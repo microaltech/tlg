@@ -28,7 +28,7 @@ var married_count := 0
 var counselors := {}
 ## id -> {"intimacy": int}
 var beauties := {}
-## [{"name", "mother", "talent", "level"}]
+## [{"name", "gender", "mother", "talent", "level"}]
 var children: Array = []
 ## key -> {"value": int, "t": float}
 var charges := {}
@@ -272,8 +272,11 @@ func visit_beauty(id: String, now: float) -> Dictionary:
 	var msg := "Keakraban dengan %s +%d." % [name, gain]
 	var chance := minf(0.25 + int(st["intimacy"]) * 0.01, 0.6)
 	if children.size() < child_seats() and rng.randf() < chance:
+		var gender := "m" if rng.randf() < 0.5 else "f"
+		var names: Array = Data.CHILD_NAMES[gender]
 		var child := {
-			"name": Data.CHILD_NAMES[rng.randi_range(0, Data.CHILD_NAMES.size() - 1)],
+			"name": names[rng.randi_range(0, names.size() - 1)],
+			"gender": gender,
 			"mother": id,
 			"talent": _roll_talent(),
 			"level": 1,
@@ -383,6 +386,7 @@ func from_dict(d: Dictionary, now: float) -> void:
 	for c in d.get("children", []):
 		children.append({
 			"name": str(c.get("name", "Anak")),
+			"gender": "f" if str(c.get("gender", "m")) == "f" else "m",
 			"mother": str(c.get("mother", "")),
 			"talent": int(c.get("talent", 1)),
 			"level": int(c.get("level", 1)),

@@ -38,9 +38,17 @@ const BEAUTIES := [
 	{"id": "cempaka", "name": "Cempaka", "unlock_stage": 20},
 ]
 
-const CHILD_NAMES := [
-	"Adi", "Bima", "Citra", "Dimas", "Eka", "Fajar", "Gita", "Hana", "Indra", "Jaya",
-	"Kirana", "Laksmi", "Mega", "Nanda", "Putri", "Rangga", "Sari", "Tirta", "Utami", "Wulan",
+const CHILD_NAMES := {
+	"m": ["Adi", "Bima", "Dimas", "Fajar", "Indra", "Jaya", "Rangga", "Tirta", "Wira", "Yoga"],
+	"f": ["Citra", "Gita", "Hana", "Kirana", "Laksmi", "Mega", "Putri", "Sari", "Utami", "Wulan"],
+}
+
+## Jenderal musuh bergiliran di tiap tahap kampanye (id = nama file potret).
+const ENEMIES := [
+	{"id": "enemy_bandit", "name": "Kepala Begal"},
+	{"id": "enemy_rebel", "name": "Pemimpin Pemberontak"},
+	{"id": "enemy_pirate", "name": "Bajak Laut Selat"},
+	{"id": "enemy_warlord", "name": "Panglima Lalim"},
 ]
 
 const CHILD_MAX_LEVEL := 10
@@ -62,8 +70,11 @@ static func beauty_def(id: String) -> Dictionary:
 
 ## Tahap kampanye dibuat prosedural supaya tidak ada batas akhir.
 static func stage_info(index: int) -> Dictionary:
+	var enemy: Dictionary = ENEMIES[index % ENEMIES.size()]
 	return {
 		"name": "Tahap %d" % (index + 1),
+		"enemy_id": enemy["id"],
+		"enemy_name": enemy["name"],
 		"enemy_soldiers": int(300 * pow(1.16, index)),
 		"enemy_str": int(12 * pow(1.13, index)),
 		"reward_silver": 120 + 45 * index,

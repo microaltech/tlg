@@ -47,6 +47,10 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   atribut permanen ke penasihat.
 - **Jabatan** — 6 tingkat; menaikkan batas charge, pengali hasil, batas level,
   dan kursi anak.
+- **Grafis** — potret untuk 7 penasihat, 4 selir, anak (laki-laki/perempuan),
+  avatar Tuan, dan 4 jenderal musuh; ikon sumber daya; latar bergambar tiap menu
+  (gerbang candi bentar, pendopo, medan perang, istana); motif batik kawung;
+  font Cinzel & Nunito. Animasi angka hadiah, serangan, dan pop-up hasil.
 - **Simpan otomatis** ke `user://save.json` (tiap 15 detik, saat keluar, dan
   saat aplikasi di-minimize di HP).
 
@@ -58,9 +62,30 @@ scenes/main.tscn           Scene utama
 scripts/core/game_data.gd  Data & angka balancing (jabatan, penasihat, tahap)
 scripts/core/game_model.gd Semua logika game, tanpa UI (mudah diuji)
 scripts/core/game.gd       Autoload "Game": simpan/muat & autosave
-scripts/ui/main.gd         UI dibangun lewat kode (4 tab)
+scripts/ui/main.gd         UI dibangun lewat kode (header, 4 halaman, navigasi bawah)
+scripts/ui/ui_theme.gd     Tema visual (warna, tombol, kartu, font)
+scripts/ui/art.gd          Pemuat gambar (PNG diutamakan, lalu SVG)
+assets/portraits|icons|bg  Gambar karakter, ikon, latar (SVG)
+assets/fonts               Font Cinzel & Nunito (lisensi SIL OFL)
+tools/gen_art.py           Generator semua gambar SVG
+tools/build_android.sh     Build APK
 tests/run_tests.gd         Tes logika headless
 ```
+
+## Grafis
+
+Semua gambar dibuat oleh `tools/gen_art.py` dari bentuk vektor sederhana, jadi
+orisinal (bebas hak cipta pihak lain), tajam di semua layar, dan APK tetap
+kecil. Ubah warna, rambut, hiasan kepala, atau pakaian karakter di kamus
+`CHARACTERS` lalu jalankan:
+
+```bash
+python3 tools/gen_art.py
+```
+
+Mau pakai gambar buatan ilustrator? Taruh file PNG dengan nama yang sama
+(misalnya `assets/portraits/arya.png`, persegi, disarankan 512×512) dan game
+otomatis memakainya menggantikan SVG.
 
 Logika dipisah dari UI, sehingga nanti UI bisa diganti dengan scene buatan
 desainer (gambar, animasi) tanpa mengubah aturan game, dan logika yang sama bisa

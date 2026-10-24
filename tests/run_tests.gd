@@ -83,6 +83,7 @@ func test_campaign_win_unlock() -> void:
 func test_campaign_loss() -> void:
 	var m := fresh()
 	m.soldiers = 10
+	check(m.current_stage_info()["enemy_id"] == "enemy_bandit", "musuh tahap pertama")
 	check(not m.fight_stage()["ok"], "kalah tanpa prajurit")
 	check(m.stage == 0 and m.soldiers == 5, "tahap tetap, separuh prajurit gugur")
 
@@ -105,6 +106,7 @@ func test_palace_children() -> void:
 		t += 60.0
 		m.visit_beauty("melati", t)
 	check(m.beauties["melati"]["intimacy"] > 0, "keakraban naik")
+	check(m.children[0]["gender"] in ["m", "f"], "anak punya jenis kelamin")
 	m.grain = 1000000
 	for i in Data.CHILD_MAX_LEVEL:
 		m.train_child(0)
@@ -121,7 +123,7 @@ func test_save_roundtrip() -> void:
 	for i in 6:
 		m.fight_stage()
 	m.do_affair("grain", 1000.0)
-	m.children.append({"name": "Adi", "mother": "melati", "talent": 3, "level": 4})
+	m.children.append({"name": "Adi", "gender": "m", "mother": "melati", "talent": 3, "level": 4})
 	m.counselors["arya"]["bonus"]["str"] = 30
 	var json := JSON.stringify(m.to_dict())
 	var m2 := Model.new()

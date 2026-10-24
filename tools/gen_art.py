@@ -1,0 +1,748 @@
+#!/usr/bin/env python3
+"""Generator aset grafis (SVG) untuk game: potret karakter, ikon, latar.
+
+Semua gambar dibuat secara prosedural dari bentuk-bentuk dasar agar orisinal,
+konsisten gayanya, dan tajam di semua resolusi. Jalankan ulang setelah mengubah
+desain:
+
+    python3 tools/gen_art.py
+
+Hasil ditulis ke assets/portraits, assets/icons, dan assets/bg. Untuk mengganti
+dengan gambar buatan ilustrator, cukup taruh file PNG dengan nama yang sama
+(mis. assets/portraits/arya.png); game akan memakai PNG lebih dulu.
+"""
+
+import math
+import os
+
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets")
+GOLD = "#e8c070"
+GOLD_DARK = "#a8742c"
+
+
+# --- Utilitas warna -------------------------------------------------------
+
+def _rgb(h):
+    h = h.lstrip("#")
+    return [int(h[i:i + 2], 16) for i in (0, 2, 4)]
+
+
+def _hex(c):
+    return "#" + "".join("%02x" % max(0, min(255, int(round(v)))) for v in c)
+
+
+def shade(h, f):
+    """f < 0 menggelapkan, f > 0 mencerahkan (rentang -1..1)."""
+    c = _rgb(h)
+    if f < 0:
+        return _hex([v * (1 + f) for v in c])
+    return _hex([v + (255 - v) * f for v in c])
+
+
+def mirror(svg):
+    """Cerminkan elemen terhadap garis tengah horizontal kanvas 256."""
+    return '<g transform="translate(256 0) scale(-1 1)">%s</g>' % svg
+
+
+def svg_doc(w, h, body, px_w=None, px_h=None, defs=""):
+    px_w = px_w or w
+    px_h = px_h or h
+    return (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" viewBox="0 0 %d %d">'
+        "<defs>%s</defs>%s</svg>\n" % (px_w, px_h, w, h, defs, body)
+    )
+
+
+def write(rel, content):
+    path = os.path.join(ROOT, rel)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        f.write(content)
+
+
+# --- Potret ---------------------------------------------------------------
+
+SKIN = {
+    "light": "#f2cba6",
+    "medium": "#dfa97c",
+    "tan": "#c58a5e",
+    "deep": "#9a6443",
+}
+
+
+def p_background(c1, c2):
+    defs = (
+        '<radialGradient id="bg" cx="50%%" cy="42%%" r="70%%">'
+        '<stop offset="0" stop-color="%s"/><stop offset="1" stop-color="%s"/></radialGradient>'
+        % (c1, c2)
+    )
+    rays = ""
+    for i in range(16):
+        a0 = math.radians(i * 22.5)
+        a1 = math.radians(i * 22.5 + 9)
+        rays += '<path d="M128 118 L%.1f %.1f L%.1f %.1f Z" fill="#fff" opacity="0.07"/>' % (
+            128 + 260 * math.cos(a0), 118 + 260 * math.sin(a0),
+            128 + 260 * math.cos(a1), 118 + 260 * math.sin(a1))
+    body = (
+        '<rect width="256" height="256" rx="28" fill="url(#bg)"/>'
+        '<g clip-path="url(#clip)">%s</g>' % rays
+    )
+    defs += '<clipPath id="clip"><rect width="256" height="256" rx="28"/></clipPath>'
+    return defs, body
+
+
+def p_frame():
+    return (
+        '<rect x="4" y="4" width="248" height="248" rx="24" fill="none" stroke="%s" stroke-width="8"/>'
+        '<rect x="11" y="11" width="234" height="234" rx="19" fill="none" stroke="%s" stroke-width="2" opacity="0.8"/>'
+        '<path d="M128 2 l9 9 -9 9 -9 -9 Z" fill="%s" stroke="%s" stroke-width="2"/>'
+        % (GOLD, GOLD_DARK, GOLD, GOLD_DARK)
+    )
+
+
+def hair_back(style, color):
+    if style == "long":
+        return (
+            '<path d="M78 100 Q70 40 128 38 Q186 40 178 100 Q186 160 194 222 Q160 236 128 230 '
+            'Q96 236 62 222 Q70 160 78 100 Z" fill="%s"/>' % color
+        )
+    if style == "bun":
+        return (
+            '<circle cx="128" cy="44" r="25" fill="%s"/>'
+            '<path d="M104 40 L156 34" stroke="%s" stroke-width="4" stroke-linecap="round"/>'
+            '<circle cx="158" cy="33" r="5" fill="%s"/>' % (color, GOLD, GOLD)
+        )
+    if style == "topknot":
+        return (
+            '<ellipse cx="128" cy="44" rx="17" ry="15" fill="%s"/>'
+            '<rect x="116" y="52" width="24" height="7" rx="3" fill="%s"/>' % (color, GOLD)
+        )
+    if style == "pigtails":
+        return (
+            '<circle cx="80" cy="70" r="20" fill="%s"/><circle cx="176" cy="70" r="20" fill="%s"/>'
+            '<circle cx="80" cy="70" r="6" fill="#e05a7a"/><circle cx="176" cy="70" r="6" fill="#e05a7a"/>'
+            % (color, color)
+        )
+    return ""
+
+
+def hair_front(style, color):
+    hl = shade(color, 0.25)
+    if style in ("short", "topknot"):
+        return (
+            '<path d="M80 114 Q72 50 128 48 Q184 50 176 114 Q172 88 160 80 Q140 94 112 84 Q92 90 80 114 Z" fill="%s"/>'
+            '<path d="M104 62 Q128 54 150 62" stroke="%s" stroke-width="4" fill="none" opacity="0.6" stroke-linecap="round"/>'
+            % (color, hl)
+        )
+    if style in ("long", "bun", "pigtails"):
+        return (
+            '<path d="M80 122 Q74 48 128 46 Q182 48 176 122 Q170 86 150 74 Q132 86 104 78 Q86 90 80 122 Z" fill="%s"/>'
+            '<path d="M100 60 Q122 52 140 56" stroke="%s" stroke-width="4" fill="none" opacity="0.6" stroke-linecap="round"/>'
+            % (color, hl)
+        )
+    if style == "child":
+        return (
+            '<path d="M80 116 Q74 50 128 48 Q182 50 176 116 Q168 86 150 80 Q138 92 118 84 Q96 92 80 116 Z" fill="%s"/>'
+            '<path d="M124 50 Q120 32 138 30 Q128 40 134 50 Z" fill="%s"/>' % (color, color)
+        )
+    return ""
+
+
+def headwear(kind, p):
+    c = p.get("hat_color", "#7a2e22")
+    if kind == "helmet":
+        metal = p.get("metal", "#c9963f")
+        plume = p.get("plume", "#c0392b")
+        return (
+            '<path d="M128 40 Q150 6 180 14 Q160 22 142 46 Z" fill="%s"/>'
+            '<path d="M76 108 Q72 38 128 36 Q184 38 180 108 L172 110 Q166 80 128 78 Q90 80 84 110 Z" fill="%s"/>'
+            '<path d="M80 108 L76 144 Q86 150 94 136 L92 108 Z" fill="%s"/>'
+            '<path d="M176 108 L180 144 Q170 150 162 136 L164 108 Z" fill="%s"/>'
+            '<path d="M76 98 Q128 76 180 98 L180 112 Q128 90 76 112 Z" fill="%s" stroke="%s" stroke-width="2"/>'
+            '<path d="M128 38 L128 80" stroke="%s" stroke-width="6"/>'
+            '<path d="M100 54 Q114 44 126 44" stroke="#fff" stroke-width="4" fill="none" opacity="0.35" stroke-linecap="round"/>'
+            '<circle cx="128" cy="96" r="7" fill="#c0392b" stroke="%s" stroke-width="2"/>'
+            % (plume, metal, shade(metal, -0.15), shade(metal, -0.15), GOLD, GOLD_DARK,
+               shade(metal, -0.25), GOLD_DARK)
+        )
+    if kind == "horned":
+        metal = p.get("metal", "#4a4a55")
+        return (
+            '<path d="M86 78 Q56 62 58 24 Q72 54 98 66 Z" fill="#efe3c8" stroke="#a89878" stroke-width="2"/>'
+            '<path d="M170 78 Q200 62 198 24 Q184 54 158 66 Z" fill="#efe3c8" stroke="#a89878" stroke-width="2"/>'
+            '<path d="M76 108 Q72 40 128 38 Q184 40 180 108 L172 110 Q166 80 128 78 Q90 80 84 110 Z" fill="%s"/>'
+            '<path d="M76 98 Q128 76 180 98 L180 112 Q128 90 76 112 Z" fill="%s"/>'
+            '<path d="M118 78 L128 108 L138 78 Z" fill="%s"/>'
+            % (metal, shade(metal, -0.3), shade(metal, -0.2))
+        )
+    if kind == "udeng":
+        dots = "".join(
+            '<circle cx="%d" cy="%d" r="2.5" fill="%s"/>' % (x, 86 - abs(x - 128) * -0.18 - 4, GOLD)
+            for x in range(90, 170, 12))
+        return (
+            '<path d="M84 86 Q90 48 128 46 Q166 48 172 86 Q128 64 84 86 Z" fill="%s"/>'
+            '<path d="M80 98 Q128 72 176 98 L176 84 Q128 56 80 84 Z" fill="%s"/>%s'
+            '<path d="M118 62 L128 34 L138 62 Z" fill="%s"/>'
+            % (shade(c, -0.25), c, dots, c)
+        )
+    if kind == "blangkon":
+        lines = "".join(
+            '<path d="M%d 96 Q%d 70 %d 50" stroke="%s" stroke-width="2" fill="none" opacity="0.5"/>'
+            % (x, x + (128 - x) * 0.3, x + (128 - x) * 0.5, GOLD) for x in range(86, 172, 14))
+        return (
+            '<path d="M78 102 Q72 44 128 42 Q184 44 178 102 Q128 82 78 102 Z" fill="%s"/>%s'
+            '<path d="M78 102 Q128 82 178 102 L178 94 Q128 74 78 94 Z" fill="%s"/>'
+            % (c, lines, GOLD_DARK)
+        )
+    if kind == "crown":
+        gem = '<circle cx="%d" cy="%d" r="%d" fill="%s" stroke="#fff3" stroke-width="1"/>'
+        return (
+            '<path d="M90 82 L100 40 L114 74 Z" fill="%s" stroke="%s" stroke-width="2"/>'
+            '<path d="M166 82 L156 40 L142 74 Z" fill="%s" stroke="%s" stroke-width="2"/>'
+            '<path d="M110 76 L128 10 L146 76 Z" fill="%s" stroke="%s" stroke-width="2"/>'
+            '<path d="M82 98 Q128 80 174 98 L174 80 Q128 62 82 80 Z" fill="%s" stroke="%s" stroke-width="2"/>'
+            '%s%s%s%s'
+            '<path d="M80 110 Q66 112 66 128 Q66 140 76 140 Q70 130 78 124 Z" fill="%s"/>'
+            '<path d="M176 110 Q190 112 190 128 Q190 140 180 140 Q186 130 178 124 Z" fill="%s"/>'
+            % (GOLD, GOLD_DARK, GOLD, GOLD_DARK, GOLD, GOLD_DARK, GOLD, GOLD_DARK,
+               gem % (128, 84, 7, "#c0392b"), gem % (104, 88, 4, "#2e86c1"),
+               gem % (152, 88, 4, "#2e86c1"), gem % (128, 46, 5, "#27ae60"), GOLD, GOLD)
+        )
+    if kind == "tiara":
+        return (
+            '<path d="M90 76 Q128 60 166 76 L162 84 Q128 70 94 84 Z" fill="%s" stroke="%s" stroke-width="1.5"/>'
+            '<path d="M116 70 L128 44 L140 70 Z" fill="%s" stroke="%s" stroke-width="1.5"/>'
+            '<circle cx="128" cy="62" r="5" fill="%s"/>'
+            % (GOLD, GOLD_DARK, GOLD, GOLD_DARK, p.get("gem", "#c0392b"))
+        )
+    if kind == "bandana":
+        return (
+            '<path d="M80 98 Q128 66 176 98 L176 84 Q128 50 80 84 Z" fill="%s"/>'
+            '<path d="M174 88 Q196 96 204 120 Q190 108 176 104 Z" fill="%s"/>'
+            '<path d="M174 92 Q200 110 196 136 Q188 116 174 104 Z" fill="%s"/>'
+            % (c, shade(c, -0.15), shade(c, -0.25))
+        )
+    return ""
+
+
+def flower(x, y, color, r=9):
+    petals = "".join(
+        '<circle cx="%.1f" cy="%.1f" r="%.1f" fill="%s"/>' % (
+            x + r * math.cos(math.radians(a)), y + r * math.sin(math.radians(a)), r * 0.75, color)
+        for a in range(-90, 270, 72))
+    return petals + '<circle cx="%d" cy="%d" r="%.1f" fill="#f4c542"/>' % (x, y, r * 0.5)
+
+
+def body(p):
+    o = p["outfit"]
+    inner = p.get("inner", shade(o, 0.5))
+    trim = p.get("trim", GOLD)
+    out = []
+    if p["gender"] == "f":
+        out.append(
+            '<path d="M36 256 Q40 212 78 198 Q104 188 114 180 L142 180 Q152 188 178 198 '
+            'Q216 212 220 256 Z" fill="%s"/>' % o)
+        out.append('<path d="M108 180 L128 214 L148 180 Z" fill="%s"/>' % inner)
+        out.append(
+            '<path d="M106 180 L128 218 L150 180" stroke="%s" stroke-width="5" fill="none" stroke-linejoin="round"/>'
+            % trim)
+        shawl = p.get("shawl", shade(o, 0.35))
+        out.append(
+            '<path d="M36 232 Q90 196 158 256 L118 256 Q84 220 38 250 Z" fill="%s" opacity="0.92"/>'
+            % shawl)
+        # Renda di sepanjang tepi atas selendang (kurva Bezier kuadrat yang sama).
+        dots = []
+        for i in range(12):
+            t = i / 11
+            x = (1 - t) ** 2 * 36 + 2 * t * (1 - t) * 90 + t * t * 158
+            y = (1 - t) ** 2 * 232 + 2 * t * (1 - t) * 196 + t * t * 256
+            dots.append('<circle cx="%.1f" cy="%.1f" r="2.4" fill="%s"/>' % (x, y, trim))
+        out.append("".join(dots))
+    else:
+        out.append(
+            '<path d="M22 256 Q26 206 70 192 Q100 182 112 176 L144 176 Q156 182 186 192 '
+            'Q230 206 234 256 Z" fill="%s"/>' % o)
+        out.append('<path d="M106 178 L128 222 L150 178 Z" fill="%s"/>' % inner)
+        out.append(
+            '<path d="M104 178 L128 226 L152 178" stroke="%s" stroke-width="6" fill="none" stroke-linejoin="round"/>'
+            % trim)
+        out.append(
+            '<path d="M96 256 Q100 236 128 230 Q156 236 160 256" stroke="%s" stroke-width="4" fill="none" opacity="0.6"/>'
+            % shade(o, -0.3))
+    if "armor" in p.get("extras", []):
+        m = p.get("metal", "#c9963f")
+        out.append(
+            '<path d="M92 202 Q128 188 164 202 L158 256 L98 256 Z" fill="%s" stroke="%s" stroke-width="3"/>'
+            % (shade(m, -0.1), shade(m, -0.4)))
+        out.append('<circle cx="128" cy="226" r="11" fill="%s" stroke="%s" stroke-width="3"/>'
+                   % (GOLD, GOLD_DARK))
+        pad = (
+            '<path d="M26 236 Q32 190 94 196 Q84 214 88 240 Z" fill="%s" stroke="%s" stroke-width="3"/>'
+            '<path d="M34 222 Q48 202 88 204" stroke="%s" stroke-width="3" fill="none"/>'
+            % (m, shade(m, -0.4), shade(m, 0.3)))
+        out.append(pad + mirror(pad))
+    if "necklace" in p.get("extras", []):
+        out.append(
+            '<path d="M102 186 Q128 214 154 186" stroke="%s" stroke-width="4" fill="none"/>'
+            '<circle cx="128" cy="204" r="7" fill="#c0392b" stroke="%s" stroke-width="3"/>' % (GOLD, GOLD))
+    return "".join(out)
+
+
+def face(p):
+    skin = p["skin"]
+    dark = shade(skin, -0.2)
+    child = p.get("child", False)
+    f = p["gender"] == "f" or child
+    out = []
+    # Leher dan bayangan dagu
+    out.append('<path d="M112 148 L144 148 L146 186 L110 186 Z" fill="%s"/>' % skin)
+    out.append('<path d="M112 156 Q128 174 144 156 L144 172 Q128 182 112 172 Z" fill="%s" opacity="0.55"/>'
+               % dark)
+    ear = ('<ellipse cx="84" cy="120" rx="8" ry="13" fill="%s"/>'
+           '<ellipse cx="85" cy="121" rx="3.5" ry="7" fill="%s" opacity="0.6"/>' % (skin, dark))
+    out.append(ear + mirror(ear))
+    if child:
+        head = ("M82 112 Q82 58 128 58 Q174 58 174 112 Q174 146 154 162 Q140 172 128 172 "
+                "Q116 172 102 162 Q82 146 82 112 Z")
+    elif f:
+        head = ("M84 108 Q84 58 128 58 Q172 58 172 108 Q172 140 154 158 Q140 170 128 170 "
+                "Q116 170 102 158 Q84 140 84 108 Z")
+    else:
+        head = ("M82 106 Q82 58 128 58 Q174 58 174 106 Q174 142 158 160 Q142 172 128 172 "
+                "Q114 172 98 160 Q82 142 82 106 Z")
+    out.append('<path d="%s" fill="%s"/>' % (head, skin))
+    out.append('<path d="M160 96 Q172 130 150 160 Q162 130 154 96 Z" fill="%s" opacity="0.35"/>' % dark)
+    if f:
+        out.append('<ellipse cx="102" cy="138" rx="10" ry="6" fill="#e8737a" opacity="0.3"/>'
+                   '<ellipse cx="154" cy="138" rx="10" ry="6" fill="#e8737a" opacity="0.3"/>')
+    # Mata
+    ey = 118 if child else 115
+    ir = 7.5 if child else (6.5 if f else 6)
+    iris = p.get("eyes", "#3b2314")
+    eye = ('<path d="M96 {y} Q108 {t} 120 {y} Q108 {b} 96 {y} Z" fill="#fff"/>'
+           '<circle cx="109" cy="{y}" r="{r}" fill="{iris}"/>'
+           '<circle cx="109" cy="{y}" r="{pr}" fill="#140b06"/>'
+           '<circle cx="111.5" cy="{hy}" r="2" fill="#fff"/>').format(
+        y=ey, t=ey - 9 - (2 if f else 0), b=ey + 7, r=ir, pr=ir * 0.45, iris=iris, hy=ey - 2.5)
+    if f:
+        eye += ('<path d="M95 {y} Q108 {t} 121 {y}" stroke="#2a160c" stroke-width="3" fill="none" '
+                'stroke-linecap="round"/><path d="M95 {y} L91 {y2}" stroke="#2a160c" stroke-width="2.5" '
+                'stroke-linecap="round"/>').format(y=ey, t=ey - 11, y2=ey - 4)
+    else:
+        eye += ('<path d="M96 {y} Q108 {t} 120 {y}" stroke="#2a160c" stroke-width="2.5" fill="none"/>'
+                ).format(y=ey, t=ey - 9)
+    if "eyepatch" in p.get("extras", []):
+        out.append(eye)
+        out.append('<path d="M84 96 L172 128" stroke="#1a1a1a" stroke-width="4"/>'
+                   '<ellipse cx="148" cy="%d" rx="15" ry="13" fill="#1a1a1a"/>' % ey)
+    else:
+        out.append(eye + mirror(eye))
+    # Alis
+    hc = p.get("brow_color", shade(p["hair"], -0.1))
+    brows = {
+        "calm": '<path d="M95 101 Q108 94 121 99" stroke="%s" stroke-width="5" fill="none" stroke-linecap="round"/>',
+        "fierce": '<path d="M94 95 L121 104" stroke="%s" stroke-width="6" fill="none" stroke-linecap="round"/>',
+        "soft": '<path d="M97 100 Q108 95 119 99" stroke="%s" stroke-width="3.5" fill="none" stroke-linecap="round"/>',
+    }[p.get("brows", "calm")] % hc
+    out.append(brows + mirror(brows))
+    # Hidung
+    out.append('<path d="M128 120 Q123 134 130 136" stroke="%s" stroke-width="2.5" fill="none" '
+               'stroke-linecap="round"/>' % dark)
+    # Jenggot / kumis
+    beard_c = p["hair"]
+    beard = p.get("beard")
+    if beard == "full":
+        out.append('<path d="M84 116 Q86 152 104 168 Q128 192 152 168 Q170 152 172 116 Q168 142 152 152 '
+                   'Q140 146 128 150 Q116 146 104 152 Q88 142 84 116 Z" fill="%s"/>' % beard_c)
+    if beard == "stubble":
+        out.append('<path d="M90 130 Q94 160 128 170 Q162 160 166 130 Q150 160 128 160 Q106 160 90 130 Z" '
+                   'fill="%s" opacity="0.25"/>' % shade(beard_c, -0.2))
+    # Mulut
+    mouth = p.get("mouth", "smile" if f else "calm")
+    if mouth == "smile":
+        out.append('<path d="M116 147 Q128 158 140 147 Q128 152 116 147 Z" fill="#c4545e"/>')
+    elif mouth == "fierce":
+        out.append('<path d="M116 152 Q128 146 140 152" stroke="#6b2a22" stroke-width="3.5" fill="none" '
+                   'stroke-linecap="round"/>')
+    elif mouth == "grin":
+        out.append('<path d="M114 146 Q128 162 142 146 Z" fill="#fff" stroke="#6b2a22" stroke-width="3"/>')
+    else:
+        out.append('<path d="M117 148 Q128 154 139 148" stroke="#7a3a2e" stroke-width="3" fill="none" '
+                   'stroke-linecap="round"/>')
+    if beard in ("mustache", "goatee", "full"):
+        out.append('<path d="M106 142 Q118 132 128 138 Q138 132 150 142 Q138 140 128 145 Q118 140 106 142 Z" '
+                   'fill="%s"/>' % beard_c)
+    if beard == "goatee":
+        out.append('<path d="M120 160 Q128 180 136 160 Q128 165 120 160 Z" fill="%s"/>' % beard_c)
+    if "scar" in p.get("extras", []):
+        out.append('<path d="M142 98 L160 132" stroke="#9e3b32" stroke-width="3" stroke-linecap="round"/>'
+                   '<path d="M146 108 L154 105 M150 118 L158 115" stroke="#9e3b32" stroke-width="2"/>')
+    return "".join(out)
+
+
+def portrait(p):
+    defs, bg = p_background(*p["bg"])
+    parts = [bg]
+    parts.append(hair_back(p.get("hair_style", "short"), p["hair"]))
+    parts.append(body(p))
+    parts.append(face(p))
+    if p.get("headwear") not in ("helmet", "horned"):
+        parts.append(hair_front(p.get("hair_style", "short"), p["hair"]))
+    parts.append(headwear(p.get("headwear"), p))
+    if "earrings" in p.get("extras", []):
+        parts.append('<circle cx="84" cy="138" r="5" fill="%s"/><circle cx="172" cy="138" r="5" fill="%s"/>'
+                     % (GOLD, GOLD))
+    for fx, fy, fc in p.get("flowers", []):
+        parts.append(flower(fx, fy, fc))
+    parts.append(p_frame())
+    return svg_doc(256, 256, "".join(parts), 384, 384, defs)
+
+
+CHARACTERS = {
+    # Penasihat
+    "arya": dict(gender="m", skin=SKIN["medium"], hair="#2a1a10", hair_style="short", headwear="helmet",
+                 outfit="#8e2b22", inner="#e9d6b0", beard="mustache", brows="fierce", mouth="fierce",
+                 extras=["armor"], bg=("#d65a3a", "#5e1810")),
+    "sekar": dict(gender="f", skin=SKIN["light"], hair="#1f140d", hair_style="bun", outfit="#2c5d8f",
+                  inner="#e8eef5", shawl="#86b3d9", brows="soft", extras=["earrings"],
+                  bg=("#5aa0d6", "#16304f")),
+    "bayu": dict(gender="m", skin=SKIN["tan"], hair="#24170f", hair_style="short", headwear="udeng",
+                 hat_color="#6b3d1e", outfit="#2f6b45", inner="#efe4c4", beard="goatee", brows="calm",
+                 bg=("#5fbf7d", "#173d24")),
+    "ratna": dict(gender="f", skin=SKIN["medium"], hair="#2b170c", hair_style="long", outfit="#a33a6b",
+                  inner="#f6d9e6", shawl="#e58fb6", extras=["necklace", "earrings"],
+                  flowers=[(164, 70, "#ffffff"), (176, 86, "#ffd1e0")], bg=("#e57aa8", "#5a1a3a")),
+    "gajah": dict(gender="m", skin=SKIN["deep"], hair="#1a110b", hair_style="short", headwear="helmet",
+                  metal="#7d7f88", plume="#2d2d2d", outfit="#5b2a12", beard="full", brows="fierce",
+                  mouth="fierce", extras=["armor", "scar"], bg=("#e08a3a", "#4a2208")),
+    "dewi": dict(gender="f", skin=SKIN["light"], hair="#140d08", hair_style="long", headwear="tiara",
+                 gem="#8e44ad", outfit="#5b2f86", inner="#efe0f7", shawl="#b38ad6",
+                 extras=["necklace", "earrings"], bg=("#a47ad6", "#2d1647")),
+    "satria": dict(gender="m", skin=SKIN["medium"], hair="#1b120b", hair_style="topknot", headwear="crown",
+                   outfit="#efe6d2", inner="#c9963f", trim="#b8862f", beard="mustache", brows="calm",
+                   extras=["necklace"], bg=("#f2d27a", "#7a4b12")),
+    # Selir
+    "melati": dict(gender="f", skin=SKIN["light"], hair="#1d120b", hair_style="long", outfit="#4f8a5b",
+                   inner="#f2f7ee", shawl="#ffffff", extras=["earrings"],
+                   flowers=[(92, 70, "#ffffff"), (82, 88, "#ffffff"), (104, 60, "#ffffff")],
+                   bg=("#9ed6a6", "#24502c")),
+    "kenanga": dict(gender="f", skin=SKIN["medium"], hair="#24160c", hair_style="bun", outfit="#c79a1e",
+                    inner="#fff3cf", shawl="#f2d36b", extras=["necklace", "earrings"],
+                    flowers=[(150, 50, "#f6e27a")], bg=("#f2d36b", "#6b4e08")),
+    "anggrek": dict(gender="f", skin=SKIN["tan"], hair="#120a06", hair_style="long", outfit="#6c3483",
+                    inner="#f1e2f7", shawl="#c39bd3", extras=["necklace", "earrings"],
+                    flowers=[(166, 72, "#d7a6e8"), (178, 90, "#b97fd0")], bg=("#c39bd3", "#3a1648")),
+    "cempaka": dict(gender="f", skin=SKIN["light"], hair="#2a170b", hair_style="long", headwear="tiara",
+                    gem="#e67e22", outfit="#c0561e", inner="#fde8d4", shawl="#f0a35e",
+                    extras=["necklace", "earrings"], flowers=[(92, 74, "#f5b041")],
+                    bg=("#f0a35e", "#5e2408")),
+    # Anak
+    "child_m": dict(gender="m", child=True, skin=SKIN["medium"], hair="#24170f", hair_style="child",
+                    outfit="#2e86c1", inner="#eaf2f8", brows="soft", mouth="grin", bg=("#85c1e9", "#1b4f72")),
+    "child_f": dict(gender="f", child=True, skin=SKIN["light"], hair="#2a170b", hair_style="pigtails",
+                    outfit="#d35d8a", inner="#fdeef4", brows="soft", mouth="grin", bg=("#f5b7c8", "#7a1f45")),
+    # Tuan (pemain)
+    "lord": dict(gender="m", skin=SKIN["medium"], hair="#1d130c", hair_style="short", headwear="blangkon",
+                 hat_color="#3b2416", outfit="#1f3a5f", inner="#efe6d2", beard="mustache", brows="calm",
+                 extras=["necklace"], bg=("#4f7cac", "#13233a")),
+    # Musuh
+    "enemy_bandit": dict(gender="m", skin=SKIN["tan"], hair="#2a1a10", hair_style="short", headwear="bandana",
+                         hat_color="#5d4a2e", outfit="#4a3b2a", beard="stubble", brows="fierce", mouth="grin",
+                         extras=["scar"], bg=("#8a7a5a", "#2a2216")),
+    "enemy_rebel": dict(gender="m", skin=SKIN["medium"], hair="#1a110b", hair_style="short", headwear="bandana",
+                        hat_color="#b03a2e", outfit="#3b3b3b", beard="goatee", brows="fierce", mouth="fierce",
+                        bg=("#c0504d", "#3a0f0e")),
+    "enemy_pirate": dict(gender="m", skin=SKIN["deep"], hair="#120b07", hair_style="short", headwear="bandana",
+                         hat_color="#1f4e79", outfit="#2b2b2b", beard="full", brows="fierce", mouth="grin",
+                         extras=["eyepatch"], bg=("#4a7fa8", "#0e2234")),
+    "enemy_warlord": dict(gender="m", skin=SKIN["tan"], hair="#0f0a06", hair_style="short", headwear="horned",
+                          outfit="#2a1f2e", beard="full", brows="fierce", mouth="fierce",
+                          extras=["armor", "scar"], metal="#55525e", bg=("#6e4a7e", "#1a0e20")),
+}
+
+
+# --- Ikon -----------------------------------------------------------------
+
+def icon_doc(body, defs=""):
+    return svg_doc(96, 96, body, 144, 144, defs)
+
+
+ICONS = {}
+
+ICONS["silver"] = icon_doc(
+    "".join(
+        '<ellipse cx="48" cy="%d" rx="30" ry="10" fill="#8f98a3"/>'
+        '<rect x="18" y="%d" width="60" height="8" fill="#8f98a3"/>'
+        '<ellipse cx="48" cy="%d" rx="30" ry="10" fill="#c9d1da" stroke="#6b7480" stroke-width="2"/>'
+        % (y + 8, y, y) for y in (72, 62, 52))
+    + '<circle cx="48" cy="34" r="26" fill="#dfe6ee" stroke="#6b7480" stroke-width="3"/>'
+      '<circle cx="48" cy="34" r="19" fill="none" stroke="#9aa4b0" stroke-width="2"/>'
+      '<rect x="41" y="27" width="14" height="14" fill="#6b7480"/>'
+      '<path d="M32 22 Q40 14 52 13" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>')
+
+ICONS["grain"] = icon_doc(
+    '<path d="M22 86 Q14 56 30 40 L66 40 Q82 56 74 86 Q48 94 22 86 Z" fill="#d9b77a" stroke="#8a6a35" stroke-width="3"/>'
+    '<path d="M30 40 Q48 48 66 40 L62 32 Q48 38 34 32 Z" fill="#c49a55" stroke="#8a6a35" stroke-width="3"/>'
+    '<path d="M48 34 Q44 18 36 8 M48 34 Q50 16 58 6 M48 34 Q56 22 68 16" stroke="#7a8a2a" stroke-width="3" fill="none"/>'
+    + "".join('<ellipse cx="%d" cy="%d" rx="3" ry="5" fill="#e8c95a" transform="rotate(%d %d %d)"/>'
+              % (x, y, r, x, y) for x, y, r in [(38, 14, -30), (35, 9, -30), (56, 12, 20), (59, 7, 20),
+                                                (64, 19, 50), (68, 15, 50)])
+    + '<path d="M36 64 Q48 70 60 64" stroke="#8a6a35" stroke-width="3" fill="none"/>'
+      '<circle cx="48" cy="58" r="6" fill="#c0392b"/>')
+
+ICONS["soldiers"] = icon_doc(
+    '<path d="M18 86 L70 10" stroke="#7a5a32" stroke-width="5"/><path d="M78 86 L26 10" stroke="#7a5a32" stroke-width="5"/>'
+    '<path d="M70 10 L78 2 L74 16 Z" fill="#c9d1da"/><path d="M26 10 L18 2 L22 16 Z" fill="#c9d1da"/>'
+    '<path d="M20 66 Q18 26 48 24 Q78 26 76 66 Z" fill="#c9963f" stroke="#7a4b1f" stroke-width="3"/>'
+    '<path d="M14 66 L82 66 L78 76 L18 76 Z" fill="#e8c070" stroke="#7a4b1f" stroke-width="3"/>'
+    '<path d="M48 24 Q62 4 80 8 Q66 14 56 28 Z" fill="#c0392b"/>'
+    '<path d="M30 40 Q38 32 48 31" stroke="#fff" stroke-width="3" fill="none" opacity="0.5" stroke-linecap="round"/>')
+
+ICONS["prestige"] = icon_doc(
+    '<path d="M30 60 L20 92 L34 84 L42 94 L46 64 Z" fill="#c0392b"/><path d="M66 60 L76 92 L62 84 L54 94 L50 64 Z" fill="#a93226"/>'
+    '<circle cx="48" cy="40" r="32" fill="#e8c070" stroke="#a8742c" stroke-width="4"/>'
+    '<path d="M48 18 L54 34 L71 34 L57 44 L62 61 L48 51 L34 61 L39 44 L25 34 L42 34 Z" fill="#fff6d8" stroke="#a8742c" stroke-width="2"/>')
+
+ICONS["power"] = icon_doc(
+    '<path d="M48 2 Q62 14 54 24 Q46 32 56 40 Q66 50 56 58 Q50 62 54 66 L42 66 Q36 58 44 52 '
+    'Q52 44 42 36 Q32 28 42 20 Q50 12 48 2 Z" fill="#d6dde6" stroke="#5d6670" stroke-width="2.5"/>'
+    '<path d="M48 8 Q54 16 49 24 Q44 32 51 40 Q57 48 50 56" stroke="#9aa4b0" stroke-width="2" fill="none"/>'
+    '<path d="M30 66 L66 66 L62 74 L34 74 Z" fill="#e8c070" stroke="#7a4b1f" stroke-width="2.5"/>'
+    '<path d="M42 74 L54 74 L56 92 Q48 96 40 92 Z" fill="#7a4b1f" stroke="#4a2c10" stroke-width="2.5"/>')
+
+ICONS["heart"] = icon_doc(
+    '<path d="M48 86 Q10 60 12 34 Q14 14 32 14 Q44 14 48 28 Q52 14 64 14 Q82 14 84 34 Q86 60 48 86 Z" '
+    'fill="#e0507a" stroke="#8e1f45" stroke-width="4"/>'
+    '<path d="M24 34 Q24 24 34 22" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.7"/>')
+
+ICONS["star"] = icon_doc(
+    '<path d="M48 6 L59 34 L90 36 L66 56 L74 88 L48 70 L22 88 L30 56 L6 36 L37 34 Z" '
+    'fill="#f4c542" stroke="#a8742c" stroke-width="4" stroke-linejoin="round"/>')
+
+ICONS["lock"] = icon_doc(
+    '<path d="M30 44 L30 30 Q30 12 48 12 Q66 12 66 30 L66 44" stroke="#c9d1da" stroke-width="8" fill="none"/>'
+    '<rect x="20" y="42" width="56" height="44" rx="8" fill="#e8c070" stroke="#7a4b1f" stroke-width="4"/>'
+    '<circle cx="48" cy="60" r="6" fill="#4a2c10"/><rect x="45" y="62" width="6" height="14" fill="#4a2c10"/>')
+
+ICONS["tab_city"] = icon_doc(
+    '<path d="M10 88 L10 40 L26 26 L28 88 Z" fill="#c0563a" stroke="#5e1f10" stroke-width="3"/>'
+    '<path d="M86 88 L86 40 L70 26 L68 88 Z" fill="#c0563a" stroke="#5e1f10" stroke-width="3"/>'
+    '<path d="M14 40 L24 30 M14 56 L26 46 M14 72 L26 62 M82 40 L72 30 M82 56 L70 46 M82 72 L70 62" stroke="#5e1f10" stroke-width="2.5"/>'
+    '<path d="M48 10 L34 40 L62 40 Z" fill="#e8c070" stroke="#7a4b1f" stroke-width="3"/>'
+    '<rect x="36" y="40" width="24" height="48" fill="#a8742c" stroke="#5e3a12" stroke-width="3"/>'
+    '<path d="M42 88 L42 64 Q48 56 54 64 L54 88 Z" fill="#3b2416"/>')
+
+ICONS["tab_counselor"] = icon_doc(
+    '<circle cx="48" cy="32" r="18" fill="#e8c070" stroke="#7a4b1f" stroke-width="3"/>'
+    '<path d="M14 90 Q16 58 48 56 Q80 58 82 90 Z" fill="#e8c070" stroke="#7a4b1f" stroke-width="3"/>'
+    '<path d="M30 20 Q48 0 66 20 Q48 12 30 20 Z" fill="#7a4b1f"/>'
+    '<path d="M40 60 L48 78 L56 60" stroke="#7a4b1f" stroke-width="3" fill="none"/>')
+
+ICONS["tab_campaign"] = icon_doc(
+    '<path d="M18 88 L18 8" stroke="#7a4b1f" stroke-width="5"/>'
+    '<path d="M20 10 Q46 2 54 14 Q62 26 84 18 L84 50 Q62 58 54 46 Q46 34 20 42 Z" fill="#c0392b" stroke="#6b1a12" stroke-width="3"/>'
+    '<circle cx="50" cy="30" r="8" fill="#e8c070"/>'
+    '<path d="M40 88 L84 60 M84 88 L40 60" stroke="#d6dde6" stroke-width="6" stroke-linecap="round"/>'
+    '<path d="M44 82 L50 88 M80 82 L74 88" stroke="#7a4b1f" stroke-width="6" stroke-linecap="round"/>')
+
+ICONS["tab_palace"] = icon_doc(
+    '<path d="M4 44 Q48 6 92 44 L80 44 Q48 20 16 44 Z" fill="#c0392b" stroke="#6b1a12" stroke-width="3"/>'
+    '<path d="M16 44 L80 44 L74 34 L22 34 Z" fill="#e8c070"/>'
+    '<path d="M48 4 L48 16" stroke="#e8c070" stroke-width="4"/><circle cx="48" cy="4" r="4" fill="#e8c070"/>'
+    '<rect x="20" y="44" width="8" height="40" fill="#a8742c"/><rect x="68" y="44" width="8" height="40" fill="#a8742c"/>'
+    '<rect x="40" y="56" width="16" height="28" rx="8" fill="#3b2416"/>'
+    '<rect x="10" y="84" width="76" height="8" fill="#e8c070" stroke="#7a4b1f" stroke-width="2"/>')
+
+
+# --- Latar ----------------------------------------------------------------
+
+def mountains(w, base, layers):
+    out = ""
+    for i, (color, height, seed) in enumerate(layers):
+        pts = ["0,%d" % base]
+        n = 9
+        for k in range(n + 1):
+            x = w * k / n
+            y = base - height * (0.55 + 0.45 * math.sin(k * 1.7 + seed) * math.cos(k * 0.6 + seed * 2))
+            pts.append("%.0f,%.0f" % (x, y))
+        pts.append("%d,%d" % (w, base))
+        out += '<polygon points="%s" fill="%s"/>' % (" ".join(pts), color)
+    return out
+
+
+def volcano(cx, base, w, h, color, cap):
+    return ('<path d="M%d %d L%d %d Q%d %d %d %d L%d %d Z" fill="%s"/>'
+            '<path d="M%d %d Q%d %d %d %d L%d %d Q%d %d %d %d Z" fill="%s" opacity="0.8"/>'
+            % (cx - w, base, cx - 18, base - h, cx, base - h - 8, cx + 18, base - h, cx + w, base, color,
+               cx - 30, base - h + 30, cx - 22, base - h + 6, cx - 16, base - h, cx + 16, base - h,
+               cx + 24, base - h + 10, cx + 30, base - h + 30, cap))
+
+
+def joglo(x, y, s, roof, wall):
+    """Rumah tradisional beratap joglo bertingkat."""
+    return (
+        '<g transform="translate(%d %d) scale(%.2f)">'
+        '<rect x="-34" y="0" width="68" height="34" fill="%s"/>'
+        '<rect x="-8" y="12" width="16" height="22" fill="#3b2416"/>'
+        '<path d="M-52 2 L-22 -22 L22 -22 L52 2 Z" fill="%s"/>'
+        '<path d="M-24 -20 L-10 -46 L10 -46 L24 -20 Z" fill="%s"/>'
+        "</g>" % (x, y, s, wall, roof, shade(roof, 0.15)))
+
+
+def candi_bentar(cx, base, h, color):
+    """Gerbang terbelah khas Jawa-Bali."""
+    half = (
+        '<path d="M{a} {b} L{a} {c} L{d} {e} L{f} {g} L{f2} {h2} L{i} {j} L{i} {b} Z" fill="{col}"/>'
+    ).format(a=cx - 70, b=base, c=base - h * 0.45, d=cx - 62, e=base - h * 0.55, f=cx - 54, g=base - h * 0.78,
+             f2=cx - 40, h2=base - h, i=cx - 18, j=base - h * 0.5, col=color)
+    lines = "".join('<path d="M%d %d L%d %d" stroke="%s" stroke-width="3"/>'
+                    % (cx - 70, base - k, cx - 18, base - k, shade(color, -0.25))
+                    for k in range(20, int(h * 0.45), 22))
+    g = half + lines
+    return g + '<g transform="translate(%d 0) scale(-1 1)">%s</g>' % (2 * cx, g)
+
+
+def tree(x, y, s, color):
+    return ('<g transform="translate(%d %d) scale(%.2f)"><rect x="-4" y="-10" width="8" height="30" fill="#4a2c10"/>'
+            '<circle cx="0" cy="-26" r="22" fill="%s"/><circle cx="-16" cy="-12" r="16" fill="%s"/>'
+            '<circle cx="16" cy="-12" r="16" fill="%s"/></g>'
+            % (x, y, s, color, shade(color, -0.1), shade(color, 0.08)))
+
+
+def bg_city():
+    W, H = 720, 360
+    defs = ('<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">'
+            '<stop offset="0" stop-color="#3a5a8c"/><stop offset="0.55" stop-color="#e9a15a"/>'
+            '<stop offset="1" stop-color="#f6d08a"/></linearGradient>')
+    b = '<rect width="%d" height="%d" fill="url(#sky)"/>' % (W, H)
+    b += '<circle cx="560" cy="150" r="46" fill="#fff1c4" opacity="0.9"/>'
+    b += volcano(200, 250, 210, 150, "#6a5a8a", "#e9e4f2")
+    b += mountains(W, 270, [("#7b5f7e", 90, 1.0), ("#5c4a64", 60, 2.4)])
+    b += '<rect x="0" y="262" width="%d" height="%d" fill="#3f5a2c"/>' % (W, H)
+    for x, s in [(70, 0.9), (150, 0.7), (580, 0.85), (660, 0.7)]:
+        b += joglo(x, 262, s, "#6b2e1e", "#d9b98a")
+    b += tree(30, 300, 1.2, "#2f5a2a") + tree(700, 300, 1.1, "#2f5a2a")
+    b += tree(250, 284, 0.8, "#3a6a30") + tree(470, 284, 0.8, "#3a6a30")
+    b += candi_bentar(360, 330, 210, "#b2553a")
+    b += '<path d="M300 360 L340 330 L380 330 L420 360 Z" fill="#c9a77a"/>'
+    b += '<rect y="330" width="%d" height="30" fill="#2e4421" opacity="0.6"/>' % W
+    return svg_doc(W, H, b, 1080, 540, defs)
+
+
+def bg_counselor():
+    W, H = 720, 360
+    defs = ('<linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">'
+            '<stop offset="0" stop-color="#3b2416"/><stop offset="1" stop-color="#6b4226"/></linearGradient>')
+    b = '<rect width="%d" height="%d" fill="url(#wall)"/>' % (W, H)
+    # Pendopo: atap & tiang
+    b += '<path d="M0 0 L720 0 L720 70 Q360 20 0 70 Z" fill="#7a2e22"/>'
+    b += '<path d="M0 70 Q360 20 720 70 L720 84 Q360 34 0 84 Z" fill="%s"/>' % GOLD
+    for x in range(40, 720, 160):
+        b += '<rect x="%d" y="80" width="26" height="250" fill="#8e3b26"/>' % x
+        b += '<rect x="%d" y="80" width="26" height="14" fill="%s"/><rect x="%d" y="316" width="26" height="14" fill="%s"/>' % (
+            x, GOLD, x, GOLD)
+    # Gulungan & rak
+    for i, x in enumerate(range(110, 640, 160)):
+        b += '<rect x="%d" y="140" width="90" height="120" fill="#4a2c18" stroke="%s" stroke-width="3"/>' % (x, GOLD_DARK)
+        for r in range(3):
+            for c in range(3):
+                b += '<rect x="%d" y="%d" width="22" height="30" rx="4" fill="%s"/>' % (
+                    x + 8 + c * 28, 148 + r * 38, ["#e9d6b0", "#c9963f", "#d8c49a"][(r + c + i) % 3])
+    b += '<rect y="330" width="%d" height="30" fill="#2a170c"/>' % W
+    b += "".join('<rect x="%d" y="330" width="60" height="30" fill="%s"/>' % (x, "#3b2416" if (x // 60) % 2 else "#2a170c")
+                 for x in range(0, W, 60))
+    return svg_doc(W, H, b, 1080, 540, defs)
+
+
+def bg_campaign():
+    W, H = 720, 360
+    defs = ('<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">'
+            '<stop offset="0" stop-color="#2a1426"/><stop offset="0.6" stop-color="#b8442e"/>'
+            '<stop offset="1" stop-color="#e88a4a"/></linearGradient>')
+    b = '<rect width="%d" height="%d" fill="url(#sky)"/>' % (W, H)
+    b += mountains(W, 250, [("#5a2a2e", 100, 0.4), ("#3e1d22", 70, 3.1)])
+    # Benteng musuh
+    b += '<rect x="420" y="150" width="260" height="110" fill="#4a3a36"/>'
+    for x in range(420, 680, 26):
+        b += '<rect x="%d" y="136" width="16" height="16" fill="#4a3a36"/>' % x
+    b += '<rect x="520" y="110" width="60" height="150" fill="#3a2c2a"/>'
+    b += '<path d="M512 112 L550 70 L588 112 Z" fill="#2a1e1c"/>'
+    b += '<path d="M534 260 L534 214 Q550 196 566 214 L566 260 Z" fill="#1a1210"/>'
+    b += '<path d="M550 70 L550 30" stroke="#2a1e1c" stroke-width="4"/><path d="M552 32 L590 42 L552 52 Z" fill="#2a2a2a"/>'
+    b += '<rect y="250" width="%d" height="%d" fill="#4a3220"/>' % (W, H)
+    # Tenda & panji pasukan sendiri
+    for x in (60, 170, 280):
+        b += '<path d="M%d 300 L%d 240 L%d 300 Z" fill="#d9c49a" stroke="#7a5a32" stroke-width="3"/>' % (x - 40, x, x + 40)
+        b += '<path d="M%d 300 L%d 262 L%d 300 Z" fill="#7a5a32"/>' % (x - 10, x, x + 10)
+    for x in (110, 230, 350):
+        b += '<path d="M%d 330 L%d 200" stroke="#5e3a12" stroke-width="5"/>' % (x, x)
+        b += '<path d="M%d 204 Q%d 196 %d 210 L%d 250 Q%d 238 %d 246 Z" fill="#c0392b"/>' % (
+            x + 2, x + 30, x + 50, x + 50, x + 30, x + 2)
+        b += '<circle cx="%d" cy="226" r="7" fill="%s"/>' % (x + 26, GOLD)
+    b += '<rect y="320" width="%d" height="40" fill="#2e1f14"/>' % W
+    return svg_doc(W, H, b, 1080, 540, defs)
+
+
+def bg_palace():
+    W, H = 720, 360
+    defs = ('<linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">'
+            '<stop offset="0" stop-color="#5a1a2a"/><stop offset="1" stop-color="#9a3a3a"/></linearGradient>'
+            '<radialGradient id="glow" cx="50%" cy="50%" r="50%">'
+            '<stop offset="0" stop-color="#ffd88a" stop-opacity="0.9"/>'
+            '<stop offset="1" stop-color="#ffd88a" stop-opacity="0"/></radialGradient>')
+    b = '<rect width="%d" height="%d" fill="url(#wall)"/>' % (W, H)
+    # Jendela melengkung dengan bulan
+    b += '<path d="M290 300 L290 150 Q360 70 430 150 L430 300 Z" fill="#1f2a4a" stroke="%s" stroke-width="8"/>' % GOLD
+    b += '<circle cx="384" cy="160" r="26" fill="#fff4d0"/>'
+    b += '<path d="M360 300 L360 120 M290 210 L430 210" stroke="%s" stroke-width="5"/>' % GOLD
+    # Tirai
+    for side in (0, 1):
+        cur = ('<path d="M0 0 L170 0 Q150 120 180 340 L0 340 Z" fill="#a8243a"/>'
+               '<path d="M30 0 Q40 160 20 340 M80 0 Q96 160 70 340 M130 0 Q140 160 130 340" stroke="#7a1428" '
+               'stroke-width="6" fill="none"/>'
+               '<path d="M0 150 Q90 190 176 160" stroke="%s" stroke-width="10" fill="none"/>' % GOLD)
+        b += cur if side == 0 else '<g transform="translate(720 0) scale(-1 1)">%s</g>' % cur
+    b += '<path d="M0 0 L720 0 L720 40 Q360 70 0 40 Z" fill="#7a1428"/>'
+    b += "".join('<path d="M%d 40 Q%d 62 %d 40" fill="%s"/>' % (x, x + 20, x + 40, GOLD) for x in range(0, 720, 40))
+    # Lentera
+    for x in (220, 500):
+        b += '<path d="M%d 40 L%d 110" stroke="%s" stroke-width="3"/>' % (x, x, GOLD)
+        b += '<circle cx="%d" cy="140" r="60" fill="url(#glow)"/>' % x
+        b += '<ellipse cx="%d" cy="140" rx="22" ry="30" fill="#e74c3c" stroke="%s" stroke-width="3"/>' % (x, GOLD)
+        b += '<rect x="%d" y="106" width="20" height="8" fill="%s"/><rect x="%d" y="166" width="20" height="8" fill="%s"/>' % (
+            x - 10, GOLD, x - 10, GOLD)
+    # Lantai
+    b += '<rect y="300" width="%d" height="60" fill="#3a1a14"/>' % W
+    b += "".join('<path d="M%d 300 L%d 360" stroke="#5a2a20" stroke-width="3"/>' % (x, x * 1.6 - 216)
+                 for x in range(0, 760, 60))
+    return svg_doc(W, H, b, 1080, 540, defs)
+
+
+def pattern_kawung():
+    """Tile motif batik kawung untuk latar aplikasi."""
+    s = 96
+    c = "#3a2618"
+    b = '<rect width="%d" height="%d" fill="#24170f"/>' % (s, s)
+    for cx, cy in [(0, 0), (s, 0), (0, s), (s, s), (s / 2, s / 2)]:
+        for dx, dy, rot in [(0, -16, 0), (0, 16, 0), (-16, 0, 90), (16, 0, 90)]:
+            b += '<ellipse cx="%.0f" cy="%.0f" rx="9" ry="15" fill="%s" transform="rotate(%d %.0f %.0f)"/>' % (
+                cx + dx, cy + dy, c, rot, cx + dx, cy + dy)
+        b += '<circle cx="%.0f" cy="%.0f" r="3" fill="#4a3220"/>' % (cx, cy)
+    return svg_doc(s, s, b, s, s)
+
+
+def main():
+    for cid, spec in CHARACTERS.items():
+        write("portraits/%s.svg" % cid, portrait(spec))
+    for name, doc in ICONS.items():
+        write("icons/%s.svg" % name, doc)
+    write("bg/city.svg", bg_city())
+    write("bg/counselor.svg", bg_counselor())
+    write("bg/campaign.svg", bg_campaign())
+    write("bg/palace.svg", bg_palace())
+    write("bg/kawung.svg", pattern_kawung())
+    print("Aset ditulis ke", os.path.normpath(ROOT))
+
+
+if __name__ == "__main__":
+    main()

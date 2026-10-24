@@ -407,6 +407,30 @@ const VIP_PERK_NAMES := {
 	"boss_attacks": "Serangan bos aliansi harian +%d", "war_attacks": "Serangan perang aliansi harian +%d",
 }
 
+## Leaderboard global (server disimulasikan: nilai pemain lain mengikuti distribusi
+## log-normal/normal yang tumbuh seiring umur akun). dist: median & sigma pada hari ke-0,
+## growth = pertumbuhan median per hari.
+const LB_PLAYERS := 100000
+const LB_TOP := 50
+const LEADERBOARDS := [
+	{"id": "power", "name": "Kekuatan", "icon": "power", "dist": "log", "median": 250.0, "sigma": 1.1, "growth": 0.06},
+	{"id": "stage", "name": "Kampanye", "icon": "tab_campaign", "dist": "log", "median": 6.0, "sigma": 0.7, "growth": 0.05},
+	{"id": "prestige", "name": "Prestise", "icon": "prestige", "dist": "log", "median": 150.0, "sigma": 1.2, "growth": 0.12},
+	{"id": "arena", "name": "Arena", "icon": "tab_arena", "dist": "normal", "median": 1050.0, "sigma": 220.0, "growth": 0.002},
+	{"id": "alliance", "name": "Aliansi", "icon": "tab_alliance"},
+]
+## Hadiah mingguan berdasarkan persentil Kekuatan di akhir minggu (top = batas persen, inklusif).
+const LB_REWARDS := [
+	{"top": 1.0, "name": "Top 1%", "gold": 300},
+	{"top": 5.0, "name": "Top 5%", "gold": 200},
+	{"top": 20.0, "name": "Top 20%", "gold": 100},
+	{"top": 50.0, "name": "Top 50%", "gold": 50},
+	{"top": 100.0, "name": "Peserta", "gold": 20},
+]
+const LB_ALLIANCE_COUNT := 30
+const LB_ALLIANCE_WORDS := ["Naga", "Rajawali", "Banteng", "Kijang", "Elang", "Singa", "Merak", "Badak", "Harimau",
+	"Gagak", "Kencana", "Wijaya", "Samudra", "Mahameru", "Surya", "Candra", "Bintang", "Pusaka", "Nusantara", "Dirgantara"]
+
 const REWARD_KEYS := ["gold", "silver", "grain", "soldiers"]
 const REWARD_NAMES := {"gold": "emas", "silver": "perak", "grain": "pangan", "soldiers": "prajurit", "jasa": "jasa"}
 
@@ -440,6 +464,13 @@ static func shop_def(id: String) -> Dictionary:
 	for item in ALLIANCE_SHOP + ARENA_SHOP:
 		if item["id"] == id:
 			return item
+	return {}
+
+
+static func leaderboard_def(id: String) -> Dictionary:
+	for lb in LEADERBOARDS:
+		if lb["id"] == id:
+			return lb
 	return {}
 
 

@@ -62,6 +62,12 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   disimulasikan offline (NPC yang tumbuh, menyumbang, dan menyerang bos tiap hari)
   karena belum ada server; logika simulasinya terkumpul di bagian "Aliansi" pada
   `game_model.gd` agar mudah diganti dengan data server.
+- **Leaderboard global** — tombol Peringkat di header: kategori Kekuatan,
+  Kampanye, Prestise, Arena, dan Aliansi. Peringkat Anda di antara 100.001 pemain
+  (mis. "#12.345 · Top 12,3%"), 50 teratas dengan tag aliansi dan medali, serta
+  hadiah mingguan berdasarkan persentil Kekuatan (Top 1% = 300 emas). Server saat
+  ini disimulasikan: nilai pemain lain mengikuti distribusi statistik yang tumbuh
+  seiring umur akun, sehingga peringkat naik saat Anda makin kuat.
 - **Chat aliansi** — sub-tab Chat di Aliansi: gelembung pesan dengan avatar,
   jabatan, dan jam; ketik bebas atau pakai 4 pesan cepat. Anggota NPC mengobrol
   sendiri (juga saat game ditutup) sesuai keadaan aliansi (HP bos, skor perang,
@@ -265,5 +271,5 @@ Catatan penting:
 
 - Aset visual: potret penasihat/selir, latar kota, ikon sumber daya, animasi.
 - Item & inventaris, toko event, papan peringkat online, banner rekrut berganti (rate-up).
-- Backend + akun: aliansi, chat, perang aliansi & arena online sungguhan (pemain nyata, matchmaking), leaderboard global.
+- Backend + akun: aliansi, chat, perang aliansi & arena online sungguhan (pemain nyata, matchmaking), leaderboard dengan skor pemain sungguhan.
 - IAP (Google Play Billing) & iklan berhadiah (AdMob) lewat plugin Godot.

@@ -58,6 +58,10 @@ var iap := {}
 ## VIP: {"points": int, "daily_day": int (hari klaim hadiah harian), "packs": [level paket yang dibeli],
 ##   "gifts": [level yang hadiah naik levelnya sudah diberikan]}
 var vip := {}
+## Hari pertama bermain (umur akun, dipakai untuk mensimulasikan pertumbuhan server).
+var start_day := 0
+## Leaderboard: {"week": int, "reward": {} hadiah minggu lalu yang belum diklaim}
+var leaderboard := {}
 ## Tutorial: {"step": int, "done": bool, "intros": [id fitur yang sudah diperkenalkan]}
 var tutorial := {}
 ## Arena PvP (kosong sampai terbuka). Lihat bagian "Arena" di bawah.
@@ -102,6 +106,8 @@ func new_game(now: float) -> void:
 	tutorial = {"step": 0, "done": false, "intros": []}
 	iap = _empty_iap()
 	vip = {"points": 0, "daily_day": -1, "packs": [], "gifts": []}
+	start_day = day_index(now)
+	leaderboard = {"week": week_index(now), "reward": {}}
 	_npc_cache = {}
 	_unlock_content()
 	ensure_daily(now)
@@ -151,6 +157,7 @@ func sync(now: float) -> void:
 		_sync_charge(key, now)
 	var daily_reset := ensure_daily(now)
 	var weekly_reset := ensure_weekly(now)
+	ensure_leaderboard(now)
 	var alliance_changed := _alliance_rollover(now)
 	alliance_changed = ensure_war(now) or alliance_changed
 	if ensure_arena(now) or alliance_changed or weekly_reset or daily_reset:
@@ -1707,6 +1714,181 @@ func buy_vip_pack(level: int) -> Dictionary:
 	return _ok("Paket VIP %d: %s." % [level, ", ".join(parts)])
 
 
+# --- Leaderboard global -----------------------------------------------------
+# Belum ada server, jadi 100.000 pemain lain disimulasikan dengan distribusi
+# statistik: peringkat pemain = 1 + N x P(nilai pemain lain > nilai pemain).
+# Daftar teratas diambil dari kuantil distribusi yang sama, jadi konsisten.
+# Untuk leaderboard online, ganti lb_rank / lb_top / lb_alliances dengan data server.
+
+static func _erf(x: float) -> float:
+	# Pendekatan Abramowitz & Stegun 7.1.26 (galat < 1.5e-7).
+	var sgn := 1.0 if x >= 0.0 else -1.0
+	x = absf(x)
+	var t := 1.0 / (1.0 + 0.3275911 * x)
+	var y := 1.0 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t
+		+ 0.254829592) * t * exp(-x * x)
+	return sgn * y
+
+
+## Peluang nilai normal baku lebih besar dari z.
+static func _normal_tail(z: float) -> float:
+	return 0.5 * (1.0 - _erf(z / sqrt(2.0)))
+
+
+## Kebalikan _normal_tail (bisection; cukup untuk 50 baris).
+static func _normal_tail_inv(p: float) -> float:
+	var lo := -9.0
+	var hi := 9.0
+	for i in 60:
+		var mid := (lo + hi) / 2.0
+		if _normal_tail(mid) > p:
+			lo = mid
+		else:
+			hi = mid
+	return (lo + hi) / 2.0
+
+
+## [median, sigma] distribusi kategori pada hari ini (tumbuh seiring umur akun).
+func _lb_dist(def: Dictionary, now: float) -> Array:
+	var age := maxi(0, day_index(now) - start_day)
+	return [float(def["median"]) * (1.0 + float(def["growth"]) * age), float(def["sigma"])]
+
+
+func lb_value(id: String) -> int:
+	match id:
+		"power":
+			return power()
+		"stage":
+			return stage
+		"prestige":
+			return prestige
+		"arena":
+			return int(arena["rating"]) if not arena.is_empty() else 0
+	return 0
+
+
+func _lb_z(def: Dictionary, value: float, now: float) -> float:
+	var d := _lb_dist(def, now)
+	if def["dist"] == "log":
+		return (log(maxf(value, 0.0) + 1.0) - log(float(d[0]) + 1.0)) / float(d[1])
+	return (value - float(d[0])) / float(d[1])
+
+
+func _lb_value_at(def: Dictionary, z: float, now: float) -> float:
+	var d := _lb_dist(def, now)
+	if def["dist"] == "log":
+		return (float(d[0]) + 1.0) * exp(float(d[1]) * z) - 1.0
+	return float(d[0]) + float(d[1]) * z
+
+
+## {"rank", "total", "top_percent", "value"} pemain pada kategori ini.
+func lb_rank(id: String, now: float) -> Dictionary:
+	var def := Data.leaderboard_def(id)
+	var value := lb_value(id)
+	var total := Data.LB_PLAYERS + 1
+	var rank := total
+	if value > 0:
+		rank = clampi(1 + int(_normal_tail(_lb_z(def, value, now)) * Data.LB_PLAYERS), 1, total)
+	return {"rank": rank, "total": total, "top_percent": 100.0 * rank / total, "value": value}
+
+
+## Daftar teratas (LB_TOP baris); pemain disisipkan sesuai peringkatnya bila masuk.
+func lb_top(id: String, now: float) -> Array:
+	var def := Data.leaderboard_def(id)
+	var today := day_index(now)
+	var r := _seeded(["lb", id, today])
+	var names := _seeded(["lb_names", id])
+	var rows := []
+	for i in Data.LB_TOP:
+		var z := _normal_tail_inv((i + 0.5) / Data.LB_PLAYERS)
+		var v := _lb_value_at(def, z, now) * r.randf_range(0.985, 1.0)
+		# Tag merujuk ke aliansi simulasi yang juga tampil di peringkat Aliansi.
+		var tag_index := names.randi_range(0, Data.LB_ALLIANCE_COUNT - Data.ALLIANCES.size() - 1)
+		rows.append({"name": _npc_name(names), "tag": _lb_tag(tag_index),
+			"avatar": Data.ARENA_AVATARS[names.randi_range(0, Data.ARENA_AVATARS.size() - 1)],
+			"value": maxi(1, int(v)), "me": false})
+	rows.sort_custom(func(a, b): return a["value"] > b["value"])
+	var mine := lb_rank(id, now)
+	if mine["rank"] <= Data.LB_TOP:
+		var tag := _lb_tag(-1) if alliance.is_empty() else "[%s]" % alliance_def()["name"].substr(0, 3).to_upper()
+		rows.insert(mine["rank"] - 1, {"name": "Anda", "tag": tag, "avatar": "lord", "value": mine["value"], "me": true})
+		rows.resize(Data.LB_TOP)
+		# Jaga urutan menurun di sekitar pemain (nilai simulasi disesuaikan, bukan nilai pemain).
+		for i in rows.size():
+			if rows[i]["me"]:
+				continue
+			if i < mine["rank"] - 1:
+				rows[i]["value"] = maxi(rows[i]["value"], mine["value"] + (mine["rank"] - 1 - i))
+			else:
+				rows[i]["value"] = mini(rows[i]["value"], mine["value"] - (i - mine["rank"] + 1))
+	return rows
+
+
+func _lb_tag(index: int) -> String:
+	if index < 0:
+		return ""
+	var r := _seeded(["lb_alliance", index])
+	var word: String = Data.LB_ALLIANCE_WORDS[r.randi_range(0, Data.LB_ALLIANCE_WORDS.size() - 1)]
+	return "[%s]" % word.substr(0, 3).to_upper()
+
+
+## Peringkat aliansi: 3 aliansi yang bisa dimasuki + aliansi simulasi lain, urut kekuatan total.
+func lb_alliances(now: float) -> Array:
+	var today := day_index(now)
+	var age := maxi(0, today - start_day)
+	var rows := []
+	for a in Data.ALLIANCES:
+		var members := _npc_members_of(a["id"])
+		var total := 0
+		for npc in members:
+			total += int(int(npc["base"]) * (1.0 + 0.015 * mini(age, 200)))
+		var me: bool = not alliance.is_empty() and alliance["id"] == a["id"]
+		if me:
+			total += power()
+		rows.append({"name": a["name"], "emblem": a["emblem"], "power": total, "members": members.size() + (1 if me else 0),
+			"me": me})
+	for i in Data.LB_ALLIANCE_COUNT - Data.ALLIANCES.size():
+		var r := _seeded(["lb_alliance", i])
+		var word: String = Data.LB_ALLIANCE_WORDS[r.randi_range(0, Data.LB_ALLIANCE_WORDS.size() - 1)]
+		var word2: String = Data.LB_ALLIANCE_WORDS[r.randi_range(0, Data.LB_ALLIANCE_WORDS.size() - 1)]
+		var base := r.randf_range(2500, 30000) * (1.0 + 0.02 * mini(age, 200))
+		rows.append({"name": "%s %s" % [word, word2], "emblem": ["emblem_garuda", "emblem_teratai", "emblem_macan"][i % 3],
+			"power": int(base), "members": r.randi_range(10, 30), "me": false})
+	rows.sort_custom(func(a, b): return a["power"] > b["power"])
+	return rows
+
+
+func lb_reward_tier(top_percent: float) -> Dictionary:
+	for t in Data.LB_REWARDS:
+		if top_percent <= float(t["top"]):
+			return t
+	return Data.LB_REWARDS[-1]
+
+
+## Hadiah mingguan: dihitung saat minggu berganti dari persentil Kekuatan.
+func ensure_leaderboard(now: float) -> bool:
+	var week := week_index(now)
+	if leaderboard.is_empty():
+		leaderboard = {"week": week, "reward": {}}
+		return true
+	if int(leaderboard["week"]) == week:
+		return false
+	var rank := lb_rank("power", now)
+	var tier := lb_reward_tier(rank["top_percent"])
+	leaderboard = {"week": week, "reward": {"tier": tier["name"], "rank": rank["rank"], "gold": int(tier["gold"])}}
+	return true
+
+
+func claim_lb_reward() -> Dictionary:
+	var r: Dictionary = leaderboard.get("reward", {})
+	if r.is_empty():
+		return _fail("Tidak ada hadiah peringkat.")
+	gold += int(r["gold"])
+	leaderboard["reward"] = {}
+	changed.emit()
+	return _ok("Hadiah peringkat mingguan (%s, #%d): +%d emas." % [r["tier"], r["rank"], r["gold"]])
+
+
 # --- Tutorial & pengenalan fitur -------------------------------------------
 
 func tutorial_active() -> bool:
@@ -1931,6 +2113,8 @@ func to_dict() -> Dictionary:
 		"tutorial": tutorial,
 		"iap": iap,
 		"vip": vip,
+		"start_day": start_day,
+		"leaderboard": leaderboard,
 	}
 
 
@@ -2024,6 +2208,13 @@ func from_dict(d: Dictionary, now: float) -> void:
 			iap[k].append(str(v))
 	for k in ["card_until", "card_claimed", "spent_idr"]:
 		iap[k] = int(src_iap.get(k, iap[k]))
+	start_day = int(d.get("start_day", day_index(now)))
+	var src_lb: Dictionary = d.get("leaderboard", {})
+	leaderboard = {"week": int(src_lb.get("week", week_index(now))), "reward": {}}
+	var src_lbr: Dictionary = src_lb.get("reward", {})
+	if not src_lbr.is_empty():
+		leaderboard["reward"] = {"tier": str(src_lbr.get("tier", "")), "rank": int(src_lbr.get("rank", 0)),
+			"gold": int(src_lbr.get("gold", 0))}
 	var src_vip: Dictionary = d.get("vip", {})
 	vip = {"points": int(src_vip.get("points", 0)), "daily_day": int(src_vip.get("daily_day", -1)),
 		"packs": [], "gifts": []}

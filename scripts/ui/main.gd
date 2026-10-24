@@ -76,7 +76,11 @@ var _vip_tag: Label
 var _vip_badge: Dictionary
 var _vip_overlay: Control
 var _vip_box: VBoxContainer
-var _vip_view := -1  ## Level VIP yang sedang dilihat di panel (-1 = level sekarang).
+var _vip_view := -1
+var _lb_hb: Dictionary
+var _lb_overlay: Control
+var _lb_box: VBoxContainer
+var _lb_cat := "power"  ## Level VIP yang sedang dilihat di panel (-1 = level sekarang).
 var _mission_box: VBoxContainer
 var _mission_reset_label: Label
 var _gacha_banner_done := false
@@ -162,7 +166,7 @@ func _build_header() -> Control:
 	info.add_theme_constant_override("separation", 0)
 	top.add_child(info)
 	_rank_label = _label(info, "", "TitleLabel")
-	_rank_label.add_theme_font_size_override("font_size", 28)
+	_rank_label.add_theme_font_size_override("font_size", 24)
 	var power_row := HBoxContainer.new()
 	info.add_child(power_row)
 	power_row.add_child(_tex(Art.icon("power"), 34))
@@ -171,6 +175,8 @@ func _build_header() -> Control:
 	var prestige := _chip("prestige")
 	prestige.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	top.add_child(prestige)
+	_lb_hb = _header_button("trophy", "Peringkat", _show_leaderboard)
+	top.add_child(_lb_hb["root"])
 	_login_hb = _header_button("calendar", "Login", _show_login)
 	top.add_child(_login_hb["root"])
 	_mission_hb = _header_button("mission", "Misi", _show_missions)
@@ -525,6 +531,8 @@ func _rebuild() -> void:
 		_fill_store()
 	if is_instance_valid(_vip_overlay):
 		_fill_vip()
+	if is_instance_valid(_lb_overlay):
+		_fill_leaderboard()
 	_tick()
 	# Kembalikan posisi gulir setelah layout dihitung ulang.
 	await get_tree().process_frame
@@ -561,6 +569,8 @@ func _tick() -> void:
 	_vip_tag.text = "VIP %d" % model.vip_level()
 	_vip_badge["badge"].visible = model.vip_daily_can_claim(now)
 	_vip_badge["badge_label"].text = "!"
+	_lb_hb["badge"].visible = not model.leaderboard.get("reward", {}).is_empty()
+	_lb_hb["badge_label"].text = "1"
 	_gold_badge["badge"].visible = model.card_can_claim(now)
 	_gold_badge["badge_label"].text = "1"
 	var event_ready: int = model.event_claimable_count()
@@ -1990,6 +2000,117 @@ func _build_alliance_members(box: VBoxContainer, now: float) -> void:
 		_label(col, "%s  ·  %s" % [m["name"], m["role"]], "CardLabel").add_theme_font_override("font", UI.font_bold)
 		_label(col, "Kekuatan %s · Kerusakan bos %s" % [_num(m["power"]), _num(m["damage"])], "SmallLabel") \
 			.add_theme_color_override("font_color", UI.INK)
+
+
+# --- Leaderboard global -----------------------------------------------------
+
+func _show_leaderboard() -> void:
+	if is_instance_valid(_lb_overlay):
+		return
+	var p := _open_panel("Peringkat Global", "trophy", _close_leaderboard)
+	_lb_overlay = p["overlay"]
+	_lb_box = p["content"]
+	p["subtitle"].text = "%s pemain · diperbarui tiap hari" % _num_dots(Data.LB_PLAYERS + 1)
+	_fill_leaderboard()
+
+
+func _close_leaderboard() -> void:
+	if is_instance_valid(_lb_overlay):
+		Audio.play("click")
+		_lb_overlay.queue_free()
+	_lb_overlay = null
+
+
+## 100001 -> "100.001" (pemisah ribuan gaya Indonesia).
+static func _num_dots(n: int) -> String:
+	return Data.format_idr(n).substr(2)
+
+
+func _fill_leaderboard() -> void:
+	_clear(_lb_box)
+	var now: float = Game.now()
+	var items := []
+	for lb in Data.LEADERBOARDS:
+		items.append([lb["id"], lb["name"]])
+	_segment_tabs(_lb_box, items, _lb_cat, func(key): _lb_cat = key, 18)
+
+	var reward: Dictionary = model.leaderboard.get("reward", {})
+	if not reward.is_empty():
+		var rb := _inner_box(_lb_box)
+		rb.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))
+		_label(rb, "Hadiah peringkat minggu lalu: %s (#%s)" % [reward["tier"], _num_dots(reward["rank"])], "CardLabel") \
+			.add_theme_font_override("font", UI.font_bold)
+		_button(rb, "Klaim +%d Emas" % reward["gold"], func(): return model.claim_lb_reward(), true, "gold",
+			"GreenButton", false, "reveal_sr")
+
+	if _lb_cat == "alliance":
+		_fill_lb_alliances(now)
+		return
+	var def: Dictionary = Data.leaderboard_def(_lb_cat)
+	var mine: Dictionary = model.lb_rank(_lb_cat, now)
+	var me := _inner_box(_lb_box)
+	me.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	me.add_child(row)
+	row.add_child(_tex(Art.icon(def["icon"]), 72))
+	var col := _col(row)
+	if mine["value"] <= 0:
+		_label(col, "Belum berperingkat", "CardTitle").add_theme_font_size_override("font_size", 26)
+		_label(col, "Mainkan fitur ini untuk masuk peringkat %s." % def["name"], "CardLabel")
+	else:
+		_label(col, "Peringkat Anda: #%s" % _num_dots(mine["rank"]), "CardTitle").add_theme_font_size_override("font_size", 28)
+		_label(col, "%s %s · Top %s%%" % [def["name"], _num(mine["value"]), _percent(mine["top_percent"])], "CardLabel")
+	if _lb_cat == "power":
+		var tier: Dictionary = model.lb_reward_tier(mine["top_percent"])
+		_label(me, "Hadiah akhir minggu bila bertahan: %s, +%d emas (dihitung dari Kekuatan)." % [tier["name"], tier["gold"]],
+			"SmallLabel").add_theme_color_override("font_color", UI.INK)
+		var timer := _label(me, "", "SmallLabel")
+		timer.add_theme_color_override("font_color", UI.INK)
+		_event_timer_labels.append(timer)
+
+	var rows: Array = model.lb_top(_lb_cat, now)
+	for i in rows.size():
+		_lb_row(i + 1, rows[i]["avatar"], "%s %s" % [rows[i]["tag"], rows[i]["name"]], _num(rows[i]["value"]), rows[i]["me"])
+
+
+static func _percent(p: float) -> String:
+	return ("%.2f" % p if p < 1.0 else "%.1f" % p).replace(".", ",")
+
+
+func _lb_row(rank: int, avatar: String, name: String, value: String, me: bool, is_icon := false) -> void:
+	var inner := _inner_box(_lb_box)
+	if me:
+		inner.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	inner.add_child(row)
+	var r := _label(row, "#%d" % rank, "CardTitle")
+	r.custom_minimum_size.x = 64
+	if rank <= 3:
+		r.add_theme_color_override("font_color", [Color("d4a017"), Color("8a9aa8"), Color("b07a45")][rank - 1])
+		r.add_theme_font_size_override("font_size", 30)
+	row.add_child(_tex(Art.icon(avatar) if is_icon else Art.portrait(avatar), 52))
+	var n := _label(row, name, "CardLabel")
+	n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	n.add_theme_font_override("font", UI.font_bold)
+	n.clip_text = true
+	var v := _label(row, value, "CardLabel")
+	v.add_theme_font_override("font", UI.font_bold)
+	v.add_theme_color_override("font_color", Color("5e2a12"))
+
+
+func _fill_lb_alliances(now: float) -> void:
+	var rows: Array = model.lb_alliances(now)
+	var my_rank := -1
+	for i in rows.size():
+		if rows[i]["me"]:
+			my_rank = i + 1
+	_label(_lb_box, ("Aliansi Anda di peringkat #%d dari %d" % [my_rank, rows.size()]) if my_rank > 0
+		else "Bergabunglah dengan aliansi untuk ikut peringkat aliansi.", "TitleLabel").add_theme_font_size_override("font_size", 24)
+	for i in rows.size():
+		var a: Dictionary = rows[i]
+		_lb_row(i + 1, a["emblem"], "%s (%d anggota)" % [a["name"], a["members"]], _num(a["power"]), a["me"], true)
 
 
 # --- VIP --------------------------------------------------------------------

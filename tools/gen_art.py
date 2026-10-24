@@ -819,6 +819,15 @@ ICONS["fort"] = fort("#c0392b")
 ICONS["fort_core"] = fort("#c0392b", "#9a8070", core=True)
 ICONS["fort_captured"] = fort("#f2c14e", "#7a6a5a", ruined=True)
 
+ICONS["trophy"] = icon_doc(
+    '<path d="M28 10 L68 10 L66 40 Q64 60 48 62 Q32 60 30 40 Z" fill="#f2c14e" stroke="#9a6a12" stroke-width="3.5"/>'
+    '<path d="M28 18 Q10 18 12 32 Q14 44 30 46" stroke="#f2c14e" stroke-width="6" fill="none"/>'
+    '<path d="M68 18 Q86 18 84 32 Q82 44 66 46" stroke="#f2c14e" stroke-width="6" fill="none"/>'
+    '<path d="M38 18 Q36 36 46 48" stroke="#fff6d0" stroke-width="4" fill="none" opacity="0.7" stroke-linecap="round"/>'
+    '<rect x="42" y="62" width="12" height="14" fill="#c9963f"/>'
+    '<rect x="28" y="76" width="40" height="14" rx="3" fill="#7a4b1f" stroke="#4a2c10" stroke-width="3"/>'
+    '<rect x="38" y="80" width="20" height="5" rx="2" fill="#f2c14e"/>')
+
 ICONS["chest"] = chest(False)
 ICONS["chest_open"] = chest(True)
 

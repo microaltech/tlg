@@ -24,6 +24,7 @@ func _init() -> void:
 		"test_iap_gold_packs", "test_iap_starter_card", "test_iap_save_format", "test_vip_levels",
 		"test_vip_perks", "test_vip_daily_packs_save", "test_war_setup", "test_war_attack", "test_war_simulation_result",
 		"test_war_save_leave", "test_chat_send_reply", "test_chat_ambient_unread", "test_chat_save_leave",
+		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -988,3 +989,69 @@ func test_chat_save_leave() -> void:
 	check(var_to_str(m2.alliance["chat"]) == var_to_str(m.alliance["chat"]), "simpan/muat chat")
 	m.leave_alliance(3000.0)
 	check(m.chat_messages(3000.0).is_empty(), "keluar aliansi mengosongkan chat")
+
+
+func test_lb_rank() -> void:
+	var m := fresh()
+	var r := m.lb_rank("power", 1000.0)
+	check(r["total"] == Data.LB_PLAYERS + 1 and r["rank"] > 1 and r["rank"] <= r["total"], "peringkat dalam rentang")
+	var prev: int = r["rank"]
+	var better := true
+	for p in [200, 1000, 5000, 50000]:
+		m.counselors["arya"]["bonus"]["str"] = p
+		var rank: int = m.lb_rank("power", 1000.0)["rank"]
+		better = better and rank < prev
+		prev = rank
+	check(better, "kekuatan lebih tinggi = peringkat lebih baik")
+	check(prev == 1, "kekuatan sangat tinggi = peringkat 1")
+	m.counselors["arya"]["bonus"]["str"] = 1000
+	check(m.lb_rank("power", 1000.0 + 60 * 86400)["rank"] > m.lb_rank("power", 1000.0)["rank"],
+		"pemain lain ikut tumbuh seiring waktu")
+	check(m.lb_rank("stage", 1000.0)["rank"] == r["total"], "belum menang tahap = peringkat terakhir")
+	check(m.lb_rank("arena", 1000.0)["value"] == 0, "arena belum terbuka tidak berperingkat")
+	check(absf(Model._erf(0.5) - 0.5205) < 0.001 and absf(Model._normal_tail_inv(0.5)) < 0.001, "rumus distribusi")
+
+
+func test_lb_top() -> void:
+	var m := fresh()
+	var top := m.lb_top("power", 1000.0)
+	check(top.size() == Data.LB_TOP, "50 baris teratas")
+	var sorted := true
+	for i in top.size() - 1:
+		sorted = sorted and top[i]["value"] >= top[i + 1]["value"]
+	check(sorted, "urut menurun")
+	check(not top.any(func(x): return x["me"]), "pemain lemah tidak masuk daftar teratas")
+	check(var_to_str(m.lb_top("power", 1000.0)) == var_to_str(top), "daftar stabil dalam satu hari")
+	m.counselors["arya"]["bonus"]["str"] = 12000
+	var rank: int = m.lb_rank("power", 1000.0)["rank"]
+	top = m.lb_top("power", 1000.0)
+	check(rank <= Data.LB_TOP and top[rank - 1]["me"], "pemain kuat muncul di posisi peringkatnya")
+	sorted = true
+	for i in top.size() - 1:
+		sorted = sorted and top[i]["value"] >= top[i + 1]["value"]
+	check(sorted, "tetap urut setelah pemain disisipkan")
+
+
+func test_lb_alliances_reward() -> void:
+	var m := _allied()
+	var rows := m.lb_alliances(1000.0)
+	check(rows.size() == Data.LB_ALLIANCE_COUNT, "30 aliansi berperingkat")
+	check(rows.filter(func(x): return x["me"]).size() == 1, "aliansi sendiri ditandai")
+	var sorted := true
+	for i in rows.size() - 1:
+		sorted = sorted and rows[i]["power"] >= rows[i + 1]["power"]
+	check(sorted, "aliansi urut kekuatan")
+	check(m.lb_reward_tier(0.5)["gold"] == 300 and m.lb_reward_tier(15.0)["gold"] == 100
+		and m.lb_reward_tier(99.0)["gold"] == 20, "tingkat hadiah dari persentil")
+	check(not m.claim_lb_reward()["ok"], "belum ada hadiah minggu ini")
+	m.counselors["arya"]["bonus"]["str"] = 50000
+	m.sync(1000.0 + 7 * 86400)
+	check(m.leaderboard["reward"].get("gold", 0) == 300, "hadiah mingguan Top 1%")
+	var gold := m.gold
+	check(m.claim_lb_reward()["ok"] and m.gold == gold + 300, "klaim hadiah peringkat")
+	check(not m.claim_lb_reward()["ok"], "hadiah peringkat sekali")
+	m.sync(1000.0 + 14 * 86400)
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0 + 14 * 86400)
+	check(m2.start_day == m.start_day and var_to_str(m2.leaderboard) == var_to_str(m.leaderboard),
+		"simpan/muat leaderboard")

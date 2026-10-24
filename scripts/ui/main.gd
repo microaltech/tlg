@@ -1,6 +1,6 @@
 extends Control
 ## UI utama, dibangun lewat kode supaya mudah dibaca dan diubah.
-## Header (avatar + sumber daya), 5 halaman, navigasi bawah, toast & efek.
+## Header (avatar + sumber daya), 6 halaman, navigasi bawah, toast & efek.
 
 const Data := preload("res://scripts/core/game_data.gd")
 const Art := preload("res://scripts/ui/art.gd")
@@ -12,6 +12,7 @@ const PAGES := [
 	{"key": "gacha", "title": "Rekrut", "icon": "tab_gacha", "bg": "gacha"},
 	{"key": "campaign", "title": "Kampanye", "icon": "tab_campaign", "bg": "campaign"},
 	{"key": "palace", "title": "Istana", "icon": "tab_palace", "bg": "palace"},
+	{"key": "alliance", "title": "Aliansi", "icon": "tab_alliance", "bg": "alliance"},
 ]
 
 var model
@@ -47,6 +48,9 @@ var _event_subtitle: Label
 ## Label hitung mundur event yang diperbarui tiap detik.
 var _event_timer_labels: Array = []
 var _city_nav_badge: Dictionary
+var _alliance_nav_badge: Dictionary
+var _alliance_tab := "markas"
+var _pending_boss_hit := 0
 var _mission_box: VBoxContainer
 var _mission_reset_label: Label
 var _gacha_banner_done := false
@@ -244,7 +248,9 @@ func _build_nav() -> Control:
 			_switch_page(key))
 		h.add_child(b)
 		if key == "city":
-			_city_nav_badge = _badge(b, Vector2(80, 4))
+			_city_nav_badge = _badge(b, Vector2(70, 4))
+		elif key == "alliance":
+			_alliance_nav_badge = _badge(b, Vector2(70, 4))
 		_nav_buttons[key] = b
 	var line := ColorRect.new()
 	line.color = UI.GOLD_DARK
@@ -452,6 +458,7 @@ func _rebuild() -> void:
 	_build_gacha(_pages["gacha"])
 	_build_campaign(_pages["campaign"])
 	_build_palace(_pages["palace"]["content"])
+	_build_alliance(_pages["alliance"]["content"])
 	if is_instance_valid(_mission_overlay):
 		_fill_missions()
 	if is_instance_valid(_login_overlay):
@@ -478,6 +485,9 @@ func _tick() -> void:
 	var claimable: int = model.claimable_count()
 	_mission_hb["badge"].visible = claimable > 0
 	_mission_hb["badge_label"].text = str(claimable)
+	var boss_ready: bool = not model.alliance.is_empty() and model.boss_info(now)["can_claim"]
+	_alliance_nav_badge["badge"].visible = boss_ready
+	_alliance_nav_badge["badge_label"].text = "1"
 	var event_ready: int = model.event_claimable_count()
 	_city_nav_badge["badge"].visible = event_ready > 0
 	_city_nav_badge["badge_label"].text = str(event_ready)
@@ -1125,6 +1135,229 @@ func _fill_event() -> void:
 			b = _button(row, "%d%%" % int(100.0 * points / int(tier["points"])), func(): return null, false)
 		b.custom_minimum_size = Vector2(130, 60)
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+
+# --- Aliansi ---------------------------------------------------------------
+
+func _build_alliance(box: VBoxContainer) -> void:
+	_clear(box)
+	var now: float = Game.now()
+	if not model.alliance_unlocked():
+		var card := _card(box)
+		card.add_child(_tex(Art.icon("lock"), 92))
+		var col := _col(card)
+		_label(col, "Aliansi Terkunci", "CardTitle")
+		_label(col, "Menangkan Tahap %d di Kampanye untuk membuka Aliansi." % Data.ALLIANCE_UNLOCK_STAGE, "CardLabel")
+		_bar(col, model.stage, Data.ALLIANCE_UNLOCK_STAGE)
+		return
+	if model.alliance.is_empty():
+		_build_alliance_choices(box, now)
+		return
+
+	var def: Dictionary = model.alliance_def()
+	var head := _card(box)
+	head.add_child(_tex(Art.icon(def["emblem"]), 110))
+	var col := _col(head)
+	_label(col, def["name"], "CardTitle")
+	var lv: int = model.alliance_level()
+	var prog: Array = model.alliance_level_progress()
+	if prog[1] > 0:
+		_label(col, "Level %d · exp %s / %s" % [lv, _num(prog[0]), _num(prog[1])], "CardLabel")
+		_bar(col, prog[0], prog[1], Color("6fa8dc"))
+	else:
+		_label(col, "Level %d (maksimal)" % lv, "CardLabel")
+	var buff := _label(col, "Bonus hasil urusan kota +%d%%" % roundi(model.alliance_bonus() * 100), "CardLabel")
+	buff.add_theme_font_override("font", UI.font_bold)
+	buff.add_theme_color_override("font_color", Color("b5651d"))
+	_icon_row(col, "jasa", "Jasa: %s" % _num(model.alliance["jasa"]))
+
+	var tabs := HBoxContainer.new()
+	tabs.add_theme_constant_override("separation", 6)
+	box.add_child(tabs)
+	for t in [["markas", "Markas"], ["bos", "Bos"], ["toko", "Toko"], ["anggota", "Anggota"]]:
+		var key: String = t[0]
+		var b := _button(tabs, t[1], func():
+			_alliance_tab = key
+			_queue_rebuild()
+			return null, true, "", "GoldButton" if _alliance_tab == key else "")
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.custom_minimum_size.y = 60
+		b.add_theme_font_size_override("font_size", 22)
+	match _alliance_tab:
+		"bos":
+			_build_alliance_boss(box, now)
+		"toko":
+			_build_alliance_shop(box, now)
+		"anggota":
+			_build_alliance_members(box, now)
+		_:
+			_build_alliance_hq(box, now)
+
+
+func _build_alliance_choices(box: VBoxContainer, now: float) -> void:
+	_label(box, "Pilih aliansi untuk bergabung. Anggota aliansi saling membantu: menyumbang, "
+		+ "melawan bos mingguan, dan berbelanja di toko aliansi.", "SmallLabel")
+	var wait: int = model.alliance_join_wait(now)
+	for a in Data.ALLIANCES:
+		var card := _card(box)
+		card.add_child(_tex(Art.icon(a["emblem"]), 110))
+		var col := _col(card)
+		_label(col, a["name"], "CardTitle")
+		var lv := 1
+		for i in Data.ALLIANCE_LEVELS.size():
+			if int(a["exp"]) >= int(Data.ALLIANCE_LEVELS[i]):
+				lv = i + 1
+		_label(col, "Level %d · %d anggota" % [lv, a["members"]], "CardLabel")
+		var motto := _label(col, "\"%s\"" % a["motto"], "CardLabel")
+		motto.add_theme_color_override("font_color", Color("6b4a2a"))
+		_label(col, "Bonus hasil urusan kota +%d%%" % roundi(lv * Data.ALLIANCE_YIELD_PER_LEVEL * 100), "CardLabel") \
+			.add_theme_color_override("font_color", Color("b5651d"))
+		var id: String = a["id"]
+		_button(col, "Gabung" if wait == 0 else "Bisa bergabung dalam %s" % _duration(wait),
+			func(): return model.join_alliance(id, Game.now()), wait == 0, "", "GreenButton", false, "promote")
+
+
+func _build_alliance_hq(box: VBoxContainer, now: float) -> void:
+	var don := _inner_box(box)
+	_label(don, "Sumbangan Harian", "CardTitle")
+	_label(don, "Sisa hari ini: %d / %d" % [model.donations_left(now), Data.ALLIANCE_DONATIONS_PER_DAY], "CardLabel")
+	for d in Data.ALLIANCE_DONATIONS:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		don.add_child(row)
+		row.add_child(_tex(Art.icon(d["icon"]), 56))
+		var col := _col(row)
+		_label(col, d["label"], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		var cost_key: String = d["cost"].keys()[0]
+		_label(col, "Biaya %s %s · +%d exp, +%d jasa" % [_num(d["cost"][cost_key]), Data.REWARD_NAMES[cost_key],
+			d["exp"], d["jasa"]], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+		var kind: String = d["id"]
+		var ok: bool = model.donations_left(now) > 0 and int(model.get(cost_key)) >= int(d["cost"][cost_key])
+		var b := _button(row, "Sumbang", func(): return model.donate(kind, Game.now()), ok, "", "", false, "coin")
+		b.custom_minimum_size = Vector2(150, 60)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+	var log := _inner_box(box)
+	_label(log, "Kabar Aliansi", "CardTitle")
+	for line in model.alliance["log"].slice(0, 10):
+		_label(log, "•  " + line, "SmallLabel").add_theme_color_override("font_color", UI.INK)
+
+	var leave := _button(box, "Keluar dari Aliansi", _confirm_leave)
+	leave.custom_minimum_size.y = 60
+
+
+func _confirm_leave():
+	var dlg := ConfirmationDialog.new()
+	dlg.dialog_text = "Keluar dari aliansi? Jasa dan progres aliansi akan hilang, dan Anda harus menunggu 24 jam untuk bergabung lagi."
+	dlg.ok_button_text = "Keluar"
+	dlg.cancel_button_text = "Batal"
+	dlg.confirmed.connect(func(): _show(model.leave_alliance(Game.now())))
+	dlg.visibility_changed.connect(func():
+		if not dlg.visible:
+			dlg.queue_free())
+	add_child(dlg)
+	dlg.popup_centered()
+	return null
+
+
+func _build_alliance_boss(box: VBoxContainer, now: float) -> void:
+	var info: Dictionary = model.boss_info(now)
+	var card := _inner_box(box)
+	_label(card, info["name"], "CardTitle")
+	var stage := CenterContainer.new()
+	card.add_child(stage)
+	var pic := _tex(Art.portrait("boss_buto"), 220)
+	if info["defeated"]:
+		pic.modulate = Color(0.45, 0.45, 0.45)
+	stage.add_child(pic)
+	_label(card, "HP %s / %s" % [_num(info["hp"]), _num(info["hp_max"])], "CardLabel") \
+		.add_theme_font_override("font", UI.font_bold)
+	_bar(card, info["hp"], info["hp_max"], Color("c0392b"))
+	var timer := _label(card, "", "SmallLabel")
+	timer.add_theme_color_override("font_color", UI.INK)
+	_event_timer_labels.append(timer)
+
+	if info["defeated"]:
+		_label(card, "%s telah dikalahkan minggu ini! Bos baru muncul hari Senin." % Data.BOSS_NAME, "CardLabel")
+		if info["can_claim"]:
+			_button(card, "Klaim Hadiah (+%d emas, +%d jasa)" % [Data.BOSS_REWARD["gold"], Data.BOSS_REWARD["jasa"]],
+				func(): return model.claim_boss(Game.now()), true, "chest", "GreenButton", false, "reveal_ssr")
+		elif info["claimed"]:
+			_label(card, "Hadiah sudah diambil.", "CardLabel")
+		else:
+			_label(card, "Anda tidak ikut menyerang, jadi tidak mendapat hadiah.", "CardLabel")
+	else:
+		_label(card, "Serangan tersisa hari ini: %d / %d" % [info["attacks_left"], Data.BOSS_ATTACKS_PER_DAY], "CardLabel")
+		var attack := _button(card, "SERANG!", func():
+			var r: Dictionary = model.attack_boss(Game.now())
+			if r["ok"]:
+				_pending_boss_hit = r["damage"]
+			return r, info["attacks_left"] > 0, "", "GoldButton", false, "attack")
+		attack.custom_minimum_size.y = 90
+	_label(card, "Kerusakan Anda: %s · anggota lain: %s" % [_num(info["my_damage"]), _num(info["npc_damage"])],
+		"CardLabel")
+	_label(card, "Tiap serangan +%d jasa. Bila bos kalah, semua yang ikut menyerang mendapat %d emas dan %d jasa."
+		% [Data.BOSS_ATTACK_JASA, Data.BOSS_REWARD["gold"], Data.BOSS_REWARD["jasa"]], "SmallLabel") \
+		.add_theme_color_override("font_color", UI.INK)
+
+	if _pending_boss_hit > 0:
+		var dmg := _pending_boss_hit
+		_pending_boss_hit = 0
+		# Tunggu satu frame supaya CenterContainer sudah menempatkan potret.
+		await get_tree().process_frame
+		if not is_instance_valid(pic):
+			return
+		var x := pic.position.x
+		pic.modulate = Color(3, 2.5, 2.5)
+		_float("-%s" % _num(dmg), pic, Color("ff8a70"))
+		var tw := create_tween()
+		for i in 6:
+			tw.tween_property(pic, "position:x", x + (12 if i % 2 == 0 else -12), 0.04)
+		tw.tween_property(pic, "position:x", x, 0.04)
+		tw.tween_callback(func():
+			var dead: bool = model.boss_info(Game.now())["defeated"]
+			pic.modulate = Color(0.45, 0.45, 0.45) if dead else Color.WHITE)
+
+
+func _build_alliance_shop(box: VBoxContainer, now: float) -> void:
+	var lv: int = model.alliance_level()
+	for item in Data.ALLIANCE_SHOP:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		_inner_box(box).add_child(row)
+		row.add_child(_tex(Art.icon(item["icon"]), 64))
+		var col := _col(row)
+		_label(col, item["name"], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		var id: String = item["id"]
+		var left: int = model.shop_left(id, now)
+		var info := "%s · sisa %d/%d hari ini" % [_reward_text(item["reward"]), left, item["limit"]]
+		if lv < int(item["level"]):
+			info = "%s · butuh aliansi level %d" % [_reward_text(item["reward"]), item["level"]]
+		_label(col, info, "SmallLabel").add_theme_color_override("font_color", UI.INK)
+		var ok: bool = lv >= int(item["level"]) and left > 0 and int(model.alliance["jasa"]) >= int(item["cost"])
+		var b := _button(row, "%d" % item["cost"], func(): return model.shop_buy(id, Game.now()), ok, "jasa",
+			"GreenButton" if ok else "", false, "coin")
+		b.custom_minimum_size = Vector2(130, 60)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+
+func _build_alliance_members(box: VBoxContainer, now: float) -> void:
+	var members: Array = model.alliance_members(now)
+	_label(box, "%d anggota · diurutkan berdasarkan kekuatan" % members.size(), "SmallLabel")
+	for i in members.size():
+		var m: Dictionary = members[i]
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		var inner := _inner_box(box)
+		inner.add_child(row)
+		if m["me"]:
+			inner.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))
+		var rank := _label(row, "#%d" % (i + 1), "CardTitle")
+		rank.custom_minimum_size.x = 64
+		var col := _col(row)
+		_label(col, "%s  ·  %s" % [m["name"], m["role"]], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		_label(col, "Kekuatan %s · Kerusakan bos %s" % [_num(m["power"]), _num(m["damage"])], "SmallLabel") \
+			.add_theme_color_override("font_color", UI.INK)
 
 
 # --- Hadiah login harian --------------------------------------------------

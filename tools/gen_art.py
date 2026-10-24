@@ -374,6 +374,9 @@ def face(p):
                    'fill="%s"/>' % beard_c)
     if beard == "goatee":
         out.append('<path d="M120 160 Q128 180 136 160 Q128 165 120 160 Z" fill="%s"/>' % beard_c)
+    if "fangs" in p.get("extras", []):
+        tusk = '<path d="M113 154 L116 136 L121 152 Z" fill="#fffbe8" stroke="#8a7a5a" stroke-width="1.5"/>'
+        out.append(tusk + mirror(tusk))
     if "scar" in p.get("extras", []):
         out.append('<path d="M142 98 L160 132" stroke="#9e3b32" stroke-width="3" stroke-linecap="round"/>'
                    '<path d="M146 108 L154 105 M150 118 L158 115" stroke="#9e3b32" stroke-width="2"/>')
@@ -440,6 +443,11 @@ CHARACTERS = {
     "resi": dict(gender="m", skin=SKIN["tan"], hair="#ece8e0", hair_style="topknot", outfit="#d98c1e",
                  inner="#f6ead2", trim="#8a4b12", beard="full", brows="calm", mouth="calm",
                  extras=["necklace"], bg=("#f7dc8a", "#7a4a0a")),
+    # Bos aliansi
+    "boss_buto": dict(gender="m", skin="#5f9e48", hair="#151510", hair_style="long", headwear="crown",
+                      outfit="#6b1a1a", inner="#e8c070", brows="fierce", mouth="grin", eyes="#c0392b",
+                      extras=["fangs", "earrings", "necklace", "armor"], metal="#8a6a2a",
+                      bg=("#9fd36a", "#1e3a12")),
     # Selir
     "melati": dict(gender="f", skin=SKIN["light"], hair="#1d120b", hair_style="long", outfit="#4f8a5b",
                    inner="#f2f7ee", shawl="#ffffff", extras=["earrings"],
@@ -644,6 +652,51 @@ ICONS["event_ritual"] = icon_doc(
     '<path d="M30 74 L66 74 L60 92 L36 92 Z" fill="#a8742c" stroke="#5e3a12" stroke-width="3"/>'
     '<rect x="26" y="70" width="44" height="8" rx="3" fill="#e8c070" stroke="#5e3a12" stroke-width="2"/>'
     '<path d="M48 70 L48 60" stroke="#7a4b1f" stroke-width="3"/><circle cx="48" cy="59" r="3" fill="#e74c3c"/>')
+
+def emblem(color, symbol):
+    shield = ('<path d="M48 4 L86 16 L82 54 Q78 78 48 93 Q18 78 14 54 L10 16 Z" fill="%s" stroke="#e8c070" stroke-width="5"/>'
+              '<path d="M48 12 L78 22 L75 53 Q72 72 48 84 Q24 72 21 53 L18 22 Z" fill="none" stroke="#fff3" stroke-width="2"/>'
+              % color)
+    return icon_doc(shield + symbol)
+
+
+ICONS["emblem_garuda"] = emblem("#a8241e",
+    '<path d="M48 30 Q30 22 18 30 Q30 34 34 40 Q22 40 20 48 Q34 46 40 50 L48 66 L56 50 Q62 46 76 48 Q74 40 62 40 '
+    'Q66 34 78 30 Q66 22 48 30 Z" fill="#f2c14e" stroke="#7a4b1f" stroke-width="2"/>'
+    '<circle cx="48" cy="30" r="7" fill="#f2c14e" stroke="#7a4b1f" stroke-width="2"/>'
+    '<path d="M52 28 L58 30 L52 32 Z" fill="#7a4b1f"/><path d="M42 66 L48 76 L54 66 Z" fill="#f2c14e"/>')
+
+ICONS["emblem_teratai"] = emblem("#1f6f5a",
+    "".join('<ellipse cx="48" cy="44" rx="8" ry="20" fill="%s" stroke="#a8742c" stroke-width="1.5" '
+            'transform="rotate(%d 48 60)"/>' % ("#f7c6d6" if abs(a) != 0 else "#fbe3ec", a)
+            for a in (-60, 60, -30, 30, 0))
+    + '<path d="M26 64 Q48 74 70 64" stroke="#e8c070" stroke-width="4" fill="none"/>'
+      '<circle cx="48" cy="56" r="5" fill="#f2c14e"/>')
+
+ICONS["emblem_macan"] = emblem("#2c3e50",
+    '<path d="M28 30 L34 18 L42 28 Z" fill="#e67e22" stroke="#4a2410" stroke-width="2"/>'
+    '<path d="M68 30 L62 18 L54 28 Z" fill="#e67e22" stroke="#4a2410" stroke-width="2"/>'
+    '<ellipse cx="48" cy="46" rx="22" ry="21" fill="#e67e22" stroke="#4a2410" stroke-width="2.5"/>'
+    '<path d="M48 26 L48 34 M38 28 L41 35 M58 28 L55 35 M27 44 L34 45 M69 44 L62 45 M28 52 L35 51 M68 52 L61 51" '
+    'stroke="#2a1a10" stroke-width="3" stroke-linecap="round"/>'
+    '<ellipse cx="48" cy="56" rx="11" ry="8" fill="#fff3e0"/>'
+    '<circle cx="40" cy="44" r="3.5" fill="#2a1a10"/><circle cx="56" cy="44" r="3.5" fill="#2a1a10"/>'
+    '<path d="M44 52 L52 52 L48 56 Z" fill="#2a1a10"/>')
+
+ICONS["tab_alliance"] = icon_doc(
+    '<path d="M22 92 L22 8" stroke="#7a4b1f" stroke-width="5"/><path d="M74 92 L74 8" stroke="#7a4b1f" stroke-width="5"/>'
+    '<path d="M24 10 L50 10 L44 26 L50 42 L24 42 Z" fill="#c0392b" stroke="#6b1a12" stroke-width="2.5"/>'
+    '<path d="M72 10 L46 10 L52 26 L46 42 L72 42 Z" fill="#2e6fbf" stroke="#14284a" stroke-width="2.5"/>'
+    '<circle cx="34" cy="26" r="5" fill="#e8c070"/><circle cx="62" cy="26" r="5" fill="#e8c070"/>'
+    '<path d="M30 70 Q48 50 66 70 L60 78 Q48 66 36 78 Z" fill="#e8c070" stroke="#7a4b1f" stroke-width="3"/>'
+    '<circle cx="48" cy="58" r="6" fill="#e8c070" stroke="#7a4b1f" stroke-width="2.5"/>')
+
+ICONS["jasa"] = icon_doc(
+    '<circle cx="48" cy="48" r="38" fill="#c98a4a" stroke="#6b3d1a" stroke-width="4"/>'
+    '<circle cx="48" cy="48" r="29" fill="none" stroke="#e8b27a" stroke-width="3"/>'
+    '<path d="M28 52 Q34 42 44 46 L52 40 Q58 36 64 42 L70 50 Q66 56 58 54 L50 60 Q42 64 36 58 Z" '
+    'fill="#f6d2a8" stroke="#6b3d1a" stroke-width="2.5" stroke-linejoin="round"/>'
+    '<path d="M34 26 Q40 18 48 22" stroke="#fff" stroke-width="3" fill="none" opacity="0.5" stroke-linecap="round"/>')
 
 ICONS["chest"] = chest(False)
 ICONS["chest_open"] = chest(True)
@@ -890,6 +943,31 @@ def bg_gacha():
     return svg_doc(W, H, b, 1080, 540, defs)
 
 
+def bg_alliance():
+    """Balairung aliansi: panji-panji tergantung dan meja bundar."""
+    W, H = 720, 360
+    defs = ('<linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">'
+            '<stop offset="0" stop-color="#2a1d2e"/><stop offset="1" stop-color="#5a3a2a"/></linearGradient>')
+    b = '<rect width="%d" height="%d" fill="url(#wall)"/>' % (W, H)
+    b += '<path d="M0 0 L720 0 L720 54 Q360 10 0 54 Z" fill="#4a2418"/>'
+    b += '<path d="M0 54 Q360 10 720 54 L720 66 Q360 22 0 66 Z" fill="%s"/>' % GOLD
+    for i, (x, c) in enumerate([(110, "#a8241e"), (260, "#1f6f5a"), (460, "#2c3e50"), (610, "#c79a1e")]):
+        b += '<path d="M%d 70 L%d 70 L%d 220 L%d 196 L%d 220 Z" fill="%s" stroke="%s" stroke-width="3"/>' % (
+            x - 40, x + 40, x + 40, x, x - 40, c, GOLD)
+        b += '<circle cx="%d" cy="130" r="20" fill="none" stroke="%s" stroke-width="4"/>' % (x, GOLD)
+        b += '<path d="M%d 118 L%d 142 M%d 130 L%d 130" stroke="%s" stroke-width="4"/>' % (x, x, x - 12, x + 12, GOLD)
+    for x in (30, 190, 360, 530, 690):
+        b += '<rect x="%d" y="66" width="18" height="250" fill="#6b2e1e"/>' % (x - 9)
+    b += '<ellipse cx="360" cy="300" rx="220" ry="40" fill="#7a4b2a" stroke="%s" stroke-width="5"/>' % GOLD
+    b += '<ellipse cx="360" cy="292" rx="200" ry="30" fill="#8e5a34"/>'
+    for i in range(7):
+        a = math.radians(200 + i * 23)
+        x, y = 360 + 230 * math.cos(a), 318 + 46 * math.sin(a)
+        b += '<rect x="%.0f" y="%.0f" width="26" height="40" rx="6" fill="#3a2418"/>' % (x - 13, y - 40)
+    b += '<rect y="330" width="%d" height="30" fill="#2a170c"/>' % W
+    return svg_doc(W, H, b, 1080, 540, defs)
+
+
 def pattern_kawung():
     """Tile motif batik kawung untuk latar aplikasi."""
     s = 96
@@ -913,6 +991,7 @@ def main():
     write("bg/campaign.svg", bg_campaign())
     write("bg/palace.svg", bg_palace())
     write("bg/gacha.svg", bg_gacha())
+    write("bg/alliance.svg", bg_alliance())
     write("bg/kawung.svg", pattern_kawung())
     print("Aset ditulis ke", os.path.normpath(ROOT))
 

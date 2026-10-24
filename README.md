@@ -54,6 +54,14 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   20 poin aktivitas; 3 peti aktivitas terbuka di 40/80/100 poin. Tombol Misi di
   header menampilkan lencana jumlah hadiah yang siap diklaim, dan tombol "Pergi"
   langsung membuka menu terkait.
+- **Aliansi** — terbuka setelah Tahap 5; pilih Garuda Nusantara, Teratai Emas,
+  atau Macan Kumbang. Sumbangan harian (3x) menaikkan level aliansi (bonus hasil
+  urusan kota +3% per level) dan memberi Jasa; Toko Aliansi menukar Jasa dengan
+  emas & sumber daya; bos mingguan Buto Ijo (3 serangan/hari, hadiah untuk semua
+  yang ikut menyerang); daftar anggota dan kabar aliansi. Anggota lain saat ini
+  disimulasikan offline (NPC yang tumbuh, menyumbang, dan menyerang bos tiap hari)
+  karena belum ada server; logika simulasinya terkumpul di bagian "Aliansi" pada
+  `game_model.gd` agar mudah diganti dengan data server.
 - **Event mingguan** — 5 event bergiliran tiap Senin: Festival Panen (sawah +50%),
   Turnamen Ksatria (korban -20%), Pasar Malam (pajak +50%), Pesta Istana (peluang
   anak +15%), Ritual Purnama (Legenda 4% → 7%). Poin event dari aksi sesuai tema
@@ -188,5 +196,5 @@ lalu **Project → Install Android Build Template**.
 
 - Aset visual: potret penasihat/selir, latar kota, ikon sumber daya, animasi.
 - Item & inventaris, toko event, papan peringkat online, banner rekrut berganti (rate-up).
-- Backend + akun, PvP, aliansi, leaderboard.
+- Backend + akun: aliansi online sungguhan (anggota pemain nyata, chat), PvP, leaderboard.
 - IAP (Google Play Billing) & iklan berhadiah (AdMob) lewat plugin Godot.

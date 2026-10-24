@@ -93,6 +93,8 @@ const DAILY_MISSIONS := [
 	{"id": "train3", "text": "Didik anak 3 kali", "event": "train", "target": 3, "gold": 25, "silver": 600, "requires": "children"},
 	{"id": "gacha1", "text": "Rekrut penasihat 1 kali", "event": "recruit", "target": 1, "gold": 30, "silver": 500},
 	{"id": "silver3k", "text": "Kumpulkan 3000 perak dari pajak", "event": "earn_silver", "target": 3000, "gold": 30, "grain": 800},
+	{"id": "donate1", "text": "Sumbang ke aliansi 1 kali", "event": "donate", "target": 1, "gold": 25, "silver": 500, "requires": "alliance"},
+	{"id": "boss2", "text": "Serang bos aliansi 2 kali", "event": "boss", "target": 2, "gold": 30, "soldiers": 800, "requires": "alliance"},
 ]
 ## Peti aktivitas: terbuka saat poin harian mencapai batas.
 const DAILY_CHESTS := [
@@ -120,7 +122,7 @@ const EVENTS := [
 		"bonus_text": "Hasil Kelola Sawah +50%"},
 	{"id": "tournament", "name": "Turnamen Ksatria", "icon": "event_tournament", "bg": "campaign",
 		"desc": "Para ksatria berlomba di medan laga. Menangkan kampanye dan latih penasihat.",
-		"points": {"win": 60, "upgrade": 15}, "bonus": {"losses": -0.2},
+		"points": {"win": 60, "upgrade": 15, "boss": 20}, "bonus": {"losses": -0.2},
 		"bonus_text": "Prajurit gugur di kampanye -20%"},
 	{"id": "market", "name": "Pasar Malam", "icon": "event_market", "bg": "city",
 		"desc": "Pedagang dari seluruh negeri datang. Tarik pajak dan rekrut prajurit.",
@@ -140,7 +142,7 @@ const EVENT_ACTION_NAMES := {
 	"affair": "Urusan kota apa saja", "affair_silver": "Tarik pajak", "affair_grain": "Kelola sawah",
 	"affair_soldiers": "Rekrut prajurit", "upgrade": "Latih penasihat", "win": "Menang kampanye",
 	"visit": "Kunjungi selir", "train": "Didik anak", "marry": "Nikahkan anak",
-	"recruit": "Rekrut penasihat (per tarikan)",
+	"recruit": "Rekrut penasihat (per tarikan)", "boss": "Serang bos aliansi", "donate": "Sumbang ke aliansi",
 }
 const EVENT_MISSION_POINTS := 50  ## Poin event untuk tiap misi harian yang diklaim.
 const EVENT_TIERS := [
@@ -152,8 +154,48 @@ const EVENT_TIERS := [
 	{"points": 2200, "silver": 15000, "grain": 10000},
 	{"points": 3000, "gold": 400},
 ]
+## Aliansi (anggota disimulasikan secara offline; lihat bagian Aliansi di game_model.gd).
+const ALLIANCE_UNLOCK_STAGE := 5
+const ALLIANCE_LEAVE_COOLDOWN := 86400
+const ALLIANCES := [
+	{"id": "garuda", "name": "Garuda Nusantara", "emblem": "emblem_garuda", "motto": "Terbang tinggi bersama!",
+		"exp": 1800, "members": 18, "power": 1.0},
+	{"id": "teratai", "name": "Teratai Emas", "emblem": "emblem_teratai", "motto": "Damai, makmur, sejahtera.",
+		"exp": 700, "members": 12, "power": 0.7},
+	{"id": "macan", "name": "Macan Kumbang", "emblem": "emblem_macan", "motto": "Kuat di medan laga.",
+		"exp": 3800, "members": 24, "power": 1.4},
+]
+## Exp kumulatif untuk mencapai level 1..10.
+const ALLIANCE_LEVELS := [0, 500, 1500, 3500, 7000, 12000, 20000, 32000, 50000, 80000]
+const ALLIANCE_YIELD_PER_LEVEL := 0.03  ## Bonus hasil urusan kota per level aliansi.
+const ALLIANCE_DONATIONS_PER_DAY := 3
+const ALLIANCE_DONATIONS := [
+	{"id": "silver", "label": "Sumbang Perak", "icon": "silver", "cost": {"silver": 5000}, "exp": 50, "jasa": 50},
+	{"id": "grain", "label": "Sumbang Pangan", "icon": "grain", "cost": {"grain": 5000}, "exp": 50, "jasa": 50},
+	{"id": "gold", "label": "Sumbang Emas", "icon": "gold", "cost": {"gold": 50}, "exp": 150, "jasa": 150},
+]
+## Toko aliansi: harga dalam Jasa, limit pembelian per hari, level aliansi minimal.
+const ALLIANCE_SHOP := [
+	{"id": "gold30", "name": "Kantong Emas", "icon": "gold", "reward": {"gold": 30}, "cost": 100, "limit": 2, "level": 1},
+	{"id": "silver10k", "name": "Peti Perak", "icon": "silver", "reward": {"silver": 10000}, "cost": 80, "limit": 3, "level": 1},
+	{"id": "grain10k", "name": "Lumbung Pangan", "icon": "grain", "reward": {"grain": 10000}, "cost": 80, "limit": 3, "level": 2},
+	{"id": "soldiers5k", "name": "Pasukan Bantuan", "icon": "soldiers", "reward": {"soldiers": 5000}, "cost": 120, "limit": 2, "level": 3},
+	{"id": "gold100", "name": "Peti Emas Besar", "icon": "chest", "reward": {"gold": 100}, "cost": 300, "limit": 1, "level": 5},
+]
+const BOSS_NAME := "Buto Ijo"
+const BOSS_ATTACKS_PER_DAY := 3
+const BOSS_DAMAGE_PER_POWER := 25  ## Kerusakan pemain per serangan = kekuatan x ini (±10%).
+const BOSS_NPC_DAMAGE_PER_POWER := 8  ## Kerusakan harian tiap anggota NPC.
+const BOSS_HP_DAYS := 5.5  ## Tanpa bantuan pemain, NPC mengalahkan bos dalam ~5,5 hari.
+const BOSS_ATTACK_JASA := 20
+const BOSS_REWARD := {"gold": 100, "jasa": 200}
+const NPC_TITLES := ["Ki", "Nyi", "Raden", "Gusti", "Mpu", "Dyah", "Arya", "Rara"]
+const NPC_NAMES := ["Rangga", "Sekar", "Bima", "Laras", "Wisnu", "Ayu", "Damar", "Kinanti", "Joko", "Sari",
+	"Panji", "Wulan", "Seta", "Rukmini", "Tejo", "Asih", "Bayu", "Ratih", "Guntur", "Lestari", "Jati", "Puspa",
+	"Galih", "Ningsih"]
+
 const REWARD_KEYS := ["gold", "silver", "grain", "soldiers"]
-const REWARD_NAMES := {"gold": "emas", "silver": "perak", "grain": "pangan", "soldiers": "prajurit"}
+const REWARD_NAMES := {"gold": "emas", "silver": "perak", "grain": "pangan", "soldiers": "prajurit", "jasa": "jasa"}
 
 
 static func counselor_def(id: String) -> Dictionary:
@@ -171,6 +213,20 @@ static func mission_def(id: String) -> Dictionary:
 	for m in DAILY_MISSIONS:
 		if m["id"] == id:
 			return m
+	return {}
+
+
+static func alliance_def(id: String) -> Dictionary:
+	for a in ALLIANCES:
+		if a["id"] == id:
+			return a
+	return {}
+
+
+static func shop_def(id: String) -> Dictionary:
+	for item in ALLIANCE_SHOP:
+		if item["id"] == id:
+			return item
 	return {}
 
 

@@ -47,6 +47,10 @@ var daily := {}
 var login := {}
 ## Event mingguan: {"week": int, "points": int, "claimed": [bool, ...]}
 var weekly := {}
+## Aliansi (kosong bila belum bergabung). Lihat bagian "Aliansi" di bawah.
+var alliance := {}
+## Waktu keluar aliansi terakhir (untuk jeda sebelum bergabung lagi).
+var alliance_left_t := -1.0e12
 ## Selisih zona waktu (detik) supaya misi direset pada tengah malam lokal.
 var tz_bias := 0
 var rng := RandomNumberGenerator.new()
@@ -72,6 +76,9 @@ func new_game(now: float) -> void:
 	daily = {}
 	login = {"streak": 0, "last_day": -1, "total": 0}
 	weekly = {}
+	alliance = {}
+	alliance_left_t = -1.0e12
+	_npc_cache = {}
 	_unlock_content()
 	ensure_daily(now)
 	ensure_weekly(now)
@@ -114,7 +121,8 @@ func sync(now: float) -> void:
 	for key in CHARGE_KEYS:
 		_sync_charge(key, now)
 	var daily_reset := ensure_daily(now)
-	if ensure_weekly(now) or daily_reset:
+	var weekly_reset := ensure_weekly(now)
+	if _alliance_rollover(now) or weekly_reset or daily_reset:
 		changed.emit()
 
 
@@ -208,7 +216,7 @@ func upgrade_counselor(id: String) -> Dictionary:
 func affair_yield(kind: String) -> int:
 	var a: Dictionary = AFFAIRS[kind]
 	return int((int(a["base"]) + total_attr(a["attr"]) * int(a["per_point"])) * float(rank_info()["mult"])
-		* (1.0 + event_bonus("yield_" + kind)))
+		* (1.0 + event_bonus("yield_" + kind) + alliance_bonus()))
 
 
 func do_affair(kind: String, now: float) -> Dictionary:
@@ -389,6 +397,8 @@ func ensure_daily(now: float) -> bool:
 	for m in Data.DAILY_MISSIONS:
 		if m.get("requires", "") == "children" and children.is_empty():
 			continue
+		if m.get("requires", "") == "alliance" and alliance.is_empty():
+			continue
 		pool.append(m["id"])
 	for i in range(pool.size() - 1, 0, -1):
 		var j := pick.randi_range(0, i)
@@ -539,6 +549,336 @@ func claim_event_tier(index: int) -> Dictionary:
 	var text := _give_rewards(Data.EVENT_TIERS[index])
 	changed.emit()
 	return _ok("Hadiah %s: %s." % [event_def()["name"], text])
+
+
+# --- Aliansi ---------------------------------------------------------------
+# Belum ada server, jadi anggota lain adalah NPC yang disimulasikan secara
+# deterministik dari id aliansi dan tanggal: kekuatan mereka tumbuh tiap hari,
+# mereka menyumbang exp dan menyerang bos setiap hari. Bila nanti memakai
+# server, ganti fungsi _npc_* dan _alliance_rollover dengan data dari server.
+
+var _npc_cache := {}
+
+
+func alliance_unlocked() -> bool:
+	return stage >= Data.ALLIANCE_UNLOCK_STAGE
+
+
+func alliance_join_wait(now: float) -> int:
+	return maxi(0, int(ceil(alliance_left_t + Data.ALLIANCE_LEAVE_COOLDOWN - now)))
+
+
+func join_alliance(id: String, now: float) -> Dictionary:
+	var def := Data.alliance_def(id)
+	if def.is_empty():
+		return _fail("Aliansi tidak ditemukan.")
+	if not alliance_unlocked():
+		return _fail("Menangkan Tahap %d untuk membuka Aliansi." % Data.ALLIANCE_UNLOCK_STAGE)
+	if not alliance.is_empty():
+		return _fail("Anda sudah tergabung dalam aliansi.")
+	if alliance_join_wait(now) > 0:
+		return _fail("Tunggu jeda setelah keluar aliansi sebelum bergabung lagi.")
+	var today := day_index(now)
+	alliance = {
+		"id": id, "join_day": today, "last_day": today, "exp": int(def["exp"]), "jasa": 0, "jasa_total": 0,
+		"donations": {"day": today, "count": 0}, "shop": {"day": today, "bought": {}},
+		"boss": {}, "log": [],
+	}
+	_ensure_boss(now)
+	_alliance_log("Anda bergabung dengan %s. Selamat datang!" % def["name"])
+	_alliance_log("%s: \"Selamat datang di %s, Tuan!\"" % [_npc_members()[0]["name"], def["name"]])
+	changed.emit()
+	return _ok("Anda bergabung dengan %s!" % def["name"])
+
+
+func leave_alliance(now: float) -> Dictionary:
+	if alliance.is_empty():
+		return _fail("Anda belum tergabung dalam aliansi.")
+	var name: String = alliance_def()["name"]
+	alliance = {}
+	alliance_left_t = now
+	changed.emit()
+	return _ok("Anda keluar dari %s." % name)
+
+
+func alliance_def() -> Dictionary:
+	return Data.alliance_def(alliance["id"])
+
+
+func alliance_level() -> int:
+	var lv := 1
+	for i in Data.ALLIANCE_LEVELS.size():
+		if int(alliance["exp"]) >= int(Data.ALLIANCE_LEVELS[i]):
+			lv = i + 1
+	return lv
+
+
+## [exp di level ini, exp yang dibutuhkan ke level berikutnya]; [0, 0] bila level maksimal.
+func alliance_level_progress() -> Array:
+	var lv := alliance_level()
+	if lv >= Data.ALLIANCE_LEVELS.size():
+		return [0, 0]
+	var base := int(Data.ALLIANCE_LEVELS[lv - 1])
+	return [int(alliance["exp"]) - base, int(Data.ALLIANCE_LEVELS[lv]) - base]
+
+
+func alliance_bonus() -> float:
+	if alliance.is_empty():
+		return 0.0
+	return Data.ALLIANCE_YIELD_PER_LEVEL * alliance_level()
+
+
+func _seeded(parts: Array) -> RandomNumberGenerator:
+	var r := RandomNumberGenerator.new()
+	r.seed = hash(parts)
+	return r
+
+
+## Anggota NPC: nama, jabatan, dan kekuatan dasar (tetap untuk tiap aliansi).
+func _npc_members() -> Array:
+	var id: String = alliance["id"]
+	if _npc_cache.has(id):
+		return _npc_cache[id]
+	var def := Data.alliance_def(id)
+	var r := _seeded(["npc", id])
+	var out := []
+	var used := {}
+	for i in int(def["members"]):
+		var name := ""
+		while name == "" or used.has(name):
+			name = "%s %s" % [Data.NPC_TITLES[r.randi_range(0, Data.NPC_TITLES.size() - 1)],
+				Data.NPC_NAMES[r.randi_range(0, Data.NPC_NAMES.size() - 1)]]
+		used[name] = true
+		var role := "Ketua" if i == 0 else ("Wakil" if i < 3 else "Anggota")
+		var base := int((120 + r.randi_range(0, 380)) * float(def["power"]) * (2.0 if i == 0 else 1.0))
+		out.append({"name": name, "role": role, "base": base})
+	_npc_cache[id] = out
+	return out
+
+
+func _npc_power(npc: Dictionary, day: int) -> int:
+	var days := clampi(day - int(alliance["join_day"]), 0, 200)
+	return int(int(npc["base"]) * (1.0 + 0.015 * days))
+
+
+## Daftar anggota (termasuk pemain) urut kekuatan, dengan kerusakan ke bos minggu ini.
+func alliance_members(now: float) -> Array:
+	var today := day_index(now)
+	var out := []
+	var dmg := _npc_boss_damage_each(now)
+	var members := _npc_members()
+	for i in members.size():
+		out.append({"name": members[i]["name"], "role": members[i]["role"], "power": _npc_power(members[i], today),
+			"damage": dmg[i], "me": false})
+	out.append({"name": "Anda", "role": "Anggota", "power": power(), "damage": int(alliance["boss"]["damage"]),
+		"me": true})
+	out.sort_custom(func(a, b): return a["power"] > b["power"])
+	return out
+
+
+## Proses hari yang lewat: sumbangan NPC menambah exp aliansi. True bila ada perubahan.
+func _alliance_rollover(now: float) -> bool:
+	if alliance.is_empty():
+		return false
+	var today := day_index(now)
+	var last := int(alliance["last_day"])
+	var changed_any := _ensure_boss(now)
+	if last >= today:
+		return changed_any
+	var total := 0
+	var members := _npc_members()
+	for day in range(maxi(last, today - 30), today):
+		var r := _seeded(["donate", alliance["id"], day])
+		for i in members.size():
+			if r.randf() < 0.75:
+				total += r.randi_range(20, 120)
+	var before := alliance_level()
+	alliance["exp"] = int(alliance["exp"]) + total
+	alliance["last_day"] = today
+	if total > 0:
+		_alliance_log("Para anggota menyumbang %d exp sejak kunjungan terakhir Anda." % total)
+	if alliance_level() > before:
+		_alliance_log("Aliansi naik ke level %d!" % alliance_level())
+	return true
+
+
+func _alliance_log(text: String) -> void:
+	var log: Array = alliance["log"]
+	log.push_front(text)
+	if log.size() > 20:
+		log.resize(20)
+
+
+func donations_left(now: float) -> int:
+	var d: Dictionary = alliance["donations"]
+	if int(d["day"]) != day_index(now):
+		return Data.ALLIANCE_DONATIONS_PER_DAY
+	return Data.ALLIANCE_DONATIONS_PER_DAY - int(d["count"])
+
+
+func donate(kind: String, now: float) -> Dictionary:
+	if alliance.is_empty():
+		return _fail("Anda belum tergabung dalam aliansi.")
+	var def: Dictionary = {}
+	for x in Data.ALLIANCE_DONATIONS:
+		if x["id"] == kind:
+			def = x
+	if def.is_empty():
+		return _fail("Jenis sumbangan tidak dikenal.")
+	if donations_left(now) <= 0:
+		return _fail("Batas sumbangan hari ini sudah habis.")
+	for key in def["cost"]:
+		if int(get(key)) < int(def["cost"][key]):
+			return _fail("%s tidak cukup." % Data.REWARD_NAMES[key].capitalize())
+	for key in def["cost"]:
+		set(key, int(get(key)) - int(def["cost"][key]))
+	var d: Dictionary = alliance["donations"]
+	if int(d["day"]) != day_index(now):
+		d["day"] = day_index(now)
+		d["count"] = 0
+	d["count"] = int(d["count"]) + 1
+	var before := alliance_level()
+	alliance["exp"] = int(alliance["exp"]) + int(def["exp"])
+	_add_jasa(int(def["jasa"]))
+	_alliance_log("Anda: %s (+%d exp)." % [def["label"], def["exp"]])
+	var msg := "%s: +%d exp aliansi, +%d jasa." % [def["label"], def["exp"], def["jasa"]]
+	if alliance_level() > before:
+		_alliance_log("Aliansi naik ke level %d!" % alliance_level())
+		msg += " Aliansi naik ke level %d!" % alliance_level()
+	_track("donate")
+	changed.emit()
+	return _ok(msg)
+
+
+func _add_jasa(amount: int) -> void:
+	alliance["jasa"] = int(alliance["jasa"]) + amount
+	alliance["jasa_total"] = int(alliance["jasa_total"]) + amount
+
+
+func shop_left(id: String, now: float) -> int:
+	var shop: Dictionary = alliance["shop"]
+	var limit := int(Data.shop_def(id)["limit"])
+	if int(shop["day"]) != day_index(now):
+		return limit
+	return limit - int(shop["bought"].get(id, 0))
+
+
+func shop_buy(id: String, now: float) -> Dictionary:
+	if alliance.is_empty():
+		return _fail("Anda belum tergabung dalam aliansi.")
+	var item := Data.shop_def(id)
+	if item.is_empty():
+		return _fail("Barang tidak ditemukan.")
+	if alliance_level() < int(item["level"]):
+		return _fail("Butuh aliansi level %d." % item["level"])
+	if shop_left(id, now) <= 0:
+		return _fail("Batas pembelian hari ini sudah habis.")
+	if int(alliance["jasa"]) < int(item["cost"]):
+		return _fail("Jasa tidak cukup (butuh %d)." % item["cost"])
+	var shop: Dictionary = alliance["shop"]
+	if int(shop["day"]) != day_index(now):
+		shop["day"] = day_index(now)
+		shop["bought"] = {}
+	shop["bought"][id] = int(shop["bought"].get(id, 0)) + 1
+	alliance["jasa"] = int(alliance["jasa"]) - int(item["cost"])
+	var text := _give_rewards(item["reward"])
+	changed.emit()
+	return _ok("Membeli %s: %s." % [item["name"], text])
+
+
+## Bos baru tiap minggu. Mengembalikan true bila bos direset.
+func _ensure_boss(now: float) -> bool:
+	var week := week_index(now)
+	var boss: Dictionary = alliance["boss"]
+	if not boss.is_empty() and int(boss["week"]) == week:
+		return false
+	var start_day := week * 7 - 3
+	var total_power := 0
+	for npc in _npc_members():
+		total_power += _npc_power(npc, start_day)
+	var hp := int(total_power * Data.BOSS_NPC_DAMAGE_PER_POWER * Data.BOSS_HP_DAYS)
+	alliance["boss"] = {"week": week, "hp_max": hp, "damage": 0, "attack_day": -1, "attacks": 0, "claimed": false}
+	return true
+
+
+## Kerusakan tiap NPC ke bos minggu ini (dihitung dari hari-hari yang sudah lewat).
+func _npc_boss_damage_each(now: float) -> Array:
+	var today := day_index(now)
+	var start_day := int(alliance["boss"]["week"]) * 7 - 3
+	var key := [alliance["id"], int(alliance["join_day"]), start_day, today]
+	if _npc_cache.has(key):
+		return _npc_cache[key]
+	var members := _npc_members()
+	var out := []
+	for i in members.size():
+		out.append(0)
+	for day in range(start_day, mini(today, start_day + 7)):
+		var r := _seeded(["boss", alliance["id"], day])
+		for i in members.size():
+			if r.randf() < 0.85:
+				out[i] += int(_npc_power(members[i], day) * Data.BOSS_NPC_DAMAGE_PER_POWER * r.randf_range(0.6, 1.4))
+	_npc_cache[key] = out
+	return out
+
+
+func boss_info(now: float) -> Dictionary:
+	var boss: Dictionary = alliance["boss"]
+	var npc := 0
+	for d in _npc_boss_damage_each(now):
+		npc += int(d)
+	var hp := maxi(0, int(boss["hp_max"]) - npc - int(boss["damage"]))
+	var used := int(boss["attacks"]) if int(boss["attack_day"]) == day_index(now) else 0
+	return {
+		"name": "%s Lv.%d" % [Data.BOSS_NAME, alliance_level()], "hp_max": int(boss["hp_max"]), "hp": hp,
+		"my_damage": int(boss["damage"]), "npc_damage": npc, "attacks_left": Data.BOSS_ATTACKS_PER_DAY - used,
+		"defeated": hp <= 0, "claimed": bool(boss["claimed"]),
+		"can_claim": hp <= 0 and not bool(boss["claimed"]) and int(boss["damage"]) > 0,
+	}
+
+
+func attack_boss(now: float) -> Dictionary:
+	if alliance.is_empty():
+		return _fail("Anda belum tergabung dalam aliansi.")
+	var info := boss_info(now)
+	if info["defeated"]:
+		return _fail("%s sudah dikalahkan minggu ini." % Data.BOSS_NAME)
+	if int(info["attacks_left"]) <= 0:
+		return _fail("Serangan hari ini sudah habis. Kembali besok!")
+	var boss: Dictionary = alliance["boss"]
+	if int(boss["attack_day"]) != day_index(now):
+		boss["attack_day"] = day_index(now)
+		boss["attacks"] = 0
+	boss["attacks"] = int(boss["attacks"]) + 1
+	var dmg := mini(int(power() * Data.BOSS_DAMAGE_PER_POWER * rng.randf_range(0.9, 1.1)), int(info["hp"]))
+	boss["damage"] = int(boss["damage"]) + dmg
+	_add_jasa(Data.BOSS_ATTACK_JASA)
+	_track("boss")
+	var msg := "Anda memberi %d kerusakan ke %s! +%d jasa." % [dmg, Data.BOSS_NAME, Data.BOSS_ATTACK_JASA]
+	_alliance_log("Anda menyerang %s: %d kerusakan." % [Data.BOSS_NAME, dmg])
+	if boss_info(now)["defeated"]:
+		msg += " %s tumbang!" % Data.BOSS_NAME
+		_alliance_log("%s berhasil dikalahkan!" % Data.BOSS_NAME)
+	changed.emit()
+	var result := _ok(msg)
+	result["damage"] = dmg
+	return result
+
+
+func claim_boss(now: float) -> Dictionary:
+	if alliance.is_empty():
+		return _fail("Anda belum tergabung dalam aliansi.")
+	var info := boss_info(now)
+	if not info["defeated"]:
+		return _fail("%s belum dikalahkan." % Data.BOSS_NAME)
+	if info["claimed"]:
+		return _fail("Hadiah bos sudah diambil.")
+	if int(info["my_damage"]) <= 0:
+		return _fail("Anda harus ikut menyerang untuk mendapat hadiah.")
+	alliance["boss"]["claimed"] = true
+	gold += int(Data.BOSS_REWARD["gold"])
+	_add_jasa(int(Data.BOSS_REWARD["jasa"]))
+	changed.emit()
+	return _ok("Hadiah kemenangan: +%d emas, +%d jasa." % [Data.BOSS_REWARD["gold"], Data.BOSS_REWARD["jasa"]])
 
 
 # --- Hadiah login harian --------------------------------------------------
@@ -707,6 +1047,8 @@ func to_dict() -> Dictionary:
 		"daily": daily,
 		"login": login,
 		"weekly": weekly,
+		"alliance": alliance,
+		"alliance_left_t": alliance_left_t,
 	}
 
 
@@ -781,9 +1123,37 @@ func from_dict(d: Dictionary, now: float) -> void:
 			claimed.append(bool(saved[i]) if i < saved.size() else false)
 		weekly = {"week": int(src_weekly.get("week", -1)), "points": int(src_weekly.get("points", 0)),
 			"claimed": claimed}
+	alliance_left_t = float(d.get("alliance_left_t", alliance_left_t))
+	alliance = _load_alliance(d.get("alliance", {}))
 	_unlock_content()
 	sync(now)
 	changed.emit()
+
+
+func _load_alliance(src: Dictionary) -> Dictionary:
+	if src.is_empty() or Data.alliance_def(str(src.get("id", ""))).is_empty():
+		return {}
+	var don: Dictionary = src.get("donations", {})
+	var shop: Dictionary = src.get("shop", {})
+	var bought := {}
+	for k in shop.get("bought", {}):
+		bought[str(k)] = int(shop["bought"][k])
+	var boss: Dictionary = src.get("boss", {})
+	var out := {
+		"id": str(src["id"]), "join_day": int(src.get("join_day", 0)), "last_day": int(src.get("last_day", 0)),
+		"exp": int(src.get("exp", 0)), "jasa": int(src.get("jasa", 0)), "jasa_total": int(src.get("jasa_total", 0)),
+		"donations": {"day": int(don.get("day", -1)), "count": int(don.get("count", 0))},
+		"shop": {"day": int(shop.get("day", -1)), "bought": bought},
+		"boss": {},
+		"log": [],
+	}
+	if not boss.is_empty():
+		out["boss"] = {"week": int(boss.get("week", -1)), "hp_max": int(boss.get("hp_max", 1)),
+			"damage": int(boss.get("damage", 0)), "attack_day": int(boss.get("attack_day", -1)),
+			"attacks": int(boss.get("attacks", 0)), "claimed": bool(boss.get("claimed", false))}
+	for line in src.get("log", []):
+		out["log"].append(str(line))
+	return out
 
 
 func _ok(msg: String) -> Dictionary:

@@ -18,6 +18,8 @@ func _init() -> void:
 		"test_daily_generate", "test_daily_progress_claim", "test_daily_chests_reset", "test_daily_save",
 		"test_login_streak", "test_login_break_and_save",
 		"test_event_calendar", "test_event_points", "test_event_bonuses", "test_event_tiers_reset_save",
+		"test_alliance_join_leave", "test_alliance_donate_level", "test_alliance_shop", "test_alliance_boss",
+		"test_alliance_npc_and_save",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -442,3 +444,131 @@ func test_event_tiers_reset_save() -> void:
 	check(var_to_str(m2.weekly) == var_to_str(m.weekly), "simpan/muat event mingguan")
 	m.sync(1000.0 + 7 * 86400.0)
 	check(m.weekly["points"] == 0 and not m.weekly["claimed"][2], "event direset di minggu baru")
+
+
+func _allied(seed := 1) -> Model:
+	var m := fresh(seed)
+	m.stage = Data.ALLIANCE_UNLOCK_STAGE
+	m.join_alliance("garuda", 1000.0)
+	return m
+
+
+func test_alliance_join_leave() -> void:
+	var m := fresh()
+	check(not m.join_alliance("garuda", 1000.0)["ok"], "aliansi terkunci sebelum tahap 5")
+	m.stage = Data.ALLIANCE_UNLOCK_STAGE
+	check(m.join_alliance("garuda", 1000.0)["ok"], "bergabung dengan aliansi")
+	check(not m.join_alliance("macan", 1000.0)["ok"], "tidak bisa bergabung dua aliansi")
+	check(m.alliance_level() == 3, "level awal Garuda dari exp awal")
+	check(m.alliance_members(1000.0).size() == 19, "18 anggota NPC + pemain")
+	check(m.leave_alliance(2000.0)["ok"] and m.alliance.is_empty(), "keluar aliansi")
+	check(not m.join_alliance("teratai", 2000.0 + 3600)["ok"], "jeda sebelum bergabung lagi")
+	check(m.join_alliance("teratai", 2000.0 + Data.ALLIANCE_LEAVE_COOLDOWN)["ok"], "bergabung lagi setelah jeda")
+
+
+func test_alliance_donate_level() -> void:
+	var m := _allied()
+	var base_yield := m.affair_yield("silver")
+	var lv := m.alliance_level()
+	m.silver = 100000
+	m.grain = 100000
+	m.gold = 1000
+	var exp := int(m.alliance["exp"])
+	check(m.donate("silver", 1000.0)["ok"] and m.silver == 95000, "sumbang perak")
+	check(int(m.alliance["exp"]) == exp + 50 and m.alliance["jasa"] == 50, "exp aliansi dan jasa bertambah")
+	m.donate("gold", 1000.0)
+	m.donate("grain", 1000.0)
+	check(m.donations_left(1000.0) == 0 and not m.donate("silver", 1000.0)["ok"], "batas 3 sumbangan per hari")
+	check(m.donations_left(1000.0 + 86400) == 3, "batas sumbangan reset besok")
+	m.alliance["exp"] = Data.ALLIANCE_LEVELS[4] - 10
+	m.donate("silver", 1000.0 + 86400)
+	check(m.alliance_level() == 5, "naik level dari sumbangan")
+	check(m.affair_yield("silver") > base_yield, "level aliansi menaikkan hasil urusan")
+	check(is_equal_approx(m.alliance_bonus(), 0.15), "bonus 3% per level")
+	m.gold = 0
+	check(not m.donate("gold", 1000.0 + 86400)["ok"], "sumbangan gagal tanpa biaya")
+	check(lv == 3, "level awal")
+
+
+func test_alliance_shop() -> void:
+	var m := _allied()
+	check(not m.shop_buy("gold30", 1000.0)["ok"], "jasa tidak cukup")
+	m.alliance["jasa"] = 1000
+	var gold := m.gold
+	check(m.shop_buy("gold30", 1000.0)["ok"] and m.gold == gold + 30 and m.alliance["jasa"] == 900, "beli di toko")
+	m.shop_buy("gold30", 1000.0)
+	check(not m.shop_buy("gold30", 1000.0)["ok"], "batas pembelian harian")
+	check(m.shop_left("gold30", 1000.0 + 86400) == 2, "batas pembelian reset besok")
+	check(not m.shop_buy("gold100", 1000.0)["ok"], "barang terkunci level aliansi")
+
+
+func test_alliance_boss() -> void:
+	var m := _allied()
+	var info := m.boss_info(1000.0)
+	# Bos mulai hari Senin; anggota NPC sudah menyerang sejak itu walau pemain baru bergabung.
+	check(info["hp"] > 0 and info["hp"] <= info["hp_max"] and info["attacks_left"] == 3, "bos tersedia saat bergabung")
+	var monday := Model.new()
+	monday.rng.seed = 1
+	monday.new_game(4 * 86400.0)
+	monday.stage = Data.ALLIANCE_UNLOCK_STAGE
+	monday.join_alliance("garuda", 4 * 86400.0)
+	info = monday.boss_info(4 * 86400.0)
+	check(info["hp"] == info["hp_max"], "bos penuh di hari Senin")
+	var r := m.attack_boss(1000.0)
+	check(r["ok"] and r["damage"] > 0 and m.alliance["jasa"] == Data.BOSS_ATTACK_JASA, "serang bos")
+	m.attack_boss(1000.0)
+	m.attack_boss(1000.0)
+	check(not m.attack_boss(1000.0)["ok"], "maksimal 3 serangan per hari")
+	check(m.boss_info(1000.0 + 86400)["attacks_left"] == 3, "serangan reset besok")
+	check(m.boss_info(1000.0 + 86400)["npc_damage"] > 0, "anggota NPC ikut menyerang tiap hari")
+	check(not m.claim_boss(1000.0)["ok"], "hadiah belum bisa sebelum bos kalah")
+	m.alliance["boss"]["damage"] = m.alliance["boss"]["hp_max"]
+	info = m.boss_info(1000.0)
+	check(info["defeated"] and info["can_claim"], "bos kalah")
+	check(not m.attack_boss(1000.0 + 86400)["ok"], "tidak bisa menyerang bos yang sudah kalah")
+	var gold := m.gold
+	check(m.claim_boss(1000.0)["ok"] and m.gold == gold + 100, "hadiah bos")
+	check(not m.claim_boss(1000.0)["ok"], "hadiah bos sekali")
+	m.sync(1000.0 + 7 * 86400)
+	check(m.boss_info(1000.0 + 7 * 86400)["hp"] > 0 and not m.alliance["boss"]["claimed"], "bos baru di minggu berikutnya")
+	var m2 := _allied()
+	var t := 1000.0
+	for d in 7:
+		if m2.boss_info(t + d * 86400)["defeated"]:
+			break
+	check(m2.boss_info(t + 6 * 86400)["npc_damage"] > m2.boss_info(t + 86400)["npc_damage"], "kerusakan NPC bertambah tiap hari")
+
+
+func test_alliance_npc_and_save() -> void:
+	var m := _allied()
+	var exp := int(m.alliance["exp"])
+	var p0: int = m.alliance_members(1000.0).filter(func(x): return not x["me"])[0]["power"]
+	m.sync(1000.0 + 3 * 86400)
+	check(int(m.alliance["exp"]) > exp, "NPC menyumbang exp saat hari berganti")
+	var p3: int = m.alliance_members(1000.0 + 3 * 86400).filter(func(x): return not x["me"])[0]["power"]
+	check(p3 > p0, "kekuatan NPC tumbuh tiap hari")
+	check(m.alliance["log"].size() >= 3, "catatan aktivitas aliansi")
+	var other := _allied(99)
+	check(var_to_str(other.alliance_members(1000.0)) == var_to_str(_allied(5).alliance_members(1000.0)),
+		"anggota NPC deterministik")
+	m.alliance["jasa"] = 77
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0 + 3 * 86400)
+	check(var_to_str(m2.alliance) == var_to_str(m.alliance), "simpan/muat aliansi")
+	_set_missions(m, [])
+	m.daily = {}
+	m.ensure_daily(1000.0 + 10 * 86400)
+	var seen := false
+	for d in 20:
+		m.daily = {}
+		m.ensure_daily(1000.0 + (11 + d) * 86400)
+		for x in m.daily["missions"]:
+			if x["id"] in ["donate1", "boss2"]:
+				seen = true
+	check(seen, "misi aliansi muncul setelah bergabung")
+	var solo := fresh()
+	for d in 20:
+		solo.daily = {}
+		solo.ensure_daily(1000.0 + d * 86400)
+		for x in solo.daily["missions"]:
+			check(not (x["id"] in ["donate1", "boss2"]), "misi aliansi tidak muncul tanpa aliansi")

@@ -16,6 +16,7 @@ func _init() -> void:
 		"test_palace_children", "test_save_roundtrip", "test_gacha_basic", "test_gacha_ten_and_pity",
 		"test_gacha_duplicates", "test_gacha_free", "test_gold_sources",
 		"test_daily_generate", "test_daily_progress_claim", "test_daily_chests_reset", "test_daily_save",
+		"test_login_streak", "test_login_break_and_save",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -310,3 +311,40 @@ func test_daily_save() -> void:
 	var m3 := Model.new()
 	m3.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0 + 86400.0)
 	check(m3.daily["points"] == 0, "muat di hari berikutnya mereset misi")
+
+
+func test_login_streak() -> void:
+	var m := fresh()
+	var day := 86400.0
+	var t := 1000.0
+	check(m.login_can_claim(t) and m.login_day(t) == 1, "hari pertama bisa diklaim")
+	var gold := m.gold
+	var r := m.claim_login(t)
+	check(r["ok"] and r["day"] == 1 and m.gold == gold + 50, "hadiah Hari 1")
+	check(not m.claim_login(t + 3600)["ok"], "hanya sekali per hari")
+	check(m.login_claimed_days(t) == 1, "kalender menandai Hari 1")
+	for d in range(2, 8):
+		t += day
+		check(m.login_day(t) == d and m.claim_login(t)["ok"], "klaim Hari %d berturut-turut" % d)
+	check(m.login["streak"] == 7, "streak 7 hari")
+	gold = m.gold
+	t += day
+	check(m.login_day(t) == 1, "setelah Hari 7 siklus kembali ke Hari 1")
+	check(m.login_claimed_days(t) == 0, "kalender kosong di siklus baru")
+	m.claim_login(t)
+	check(m.login["total"] == 8, "total hari login")
+
+
+func test_login_break_and_save() -> void:
+	var m := fresh()
+	var day := 86400.0
+	m.claim_login(1000.0)
+	m.claim_login(1000.0 + day)
+	check(m.login_day(1000.0 + 2 * day) == 3, "lanjut Hari 3 bila tidak terlewat")
+	check(m.login_streak_broken(1000.0 + 3 * day), "terlewat sehari memutus rangkaian")
+	check(m.login_day(1000.0 + 3 * day) == 1, "rangkaian terputus kembali ke Hari 1")
+	m.claim_login(1000.0 + 3 * day)
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0 + 3 * day)
+	check(var_to_str(m2.login) == var_to_str(m.login), "simpan/muat data login")
+	check(not m2.login_can_claim(1000.0 + 3 * day), "status klaim bertahan setelah dimuat")

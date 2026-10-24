@@ -33,10 +33,14 @@ var _battling := false
 var _vs_lord: TextureRect
 var _vs_enemy: TextureRect
 var _free_button: Button
-var _mission_button: Control
-var _mission_badge: PanelContainer
-var _mission_badge_label: Label
+var _mission_hb: Dictionary
+var _login_hb: Dictionary
 var _mission_overlay: Control
+var _login_overlay: Control
+var _login_box: VBoxContainer
+var _login_subtitle: Label
+var _login_next_label: Label
+var _login_prompted_day := -1
 var _mission_box: VBoxContainer
 var _mission_reset_label: Label
 var _gacha_banner_done := false
@@ -81,7 +85,7 @@ func _ready() -> void:
 	model.changed.connect(_queue_rebuild)
 	model.mission_completed.connect(func(_text):
 		Audio.play("upgrade")
-		_float("Misi selesai!", _mission_button, Color("b8f0a8")))
+		_float("Misi selesai!", _mission_hb["root"], Color("b8f0a8")))
 	var timer := Timer.new()
 	timer.wait_time = 1.0
 	timer.autostart = true
@@ -89,6 +93,8 @@ func _ready() -> void:
 	add_child(timer)
 	_switch_page("city", false)
 	_rebuild()
+	# Tampilkan hadiah login otomatis setelah layar siap.
+	get_tree().create_timer(0.6).timeout.connect(_maybe_prompt_login)
 
 
 # --- Kerangka -------------------------------------------------------------
@@ -110,7 +116,7 @@ func _build_header() -> Control:
 	info.add_theme_constant_override("separation", 0)
 	top.add_child(info)
 	_rank_label = _label(info, "", "TitleLabel")
-	_rank_label.add_theme_font_size_override("font_size", 32)
+	_rank_label.add_theme_font_size_override("font_size", 28)
 	var power_row := HBoxContainer.new()
 	info.add_child(power_row)
 	power_row.add_child(_tex(Art.icon("power"), 34))
@@ -119,7 +125,10 @@ func _build_header() -> Control:
 	var prestige := _chip("prestige")
 	prestige.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	top.add_child(prestige)
-	top.add_child(_build_mission_button())
+	_login_hb = _header_button("calendar", "Login", _show_login)
+	top.add_child(_login_hb["root"])
+	_mission_hb = _header_button("mission", "Misi", _show_missions)
+	top.add_child(_mission_hb["root"])
 
 	var res := HBoxContainer.new()
 	res.add_theme_constant_override("separation", 8)
@@ -431,6 +440,8 @@ func _rebuild() -> void:
 	_build_palace(_pages["palace"]["content"])
 	if is_instance_valid(_mission_overlay):
 		_fill_missions()
+	if is_instance_valid(_login_overlay):
+		_fill_login()
 	_tick()
 	# Kembalikan posisi gulir setelah layout dihitung ulang.
 	await get_tree().process_frame
@@ -449,8 +460,18 @@ func _tick() -> void:
 	_res_labels["prestige"].text = _num(model.prestige)
 	_res_labels["gold"].text = _num(model.gold)
 	var claimable: int = model.claimable_count()
-	_mission_badge.visible = claimable > 0
-	_mission_badge_label.text = str(claimable)
+	_mission_hb["badge"].visible = claimable > 0
+	_mission_hb["badge_label"].text = str(claimable)
+	var login_ready: bool = model.login_can_claim(now)
+	_login_hb["badge"].visible = login_ready
+	_login_hb["badge_label"].text = "1"
+	# -1 = startup belum selesai (ditangani timer di _ready); setelah itu
+	# pengecekan ini menangani pergantian hari saat game tetap terbuka.
+	if login_ready and _login_prompted_day != -1 and _login_prompted_day != model.day_index(now):
+		_maybe_prompt_login()
+	if is_instance_valid(_login_next_label):
+		var wait: int = model.seconds_until_reset(now)
+		_login_next_label.text = "Hadiah berikutnya dalam %02d:%02d:%02d" % [wait / 3600, wait / 60 % 60, wait % 60]
 	if is_instance_valid(_mission_reset_label):
 		var left: int = model.seconds_until_reset(now)
 		_mission_reset_label.text = "Reset dalam %02d:%02d:%02d" % [left / 3600, left / 60 % 60, left % 60]
@@ -707,55 +728,57 @@ const MISSION_PAGES := {
 }
 
 
-func _build_mission_button() -> Control:
+## Tombol ikon kecil di header dengan lencana angka merah.
+## Mengembalikan {"root": Control, "badge": PanelContainer, "badge_label": Label}.
+func _header_button(icon_name: String, caption: String, on_press: Callable) -> Dictionary:
 	var holder := Control.new()
-	holder.custom_minimum_size = Vector2(84, 84)
+	holder.custom_minimum_size = Vector2(72, 84)
 	holder.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var b := Button.new()
 	b.theme_type_variation = "NavButton"
 	b.set_anchors_preset(Control.PRESET_FULL_RECT)
 	b.pressed.connect(func():
 		Audio.play("click")
-		_show_missions())
+		on_press.call())
 	holder.add_child(b)
-	var icon := _tex(Art.icon("mission"), 64)
-	icon.position = Vector2(10, 4)
+	var icon := _tex(Art.icon(icon_name), 58)
+	icon.position = Vector2(7, 4)
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	holder.add_child(icon)
 	var cap := Label.new()
-	cap.text = "Misi"
+	cap.text = caption
 	cap.theme_type_variation = "SmallLabel"
 	cap.add_theme_font_size_override("font_size", 16)
 	cap.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	cap.position = Vector2(0, 64)
-	cap.size = Vector2(84, 20)
+	cap.position = Vector2(0, 62)
+	cap.size = Vector2(72, 20)
 	cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	holder.add_child(cap)
-	_mission_badge = PanelContainer.new()
+	var badge := PanelContainer.new()
 	var red := UI.box(Color("d63a2f"), Color("fff3d6"), 2, 14)
 	red.content_margin_left = 8
 	red.content_margin_right = 8
 	red.content_margin_top = 0
 	red.content_margin_bottom = 0
-	_mission_badge.add_theme_stylebox_override("panel", red)
-	_mission_badge.position = Vector2(54, -4)
-	_mission_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_mission_badge_label = Label.new()
-	_mission_badge_label.add_theme_font_override("font", UI.font_bold)
-	_mission_badge_label.add_theme_font_size_override("font_size", 18)
-	_mission_badge.add_child(_mission_badge_label)
-	holder.add_child(_mission_badge)
-	_mission_button = holder
-	return holder
+	badge.add_theme_stylebox_override("panel", red)
+	badge.position = Vector2(46, -4)
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var badge_label := Label.new()
+	badge_label.add_theme_font_override("font", UI.font_bold)
+	badge_label.add_theme_font_size_override("font_size", 18)
+	badge.add_child(badge_label)
+	holder.add_child(badge)
+	return {"root": holder, "badge": badge, "badge_label": badge_label}
 
 
-func _show_missions() -> void:
-	if is_instance_valid(_mission_overlay):
-		return
-	_mission_overlay = Control.new()
-	_mission_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(_mission_overlay)
-	move_child(_mission_overlay, _toast.get_index())  # toast tetap di atas panel
+## Panel pop-up perkamen di atas layar dengan judul, subjudul, dan isi bergulir.
+## Mengembalikan {"overlay": Control, "content": VBoxContainer, "subtitle": Label}.
+func _open_panel(title: String, icon_name: String, on_close: Callable, top := 0.06,
+		bottom := 0.94) -> Dictionary:
+	var overlay := Control.new()
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(overlay)
+	move_child(overlay, _toast.get_index())  # toast tetap di atas panel
 	var dim := Button.new()
 	dim.flat = true
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -763,48 +786,58 @@ func _show_missions() -> void:
 	dim_style.bg_color = Color(0.04, 0.01, 0.03, 0.82)
 	for st in ["normal", "hover", "pressed", "hover_pressed", "focus"]:
 		dim.add_theme_stylebox_override(st, dim_style)
-	dim.pressed.connect(_close_missions)
-	_mission_overlay.add_child(dim)
+	dim.pressed.connect(on_close)
+	overlay.add_child(dim)
 
 	var panel := PanelContainer.new()
 	panel.anchor_left = 0.03
 	panel.anchor_right = 0.97
-	panel.anchor_top = 0.06
-	panel.anchor_bottom = 0.94
-	_mission_overlay.add_child(panel)
+	panel.anchor_top = top
+	panel.anchor_bottom = bottom
+	overlay.add_child(panel)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 10)
 	panel.add_child(v)
 	var head := HBoxContainer.new()
 	v.add_child(head)
-	head.add_child(_tex(Art.icon("mission"), 64))
+	head.add_child(_tex(Art.icon(icon_name), 64))
 	var titles := _col(head)
-	_label(titles, "Misi Harian", "CardTitle").add_theme_font_size_override("font_size", 34)
-	_mission_reset_label = _label(titles, "", "CardLabel")
+	_label(titles, title, "CardTitle").add_theme_font_size_override("font_size", 32)
+	var subtitle := _label(titles, "", "CardLabel")
 	var close := Button.new()
 	close.text = "Tutup"
 	close.custom_minimum_size = Vector2(130, 64)
 	close.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	close.pressed.connect(_close_missions)
+	close.pressed.connect(on_close)
 	head.add_child(close)
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	v.add_child(scroll)
-	_mission_box = VBoxContainer.new()
-	_mission_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_mission_box.add_theme_constant_override("separation", 12)
-	scroll.add_child(_mission_box)
+	var content := VBoxContainer.new()
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.add_theme_constant_override("separation", 12)
+	scroll.add_child(content)
+
+	panel.pivot_offset = Vector2(size.x * 0.47, size.y * (top + bottom) / 2 - size.y * top)
+	panel.scale = Vector2(0.9, 0.9)
+	overlay.modulate.a = 0.0
+	var tw := create_tween().set_parallel()
+	tw.tween_property(overlay, "modulate:a", 1.0, 0.15)
+	tw.tween_property(panel, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	return {"overlay": overlay, "content": content, "subtitle": subtitle}
+
+
+func _show_missions() -> void:
+	if is_instance_valid(_mission_overlay):
+		return
+	var p := _open_panel("Misi Harian", "mission", _close_missions)
+	_mission_overlay = p["overlay"]
+	_mission_box = p["content"]
+	_mission_reset_label = p["subtitle"]
 	_fill_missions()
 	_tick()
-
-	panel.pivot_offset = Vector2(size.x * 0.47, size.y * 0.44)
-	panel.scale = Vector2(0.9, 0.9)
-	_mission_overlay.modulate.a = 0.0
-	var tw := create_tween().set_parallel()
-	tw.tween_property(_mission_overlay, "modulate:a", 1.0, 0.15)
-	tw.tween_property(panel, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 func _close_missions() -> void:
@@ -905,6 +938,120 @@ static func _reward_text(def: Dictionary) -> String:
 		if int(def.get(key, 0)) > 0:
 			parts.append("+%s %s" % [_num(def[key]), Data.REWARD_NAMES[key]])
 	return ", ".join(parts)
+
+
+# --- Hadiah login harian --------------------------------------------------
+
+## Buka kalender login sekali per hari bila hadiahnya belum diklaim.
+func _maybe_prompt_login() -> void:
+	var now: float = Game.now()
+	if _login_prompted_day == model.day_index(now):
+		return
+	_login_prompted_day = model.day_index(now)
+	if model.login_can_claim(now):
+		_show_login()
+
+
+func _show_login() -> void:
+	if is_instance_valid(_login_overlay):
+		return
+	var p := _open_panel("Hadiah Login Harian", "calendar", _close_login, 0.12, 0.7)
+	_login_overlay = p["overlay"]
+	_login_box = p["content"]
+	_login_subtitle = p["subtitle"]
+	_fill_login()
+	_tick()
+
+
+func _close_login() -> void:
+	if is_instance_valid(_login_overlay):
+		Audio.play("click")
+		_login_overlay.queue_free()
+	_login_overlay = null
+
+
+func _fill_login() -> void:
+	_clear(_login_box)
+	var now: float = Game.now()
+	var claimed: int = model.login_claimed_days(now)
+	var today: int = model.login_day(now)
+	var can: bool = model.login_can_claim(now)
+	_login_subtitle.text = "Berturut-turut %d hari · Total %d hari" % [
+		model.login["streak"] if not model.login_streak_broken(now) else 0, model.login["total"]]
+	_login_next_label = null
+	if can and model.login_streak_broken(now):
+		var warn := _label(_login_box, "Rangkaian login terputus, kalender dimulai lagi dari Hari 1.", "CardLabel")
+		warn.add_theme_color_override("font_color", UI.RED)
+	_label(_login_box, "Login setiap hari tanpa terputus. Hari 7 berisi hadiah besar!", "CardLabel")
+
+	var rows := [[0, 1, 2, 3], [4, 5, 6]]
+	for row_days in rows:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		_login_box.add_child(row)
+		for i in row_days:
+			row.add_child(_login_cell(i, i < claimed, can and i == today - 1))
+
+	if can:
+		var day7: bool = today == Data.LOGIN_REWARDS.size()
+		var b := _button(_login_box, "Klaim Hari %d" % today, func(): return model.claim_login(Game.now()),
+			true, "calendar", "GreenButton", false, "reveal_ssr" if day7 else "reveal_sr")
+		b.custom_minimum_size.y = 84
+	else:
+		_login_next_label = _label(_login_box, "", "CardLabel")
+		_login_next_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_login_next_label.add_theme_font_override("font", UI.font_bold)
+
+
+func _login_cell(i: int, claimed: bool, is_today: bool) -> Control:
+	var def: Dictionary = Data.LOGIN_REWARDS[i]
+	var big := i == Data.LOGIN_REWARDS.size() - 1
+	var bg := Color("fff3c8") if is_today else (Color("e2cfa6") if claimed else Color(1, 1, 1, 0.45))
+	var style := UI.box(bg, UI.GOLD if is_today else UI.GOLD_DARK, 4 if is_today else 2, 12)
+	style.set_content_margin_all(8)
+	if is_today:
+		style.shadow_color = Color(UI.GOLD, 0.8)
+		style.shadow_size = 10
+	var cell := PanelContainer.new()
+	cell.add_theme_stylebox_override("panel", style)
+	cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cell.size_flags_stretch_ratio = 2.0 if big else 1.0
+	var v := VBoxContainer.new()
+	v.alignment = BoxContainer.ALIGNMENT_CENTER
+	v.add_theme_constant_override("separation", 2)
+	cell.add_child(v)
+	var title := _label(v, "Hari %d" % (i + 1), "CardLabel")
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_override("font", UI.font_bold)
+
+	var side := 78.0 if big else 58.0
+	var holder := Control.new()
+	holder.custom_minimum_size = Vector2(side, side)
+	holder.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	v.add_child(holder)
+	var main_key := "gold"
+	for key in Data.REWARD_KEYS:
+		if def.has(key):
+			main_key = key
+			break
+	var icon := _tex(Art.icon("chest" if big else main_key), side)
+	if claimed:
+		icon.modulate = Color(1, 1, 1, 0.45)
+	holder.add_child(icon)
+	if claimed:
+		var tick := _tex(Art.icon("check"), side * 0.6)
+		tick.position = Vector2(side * 0.45, side * 0.4)
+		holder.add_child(tick)
+
+	var reward := _label(v, _reward_text(def).replace(", ", "\n"), "SmallLabel")
+	reward.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	reward.add_theme_color_override("font_color", UI.INK)
+	reward.add_theme_font_size_override("font_size", 16)
+	if is_today:
+		var glow := cell.create_tween().set_loops()
+		glow.tween_property(cell, "self_modulate", Color(1.12, 1.08, 0.9), 0.5)
+		glow.tween_property(cell, "self_modulate", Color.WHITE, 0.5)
+	return cell
 
 
 # --- Rekrut (gacha) -------------------------------------------------------

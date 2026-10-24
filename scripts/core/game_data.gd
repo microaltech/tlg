@@ -100,6 +100,16 @@ const DAILY_CHESTS := [
 	{"points": 80, "gold": 50, "grain": 1500},
 	{"points": 100, "gold": 100, "soldiers": 2000},
 ]
+## Hadiah login harian (7 hari berturut-turut). Terlewat sehari = kembali ke Hari 1.
+const LOGIN_REWARDS := [
+	{"gold": 50, "silver": 1000},
+	{"grain": 2000, "soldiers": 1000},
+	{"gold": 80},
+	{"silver": 3000, "grain": 2000},
+	{"gold": 100, "soldiers": 2000},
+	{"silver": 5000, "grain": 3000},
+	{"gold": 300, "soldiers": 5000},
+]
 const REWARD_KEYS := ["gold", "silver", "grain", "soldiers"]
 const REWARD_NAMES := {"gold": "emas", "silver": "perak", "grain": "pangan", "soldiers": "prajurit"}
 

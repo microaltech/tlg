@@ -582,6 +582,20 @@ def chest(open_):
         '<circle cx="48" cy="52" r="3" fill="#4a2410"/>')
 
 
+ICONS["calendar"] = icon_doc(
+    '<rect x="10" y="16" width="76" height="72" rx="10" fill="#f4e4c1" stroke="#7a4b1f" stroke-width="4"/>'
+    '<path d="M10 26 Q10 16 20 16 L76 16 Q86 16 86 26 L86 36 L10 36 Z" fill="#c0392b" stroke="#7a4b1f" stroke-width="4"/>'
+    '<rect x="26" y="6" width="8" height="20" rx="4" fill="#e8c070" stroke="#7a4b1f" stroke-width="2.5"/>'
+    '<rect x="62" y="6" width="8" height="20" rx="4" fill="#e8c070" stroke="#7a4b1f" stroke-width="2.5"/>'
+    + "".join('<rect x="%d" y="%d" width="12" height="10" rx="2" fill="%s"/>' % (
+        20 + c * 16, 44 + r * 14, "#e8c070" if (r * 4 + c) < 6 else "#d8c49a") for r in range(3) for c in range(4))
+    + '<circle cx="74" cy="74" r="16" fill="#2e9a4a" stroke="#fff3d6" stroke-width="3"/>'
+      '<path d="M66 74 L72 80 L82 68" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/>')
+
+ICONS["check"] = icon_doc(
+    '<circle cx="48" cy="48" r="40" fill="#2e9a4a" stroke="#fff3d6" stroke-width="6"/>'
+    '<path d="M28 50 L42 64 L68 34" stroke="#fff" stroke-width="11" fill="none" stroke-linecap="round" stroke-linejoin="round"/>')
+
 ICONS["chest"] = chest(False)
 ICONS["chest_open"] = chest(True)
 

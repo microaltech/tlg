@@ -54,6 +54,10 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   20 poin aktivitas; 3 peti aktivitas terbuka di 40/80/100 poin. Tombol Misi di
   header menampilkan lencana jumlah hadiah yang siap diklaim, dan tombol "Pergi"
   langsung membuka menu terkait.
+- **Hadiah login harian** — kalender 7 hari dengan hadiah yang makin besar
+  (Hari 7: 300 emas + 5000 prajurit). Harus berturut-turut: terlewat sehari
+  kembali ke Hari 1. Muncul otomatis saat game dibuka bila belum diklaim, dan
+  bisa dibuka lewat tombol Login di header.
 - **Istana** — kunjungi selir untuk menaikkan keakraban (menambah Karisma) dan
   peluang mendapat anak. Didik anak dengan pangan, lalu nikahkan untuk bonus
   atribut permanen ke penasihat.
@@ -178,6 +182,6 @@ lalu **Project → Install Android Build Template**.
 ## Langkah berikutnya
 
 - Aset visual: potret penasihat/selir, latar kota, ikon sumber daya, animasi.
-- Item & inventaris, event, hadiah login beruntun, banner rekrut berganti (rate-up).
+- Item & inventaris, event, banner rekrut berganti (rate-up).
 - Backend + akun, PvP, aliansi, leaderboard.
 - IAP (Google Play Billing) & iklan berhadiah (AdMob) lewat plugin Godot.

@@ -42,6 +42,9 @@ var charges := {}
 ## Misi harian: {"day": int, "missions": [{"id", "progress", "claimed"}],
 ##   "points": int, "chests": [bool, ...]}
 var daily := {}
+## Hadiah login: streak = hari yang sudah diklaim di siklus ini (0..7),
+## last_day = indeks hari klaim terakhir, total = total hari login.
+var login := {}
 ## Selisih zona waktu (detik) supaya misi direset pada tengah malam lokal.
 var tz_bias := 0
 var rng := RandomNumberGenerator.new()
@@ -65,6 +68,7 @@ func new_game(now: float) -> void:
 	for key in CHARGE_KEYS:
 		charges[key] = {"value": max_charges(), "t": now}
 	daily = {}
+	login = {"streak": 0, "last_day": -1, "total": 0}
 	_unlock_content()
 	ensure_daily(now)
 	changed.emit()
@@ -466,6 +470,50 @@ func _give_rewards(def: Dictionary) -> String:
 	return ", ".join(parts)
 
 
+# --- Hadiah login harian --------------------------------------------------
+
+## Hari (1..7) yang hadiahnya bisa/terakhir diklaim hari ini.
+func login_day(now: float) -> int:
+	var today := day_index(now)
+	var last := int(login["last_day"])
+	if last == today:
+		return int(login["streak"])
+	if last == today - 1:
+		return int(login["streak"]) % Data.LOGIN_REWARDS.size() + 1
+	return 1
+
+
+func login_can_claim(now: float) -> bool:
+	return int(login["last_day"]) != day_index(now)
+
+
+## True bila rangkaian login terputus (ada hari yang terlewat sejak klaim terakhir).
+func login_streak_broken(now: float) -> bool:
+	var last := int(login["last_day"])
+	return last >= 0 and last < day_index(now) - 1
+
+
+## Jumlah hari yang tampil sudah diklaim di kalender saat ini.
+func login_claimed_days(now: float) -> int:
+	if not login_can_claim(now):
+		return int(login["streak"])
+	return login_day(now) - 1
+
+
+func claim_login(now: float) -> Dictionary:
+	if not login_can_claim(now):
+		return _fail("Hadiah login hari ini sudah diambil.")
+	var day := login_day(now)
+	login["streak"] = day
+	login["last_day"] = day_index(now)
+	login["total"] = int(login["total"]) + 1
+	var text := _give_rewards(Data.LOGIN_REWARDS[day - 1])
+	changed.emit()
+	var result := _ok("Hadiah login Hari %d: %s." % [day, text])
+	result["day"] = day
+	return result
+
+
 # --- Istana: selir & anak -------------------------------------------------
 
 func total_intimacy() -> int:
@@ -585,6 +633,7 @@ func to_dict() -> Dictionary:
 		"children": children,
 		"charges": charges,
 		"daily": daily,
+		"login": login,
 	}
 
 
@@ -645,6 +694,12 @@ func from_dict(d: Dictionary, now: float) -> void:
 			chests.append(bool(saved[i]) if i < saved.size() else false)
 		daily = {"day": int(src_daily.get("day", -1)), "missions": missions,
 			"points": int(src_daily.get("points", 0)), "chests": chests}
+	var src_login: Dictionary = d.get("login", {})
+	login = {
+		"streak": clampi(int(src_login.get("streak", 0)), 0, Data.LOGIN_REWARDS.size()),
+		"last_day": int(src_login.get("last_day", -1)),
+		"total": int(src_login.get("total", 0)),
+	}
 	_unlock_content()
 	sync(now)
 	changed.emit()

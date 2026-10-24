@@ -62,6 +62,12 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   disimulasikan offline (NPC yang tumbuh, menyumbang, dan menyerang bos tiap hari)
   karena belum ada server; logika simulasinya terkumpul di bagian "Aliansi" pada
   `game_model.gd` agar mudah diganti dengan data server.
+- **Arena PvP** — terbuka setelah Tahap 8. Poin arena (mulai 1000, sistem Elo)
+  menentukan liga Perunggu/Perak/Emas/Berlian/Legenda. 5 tiket per hari (+ beli
+  dengan emas), pilih 1 dari 3 lawan, pertarungan animasi 3 ronde dengan peluang
+  menang dari perbandingan kekuatan. Koin arena untuk Toko Arena, musim mingguan
+  dengan hadiah sesuai liga, papan peringkat, dan catatan pertahanan. Lawan saat
+  ini adalah "pemain" simulasi offline (bagian "Arena" di `game_model.gd`).
 - **Event mingguan** — 5 event bergiliran tiap Senin: Festival Panen (sawah +50%),
   Turnamen Ksatria (korban -20%), Pasar Malam (pajak +50%), Pesta Istana (peluang
   anak +15%), Ritual Purnama (Legenda 4% → 7%). Poin event dari aksi sesuai tema
@@ -196,5 +202,5 @@ lalu **Project → Install Android Build Template**.
 
 - Aset visual: potret penasihat/selir, latar kota, ikon sumber daya, animasi.
 - Item & inventaris, toko event, papan peringkat online, banner rekrut berganti (rate-up).
-- Backend + akun: aliansi online sungguhan (anggota pemain nyata, chat), PvP, leaderboard.
+- Backend + akun: aliansi & arena online sungguhan (pemain nyata, chat, matchmaking), leaderboard global.
 - IAP (Google Play Billing) & iklan berhadiah (AdMob) lewat plugin Godot.

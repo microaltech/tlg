@@ -698,6 +698,40 @@ ICONS["jasa"] = icon_doc(
     'fill="#f6d2a8" stroke="#6b3d1a" stroke-width="2.5" stroke-linejoin="round"/>'
     '<path d="M34 26 Q40 18 48 22" stroke="#fff" stroke-width="3" fill="none" opacity="0.5" stroke-linecap="round"/>')
 
+ICONS["tab_arena"] = icon_doc(
+    '<circle cx="48" cy="50" r="40" fill="#7a2e22" stroke="#e8c070" stroke-width="5"/>'
+    '<path d="M24 76 L66 22 M72 76 L30 22" stroke="#d6dde6" stroke-width="7" stroke-linecap="round"/>'
+    '<path d="M26 66 L36 76 M70 66 L60 76" stroke="#a8742c" stroke-width="8" stroke-linecap="round"/>'
+    '<path d="M18 30 Q8 50 20 72 M78 30 Q88 50 76 72" stroke="#6fbf5a" stroke-width="5" fill="none"/>')
+
+ICONS["arena_coin"] = icon_doc(
+    '<circle cx="48" cy="48" r="38" fill="#9b59b6" stroke="#4a235a" stroke-width="4"/>'
+    '<circle cx="48" cy="48" r="29" fill="none" stroke="#d2b4de" stroke-width="3"/>'
+    '<path d="M32 64 L60 30 M64 64 L36 30" stroke="#f4ecf7" stroke-width="5" stroke-linecap="round"/>'
+    '<path d="M34 24 Q42 18 50 20" stroke="#fff" stroke-width="3" fill="none" opacity="0.5" stroke-linecap="round"/>')
+
+ICONS["ticket"] = icon_doc(
+    '<path d="M10 28 L86 28 L86 40 Q78 48 86 56 L86 68 L10 68 L10 56 Q18 48 10 40 Z" fill="#e8c070" '
+    'stroke="#7a4b1f" stroke-width="3.5"/>'
+    '<path d="M30 30 L30 66" stroke="#7a4b1f" stroke-width="2.5" stroke-dasharray="4 4"/>'
+    '<path d="M44 58 L70 38 M70 58 L44 38" stroke="#a8241e" stroke-width="5" stroke-linecap="round"/>')
+
+
+def league_badge(color, stars):
+    star = '<path d="M0 -7 L2 -2 L7 -2 L3 1 L4.5 6 L0 3 L-4.5 6 L-3 1 L-7 -2 L-2 -2 Z" fill="#fff8d0" stroke="#7a4b1f" stroke-width="1"/>'
+    row = "".join('<g transform="translate(%.1f 82)">%s</g>' % (48 + (i - (stars - 1) / 2) * 15, star)
+                  for i in range(stars))
+    return icon_doc(
+        '<path d="M48 4 L82 16 L80 50 Q76 72 48 86 Q20 72 16 50 L14 16 Z" fill="%s" stroke="#3a2418" stroke-width="4"/>'
+        '<path d="M48 12 L74 21 L72 49 Q69 66 48 77 Q27 66 24 49 L22 21 Z" fill="%s"/>'
+        '<path d="M34 54 L62 24 M62 54 L34 24" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity="0.9"/>'
+        '<circle cx="48" cy="39" r="7" fill="%s" stroke="#fff" stroke-width="2"/>' % (
+            color, shade(color, 0.25), shade(color, -0.3)) + row)
+
+
+for i, (c, n) in enumerate([("#b07a45", 1), ("#9aa4b0", 2), ("#e0a830", 3), ("#4fb3d9", 4), ("#c0392b", 5)]):
+    ICONS["league_%d" % i] = league_badge(c, n)
+
 ICONS["chest"] = chest(False)
 ICONS["chest_open"] = chest(True)
 
@@ -968,6 +1002,32 @@ def bg_alliance():
     return svg_doc(W, H, b, 1080, 540, defs)
 
 
+def bg_arena():
+    """Alun-alun arena: gelanggang pasir, tribun penonton, dan umbul-umbul."""
+    W, H = 720, 360
+    defs = ('<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">'
+            '<stop offset="0" stop-color="#4a7fb8"/><stop offset="1" stop-color="#f4d7a0"/></linearGradient>')
+    b = '<rect width="%d" height="%d" fill="url(#sky)"/>' % (W, H)
+    # Tribun bertingkat
+    for k, (y, c) in enumerate([(120, "#7a4b2a"), (160, "#8e5a34"), (200, "#a06a3c")]):
+        b += '<rect x="0" y="%d" width="%d" height="44" fill="%s"/>' % (y, W, c)
+        for x in range(8, W, 18):
+            hue = ["#c0392b", "#2e86c1", "#27ae60", "#f1c40f", "#8e44ad", "#e67e22"][(x // 18 + k * 2) % 6]
+            b += '<circle cx="%d" cy="%d" r="7" fill="%s"/><circle cx="%d" cy="%d" r="5" fill="#e0b48a"/>' % (
+                x, y + 26, hue, x, y + 14)
+    # Atap tribun dan umbul-umbul
+    b += '<path d="M0 120 L720 120 L720 100 L0 100 Z" fill="#6b2e1e"/>'
+    for x in range(30, 720, 90):
+        b += '<path d="M%d 100 L%d 20" stroke="#5e3a12" stroke-width="4"/>' % (x, x)
+        b += '<path d="M%d 22 Q%d 30 %d 22 L%d 70 Q%d 62 %d 70 Z" fill="%s"/>' % (
+            x + 2, x + 14, x + 26, x + 26, x + 14, x + 2, ["#c0392b", "#f1c40f", "#2e86c1"][(x // 90) % 3])
+    # Gelanggang
+    b += '<ellipse cx="360" cy="330" rx="420" ry="100" fill="#d9b77a" stroke="%s" stroke-width="6"/>' % GOLD
+    b += '<ellipse cx="360" cy="330" rx="260" ry="56" fill="none" stroke="#b8955a" stroke-width="4"/>'
+    b += '<path d="M330 330 L390 330 M360 310 L360 350" stroke="#b8955a" stroke-width="4"/>'
+    return svg_doc(W, H, b, 1080, 540, defs)
+
+
 def pattern_kawung():
     """Tile motif batik kawung untuk latar aplikasi."""
     s = 96
@@ -992,6 +1052,7 @@ def main():
     write("bg/palace.svg", bg_palace())
     write("bg/gacha.svg", bg_gacha())
     write("bg/alliance.svg", bg_alliance())
+    write("bg/arena.svg", bg_arena())
     write("bg/kawung.svg", pattern_kawung())
     print("Aset ditulis ke", os.path.normpath(ROOT))
 

@@ -1,6 +1,6 @@
 extends Control
 ## UI utama, dibangun lewat kode supaya mudah dibaca dan diubah.
-## Header (avatar + sumber daya), 6 halaman, navigasi bawah, toast & efek.
+## Header (avatar + sumber daya), 7 halaman, navigasi bawah, toast & efek.
 
 const Data := preload("res://scripts/core/game_data.gd")
 const Art := preload("res://scripts/ui/art.gd")
@@ -13,6 +13,7 @@ const PAGES := [
 	{"key": "campaign", "title": "Kampanye", "icon": "tab_campaign", "bg": "campaign"},
 	{"key": "palace", "title": "Istana", "icon": "tab_palace", "bg": "palace"},
 	{"key": "alliance", "title": "Aliansi", "icon": "tab_alliance", "bg": "alliance"},
+	{"key": "arena", "title": "Arena", "icon": "tab_arena", "bg": "arena"},
 ]
 
 var model
@@ -51,6 +52,8 @@ var _city_nav_badge: Dictionary
 var _alliance_nav_badge: Dictionary
 var _alliance_tab := "markas"
 var _pending_boss_hit := 0
+var _arena_tab := "lawan"
+var _arena_nav_badge: Dictionary
 var _mission_box: VBoxContainer
 var _mission_reset_label: Label
 var _gacha_banner_done := false
@@ -251,6 +254,8 @@ func _build_nav() -> Control:
 			_city_nav_badge = _badge(b, Vector2(70, 4))
 		elif key == "alliance":
 			_alliance_nav_badge = _badge(b, Vector2(70, 4))
+		elif key == "arena":
+			_arena_nav_badge = _badge(b, Vector2(70, 4))
 		_nav_buttons[key] = b
 	var line := ColorRect.new()
 	line.color = UI.GOLD_DARK
@@ -459,6 +464,7 @@ func _rebuild() -> void:
 	_build_campaign(_pages["campaign"])
 	_build_palace(_pages["palace"]["content"])
 	_build_alliance(_pages["alliance"]["content"])
+	_build_arena(_pages["arena"]["content"])
 	if is_instance_valid(_mission_overlay):
 		_fill_missions()
 	if is_instance_valid(_login_overlay):
@@ -488,6 +494,9 @@ func _tick() -> void:
 	var boss_ready: bool = not model.alliance.is_empty() and model.boss_info(now)["can_claim"]
 	_alliance_nav_badge["badge"].visible = boss_ready
 	_alliance_nav_badge["badge_label"].text = "1"
+	var season_ready: bool = not model.arena.is_empty() and not model.arena["season_reward"].is_empty()
+	_arena_nav_badge["badge"].visible = season_ready
+	_arena_nav_badge["badge_label"].text = "1"
 	var event_ready: int = model.event_claimable_count()
 	_city_nav_badge["badge"].visible = event_ready > 0
 	_city_nav_badge["badge_label"].text = str(event_ready)
@@ -1137,6 +1146,281 @@ func _fill_event() -> void:
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 
+## Baris tombol sub-tab; tombol aktif berwarna emas. on_select(key) dipanggil lalu UI dibangun ulang.
+func _segment_tabs(box: Node, items: Array, current: String, on_select: Callable) -> void:
+	var tabs := HBoxContainer.new()
+	tabs.add_theme_constant_override("separation", 6)
+	box.add_child(tabs)
+	for t in items:
+		var key: String = t[0]
+		var b := _button(tabs, t[1], func():
+			on_select.call(key)
+			_queue_rebuild()
+			return null, true, "", "GoldButton" if current == key else "")
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.custom_minimum_size.y = 60
+		b.add_theme_font_size_override("font_size", 22)
+
+
+# --- Arena PvP -------------------------------------------------------------
+
+static func _league_index(league: Dictionary) -> int:
+	return Data.ARENA_LEAGUES.find(league)
+
+
+func _build_arena(box: VBoxContainer) -> void:
+	_clear(box)
+	var now: float = Game.now()
+	if not model.arena_unlocked():
+		var card := _card(box)
+		card.add_child(_tex(Art.icon("lock"), 92))
+		var col := _col(card)
+		_label(col, "Arena Terkunci", "CardTitle")
+		_label(col, "Menangkan Tahap %d di Kampanye untuk membuka Arena." % Data.ARENA_UNLOCK_STAGE, "CardLabel")
+		_bar(col, model.stage, Data.ARENA_UNLOCK_STAGE)
+		return
+	if model.arena.is_empty():
+		model.ensure_arena(now)
+	var arena: Dictionary = model.arena
+	var league: Dictionary = model.arena_league()
+	var li := _league_index(league)
+
+	var head := _card(box)
+	head.add_child(_tex(Art.icon("league_%d" % li), 110))
+	var col := _col(head)
+	var league_label := _label(col, "Liga " + league["name"], "CardTitle")
+	league_label.add_theme_color_override("font_color", Color(league["color"]).darkened(0.25))
+	_label(col, "Poin arena %d · terbaik %d" % [arena["rating"], arena["best"]], "CardLabel")
+	if li + 1 < Data.ARENA_LEAGUES.size():
+		var nxt: Dictionary = Data.ARENA_LEAGUES[li + 1]
+		var lo := int(league["min"])
+		_bar(col, int(arena["rating"]) - lo, int(nxt["min"]) - lo, Color(nxt["color"]))
+		_label(col, "%d poin lagi ke liga %s" % [int(nxt["min"]) - int(arena["rating"]), nxt["name"]], "SmallLabel") \
+			.add_theme_color_override("font_color", UI.INK)
+	_label(col, "Menang %d · Kalah %d" % [arena["wins"], arena["losses"]], "CardLabel")
+	_icon_row(col, "arena_coin", "Koin arena: %s" % _num(arena["coins"]))
+
+	var season := _inner_box(box)
+	var timer := _label(season, "", "CardLabel")
+	timer.add_theme_font_override("font", UI.font_bold)
+	_event_timer_labels.append(timer)
+	_label(season, "Hadiah akhir musim liga %s: %s" % [league["name"], _reward_text(league["reward"])], "CardLabel")
+	if not arena["season_reward"].is_empty():
+		var sr: Dictionary = arena["season_reward"]
+		_button(season, "Klaim hadiah musim lalu (%s)" % sr["league"], func(): return model.claim_arena_season(),
+			true, "chest", "GreenButton", false, "reveal_ssr")
+
+	_segment_tabs(box, [["lawan", "Lawan"], ["peringkat", "Peringkat"], ["toko", "Toko"], ["catatan", "Catatan"]],
+		_arena_tab, func(key): _arena_tab = key)
+	match _arena_tab:
+		"peringkat":
+			_build_arena_board(box)
+		"toko":
+			_build_arena_shop(box, now)
+		"catatan":
+			var log := _inner_box(box)
+			_label(log, "Catatan Pertarungan", "CardTitle")
+			for line in model.arena["log"].slice(0, 15):
+				_label(log, "•  " + line, "SmallLabel").add_theme_color_override("font_color", UI.INK)
+		_:
+			_build_arena_opponents(box, now)
+
+
+func _build_arena_opponents(box: VBoxContainer, now: float) -> void:
+	var tickets: int = model.arena_tickets_left(now)
+	var bar := HBoxContainer.new()
+	bar.add_theme_constant_override("separation", 8)
+	box.add_child(bar)
+	var t := PanelContainer.new()
+	t.theme_type_variation = "Chip"
+	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar.add_child(t)
+	var th := HBoxContainer.new()
+	t.add_child(th)
+	th.add_child(_tex(Art.icon("ticket"), 40))
+	_label(th, "Tiket %d" % tickets).add_theme_font_override("font", UI.font_bold)
+	var buy := _button(bar, "+1  %d" % Data.ARENA_TICKET_COST, func(): return model.buy_arena_ticket(Game.now()),
+		model.gold >= Data.ARENA_TICKET_COST and int(model.arena["tickets_bought"]) < Data.ARENA_TICKET_BUY_MAX,
+		"gold", "", false, "coin")
+	buy.custom_minimum_size = Vector2(150, 60)
+	var refresh := _button(bar, "Segarkan (%d)" % model.arena_refresh_left(), func(): return model.refresh_arena(Game.now()),
+		model.arena_refresh_left() > 0)
+	refresh.custom_minimum_size = Vector2(190, 60)
+
+	var my_power: int = model.power()
+	for i in model.arena["opponents"].size():
+		var opp: Dictionary = model.arena["opponents"][i]
+		var card := _card(box)
+		card.add_child(_tex(Art.portrait(opp["avatar"]), 120))
+		var col := _col(card)
+		_label(col, opp["name"], "CardTitle")
+		var ol: Dictionary = Data.league_of(int(opp["rating"]))
+		var row := HBoxContainer.new()
+		col.add_child(row)
+		row.add_child(_tex(Art.icon("league_%d" % _league_index(ol)), 34))
+		_label(row, "%s · %d poin" % [ol["name"], opp["rating"]], "CardLabel")
+		var chance: float = model.arena_win_chance(int(opp["power"]))
+		var color := UI.GREEN.darkened(0.25) if chance >= 0.6 else (Color("b5651d") if chance >= 0.35 else UI.RED)
+		_icon_row(col, "power", "Kekuatan %s (Anda %s)" % [_num(opp["power"]), _num(my_power)], color)
+		var stakes: Array = model.arena_stakes(int(opp["rating"]))
+		_label(col, "Peluang menang %d%% · menang +%d, kalah -%d" % [roundi(chance * 100), stakes[0], stakes[1]],
+			"SmallLabel").add_theme_color_override("font_color", UI.INK)
+		var idx: int = i
+		_button(col, "Tantang", func():
+			var r: Dictionary = model.arena_fight(idx, Game.now())
+			if r["ok"]:
+				_show_arena_battle(r)
+				return null
+			return r, tickets > 0, "ticket", "GoldButton", false, "attack").add_theme_font_size_override("font_size", 26)
+
+
+func _build_arena_board(box: VBoxContainer) -> void:
+	var board: Dictionary = model.arena_leaderboard()
+	_label(box, "Peringkat Anda: #%d dari %d" % [board["rank"], board["total"]], "TitleLabel") \
+		.add_theme_font_size_override("font_size", 28)
+	var rows: Array = board["rows"]
+	if board["rank"] > rows.size():
+		rows = rows + [board["me"]]
+	for i in rows.size():
+		var e: Dictionary = rows[i]
+		var rank: int = i + 1 if i < 10 else board["rank"]
+		var inner := _inner_box(box)
+		if e["me"]:
+			inner.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		inner.add_child(row)
+		var r := _label(row, "#%d" % rank, "CardTitle")
+		r.custom_minimum_size.x = 64
+		row.add_child(_tex(Art.portrait(e["avatar"]), 56))
+		var col := _col(row)
+		_label(col, e["name"], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		var l: Dictionary = Data.league_of(int(e["rating"]))
+		_label(col, "%s · %d poin" % [l["name"], e["rating"]], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+		row.add_child(_tex(Art.icon("league_%d" % _league_index(l)), 44))
+
+
+func _build_arena_shop(box: VBoxContainer, now: float) -> void:
+	for item in Data.ARENA_SHOP:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		_inner_box(box).add_child(row)
+		row.add_child(_tex(Art.icon(item["icon"]), 64))
+		var col := _col(row)
+		_label(col, item["name"], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		var id: String = item["id"]
+		var left: int = model.arena_shop_left(id, now)
+		_label(col, "%s · sisa %d/%d hari ini" % [_reward_text(item["reward"]), left, item["limit"]], "SmallLabel") \
+			.add_theme_color_override("font_color", UI.INK)
+		var ok: bool = left > 0 and int(model.arena["coins"]) >= int(item["cost"])
+		var b := _button(row, "%d" % item["cost"], func(): return model.arena_shop_buy(id, Game.now()), ok,
+			"arena_coin", "GreenButton" if ok else "", false, "coin")
+		b.custom_minimum_size = Vector2(130, 60)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+
+## Layar pertarungan arena: 3 ronde dengan bar HP, lalu hasil.
+func _show_arena_battle(r: Dictionary) -> void:
+	var opp: Dictionary = r["opponent"]
+	var overlay := Control.new()
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(overlay)
+	move_child(overlay, _toast.get_index())
+	var bg := TextureRect.new()
+	bg.texture = Art.bg("arena")
+	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(bg)
+	var dim := ColorRect.new()
+	dim.color = Color(0.05, 0.02, 0.02, 0.55)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(dim)
+
+	var v := VBoxContainer.new()
+	v.set_anchors_preset(Control.PRESET_FULL_RECT)
+	v.alignment = BoxContainer.ALIGNMENT_CENTER
+	v.add_theme_constant_override("separation", 18)
+	overlay.add_child(v)
+	var round_label := _label(v, "Bersiap!", "TitleLabel")
+	round_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+	var fighters := HBoxContainer.new()
+	fighters.alignment = BoxContainer.ALIGNMENT_CENTER
+	fighters.add_theme_constant_override("separation", 40)
+	v.add_child(fighters)
+	var sides := []
+	for who in [["Anda", "lord", model.power()], [opp["name"], opp["avatar"], opp["power"]]]:
+		var col := VBoxContainer.new()
+		col.add_theme_constant_override("separation", 6)
+		fighters.add_child(col)
+		var holder := Control.new()
+		holder.custom_minimum_size = Vector2(250, 250)
+		col.add_child(holder)
+		var pic := _tex(Art.portrait(who[1]), 250)
+		holder.add_child(pic)
+		var n := _label(col, who[0], "TitleLabel")
+		n.add_theme_font_size_override("font_size", 26)
+		n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		n.custom_minimum_size.x = 250
+		var hp := _bar(col, 100, 100, Color("4caf50"))
+		hp.custom_minimum_size = Vector2(250, 22)
+		var p := _label(col, "Kekuatan %s" % _num(who[2]), "SmallLabel")
+		p.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		sides.append({"pic": pic, "hp": hp})
+
+	var result_label := _label(v, "", "BigLabel")
+	result_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	result_label.modulate.a = 0.0
+	var detail := _label(v, "", "CardLabel")
+	detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	detail.add_theme_color_override("font_color", UI.PARCHMENT)
+	var done := Button.new()
+	done.text = "Lanjut"
+	done.theme_type_variation = "GoldButton"
+	done.custom_minimum_size = Vector2(300, 84)
+	done.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	done.modulate.a = 0.0
+	done.disabled = true
+	done.pressed.connect(func():
+		Audio.play("click")
+		overlay.queue_free())
+	v.add_child(done)
+
+	var rounds: Array = r["rounds"]
+	var tw := create_tween()
+	tw.tween_interval(0.4)
+	for k in range(1, rounds.size()):
+		var state: Dictionary = rounds[k]
+		tw.tween_callback(func():
+			round_label.text = "Ronde %d" % k
+			Audio.play("attack"))
+		for s_i in 2:
+			var side: Dictionary = sides[s_i]
+			var pic: TextureRect = side["pic"]
+			var target: int = state["me"] if s_i == 0 else state["them"]
+			tw.tween_callback(func(): pic.modulate = Color(3, 2.5, 2.5))
+			tw.tween_property(pic, "position:x", 10.0 if s_i == 0 else -10.0, 0.05)
+			tw.tween_property(pic, "position:x", 0.0, 0.05)
+			tw.tween_callback(func(): pic.modulate = Color.WHITE)
+			tw.tween_property(side["hp"], "value", float(target), 0.25)
+		tw.tween_interval(0.35)
+	tw.tween_callback(func():
+		var win: bool = r["win"]
+		round_label.text = "Selesai"
+		result_label.text = "MENANG!" if win else "KALAH..."
+		result_label.add_theme_color_override("font_color", UI.GOLD if win else Color("e06050"))
+		detail.text = "%+d poin arena · +%d koin arena%s" % [r["delta"], r["coins"],
+			" · +%d perak" % Data.ARENA_WIN["silver"] if win else ""]
+		Audio.play("win" if win else "lose", 0.0)
+		var loser: TextureRect = sides[1 if win else 0]["pic"]
+		loser.modulate = Color(0.45, 0.45, 0.45)
+		done.disabled = false)
+	tw.tween_property(result_label, "modulate:a", 1.0, 0.25)
+	tw.tween_property(done, "modulate:a", 1.0, 0.2)
+
+
 # --- Aliansi ---------------------------------------------------------------
 
 func _build_alliance(box: VBoxContainer) -> void:
@@ -1171,18 +1455,8 @@ func _build_alliance(box: VBoxContainer) -> void:
 	buff.add_theme_color_override("font_color", Color("b5651d"))
 	_icon_row(col, "jasa", "Jasa: %s" % _num(model.alliance["jasa"]))
 
-	var tabs := HBoxContainer.new()
-	tabs.add_theme_constant_override("separation", 6)
-	box.add_child(tabs)
-	for t in [["markas", "Markas"], ["bos", "Bos"], ["toko", "Toko"], ["anggota", "Anggota"]]:
-		var key: String = t[0]
-		var b := _button(tabs, t[1], func():
-			_alliance_tab = key
-			_queue_rebuild()
-			return null, true, "", "GoldButton" if _alliance_tab == key else "")
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.custom_minimum_size.y = 60
-		b.add_theme_font_size_override("font_size", 22)
+	_segment_tabs(box, [["markas", "Markas"], ["bos", "Bos"], ["toko", "Toko"], ["anggota", "Anggota"]],
+		_alliance_tab, func(key): _alliance_tab = key)
 	match _alliance_tab:
 		"bos":
 			_build_alliance_boss(box, now)

@@ -95,6 +95,7 @@ const DAILY_MISSIONS := [
 	{"id": "silver3k", "text": "Kumpulkan 3000 perak dari pajak", "event": "earn_silver", "target": 3000, "gold": 30, "grain": 800},
 	{"id": "donate1", "text": "Sumbang ke aliansi 1 kali", "event": "donate", "target": 1, "gold": 25, "silver": 500, "requires": "alliance"},
 	{"id": "boss2", "text": "Serang bos aliansi 2 kali", "event": "boss", "target": 2, "gold": 30, "soldiers": 800, "requires": "alliance"},
+	{"id": "arena3", "text": "Bertarung di arena 3 kali", "event": "arena", "target": 3, "gold": 30, "silver": 800, "requires": "arena"},
 ]
 ## Peti aktivitas: terbuka saat poin harian mencapai batas.
 const DAILY_CHESTS := [
@@ -122,7 +123,7 @@ const EVENTS := [
 		"bonus_text": "Hasil Kelola Sawah +50%"},
 	{"id": "tournament", "name": "Turnamen Ksatria", "icon": "event_tournament", "bg": "campaign",
 		"desc": "Para ksatria berlomba di medan laga. Menangkan kampanye dan latih penasihat.",
-		"points": {"win": 60, "upgrade": 15, "boss": 20}, "bonus": {"losses": -0.2},
+		"points": {"win": 60, "upgrade": 15, "boss": 20, "arena_win": 40}, "bonus": {"losses": -0.2},
 		"bonus_text": "Prajurit gugur di kampanye -20%"},
 	{"id": "market", "name": "Pasar Malam", "icon": "event_market", "bg": "city",
 		"desc": "Pedagang dari seluruh negeri datang. Tarik pajak dan rekrut prajurit.",
@@ -143,6 +144,7 @@ const EVENT_ACTION_NAMES := {
 	"affair_soldiers": "Rekrut prajurit", "upgrade": "Latih penasihat", "win": "Menang kampanye",
 	"visit": "Kunjungi selir", "train": "Didik anak", "marry": "Nikahkan anak",
 	"recruit": "Rekrut penasihat (per tarikan)", "boss": "Serang bos aliansi", "donate": "Sumbang ke aliansi",
+	"arena_win": "Menang di arena",
 }
 const EVENT_MISSION_POINTS := 50  ## Poin event untuk tiap misi harian yang diklaim.
 const EVENT_TIERS := [
@@ -194,6 +196,34 @@ const NPC_NAMES := ["Rangga", "Sekar", "Bima", "Laras", "Wisnu", "Ayu", "Damar",
 	"Panji", "Wulan", "Seta", "Rukmini", "Tejo", "Asih", "Bayu", "Ratih", "Guntur", "Lestari", "Jati", "Puspa",
 	"Galih", "Ningsih"]
 
+## Arena PvP (lawan disimulasikan secara offline; lihat bagian Arena di game_model.gd).
+const ARENA_UNLOCK_STAGE := 8
+const ARENA_START_RATING := 1000
+const ARENA_TICKETS := 5
+const ARENA_TICKET_COST := 30  ## Emas per tiket tambahan.
+const ARENA_TICKET_BUY_MAX := 5
+const ARENA_REFRESH_FREE := 5
+const ARENA_ELO_K := 32
+const ARENA_WIN := {"coins": 20, "silver": 1500}
+const ARENA_LOSS := {"coins": 5}
+## Liga berdasarkan poin arena; reward = hadiah akhir musim (mingguan).
+const ARENA_LEAGUES := [
+	{"name": "Perunggu", "min": 0, "color": "b07a45", "stars": 1, "reward": {"gold": 50}},
+	{"name": "Perak", "min": 1200, "color": "9aa4b0", "stars": 2, "reward": {"gold": 100, "silver": 5000}},
+	{"name": "Emas", "min": 1500, "color": "e0a830", "stars": 3, "reward": {"gold": 200, "silver": 10000}},
+	{"name": "Berlian", "min": 1800, "color": "4fb3d9", "stars": 4, "reward": {"gold": 350, "soldiers": 10000}},
+	{"name": "Legenda", "min": 2200, "color": "c0392b", "stars": 5, "reward": {"gold": 600, "soldiers": 20000}},
+]
+const ARENA_SHOP := [
+	{"id": "a_gold", "name": "Kantong Emas", "icon": "gold", "reward": {"gold": 40}, "cost": 100, "limit": 2},
+	{"id": "a_silver", "name": "Peti Perak", "icon": "silver", "reward": {"silver": 15000}, "cost": 60, "limit": 3},
+	{"id": "a_grain", "name": "Lumbung Pangan", "icon": "grain", "reward": {"grain": 15000}, "cost": 60, "limit": 3},
+	{"id": "a_soldiers", "name": "Pasukan Bayaran", "icon": "soldiers", "reward": {"soldiers": 8000}, "cost": 80, "limit": 3},
+]
+## Potret yang dipakai sebagai avatar lawan arena.
+const ARENA_AVATARS := ["arya", "sekar", "bayu", "ratna", "gajah", "lintang", "danu", "wening", "bagas",
+	"enemy_bandit", "enemy_rebel", "enemy_pirate"]
+
 const REWARD_KEYS := ["gold", "silver", "grain", "soldiers"]
 const REWARD_NAMES := {"gold": "emas", "silver": "perak", "grain": "pangan", "soldiers": "prajurit", "jasa": "jasa"}
 
@@ -224,10 +254,18 @@ static func alliance_def(id: String) -> Dictionary:
 
 
 static func shop_def(id: String) -> Dictionary:
-	for item in ALLIANCE_SHOP:
+	for item in ALLIANCE_SHOP + ARENA_SHOP:
 		if item["id"] == id:
 			return item
 	return {}
+
+
+static func league_of(rating: int) -> Dictionary:
+	var out: Dictionary = ARENA_LEAGUES[0]
+	for l in ARENA_LEAGUES:
+		if rating >= int(l["min"]):
+			out = l
+	return out
 
 
 static func beauty_def(id: String) -> Dictionary:

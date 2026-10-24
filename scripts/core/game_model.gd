@@ -49,6 +49,8 @@ var login := {}
 var weekly := {}
 ## Aliansi (kosong bila belum bergabung). Lihat bagian "Aliansi" di bawah.
 var alliance := {}
+## Arena PvP (kosong sampai terbuka). Lihat bagian "Arena" di bawah.
+var arena := {}
 ## Waktu keluar aliansi terakhir (untuk jeda sebelum bergabung lagi).
 var alliance_left_t := -1.0e12
 ## Selisih zona waktu (detik) supaya misi direset pada tengah malam lokal.
@@ -57,6 +59,7 @@ var rng := RandomNumberGenerator.new()
 
 
 func new_game(now: float) -> void:
+	_last_now = now
 	silver = 500
 	grain = 500
 	soldiers = 1000
@@ -78,6 +81,7 @@ func new_game(now: float) -> void:
 	weekly = {}
 	alliance = {}
 	alliance_left_t = -1.0e12
+	arena = {}
 	_npc_cache = {}
 	_unlock_content()
 	ensure_daily(now)
@@ -117,12 +121,18 @@ func promote() -> Dictionary:
 
 # --- Charge (energi yang terisi seiring waktu) ----------------------------
 
+## Waktu sinkronisasi terakhir, untuk aksi yang tidak menerima `now`.
+var _last_now := 0.0
+
+
 func sync(now: float) -> void:
+	_last_now = now
 	for key in CHARGE_KEYS:
 		_sync_charge(key, now)
 	var daily_reset := ensure_daily(now)
 	var weekly_reset := ensure_weekly(now)
-	if _alliance_rollover(now) or weekly_reset or daily_reset:
+	var alliance_changed := _alliance_rollover(now)
+	if ensure_arena(now) or alliance_changed or weekly_reset or daily_reset:
 		changed.emit()
 
 
@@ -271,6 +281,7 @@ func fight_stage() -> Dictionary:
 	gold += int(info["reward_gold"])
 	stage += 1
 	_track("win")
+	ensure_arena(_last_now)
 	var unlocked := _unlock_content()
 	changed.emit()
 	var msg := "Menang di %s! -%d prajurit, +%d perak, +%d prestise, +%d emas." % [
@@ -398,6 +409,8 @@ func ensure_daily(now: float) -> bool:
 		if m.get("requires", "") == "children" and children.is_empty():
 			continue
 		if m.get("requires", "") == "alliance" and alliance.is_empty():
+			continue
+		if m.get("requires", "") == "arena" and not arena_unlocked():
 			continue
 		pool.append(m["id"])
 	for i in range(pool.size() - 1, 0, -1):
@@ -755,12 +768,22 @@ func _add_jasa(amount: int) -> void:
 	alliance["jasa_total"] = int(alliance["jasa_total"]) + amount
 
 
-func shop_left(id: String, now: float) -> int:
-	var shop: Dictionary = alliance["shop"]
-	var limit := int(Data.shop_def(id)["limit"])
-	if int(shop["day"]) != day_index(now):
+## Sisa pembelian hari ini untuk barang berbatas harian (state: {"day", "bought": {id: n}}).
+func _daily_left(state: Dictionary, id: String, limit: int, now: float) -> int:
+	if int(state["day"]) != day_index(now):
 		return limit
-	return limit - int(shop["bought"].get(id, 0))
+	return limit - int(state["bought"].get(id, 0))
+
+
+func _daily_record(state: Dictionary, id: String, now: float) -> void:
+	if int(state["day"]) != day_index(now):
+		state["day"] = day_index(now)
+		state["bought"] = {}
+	state["bought"][id] = int(state["bought"].get(id, 0)) + 1
+
+
+func shop_left(id: String, now: float) -> int:
+	return _daily_left(alliance["shop"], id, int(Data.shop_def(id)["limit"]), now)
 
 
 func shop_buy(id: String, now: float) -> Dictionary:
@@ -775,11 +798,7 @@ func shop_buy(id: String, now: float) -> Dictionary:
 		return _fail("Batas pembelian hari ini sudah habis.")
 	if int(alliance["jasa"]) < int(item["cost"]):
 		return _fail("Jasa tidak cukup (butuh %d)." % item["cost"])
-	var shop: Dictionary = alliance["shop"]
-	if int(shop["day"]) != day_index(now):
-		shop["day"] = day_index(now)
-		shop["bought"] = {}
-	shop["bought"][id] = int(shop["bought"].get(id, 0)) + 1
+	_daily_record(alliance["shop"], id, now)
 	alliance["jasa"] = int(alliance["jasa"]) - int(item["cost"])
 	var text := _give_rewards(item["reward"])
 	changed.emit()
@@ -879,6 +898,261 @@ func claim_boss(now: float) -> Dictionary:
 	_add_jasa(int(Data.BOSS_REWARD["jasa"]))
 	changed.emit()
 	return _ok("Hadiah kemenangan: +%d emas, +%d jasa." % [Data.BOSS_REWARD["gold"], Data.BOSS_REWARD["jasa"]])
+
+
+# --- Arena PvP -------------------------------------------------------------
+# Belum ada server, jadi lawan adalah "pemain" NPC yang dibuat di sekitar poin
+# dan kekuatan pemain. Untuk PvP online, ganti _gen_opponent, _arena_defense,
+# dan arena_leaderboard dengan data dari server.
+
+func arena_unlocked() -> bool:
+	return stage >= Data.ARENA_UNLOCK_STAGE
+
+
+func arena_league() -> Dictionary:
+	return Data.league_of(int(arena["rating"]))
+
+
+## Siapkan/reset data arena: harian (tiket, segarkan, toko, pertahanan) dan
+## mingguan (musim). Mengembalikan true bila ada perubahan.
+func ensure_arena(now: float) -> bool:
+	if not arena_unlocked():
+		return false
+	var today := day_index(now)
+	var week := week_index(now)
+	if arena.is_empty():
+		arena = {
+			"rating": Data.ARENA_START_RATING, "best": Data.ARENA_START_RATING, "coins": 0, "wins": 0,
+			"losses": 0, "week": week, "season_fights": 0, "season_reward": {}, "last_day": today,
+			"day": today, "tickets_used": 0, "tickets_bought": 0, "refresh_used": 0,
+			"shop": {"day": today, "bought": {}}, "opponents": [], "log": [],
+		}
+		_refresh_opponents()
+		_arena_log("Selamat datang di Arena! Kalahkan lawan untuk naik liga.")
+		return true
+	var changed_any := false
+	if int(arena["week"]) != week:
+		# Musim berakhir: simpan hadiah liga (bila ikut bertarung) dan reset sebagian poin.
+		var league := arena_league()
+		if int(arena["season_fights"]) > 0:
+			arena["season_reward"] = {"league": league["name"], "reward": league["reward"]}
+		var r := int(arena["rating"])
+		if r > Data.ARENA_START_RATING:
+			arena["rating"] = Data.ARENA_START_RATING + (r - Data.ARENA_START_RATING) / 2
+		arena["week"] = week
+		arena["season_fights"] = 0
+		_arena_log("Musim baru dimulai! Liga musim lalu: %s." % league["name"])
+		changed_any = true
+	if int(arena["day"]) != today:
+		arena["day"] = today
+		arena["tickets_used"] = 0
+		arena["tickets_bought"] = 0
+		arena["refresh_used"] = 0
+		changed_any = true
+	if int(arena["last_day"]) < today:
+		_arena_defense(mini(today - int(arena["last_day"]), 3))
+		arena["last_day"] = today
+		changed_any = true
+	return changed_any
+
+
+func _arena_log(text: String) -> void:
+	var log: Array = arena["log"]
+	log.push_front(text)
+	if log.size() > 20:
+		log.resize(20)
+
+
+func _npc_name(r: RandomNumberGenerator) -> String:
+	return "%s %s" % [Data.NPC_TITLES[r.randi_range(0, Data.NPC_TITLES.size() - 1)],
+		Data.NPC_NAMES[r.randi_range(0, Data.NPC_NAMES.size() - 1)]]
+
+
+func _gen_opponent(rating_offset: int) -> Dictionary:
+	var mine := int(arena["rating"])
+	var rating := maxi(0, mine + rating_offset)
+	var factor := rng.randf_range(0.8, 1.2) * (1.0 + (rating - mine) / 800.0)
+	return {
+		"name": _npc_name(rng),
+		"avatar": Data.ARENA_AVATARS[rng.randi_range(0, Data.ARENA_AVATARS.size() - 1)],
+		"rating": rating,
+		"power": maxi(10, int(power() * factor)),
+	}
+
+
+func _refresh_opponents() -> void:
+	arena["opponents"] = [
+		_gen_opponent(rng.randi_range(-150, -30)),
+		_gen_opponent(rng.randi_range(-40, 60)),
+		_gen_opponent(rng.randi_range(50, 200)),
+	]
+
+
+## Peluang menang berdasarkan perbandingan kekuatan (pangkat 3 agar selisih terasa).
+func arena_win_chance(opp_power: int) -> float:
+	var a := pow(float(maxi(1, power())), 3.0)
+	var b := pow(float(maxi(1, opp_power)), 3.0)
+	return a / (a + b)
+
+
+func _elo_expected(opp_rating: int) -> float:
+	return 1.0 / (1.0 + pow(10.0, (opp_rating - int(arena["rating"])) / 400.0))
+
+
+## Poin yang didapat bila menang / hilang bila kalah melawan lawan ini.
+func arena_stakes(opp_rating: int) -> Array:
+	var e := _elo_expected(opp_rating)
+	return [maxi(5, roundi(Data.ARENA_ELO_K * (1.0 - e))), maxi(5, roundi(Data.ARENA_ELO_K * e))]
+
+
+func arena_tickets_left(now: float) -> int:
+	if int(arena["day"]) != day_index(now):
+		return Data.ARENA_TICKETS
+	return Data.ARENA_TICKETS + int(arena["tickets_bought"]) - int(arena["tickets_used"])
+
+
+func buy_arena_ticket(now: float) -> Dictionary:
+	ensure_arena(now)
+	if int(arena["tickets_bought"]) >= Data.ARENA_TICKET_BUY_MAX:
+		return _fail("Batas pembelian tiket hari ini sudah habis.")
+	if gold < Data.ARENA_TICKET_COST:
+		return _fail("Emas tidak cukup (butuh %d)." % Data.ARENA_TICKET_COST)
+	gold -= Data.ARENA_TICKET_COST
+	arena["tickets_bought"] = int(arena["tickets_bought"]) + 1
+	changed.emit()
+	return _ok("Tiket arena +1.")
+
+
+func arena_refresh_left() -> int:
+	return Data.ARENA_REFRESH_FREE - int(arena["refresh_used"])
+
+
+func refresh_arena(now: float) -> Dictionary:
+	ensure_arena(now)
+	if arena_refresh_left() <= 0:
+		return _fail("Batas menyegarkan lawan hari ini sudah habis.")
+	arena["refresh_used"] = int(arena["refresh_used"]) + 1
+	_refresh_opponents()
+	changed.emit()
+	return _ok("Daftar lawan diperbarui.")
+
+
+func arena_fight(index: int, now: float) -> Dictionary:
+	if not arena_unlocked():
+		return _fail("Menangkan Tahap %d untuk membuka Arena." % Data.ARENA_UNLOCK_STAGE)
+	ensure_arena(now)
+	if index < 0 or index >= arena["opponents"].size():
+		return _fail("Lawan tidak ditemukan.")
+	if arena_tickets_left(now) <= 0:
+		return _fail("Tiket arena habis. Beli tiket atau kembali besok.")
+	var opp: Dictionary = arena["opponents"][index]
+	var stakes := arena_stakes(int(opp["rating"]))
+	var win := rng.randf() < arena_win_chance(int(opp["power"]))
+	arena["tickets_used"] = int(arena["tickets_used"]) + 1
+	arena["season_fights"] = int(arena["season_fights"]) + 1
+	var delta: int = stakes[0] if win else -int(stakes[1])
+	arena["rating"] = maxi(0, int(arena["rating"]) + delta)
+	arena["best"] = maxi(int(arena["best"]), int(arena["rating"]))
+	var reward: Dictionary = Data.ARENA_WIN if win else Data.ARENA_LOSS
+	arena["coins"] = int(arena["coins"]) + int(reward.get("coins", 0))
+	silver += int(reward.get("silver", 0))
+	if win:
+		arena["wins"] = int(arena["wins"]) + 1
+		_track("arena_win")
+	else:
+		arena["losses"] = int(arena["losses"]) + 1
+	_track("arena")
+	_arena_log("Anda %s melawan %s (%+d poin)." % ["menang" if win else "kalah", opp["name"], delta])
+	var rounds := _arena_rounds(win)
+	_refresh_opponents()
+	changed.emit()
+	var msg := "%s melawan %s! %+d poin arena, +%d koin arena" % [
+		"Menang" if win else "Kalah", opp["name"], delta, reward.get("coins", 0)]
+	if win:
+		msg += ", +%d perak" % reward["silver"]
+	var result := _ok(msg + ".")
+	result.merge({"win": win, "delta": delta, "opponent": opp, "rounds": rounds,
+		"coins": int(reward.get("coins", 0))})
+	return result
+
+
+## Persentase HP kedua pihak di awal dan tiap akhir ronde (3 ronde), sesuai hasil.
+func _arena_rounds(win: bool) -> Array:
+	var final_winner := rng.randi_range(15, 70)
+	var me := [100]
+	var them := [100]
+	for k in range(1, 4):
+		var w := 100 - (100 - final_winner) * k / 3.0 + (rng.randf_range(-8, 8) if k < 3 else 0.0)
+		var l := 100 - 100 * k / 3.0 + (rng.randf_range(-10, 10) if k < 3 else 0.0)
+		var wv := clampi(int(w), final_winner, me[-1] if win else them[-1])
+		var lv := clampi(int(l), 0, them[-1] if win else me[-1])
+		if win:
+			me.append(wv)
+			them.append(lv)
+		else:
+			me.append(lv)
+			them.append(wv)
+	var out := []
+	for i in 4:
+		out.append({"me": me[i], "them": them[i]})
+	return out
+
+
+## "Pemain" lain menyerang pemain saat offline: hasilnya mengubah poin sedikit.
+func _arena_defense(days: int) -> void:
+	for d in days:
+		for i in rng.randi_range(0, 3):
+			var opp := _gen_opponent(rng.randi_range(-100, 100))
+			var held := rng.randf() < arena_win_chance(int(opp["power"]))
+			var delta := rng.randi_range(3, 8) * (1 if held else -1)
+			arena["rating"] = maxi(0, int(arena["rating"]) + delta)
+			_arena_log("%s menyerang Anda dan %s (%+d poin)." % [opp["name"], "kalah" if held else "menang", delta])
+
+
+func claim_arena_season() -> Dictionary:
+	if arena.is_empty() or arena["season_reward"].is_empty():
+		return _fail("Tidak ada hadiah musim.")
+	var sr: Dictionary = arena["season_reward"]
+	var text := _give_rewards(sr["reward"])
+	arena["season_reward"] = {}
+	changed.emit()
+	return _ok("Hadiah musim liga %s: %s." % [sr["league"], text])
+
+
+func arena_shop_left(id: String, now: float) -> int:
+	return _daily_left(arena["shop"], id, int(Data.shop_def(id)["limit"]), now)
+
+
+func arena_shop_buy(id: String, now: float) -> Dictionary:
+	ensure_arena(now)
+	var item := Data.shop_def(id)
+	if arena.is_empty() or item.is_empty() or not item["id"].begins_with("a_"):
+		return _fail("Barang tidak ditemukan.")
+	if arena_shop_left(id, now) <= 0:
+		return _fail("Batas pembelian hari ini sudah habis.")
+	if int(arena["coins"]) < int(item["cost"]):
+		return _fail("Koin arena tidak cukup (butuh %d)." % item["cost"])
+	_daily_record(arena["shop"], id, now)
+	arena["coins"] = int(arena["coins"]) - int(item["cost"])
+	var text := _give_rewards(item["reward"])
+	changed.emit()
+	return _ok("Membeli %s: %s." % [item["name"], text])
+
+
+## Papan peringkat musim ini: 40 "pemain" + Anda. {"rows": [...10 teratas], "rank": int, "total": int}
+func arena_leaderboard() -> Dictionary:
+	var r := _seeded(["arena_board", int(arena["week"])])
+	var npcs := []
+	var rating := 2550
+	for i in 40:
+		npcs.append({"name": _npc_name(r), "avatar": Data.ARENA_AVATARS[r.randi_range(0, Data.ARENA_AVATARS.size() - 1)],
+			"rating": rating, "me": false})
+		rating -= r.randi_range(15, 60)
+	var mine := {"name": "Anda", "avatar": "lord", "rating": int(arena["rating"]), "me": true}
+	var all := npcs + [mine]
+	all.sort_custom(func(a, b): return a["rating"] > b["rating"] or (a["rating"] == b["rating"] and a["me"]))
+	var rank := all.find(mine) + 1
+	return {"rows": all.slice(0, 10), "rank": rank, "total": all.size(), "me": mine}
 
 
 # --- Hadiah login harian --------------------------------------------------
@@ -1049,6 +1323,7 @@ func to_dict() -> Dictionary:
 		"weekly": weekly,
 		"alliance": alliance,
 		"alliance_left_t": alliance_left_t,
+		"arena": arena,
 	}
 
 
@@ -1125,9 +1400,39 @@ func from_dict(d: Dictionary, now: float) -> void:
 			"claimed": claimed}
 	alliance_left_t = float(d.get("alliance_left_t", alliance_left_t))
 	alliance = _load_alliance(d.get("alliance", {}))
+	arena = _load_arena(d.get("arena", {}))
 	_unlock_content()
 	sync(now)
 	changed.emit()
+
+
+func _load_arena(src: Dictionary) -> Dictionary:
+	if src.is_empty():
+		return {}
+	var out := {}
+	for k in ["rating", "best", "coins", "wins", "losses", "week", "season_fights", "last_day", "day",
+			"tickets_used", "tickets_bought", "refresh_used"]:
+		out[k] = int(src.get(k, 0))
+	var sr: Dictionary = src.get("season_reward", {})
+	out["season_reward"] = {}
+	if not sr.is_empty():
+		var reward := {}
+		for k in sr.get("reward", {}):
+			reward[str(k)] = int(sr["reward"][k])
+		out["season_reward"] = {"league": str(sr.get("league", "")), "reward": reward}
+	var shop: Dictionary = src.get("shop", {})
+	var bought := {}
+	for k in shop.get("bought", {}):
+		bought[str(k)] = int(shop["bought"][k])
+	out["shop"] = {"day": int(shop.get("day", -1)), "bought": bought}
+	out["opponents"] = []
+	for o in src.get("opponents", []):
+		out["opponents"].append({"name": str(o.get("name", "")), "avatar": str(o.get("avatar", "arya")),
+			"rating": int(o.get("rating", 0)), "power": int(o.get("power", 10))})
+	out["log"] = []
+	for line in src.get("log", []):
+		out["log"].append(str(line))
+	return out
 
 
 func _load_alliance(src: Dictionary) -> Dictionary:

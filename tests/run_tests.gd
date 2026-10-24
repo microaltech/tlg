@@ -19,7 +19,8 @@ func _init() -> void:
 		"test_login_streak", "test_login_break_and_save",
 		"test_event_calendar", "test_event_points", "test_event_bonuses", "test_event_tiers_reset_save",
 		"test_alliance_join_leave", "test_alliance_donate_level", "test_alliance_shop", "test_alliance_boss",
-		"test_alliance_npc_and_save",
+		"test_alliance_npc_and_save", "test_arena_unlock_tickets", "test_arena_fight", "test_arena_season_defense",
+		"test_arena_shop_board_save",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -572,3 +573,102 @@ func test_alliance_npc_and_save() -> void:
 		solo.ensure_daily(1000.0 + d * 86400)
 		for x in solo.daily["missions"]:
 			check(not (x["id"] in ["donate1", "boss2"]), "misi aliansi tidak muncul tanpa aliansi")
+
+
+func _arena_model(seed := 1) -> Model:
+	var m := fresh(seed)
+	m.soldiers = 100000000
+	for i in Data.ARENA_UNLOCK_STAGE:
+		m.fight_stage()
+	m.ensure_arena(1000.0)
+	return m
+
+
+func test_arena_unlock_tickets() -> void:
+	var m := fresh()
+	check(not m.arena_unlocked() and not m.arena_fight(0, 1000.0)["ok"], "arena terkunci sebelum tahap 8")
+	m = _arena_model()
+	check(not m.arena.is_empty() and m.arena["rating"] == Data.ARENA_START_RATING, "arena terbuka dengan 1000 poin")
+	check(m.arena["opponents"].size() == 3, "tiga lawan")
+	var ratings: Array = m.arena["opponents"].map(func(o): return o["rating"])
+	check(ratings[0] < 1000 and ratings[2] > 1000, "lawan lebih lemah dan lebih kuat")
+	for i in Data.ARENA_TICKETS:
+		m.arena_fight(0, 1000.0)
+	check(m.arena_tickets_left(1000.0) == 0 and not m.arena_fight(0, 1000.0)["ok"], "tiket harian habis")
+	m.gold = 1000
+	check(m.buy_arena_ticket(1000.0)["ok"] and m.gold == 1000 - Data.ARENA_TICKET_COST, "beli tiket")
+	check(m.arena_tickets_left(1000.0) == 1, "tiket tambahan")
+	check(m.arena_tickets_left(1000.0 + 86400) == Data.ARENA_TICKETS, "tiket reset besok")
+	for i in Data.ARENA_REFRESH_FREE:
+		m.refresh_arena(1000.0)
+	check(not m.refresh_arena(1000.0)["ok"], "batas segarkan lawan")
+
+
+func test_arena_fight() -> void:
+	var m := _arena_model()
+	var opp: Dictionary = m.arena["opponents"][1]
+	var stakes := m.arena_stakes(int(opp["rating"]))
+	var r := m.arena_fight(1, 1000.0)
+	check(r["ok"] and r["rounds"].size() == 4, "pertarungan 3 ronde")
+	var last: Dictionary = r["rounds"][3]
+	check((last["them"] == 0) == r["win"] and (last["me"] == 0) == (not r["win"]), "HP akhir sesuai hasil")
+	check(r["delta"] == (stakes[0] if r["win"] else -stakes[1]), "perubahan poin sesuai taruhan")
+	check(m.arena["rating"] == 1000 + r["delta"], "poin arena berubah")
+	check(m.arena["coins"] == (20 if r["win"] else 5), "koin arena")
+	var weak := 0
+	var strong := 0
+	for i in 400:
+		weak += 1 if m.rng.randf() < m.arena_win_chance(int(m.power() * 0.6)) else 0
+		strong += 1 if m.rng.randf() < m.arena_win_chance(int(m.power() * 1.6)) else 0
+	check(m.arena_win_chance(int(m.power() * 0.6)) > 0.8 and m.arena_win_chance(int(m.power() * 1.6)) < 0.2,
+		"peluang menang mengikuti selisih kekuatan")
+	check(weak > 280 and strong < 120, "lawan lemah mudah dikalahkan, lawan kuat sulit (%d / %d)" % [weak, strong])
+	check(m.arena_stakes(1400)[0] > m.arena_stakes(800)[0], "menang lawan berpoin tinggi memberi lebih banyak")
+	check(Data.league_of(1250)["name"] == "Perak" and Data.league_of(2300)["name"] == "Legenda", "liga dari poin")
+
+
+func test_arena_season_defense() -> void:
+	var m := _arena_model()
+	m.arena["rating"] = 1600
+	m.arena_fight(0, 1000.0)
+	var rating: int = m.arena["rating"]
+	var log_before: int = m.arena["log"].size()
+	m.sync(1000.0 + 86400 * 2)
+	check(m.arena["log"].size() >= log_before, "catatan pertahanan saat offline")
+	m.arena["rating"] = 1600
+	m.sync(1000.0 + 86400 * 7)
+	# 1600 -> 1300, lalu pertahanan offline (maks. 3 hari x 3 serangan x 8 poin) mengubah sedikit.
+	check(absi(m.arena["rating"] - 1300) <= 72, "poin direset sebagian di musim baru (%d)" % m.arena["rating"])
+	check(not m.arena["season_reward"].is_empty() and m.arena["season_reward"]["league"] == "Emas", "hadiah musim sesuai liga")
+	var gold := m.gold
+	check(m.claim_arena_season()["ok"] and m.gold == gold + 200, "klaim hadiah musim")
+	check(not m.claim_arena_season()["ok"], "hadiah musim sekali")
+	m.sync(1000.0 + 86400 * 14)
+	check(m.arena["season_reward"].is_empty(), "tanpa bertarung tidak ada hadiah musim")
+	check(rating > 0, "poin valid")
+
+
+func test_arena_shop_board_save() -> void:
+	var m := _arena_model()
+	check(not m.arena_shop_buy("a_gold", 1000.0)["ok"], "koin arena tidak cukup")
+	m.arena["coins"] = 500
+	var gold := m.gold
+	check(m.arena_shop_buy("a_gold", 1000.0)["ok"] and m.gold == gold + 40, "beli di toko arena")
+	m.arena_shop_buy("a_gold", 1000.0)
+	check(not m.arena_shop_buy("a_gold", 1000.0)["ok"], "batas toko arena")
+	check(not m.arena_shop_buy("gold30", 1000.0)["ok"], "barang toko aliansi tidak dijual di arena")
+	var board := m.arena_leaderboard()
+	check(board["total"] == 41 and board["rows"].size() == 10, "papan peringkat 41 pemain")
+	m.arena["rating"] = 3000
+	check(m.arena_leaderboard()["rank"] == 1, "poin tertinggi peringkat 1")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(var_to_str(m2.arena) == var_to_str(m.arena), "simpan/muat arena")
+	var seen := false
+	for d in 20:
+		m.daily = {}
+		m.ensure_daily(1000.0 + d * 86400)
+		for x in m.daily["missions"]:
+			if x["id"] == "arena3":
+				seen = true
+	check(seen, "misi arena muncul setelah arena terbuka")

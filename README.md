@@ -106,6 +106,11 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
 - **Istana** — kunjungi selir untuk menaikkan keakraban (menambah Karisma) dan
   peluang mendapat anak. Didik anak dengan pangan, lalu nikahkan untuk bonus
   atribut permanen ke penasihat.
+- **Istana: Anak, Penjara, Perjamuan** — anak dewasa bisa ikut Ujian Negara dan
+  menjadi pejabat (Juru Tulis s.d. Menteri Muda, bonus permanen hasil urusan kota);
+  tahanan dari kampanye diinterogasi (Interogasi/Gertak) sampai mengaku untuk perak,
+  prestise, dan item; Jamuan Sederhana/Pesta Agung harian dan undangan perjamuan
+  dari tuan lain untuk prestise.
 - **Jabatan** — 6 tingkat; menaikkan batas charge, pengali hasil, batas level,
   dan kursi anak.
 - **Toko & pembelian dalam aplikasi** — buka lewat tombol "+" di chip Emas atau

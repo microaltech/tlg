@@ -58,6 +58,12 @@ var iap := {}
 ## VIP: {"points": int, "daily_day": int (hari klaim hadiah harian), "packs": [level paket yang dibeli],
 ##   "gifts": [level yang hadiah naik levelnya sudah diberikan]}
 var vip := {}
+## Pejabat dari anak yang lulus ujian: [{"name", "gender", "talent", "title"}]
+var officials: Array = []
+## Perjamuan: {"day": hari pesta terakhir per jenis {jenis: hari}, "invite_day": int, "attended": [indeks]}
+var banquet := {}
+## Penjara: {"prisoners": [{"name", "avatar", "stage", "hp", "max"}], "day": int, "used": int}
+var prison := {}
 ## Tas: id item -> jumlah.
 var inventory := {}
 ## Hari pertama bermain (umur akun, dipakai untuk mensimulasikan pertumbuhan server).
@@ -111,6 +117,9 @@ func new_game(now: float) -> void:
 	start_day = day_index(now)
 	leaderboard = {"week": week_index(now), "reward": {}}
 	inventory = {"recruit_ticket": 1, "scroll_train": 2}
+	prison = {"prisoners": [], "day": -1, "used": 0}
+	officials = []
+	banquet = {"held": {}, "invite_day": -1, "attended": []}
 	_npc_cache = {}
 	_unlock_content()
 	ensure_daily(now)
@@ -288,7 +297,7 @@ func affair_yield(kind: String) -> int:
 	var a: Dictionary = AFFAIRS[kind]
 	return int((int(a["base"]) + total_attr(a["attr"]) * int(a["per_point"])) * float(rank_info()["mult"])
 		* (1.0 + event_bonus("yield_" + kind) + alliance_bonus() + vip_perk("yield"))
-		* (1.0 + skill_bonus("yield_" + kind) + skill_bonus("yield_all")))
+		* (1.0 + skill_bonus("yield_" + kind) + skill_bonus("yield_all") + officials_bonus()))
 
 
 func do_affair(kind: String, now: float) -> Dictionary:
@@ -356,6 +365,9 @@ func fight_stage() -> Dictionary:
 		info["name"], losses, info["reward_silver"], gained_prestige, info["reward_gold"]]
 	if stage_item != "":
 		msg += " Rampasan: %s." % Data.ITEMS[stage_item]["name"]
+	var captured := _capture_prisoner(info)
+	if captured != "":
+		msg += " Tertangkap: %s!" % captured
 	if not unlocked.is_empty():
 		msg += " Bergabung: " + ", ".join(unlocked)
 	return _ok(msg)
@@ -485,6 +497,8 @@ func ensure_daily(now: float) -> bool:
 		if m.get("requires", "") == "alliance" and alliance.is_empty():
 			continue
 		if m.get("requires", "") == "arena" and not arena_unlocked():
+			continue
+		if m.get("requires", "") == "prisoners" and prison.get("prisoners", []).is_empty():
 			continue
 		pool.append(m["id"])
 	for i in range(pool.size() - 1, 0, -1):
@@ -1938,6 +1952,203 @@ func claim_lb_reward() -> Dictionary:
 	return _ok("Hadiah peringkat mingguan (%s, #%d): +%d emas." % [r["tier"], r["rank"], r["gold"]])
 
 
+# --- Ujian anak & pejabat ---------------------------------------------------
+
+func exam_chance(index: int) -> float:
+	return minf(0.95, Data.EXAM_BASE_CHANCE + Data.EXAM_CHANCE_PER_TALENT * int(children[index]["talent"]))
+
+
+func exam_cost(index: int) -> int:
+	return Data.EXAM_COST_PER_TALENT * int(children[index]["talent"])
+
+
+func exam_available(index: int, now: float) -> bool:
+	var c: Dictionary = children[index]
+	return int(c["level"]) >= Data.CHILD_MAX_LEVEL and int(c.get("exam_day", -1)) != day_index(now)
+
+
+func officials_bonus() -> float:
+	var total := 0.0
+	for o in officials:
+		for t in Data.OFFICIAL_TITLES:
+			if t["name"] == o["title"]:
+				total += float(t["bonus"])
+	return total
+
+
+func take_exam(index: int, now: float) -> Dictionary:
+	if index < 0 or index >= children.size():
+		return _fail("Anak tidak ditemukan.")
+	var c: Dictionary = children[index]
+	if int(c["level"]) < Data.CHILD_MAX_LEVEL:
+		return _fail("%s belum dewasa." % c["name"])
+	if not exam_available(index, now):
+		return _fail("%s sudah ikut ujian hari ini. Coba lagi besok." % c["name"])
+	if officials.size() >= Data.OFFICIALS_MAX:
+		return _fail("Kursi pejabat sudah penuh (%d)." % Data.OFFICIALS_MAX)
+	var cost := exam_cost(index)
+	if silver < cost:
+		return _fail("Perak tidak cukup (butuh %d)." % cost)
+	silver -= cost
+	if rng.randf() >= exam_chance(index):
+		c["exam_day"] = day_index(now)
+		changed.emit()
+		var fail := _fail("%s belum lulus ujian. Coba lagi besok, atau nikahkan." % c["name"])
+		fail["exam"] = true
+		return fail
+	var score := int(c["talent"]) + rng.randi_range(0, 2)
+	var title: Dictionary = Data.OFFICIAL_TITLES[0]
+	for t in Data.OFFICIAL_TITLES:
+		if score >= int(t["min"]):
+			title = t
+	officials.append({"name": c["name"], "gender": c.get("gender", "m"), "talent": int(c["talent"]), "title": title["name"]})
+	children.remove_at(index)
+	prestige += 10 * int(c["talent"])
+	changed.emit()
+	return _ok("%s lulus ujian dan menjadi %s! Hasil urusan kota +%d%%." % [c["name"], title["name"],
+		roundi(float(title["bonus"]) * 100)])
+
+
+# --- Perjamuan ---------------------------------------------------------------
+
+func banquet_available(kind: String, now: float) -> bool:
+	return int(banquet["held"].get(kind, -1)) != day_index(now)
+
+
+func hold_banquet(kind: String, now: float) -> Dictionary:
+	if not Data.BANQUETS.has(kind):
+		return _fail("Jenis perjamuan tidak dikenal.")
+	var def: Dictionary = Data.BANQUETS[kind]
+	if not banquet_available(kind, now):
+		return _fail("%s sudah diadakan hari ini." % def["name"])
+	for key in def["cost"]:
+		if int(get(key)) < int(def["cost"][key]):
+			return _fail("%s tidak cukup." % Data.REWARD_NAMES[key].capitalize())
+	for key in def["cost"]:
+		set(key, int(get(key)) - int(def["cost"][key]))
+	banquet["held"][kind] = day_index(now)
+	var guests := int(def["guests"]) + (mini(8, _npc_members().size()) if not alliance.is_empty() else 0)
+	var gained := int(def["prestige"]) + guests * int(def["per_guest"])
+	prestige += gained
+	var parts := ["%d tamu hadir" % guests, "+%d prestise" % gained]
+	for i in int(def["items"]):
+		var item: String = Data.BANQUET_GIFT_ITEMS[rng.randi_range(0, Data.BANQUET_GIFT_ITEMS.size() - 1)]
+		add_item(item)
+		parts.append(Data.ITEMS[item]["name"])
+	if int(def["alliance_exp"]) > 0 and not alliance.is_empty():
+		alliance["exp"] = int(alliance["exp"]) + int(def["alliance_exp"])
+		parts.append("+%d exp aliansi" % def["alliance_exp"])
+	_track("banquet")
+	changed.emit()
+	return _ok("%s meriah! %s." % [def["name"], ", ".join(parts)])
+
+
+## Undangan hari ini dari tuan lain (anggota aliansi bila ada).
+func banquet_invites(now: float) -> Array:
+	var today := day_index(now)
+	var r := _seeded(["invite", today, alliance.get("id", "")])
+	var out := []
+	for i in Data.INVITES_PER_DAY:
+		var host := _npc_name(r)
+		if not alliance.is_empty():
+			host = _npc_members()[r.randi_range(0, _npc_members().size() - 1)]["name"]
+		var attended: bool = int(banquet["invite_day"]) == today and i in banquet["attended"]
+		out.append({"host": host, "avatar": _npc_avatar(host), "attended": attended})
+	return out
+
+
+func attend_banquet(index: int, now: float) -> Dictionary:
+	var invites := banquet_invites(now)
+	if index < 0 or index >= invites.size():
+		return _fail("Undangan tidak ditemukan.")
+	if invites[index]["attended"]:
+		return _fail("Anda sudah menghadiri perjamuan ini.")
+	if silver < Data.INVITE_GIFT_SILVER:
+		return _fail("Perak untuk hadiah tidak cukup (butuh %d)." % Data.INVITE_GIFT_SILVER)
+	if int(banquet["invite_day"]) != day_index(now):
+		banquet["invite_day"] = day_index(now)
+		banquet["attended"] = []
+	banquet["attended"].append(index)
+	silver -= Data.INVITE_GIFT_SILVER
+	prestige += Data.INVITE_PRESTIGE
+	changed.emit()
+	return _ok("Anda menghadiri perjamuan %s: -%d perak, +%d prestise." % [invites[index]["host"],
+		Data.INVITE_GIFT_SILVER, Data.INVITE_PRESTIGE])
+
+
+# --- Penjara ---------------------------------------------------------------
+
+func _capture_prisoner(info: Dictionary) -> String:
+	if prison["prisoners"].size() >= Data.PRISON_CAPACITY or rng.randf() >= Data.PRISON_CAPTURE_CHANCE:
+		return ""
+	var st := Data.prisoner_stats(stage - 1)
+	var name := "%s %s" % [info["enemy_name"], Data.NPC_NAMES[rng.randi_range(0, Data.NPC_NAMES.size() - 1)]]
+	prison["prisoners"].append({"name": name, "avatar": info["enemy_id"], "stage": stage - 1, "hp": st["hp"],
+		"max": st["hp"]})
+	return name
+
+
+func prison_left(now: float) -> int:
+	if int(prison["day"]) != day_index(now):
+		return Data.PRISON_DAILY_LIMIT
+	return Data.PRISON_DAILY_LIMIT - int(prison["used"])
+
+
+## Perkiraan kerusakan interogasi untuk cara tertentu.
+func prison_damage(method: String) -> int:
+	var m: Dictionary = Data.PRISON_METHODS[method]
+	return maxi(1, int(total_attr(m["attr"]) * float(m["factor"])))
+
+
+func interrogate(index: int, method: String, now: float) -> Dictionary:
+	if index < 0 or index >= prison["prisoners"].size():
+		return _fail("Tahanan tidak ditemukan.")
+	if not Data.PRISON_METHODS.has(method):
+		return _fail("Cara interogasi tidak dikenal.")
+	if prison_left(now) <= 0:
+		return _fail("Batas interogasi hari ini sudah habis.")
+	if grain < Data.PRISON_COST_GRAIN:
+		return _fail("Pangan tidak cukup (butuh %d)." % Data.PRISON_COST_GRAIN)
+	if int(prison["day"]) != day_index(now):
+		prison["day"] = day_index(now)
+		prison["used"] = 0
+	prison["used"] = int(prison["used"]) + 1
+	grain -= Data.PRISON_COST_GRAIN
+	var p: Dictionary = prison["prisoners"][index]
+	var dmg := mini(int(prison_damage(method) * rng.randf_range(0.8, 1.2)), int(p["hp"]))
+	p["hp"] = int(p["hp"]) - dmg
+	silver += Data.PRISON_HIT_SILVER
+	_track("interrogate")
+	var msg := "%s: %s -%d daya tahan, +%d perak." % [Data.PRISON_METHODS[method]["name"], p["name"], dmg,
+		Data.PRISON_HIT_SILVER]
+	var result := _ok(msg)
+	result["damage"] = dmg
+	if int(p["hp"]) <= 0:
+		var st := Data.prisoner_stats(int(p["stage"]))
+		silver += int(st["silver"])
+		prestige += int(st["prestige"])
+		var parts := ["+%d perak" % st["silver"], "+%d prestise" % st["prestige"]]
+		if rng.randf() < 0.5:
+			var item: String = Data.PRISON_CONFESS_ITEMS[rng.randi_range(0, Data.PRISON_CONFESS_ITEMS.size() - 1)]
+			add_item(item)
+			parts.append(Data.ITEMS[item]["name"])
+		prison["prisoners"].remove_at(index)
+		result["msg"] = "%s mengaku! %s." % [p["name"], ", ".join(parts)]
+		result["confessed"] = true
+	changed.emit()
+	return result
+
+
+func release_prisoner(index: int) -> Dictionary:
+	if index < 0 or index >= prison["prisoners"].size():
+		return _fail("Tahanan tidak ditemukan.")
+	var p: Dictionary = prison["prisoners"][index]
+	prison["prisoners"].remove_at(index)
+	prestige += Data.PRISON_RELEASE_PRESTIGE
+	changed.emit()
+	return _ok("%s dibebaskan. Rakyat memuji kemurahan hati Anda: +%d prestise." % [p["name"], Data.PRISON_RELEASE_PRESTIGE])
+
+
 # --- Tas & item ---------------------------------------------------------------
 
 func item_count(id: String) -> int:
@@ -2223,6 +2434,9 @@ func to_dict() -> Dictionary:
 		"iap": iap,
 		"vip": vip,
 		"inventory": inventory,
+		"prison": prison,
+		"officials": officials,
+		"banquet": banquet,
 		"start_day": start_day,
 		"leaderboard": leaderboard,
 	}
@@ -2267,6 +2481,8 @@ func from_dict(d: Dictionary, now: float) -> void:
 			"talent": int(c.get("talent", 1)),
 			"level": int(c.get("level", 1)),
 		})
+		if c.has("exam_day"):
+			children[-1]["exam_day"] = int(c["exam_day"])
 	charges = {}
 	for key in CHARGE_KEYS:
 		var c: Dictionary = d.get("charges", {}).get(key, {})
@@ -2322,6 +2538,21 @@ func from_dict(d: Dictionary, now: float) -> void:
 	for id in d.get("inventory", {}):
 		if Data.ITEMS.has(str(id)) and int(d["inventory"][id]) > 0:
 			inventory[str(id)] = int(d["inventory"][id])
+	officials = []
+	for o in d.get("officials", []):
+		officials.append({"name": str(o.get("name", "")), "gender": str(o.get("gender", "m")),
+			"talent": int(o.get("talent", 1)), "title": str(o.get("title", "Juru Tulis"))})
+	var src_bq: Dictionary = d.get("banquet", {})
+	banquet = {"held": {}, "invite_day": int(src_bq.get("invite_day", -1)), "attended": []}
+	for k in src_bq.get("held", {}):
+		banquet["held"][str(k)] = int(src_bq["held"][k])
+	for i in src_bq.get("attended", []):
+		banquet["attended"].append(int(i))
+	var src_prison: Dictionary = d.get("prison", {})
+	prison = {"prisoners": [], "day": int(src_prison.get("day", -1)), "used": int(src_prison.get("used", 0))}
+	for pr in src_prison.get("prisoners", []):
+		prison["prisoners"].append({"name": str(pr.get("name", "")), "avatar": str(pr.get("avatar", "enemy_bandit")),
+			"stage": int(pr.get("stage", 0)), "hp": int(pr.get("hp", 1)), "max": int(pr.get("max", 1))})
 	start_day = int(d.get("start_day", day_index(now)))
 	var src_lb: Dictionary = d.get("leaderboard", {})
 	leaderboard = {"week": int(src_lb.get("week", week_index(now))), "reward": {}}

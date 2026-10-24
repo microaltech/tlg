@@ -113,6 +113,52 @@ const ENEMIES := [
 
 const CHILD_MAX_LEVEL := 10
 
+## Ujian anak: anak dewasa bisa menjadi pejabat (bonus permanen hasil urusan kota).
+const EXAM_COST_PER_TALENT := 1000  ## Perak.
+const EXAM_BASE_CHANCE := 0.3
+const EXAM_CHANCE_PER_TALENT := 0.12
+const OFFICIALS_MAX := 8
+## Gelar menurut skor (bakat + keberuntungan 0-2): min = skor minimal, bonus = hasil urusan.
+const OFFICIAL_TITLES := [
+	{"name": "Juru Tulis", "min": 0, "bonus": 0.01},
+	{"name": "Hakim", "min": 3, "bonus": 0.02},
+	{"name": "Adipati", "min": 5, "bonus": 0.03},
+	{"name": "Menteri Muda", "min": 7, "bonus": 0.05},
+]
+
+## Perjamuan: sekali sehari per jenis. guests = jumlah tamu (+ anggota aliansi bila ada).
+const BANQUETS := {
+	"simple": {"name": "Jamuan Sederhana", "cost": {"silver": 5000, "grain": 3000}, "guests": 6,
+		"prestige": 30, "per_guest": 5, "items": 1, "alliance_exp": 0},
+	"grand": {"name": "Pesta Agung", "cost": {"gold": 300}, "guests": 12, "prestige": 150, "per_guest": 10,
+		"items": 3, "alliance_exp": 100},
+}
+const BANQUET_GIFT_ITEMS := ["pill_intimacy", "energy_tea", "scroll_train", "silver_box", "grain_box"]
+## Undangan perjamuan dari tuan lain tiap hari: datang dengan hadiah perak untuk prestise.
+const INVITES_PER_DAY := 2
+const INVITE_GIFT_SILVER := 1000
+const INVITE_PRESTIGE := 12
+
+## Penjara: tahanan tertangkap dari kemenangan kampanye, diinterogasi sampai mengaku.
+const PRISON_CAPACITY := 5
+const PRISON_CAPTURE_CHANCE := 0.5
+const PRISON_DAILY_LIMIT := 15
+const PRISON_COST_GRAIN := 300
+const PRISON_HIT_SILVER := 30
+const PRISON_METHODS := {
+	"interrogate": {"name": "Interogasi", "attr": "int", "factor": 0.5, "desc": "Kecerdasan"},
+	"intimidate": {"name": "Gertak", "attr": "str", "factor": 0.5, "desc": "Kekuatan"},
+}
+const PRISON_RELEASE_PRESTIGE := 5
+const PRISON_CONFESS_ITEMS := ["silver_box", "grain_box", "troop_writ", "scroll_train", "pill_intimacy"]
+
+static func prisoner_stats(stage_index: int) -> Dictionary:
+	return {
+		"hp": int(200 * pow(1.12, stage_index)),
+		"silver": 500 + 150 * stage_index,
+		"prestige": 15 + 3 * stage_index,
+	}
+
 ## Misi harian: tiap hari dipilih DAILY_COUNT misi acak dari kumpulan ini.
 ## event = aksi yang dihitung; requires = syarat agar misi boleh muncul.
 ## Hadiah memakai kunci gold/silver/grain/soldiers.
@@ -132,6 +178,8 @@ const DAILY_MISSIONS := [
 	{"id": "donate1", "text": "Sumbang ke aliansi 1 kali", "event": "donate", "target": 1, "gold": 25, "silver": 500, "requires": "alliance"},
 	{"id": "boss2", "text": "Serang bos aliansi 2 kali", "event": "boss", "target": 2, "gold": 30, "soldiers": 800, "requires": "alliance"},
 	{"id": "war2", "text": "Serang benteng dalam perang aliansi 2 kali", "event": "war", "target": 2, "gold": 30, "silver": 800, "requires": "alliance"},
+	{"id": "jail3", "text": "Interogasi tahanan 3 kali", "event": "interrogate", "target": 3, "gold": 25, "silver": 600, "requires": "prisoners"},
+	{"id": "feast1", "text": "Adakan perjamuan 1 kali", "event": "banquet", "target": 1, "gold": 25, "grain": 800},
 	{"id": "arena3", "text": "Bertarung di arena 3 kali", "event": "arena", "target": 3, "gold": 30, "silver": 800, "requires": "arena"},
 ]
 ## Peti aktivitas: terbuka saat poin harian mencapai batas.

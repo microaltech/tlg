@@ -25,7 +25,7 @@ func _init() -> void:
 		"test_vip_perks", "test_vip_daily_packs_save", "test_war_setup", "test_war_attack", "test_war_simulation_result",
 		"test_war_save_leave", "test_chat_send_reply", "test_chat_ambient_unread", "test_chat_save_leave",
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
-		"test_skills", "test_bonds",
+		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1148,3 +1148,86 @@ func test_bonds() -> void:
 	for b in Data.BONDS:
 		for id in b["members"]:
 			check(Data.SKILLS.has(id) and not Data.counselor_def(id).is_empty(), "anggota ikatan valid: %s" % id)
+
+
+func test_prison() -> void:
+	var m := fresh(5)
+	m.soldiers = 100000000
+	for i in 30:
+		m.fight_stage()
+	check(m.prison["prisoners"].size() == Data.PRISON_CAPACITY, "tahanan tertangkap sampai penjara penuh")
+	var p: Dictionary = m.prison["prisoners"][0]
+	check(p["hp"] == p["max"] and p["max"] > 0, "tahanan dengan daya tahan")
+	m.grain = 1000000
+	m.silver = 0
+	var r := m.interrogate(0, "interrogate", 1000.0)
+	check(r["ok"] and m.prison["prisoners"][0]["hp"] < p["max"], "interogasi mengurangi daya tahan")
+	check(m.silver == Data.PRISON_HIT_SILVER and m.grain == 1000000 - Data.PRISON_COST_GRAIN, "biaya dan perak interogasi")
+	check(not m.interrogate(0, "palsu", 1000.0)["ok"], "cara tidak dikenal ditolak")
+	m.prison["prisoners"][0]["hp"] = 1
+	var prestige := m.prestige
+	var c := m.interrogate(0, "intimidate", 1000.0)
+	check(c.get("confessed", false) and m.prestige > prestige, "tahanan mengaku memberi hadiah")
+	check(m.prison["prisoners"].size() == Data.PRISON_CAPACITY - 1, "tahanan yang mengaku keluar dari penjara")
+	for i in Data.PRISON_DAILY_LIMIT:
+		m.interrogate(0, "interrogate", 1000.0)
+	check(not m.interrogate(0, "interrogate", 1000.0)["ok"] and m.prison_left(1000.0 + 86400) == Data.PRISON_DAILY_LIMIT,
+		"batas interogasi harian")
+	prestige = m.prestige
+	check(m.release_prisoner(0)["ok"] and m.prestige == prestige + Data.PRISON_RELEASE_PRESTIGE, "bebaskan tahanan")
+	m.grain = 0
+	check(not m.interrogate(0, "interrogate", 1000.0 + 86400)["ok"], "interogasi butuh pangan")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(var_to_str(m2.prison) == var_to_str(m.prison), "simpan/muat penjara")
+
+
+func test_exam_officials() -> void:
+	var m := fresh(2)
+	m.children.append({"name": "Gita", "gender": "f", "mother": "melati", "talent": 5, "level": 10})
+	m.children.append({"name": "Adi", "gender": "m", "mother": "melati", "talent": 1, "level": 3})
+	check(not m.take_exam(1, 1000.0)["ok"], "anak belum dewasa tidak bisa ujian")
+	check(absf(m.exam_chance(0) - 0.9) < 0.001, "peluang lulus dari bakat")
+	m.silver = 0
+	check(not m.take_exam(0, 1000.0)["ok"], "ujian butuh perak")
+	m.silver = 100000
+	var yield_before := m.affair_yield("silver")
+	var passed := false
+	var day := 0
+	while not passed and day < 20:
+		var r := m.take_exam(0, 1000.0 + day * 86400)
+		passed = r["ok"]
+		if not passed:
+			check(r.get("exam", false) and not m.exam_available(0, 1000.0 + day * 86400), "gagal ujian: coba besok")
+		day += 1
+	check(passed and m.officials.size() == 1 and m.children.size() == 1, "anak lulus menjadi pejabat")
+	check(m.officials_bonus() > 0.0 and m.affair_yield("silver") > yield_before, "pejabat menaikkan hasil urusan")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(var_to_str(m2.officials) == var_to_str(m.officials), "simpan/muat pejabat")
+
+
+func test_banquet() -> void:
+	var m := fresh()
+	m.silver = 100000
+	m.grain = 100000
+	var prestige := m.prestige
+	check(m.hold_banquet("simple", 1000.0)["ok"] and m.prestige > prestige, "jamuan sederhana memberi prestise")
+	check(m.silver == 95000 and m.grain == 97000, "biaya jamuan")
+	check(not m.hold_banquet("simple", 1000.0)["ok"] and m.banquet_available("simple", 1000.0 + 86400), "sekali per hari")
+	m.gold = 0
+	check(not m.hold_banquet("grand", 1000.0)["ok"], "pesta agung butuh emas")
+	var invites := m.banquet_invites(1000.0)
+	check(invites.size() == Data.INVITES_PER_DAY and var_to_str(m.banquet_invites(1000.0)) == var_to_str(invites),
+		"undangan harian stabil")
+	prestige = m.prestige
+	check(m.attend_banquet(0, 1000.0)["ok"] and m.prestige == prestige + Data.INVITE_PRESTIGE, "hadiri undangan")
+	check(not m.attend_banquet(0, 1000.0)["ok"] and m.banquet_invites(1000.0)[0]["attended"], "undangan sekali")
+	check(not m.banquet_invites(1000.0 + 86400)[0]["attended"], "undangan baru besok")
+	var a := _allied()
+	a.gold = 1000
+	var exp: int = a.alliance["exp"]
+	check(a.hold_banquet("grand", 1000.0)["ok"] and int(a.alliance["exp"]) == exp + 100, "pesta agung menambah exp aliansi")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(var_to_str(m2.banquet) == var_to_str(m.banquet), "simpan/muat perjamuan")

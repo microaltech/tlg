@@ -866,6 +866,13 @@ ICONS["bag"] = icon_doc(
     '<rect x="14" y="36" width="68" height="12" rx="5" fill="#e8c070" stroke="#4a2410" stroke-width="3"/>'
     '<rect x="40" y="56" width="16" height="14" rx="3" fill="#e8c070" stroke="#4a2410" stroke-width="2.5"/>')
 
+ICONS["prison"] = icon_doc(
+    '<rect x="8" y="10" width="80" height="78" rx="6" fill="none" stroke="#4a4a52" stroke-width="6"/>'
+    + "".join('<path d="M%d 12 L%d 86" stroke="#5d5d66" stroke-width="6" stroke-linecap="round"/>' % (x, x)
+              for x in range(22, 80, 14))
+    + '<path d="M8 48 L88 48" stroke="#4a4a52" stroke-width="5"/>'
+      '<circle cx="74" cy="56" r="6" fill="#c9963f" stroke="#5e3a12" stroke-width="2"/>')
+
 ICONS["chest"] = chest(False)
 ICONS["chest_open"] = chest(True)
 

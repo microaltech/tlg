@@ -61,6 +61,7 @@ var _chat_draft := ""
 var _chat_focus := false
 var _chat_shown := 0
 var _arena_tab := "lawan"
+var _palace_tab := "selir"
 var _arena_nav_badge: Dictionary
 var _tutorial: Control
 ## Elemen yang bisa disorot tutorial (diisi saat halaman dibangun).
@@ -2987,6 +2988,22 @@ func _reveal_card(res: Dictionary, side: float) -> Control:
 
 func _build_palace(box: VBoxContainer) -> void:
 	_clear(box)
+	var now: float = Game.now()
+	_segment_tabs(box, [["selir", "Selir"], ["anak", "Anak (%d)" % model.children.size()],
+		["penjara", "Penjara (%d)" % model.prison["prisoners"].size()], ["perjamuan", "Perjamuan"]],
+		_palace_tab, func(key): _palace_tab = key, 20)
+	match _palace_tab:
+		"anak":
+			_build_children(box, now)
+		"penjara":
+			_build_prison(box, now)
+		"perjamuan":
+			_build_banquet(box, now)
+		_:
+			_build_consorts(box)
+
+
+func _build_consorts(box: VBoxContainer) -> void:
 	var energy := _card(box)
 	energy.add_child(_tex(Art.icon("heart"), 72))
 	var ecol := _col(energy)
@@ -3006,6 +3023,8 @@ func _build_palace(box: VBoxContainer) -> void:
 		if id == model.beauties.keys()[0]:
 			_first_visit_button = visit
 
+
+func _build_children(box: VBoxContainer, now: float) -> void:
 	var head := _label(box, "Anak  (%d/%d kursi)" % [model.children.size(), model.child_seats()], "TitleLabel")
 	head.add_theme_font_size_override("font_size", 30)
 	if model.children.is_empty():
@@ -3034,7 +3053,126 @@ func _build_palace(box: VBoxContainer) -> void:
 			_button(col, "Didik  %s" % _num(cost), func(): return model.train_child(i), model.grain >= cost, "grain",
 				"", false, "upgrade")
 		else:
-			var marry := _button(col, "Nikahkan", func(): return model.marry_child(i), true, "heart", "GoldButton",
+			var row := HBoxContainer.new()
+			row.add_theme_constant_override("separation", 8)
+			col.add_child(row)
+			var marry := _button(row, "Nikahkan", func(): return model.marry_child(i), true, "heart", "GoldButton",
 				false, "birth")
-			marry.add_theme_font_size_override("font_size", 26)
+			marry.add_theme_font_size_override("font_size", 22)
+			marry.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var can_exam: bool = model.exam_available(i, now) and model.silver >= model.exam_cost(i) \
+				and model.officials.size() < Data.OFFICIALS_MAX
+			var exam := _button(row, "Ujian %s" % _num(model.exam_cost(i)), func(): return model.take_exam(i, Game.now()),
+				can_exam, "item_scroll", "GreenButton", false, "promote")
+			exam.add_theme_font_size_override("font_size", 22)
+			exam.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var hint := "Peluang lulus ujian %d%%" % roundi(model.exam_chance(i) * 100)
+			if not model.exam_available(i, now):
+				hint = "Sudah ujian hari ini, coba lagi besok"
+			_label(col, hint, "SmallLabel").add_theme_color_override("font_color", UI.INK)
 	_label(box, "Anak yang telah menikah: %d" % model.married_count, "SmallLabel")
+
+	var off := _label(box, "Pejabat (%d/%d) · hasil urusan kota +%d%%" % [model.officials.size(), Data.OFFICIALS_MAX,
+		roundi(model.officials_bonus() * 100)], "TitleLabel")
+	off.add_theme_font_size_override("font_size", 24)
+	if model.officials.is_empty():
+		_label(box, "Anak dewasa yang lulus Ujian Negara menjadi pejabat dan memberi bonus permanen.", "SmallLabel")
+	for o in model.officials:
+		var card := _card(box)
+		card.add_child(_tex(Art.portrait("child_f" if o["gender"] == "f" else "child_m"), 72))
+		var col := _col(card)
+		_label(col, "%s · %s" % [o["name"], o["title"]], "CardTitle").add_theme_font_size_override("font_size", 22)
+		var bonus := 0.0
+		for t in Data.OFFICIAL_TITLES:
+			if t["name"] == o["title"]:
+				bonus = t["bonus"]
+		_label(col, "Bakat %d/5 · hasil urusan kota +%d%%" % [o["talent"], roundi(bonus * 100)], "CardLabel")
+
+
+func _build_prison(box: VBoxContainer, now: float) -> void:
+	var info := _card(box)
+	info.add_child(_tex(Art.icon("prison"), 80))
+	var col := _col(info)
+	_label(col, "Penjara (%d/%d)" % [model.prison["prisoners"].size(), Data.PRISON_CAPACITY], "CardTitle")
+	_label(col, "Interogasi tersisa hari ini: %d / %d · biaya %d pangan" % [model.prison_left(now),
+		Data.PRISON_DAILY_LIMIT, Data.PRISON_COST_GRAIN], "CardLabel")
+	_label(col, "Tahanan ditangkap dari kemenangan kampanye. Patahkan daya tahannya sampai mengaku.", "SmallLabel") \
+		.add_theme_color_override("font_color", UI.INK)
+	if model.prison["prisoners"].is_empty():
+		_label(box, "Penjara kosong. Menangkan kampanye untuk menangkap tahanan.", "SmallLabel")
+	var can: bool = model.prison_left(now) > 0 and model.grain >= Data.PRISON_COST_GRAIN
+	for i in model.prison["prisoners"].size():
+		var p: Dictionary = model.prison["prisoners"][i]
+		var card := _card(box)
+		var holder := Control.new()
+		holder.custom_minimum_size = Vector2(110, 110)
+		card.add_child(holder)
+		var pic := _tex(Art.portrait(p["avatar"]), 110)
+		pic.modulate = Color(0.75, 0.7, 0.7)
+		holder.add_child(pic)
+		var bars := _tex(Art.icon("prison"), 110)
+		bars.modulate = Color(1, 1, 1, 0.75)
+		holder.add_child(bars)
+		var pcol := _col(card)
+		_label(pcol, p["name"], "CardTitle").add_theme_font_size_override("font_size", 22)
+		var st: Dictionary = Data.prisoner_stats(int(p["stage"]))
+		_label(pcol, "Daya tahan %s / %s · bila mengaku: +%s perak, +%d prestise" % [_num(p["hp"]), _num(p["max"]),
+			_num(st["silver"]), st["prestige"]], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+		_bar(pcol, p["hp"], p["max"], Color("c0392b"))
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		pcol.add_child(row)
+		var idx: int = i
+		for method in Data.PRISON_METHODS:
+			var m: Dictionary = Data.PRISON_METHODS[method]
+			var key: String = method
+			var b := _button(row, "%s ~%s" % [m["name"], _num(model.prison_damage(method))], func():
+				var r: Dictionary = model.interrogate(idx, key, Game.now())
+				if r["ok"] and not r.get("confessed", false):
+					_float("-%s" % _num(r["damage"]), pic, Color("ff8a70"))
+				return r, can, "", "GoldButton" if method == "interrogate" else "", false, "attack")
+			b.add_theme_font_size_override("font_size", 20)
+			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			b.custom_minimum_size.y = 60
+		var free := _button(pcol, "Bebaskan (+%d prestise)" % Data.PRISON_RELEASE_PRESTIGE,
+			func(): return model.release_prisoner(idx), true, "", "GreenButton")
+		free.custom_minimum_size.y = 52
+		free.add_theme_font_size_override("font_size", 18)
+
+
+func _build_banquet(box: VBoxContainer, now: float) -> void:
+	for kind in Data.BANQUETS:
+		var def: Dictionary = Data.BANQUETS[kind]
+		var card := _card(box)
+		card.add_child(_tex(Art.icon("event_palace" if kind == "grand" else "item_tea"), 84))
+		var col := _col(card)
+		_label(col, def["name"], "CardTitle")
+		var cost := []
+		for key in def["cost"]:
+			cost.append("%s %s" % [_num(def["cost"][key]), Data.REWARD_NAMES[key]])
+		var extra := " · +%d exp aliansi" % def["alliance_exp"] if int(def["alliance_exp"]) > 0 else ""
+		_label(col, "Biaya %s · %d+ tamu, %d+ prestise, %d hadiah%s" % [" + ".join(cost), def["guests"],
+			def["prestige"], def["items"], extra], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+		var ok: bool = model.banquet_available(kind, now)
+		for key in def["cost"]:
+			ok = ok and int(model.get(key)) >= int(def["cost"][key])
+		var k: String = kind
+		_button(col, "Adakan" if model.banquet_available(kind, now) else "Sudah diadakan hari ini",
+			func(): return model.hold_banquet(k, Game.now()), ok, "", "GoldButton" if kind == "grand" else "GreenButton",
+			false, "promote")
+	var head := _label(box, "Undangan Hari Ini", "TitleLabel")
+	head.add_theme_font_size_override("font_size", 26)
+	var invites: Array = model.banquet_invites(now)
+	for i in invites.size():
+		var inv: Dictionary = invites[i]
+		var card := _card(box)
+		card.add_child(_tex(Art.portrait(inv["avatar"]), 72))
+		var col := _col(card)
+		_label(col, "Perjamuan %s" % inv["host"], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		_label(col, "Bawa hadiah %s perak · +%d prestise" % [_num(Data.INVITE_GIFT_SILVER), Data.INVITE_PRESTIGE],
+			"SmallLabel").add_theme_color_override("font_color", UI.INK)
+		var idx: int = i
+		var b := _button(card, "Hadir" if not inv["attended"] else "Sudah hadir", func(): return model.attend_banquet(idx, Game.now()),
+			not inv["attended"] and model.silver >= Data.INVITE_GIFT_SILVER, "", "GreenButton", false, "coin")
+		b.custom_minimum_size = Vector2(150, 60)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER

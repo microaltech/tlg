@@ -24,7 +24,12 @@ var prestige := 0
 var rank := 0
 var stage := 0
 var married_count := 0
-## id -> {"level": int, "bonus": {attr: int}}
+var gold := 0
+## Tarikan sejak Legenda terakhir (untuk jaminan pity).
+var pity := 0
+## Waktu rekrut gratis terakhir (detik unix).
+var free_pull_t := 0.0
+## id -> {"level": int, "stars": int, "bonus": {attr: int}}
 var counselors := {}
 ## id -> {"intimacy": int}
 var beauties := {}
@@ -43,6 +48,9 @@ func new_game(now: float) -> void:
 	rank = 0
 	stage = 0
 	married_count = 0
+	gold = Data.START_GOLD
+	pity = 0
+	free_pull_t = now - Data.GACHA_FREE_SECONDS
 	counselors = {}
 	beauties = {}
 	children = []
@@ -78,8 +86,9 @@ func promote() -> Dictionary:
 	if not can_promote():
 		return _fail("Prestise belum cukup untuk naik jabatan.")
 	rank += 1
+	gold += Data.PROMOTE_GOLD
 	changed.emit()
-	return _ok("Selamat! Anda kini menjabat sebagai %s." % rank_info()["name"])
+	return _ok("Selamat! Anda kini menjabat sebagai %s. +%d emas." % [rank_info()["name"], Data.PROMOTE_GOLD])
 
 
 # --- Charge (energi yang terisi seiring waktu) ----------------------------
@@ -134,7 +143,8 @@ func _spend_charge(key: String, now: float) -> bool:
 func attr(id: String, key: String) -> int:
 	var def := Data.counselor_def(id)
 	var st: Dictionary = counselors[id]
-	return int(def[key]) * int(st["level"]) + int(st["bonus"].get(key, 0))
+	var mult := 1.0 + Data.STAR_BONUS * int(st.get("stars", 0))
+	return int(int(def[key]) * int(st["level"]) * mult) + int(st["bonus"].get(key, 0))
 
 
 func total_attr(key: String) -> int:
@@ -224,11 +234,12 @@ func fight_stage() -> Dictionary:
 	soldiers -= losses
 	silver += int(info["reward_silver"])
 	prestige += int(info["reward_prestige"])
+	gold += int(info["reward_gold"])
 	stage += 1
 	var unlocked := _unlock_content()
 	changed.emit()
-	var msg := "Menang di %s! -%d prajurit, +%d perak, +%d prestise." % [
-		info["name"], losses, info["reward_silver"], info["reward_prestige"]]
+	var msg := "Menang di %s! -%d prajurit, +%d perak, +%d prestise, +%d emas." % [
+		info["name"], losses, info["reward_silver"], info["reward_prestige"], info["reward_gold"]]
 	if not unlocked.is_empty():
 		msg += " Bergabung: " + ", ".join(unlocked)
 	return _ok(msg)
@@ -237,14 +248,94 @@ func fight_stage() -> Dictionary:
 func _unlock_content() -> Array:
 	var names := []
 	for c in Data.COUNSELORS:
-		if stage >= int(c["unlock_stage"]) and not counselors.has(c["id"]):
-			counselors[c["id"]] = {"level": 1, "bonus": {}}
+		if int(c["unlock_stage"]) >= 0 and stage >= int(c["unlock_stage"]) and not counselors.has(c["id"]):
+			counselors[c["id"]] = {"level": 1, "stars": 0, "bonus": {}}
 			names.append(c["name"])
 	for b in Data.BEAUTIES:
 		if stage >= int(b["unlock_stage"]) and not beauties.has(b["id"]):
 			beauties[b["id"]] = {"intimacy": 0}
 			names.append(b["name"])
 	return names
+
+
+# --- Rekrut (gacha) -------------------------------------------------------
+
+func free_pull_eta(now: float) -> int:
+	return maxi(0, int(ceil(free_pull_t + Data.GACHA_FREE_SECONDS - now)))
+
+
+## Tarikan tersisa sampai Legenda dijamin.
+func pity_left() -> int:
+	return Data.GACHA_PITY - pity
+
+
+## count: 1 atau 10. free: rekrut gratis harian (hanya untuk 1 tarikan).
+## Hasil: {"ok", "msg", "results": [{"id", "rarity", "new", "stars", "silver"}]}
+func recruit(count: int, now: float, free := false) -> Dictionary:
+	if count != 1 and count != 10:
+		return _fail("Jumlah rekrut tidak valid.")
+	var cost := 0
+	if free:
+		if count != 1 or free_pull_eta(now) > 0:
+			return _fail("Rekrut gratis belum tersedia.")
+	else:
+		cost = Data.GACHA_COST if count == 1 else Data.GACHA_COST_10
+		if gold < cost:
+			return _fail("Emas tidak cukup (butuh %d)." % cost)
+	gold -= cost
+	if free:
+		free_pull_t = now
+	var results := []
+	var got_epic := false
+	for i in count:
+		# 10x menjamin minimal satu Epik: tarikan terakhir dipaksa Epik bila belum ada.
+		var rarity := _roll_rarity(count == 10 and i == count - 1 and not got_epic)
+		pity = 0 if rarity == "ssr" else pity + 1
+		if rarity != "r":
+			got_epic = true
+		var pool := Data.counselors_of_rarity(rarity)
+		var def: Dictionary = pool[rng.randi_range(0, pool.size() - 1)]
+		results.append(_grant_counselor(def["id"], rarity))
+	changed.emit()
+	var names := []
+	for r in results:
+		if r["new"]:
+			names.append(Data.counselor_def(r["id"])["name"])
+	var msg := "Rekrut selesai."
+	if not names.is_empty():
+		msg += " Bergabung: " + ", ".join(names)
+	var result := _ok(msg)
+	result["results"] = results
+	return result
+
+
+func _roll_rarity(min_epic: bool) -> String:
+	if pity >= Data.GACHA_PITY - 1:
+		return "ssr"
+	var r := rng.randf()
+	if r < float(Data.RARITIES["ssr"]["rate"]):
+		return "ssr"
+	if min_epic or r < float(Data.RARITIES["ssr"]["rate"]) + float(Data.RARITIES["sr"]["rate"]):
+		return "sr"
+	return "r"
+
+
+## Penasihat baru bergabung; duplikat menambah bintang, atau perak bila bintang penuh.
+func _grant_counselor(id: String, rarity: String) -> Dictionary:
+	var out := {"id": id, "rarity": rarity, "new": false, "stars": 0, "silver": 0}
+	if not counselors.has(id):
+		counselors[id] = {"level": 1, "stars": 0, "bonus": {}}
+		out["new"] = true
+		return out
+	var st: Dictionary = counselors[id]
+	if int(st["stars"]) < Data.MAX_STARS:
+		st["stars"] = int(st["stars"]) + 1
+		out["stars"] = st["stars"]
+	else:
+		var bonus: int = Data.RARITIES[rarity]["dup_silver"]
+		silver += bonus
+		out["silver"] = bonus
+	return out
 
 
 # --- Istana: selir & anak -------------------------------------------------
@@ -356,6 +447,9 @@ func to_dict() -> Dictionary:
 		"rank": rank,
 		"stage": stage,
 		"married_count": married_count,
+		"gold": gold,
+		"pity": pity,
+		"free_pull_t": free_pull_t,
 		"counselors": counselors,
 		"beauties": beauties,
 		"children": children,
@@ -372,6 +466,9 @@ func from_dict(d: Dictionary, now: float) -> void:
 	rank = clampi(int(d.get("rank", 0)), 0, Data.RANKS.size() - 1)
 	stage = int(d.get("stage", 0))
 	married_count = int(d.get("married_count", 0))
+	gold = int(d.get("gold", gold))
+	pity = int(d.get("pity", 0))
+	free_pull_t = float(d.get("free_pull_t", free_pull_t))
 	# JSON mengubah semua angka menjadi float, jadi normalisasi ke int.
 	counselors = {}
 	for id in d.get("counselors", {}):
@@ -381,7 +478,11 @@ func from_dict(d: Dictionary, now: float) -> void:
 		var bonus := {}
 		for k in src.get("bonus", {}):
 			bonus[k] = int(src["bonus"][k])
-		counselors[id] = {"level": int(src.get("level", 1)), "bonus": bonus}
+		counselors[id] = {
+			"level": int(src.get("level", 1)),
+			"stars": clampi(int(src.get("stars", 0)), 0, Data.MAX_STARS),
+			"bonus": bonus,
+		}
 	beauties = {}
 	for id in d.get("beauties", {}):
 		if not Data.beauty_def(id).is_empty():

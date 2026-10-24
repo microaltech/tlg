@@ -1,6 +1,6 @@
 extends Control
 ## UI utama, dibangun lewat kode supaya mudah dibaca dan diubah.
-## Header (avatar + sumber daya), 4 halaman, navigasi bawah, toast & efek.
+## Header (avatar + sumber daya), 5 halaman, navigasi bawah, toast & efek.
 
 const Data := preload("res://scripts/core/game_data.gd")
 const Art := preload("res://scripts/ui/art.gd")
@@ -9,6 +9,7 @@ const UI := preload("res://scripts/ui/ui_theme.gd")
 const PAGES := [
 	{"key": "city", "title": "Kota", "icon": "tab_city", "bg": "city"},
 	{"key": "counselor", "title": "Penasihat", "icon": "tab_counselor", "bg": "counselor"},
+	{"key": "gacha", "title": "Rekrut", "icon": "tab_gacha", "bg": "gacha"},
 	{"key": "campaign", "title": "Kampanye", "icon": "tab_campaign", "bg": "campaign"},
 	{"key": "palace", "title": "Istana", "icon": "tab_palace", "bg": "palace"},
 ]
@@ -31,6 +32,8 @@ var _rebuild_queued := false
 var _battling := false
 var _vs_lord: TextureRect
 var _vs_enemy: TextureRect
+var _free_button: Button
+var _gacha_banner_done := false
 
 
 func _ready() -> void:
@@ -111,7 +114,7 @@ func _build_header() -> Control:
 	var res := HBoxContainer.new()
 	res.add_theme_constant_override("separation", 8)
 	v.add_child(res)
-	for kind in ["silver", "grain", "soldiers"]:
+	for kind in ["silver", "grain", "soldiers", "gold"]:
 		var c := _chip(kind)
 		c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		res.add_child(c)
@@ -228,7 +231,7 @@ func _build_nav() -> Control:
 
 func _switch_page(key: String, animate := true) -> void:
 	_current = key
-	Audio.play_music({"campaign": "battle", "palace": "palace"}.get(key, "city"))
+	Audio.play_music({"campaign": "battle", "palace": "palace", "gacha": "palace"}.get(key, "city"))
 	for k in _pages:
 		var on: bool = k == key
 		_pages[k]["root"].visible = on
@@ -413,6 +416,7 @@ func _rebuild() -> void:
 	_charge_widgets.clear()
 	_build_city(_pages["city"]["content"])
 	_build_counselors(_pages["counselor"]["content"])
+	_build_gacha(_pages["gacha"])
 	_build_campaign(_pages["campaign"])
 	_build_palace(_pages["palace"]["content"])
 	_tick()
@@ -431,6 +435,12 @@ func _tick() -> void:
 	_res_labels["grain"].text = _num(model.grain)
 	_res_labels["soldiers"].text = _num(model.soldiers)
 	_res_labels["prestige"].text = _num(model.prestige)
+	_res_labels["gold"].text = _num(model.gold)
+	if is_instance_valid(_free_button):
+		var free_eta: int = model.free_pull_eta(now)
+		_free_button.disabled = free_eta > 0
+		_free_button.text = "Rekrut Gratis" if free_eta == 0 else "Gratis lagi %02d:%02d:%02d" % [
+			free_eta / 3600, free_eta / 60 % 60, free_eta % 60]
 	for key in _charge_widgets:
 		var w: Dictionary = _charge_widgets[key]
 		if not is_instance_valid(w["label"]):
@@ -540,9 +550,14 @@ func _build_counselors(box: VBoxContainer) -> void:
 	for id in model.counselors:
 		var def: Dictionary = Data.counselor_def(id)
 		var card := _card(box)
-		card.add_child(_tex(Art.portrait(id), 150))
+		var left := VBoxContainer.new()
+		left.add_theme_constant_override("separation", 6)
+		card.add_child(left)
+		left.add_child(_portrait_frame(id, 150))
+		_rarity_tag(left, def["rarity"])
 		var col := _col(card)
 		_label(col, def["name"], "CardTitle")
+		_stars(col, int(model.counselors[id].get("stars", 0)))
 		var lv: int = model.counselors[id]["level"]
 		var cap: int = model.rank_info()["level_cap"]
 		_label(col, "Level %d / %d" % [lv, cap], "CardLabel")
@@ -574,7 +589,11 @@ func _build_counselors(box: VBoxContainer) -> void:
 		var col := _col(card)
 		col.alignment = BoxContainer.ALIGNMENT_CENTER
 		_label(col, "???", "CardTitle")
-		_label(col, "Bergabung setelah memenangkan Tahap %d" % c["unlock_stage"], "CardLabel")
+		_rarity_tag(col, c["rarity"])
+		if int(c["unlock_stage"]) >= 0:
+			_label(col, "Bergabung setelah Tahap %d, atau lewat Rekrut" % c["unlock_stage"], "CardLabel")
+		else:
+			_label(col, "Hanya bisa didapat lewat Rekrut", "CardLabel")
 
 
 func _build_campaign(page: Dictionary) -> void:
@@ -608,6 +627,8 @@ func _build_campaign(page: Dictionary) -> void:
 		UI.GREEN.darkened(0.25) if model.soldiers >= losses else UI.RED)
 	_icon_row(col, "silver", "Hadiah: %d perak" % info["reward_silver"])
 	_icon_row(col, "prestige", "Hadiah: %d prestise" % info["reward_prestige"])
+	_icon_row(col, "gold", "Hadiah: %d emas%s" % [info["reward_gold"],
+		"  (tahap besar!)" if (model.stage + 1) % 5 == 0 else ""])
 
 	var attack := _button(box, "SERANG!", _attack, true, "", "GoldButton", false, "attack")
 	attack.custom_minimum_size.y = 96
@@ -656,6 +677,247 @@ func _big_result(win: bool) -> void:
 	tw.tween_interval(0.7)
 	tw.tween_property(l, "modulate:a", 0.0, 0.4)
 	tw.tween_callback(l.queue_free)
+
+
+# --- Rekrut (gacha) -------------------------------------------------------
+
+static func _rarity_color(rarity: String) -> Color:
+	return Color(Data.RARITIES[rarity]["color"])
+
+
+## Potret dengan bingkai berwarna sesuai kelangkaan; Legenda diberi cahaya.
+func _portrait_frame(id: String, side: float, dim := false) -> PanelContainer:
+	var rarity: String = Data.counselor_def(id)["rarity"]
+	var style := UI.box(Color.TRANSPARENT, _rarity_color(rarity), 5, 22)
+	style.set_content_margin_all(3)
+	if rarity == "ssr" and not dim:
+		style.shadow_color = Color(_rarity_color(rarity), 0.8)
+		style.shadow_size = 12
+	var frame := PanelContainer.new()
+	frame.add_theme_stylebox_override("panel", style)
+	var pic := _tex(Art.portrait(id), side)
+	if dim:
+		pic.self_modulate = Color(0.25, 0.2, 0.18)
+	frame.add_child(pic)
+	return frame
+
+
+func _rarity_tag(parent: Node, rarity: String) -> void:
+	var l := _label(parent, Data.RARITIES[rarity]["name"].to_upper(), "SmallLabel")
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.add_theme_font_override("font", UI.font_bold)
+	l.add_theme_color_override("font_color", _rarity_color(rarity).darkened(0.15))
+
+
+func _stars(parent: Node, count: int, side := 26.0) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 2)
+	parent.add_child(row)
+	for i in Data.MAX_STARS:
+		var st := _tex(Art.icon("star"), side)
+		if i >= count:
+			st.modulate = Color(0.3, 0.25, 0.2, 0.3)
+		row.add_child(st)
+	return row
+
+
+func _build_gacha(page: Dictionary) -> void:
+	if not _gacha_banner_done:
+		_gacha_banner_done = true
+		var banner: Control = page["banner"]
+		for i in 2:
+			var f := _portrait_frame(["kedaton", "resi"][i], 120)
+			f.position = Vector2(30 if i == 0 else 720 - 30 - 132, 30)
+			banner.add_child(f)
+		page["title"].position.x = 20
+
+	var box: VBoxContainer = page["content"]
+	_clear(box)
+	var info := _card(box)
+	info.add_child(_tex(Art.icon("gold"), 92))
+	var col := _col(info)
+	_label(col, "Emas: %s" % _num(model.gold), "CardTitle")
+	var rates := []
+	for r in ["ssr", "sr", "r"]:
+		rates.append("%s %d%%" % [Data.RARITIES[r]["name"], int(Data.RARITIES[r]["rate"] * 100)])
+	_label(col, " · ".join(rates), "CardLabel")
+	_label(col, "Legenda dijamin dalam %d tarikan" % model.pity_left(), "CardLabel")
+	_bar(col, Data.GACHA_PITY - model.pity_left(), Data.GACHA_PITY, _rarity_color("ssr"))
+
+	var pulls := _card(box)
+	var pcol := _col(pulls)
+	_free_button = _button(pcol, "Rekrut Gratis", func(): return _recruit(1, true), true, "tab_gacha",
+		"GreenButton", false, "gacha_roll")
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	pcol.add_child(row)
+	var one := _button(row, "x1  ·  %d" % Data.GACHA_COST, func(): return _recruit(1, false),
+		model.gold >= Data.GACHA_COST, "gold", "", false, "gacha_roll")
+	one.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var ten := _button(row, "x10  ·  %d" % Data.GACHA_COST_10, func(): return _recruit(10, false),
+		model.gold >= Data.GACHA_COST_10, "gold", "GoldButton", false, "gacha_roll")
+	ten.add_theme_font_size_override("font_size", 26)
+	ten.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_label(pcol, "x10 dijamin minimal satu Epik. Duplikat menambah bintang (+%d%% atribut), "
+		% int(Data.STAR_BONUS * 100) + "atau perak bila bintang sudah penuh.", "CardLabel")
+	_label(pcol, "Emas didapat dari kampanye (bonus tiap 5 tahap) dan naik jabatan.", "CardLabel")
+
+	var head := _label(box, "Daftar Penasihat", "TitleLabel")
+	head.add_theme_font_size_override("font_size", 30)
+	var grid_card := PanelContainer.new()
+	box.add_child(grid_card)
+	var grid := GridContainer.new()
+	grid.columns = 4
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 12)
+	grid_card.add_child(grid)
+	for r in ["ssr", "sr", "r"]:
+		for c in Data.counselors_of_rarity(r):
+			var cell := VBoxContainer.new()
+			cell.add_theme_constant_override("separation", 2)
+			grid.add_child(cell)
+			var owned: bool = model.counselors.has(c["id"])
+			cell.add_child(_portrait_frame(c["id"], 136, not owned))
+			if owned:
+				var stars := _stars(cell, int(model.counselors[c["id"]].get("stars", 0)), 20)
+				stars.alignment = BoxContainer.ALIGNMENT_CENTER
+			else:
+				_rarity_tag(cell, r)
+
+
+func _recruit(count: int, free: bool):
+	var result: Dictionary = model.recruit(count, Game.now(), free)
+	if result["ok"]:
+		_show_recruit(result["results"])
+	return result if not result["ok"] else {"ok": true}
+
+
+## Layar pengungkapan hasil rekrut dengan animasi.
+func _show_recruit(results: Array) -> void:
+	var overlay := Control.new()
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(overlay)
+	var dim := ColorRect.new()
+	dim.color = Color(0.04, 0.01, 0.03, 0.92)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(dim)
+
+	var v := VBoxContainer.new()
+	v.set_anchors_preset(Control.PRESET_FULL_RECT)
+	v.alignment = BoxContainer.ALIGNMENT_CENTER
+	v.add_theme_constant_override("separation", 24)
+	overlay.add_child(v)
+	var title := _label(v, "Hasil Rekrut", "TitleLabel")
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+	# Gulungan bergetar sambil menunggu (suara gulungan dari tombol).
+	var scroll := _tex(Art.icon("tab_gacha"), 220)
+	scroll.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	v.add_child(scroll)
+
+	var cards: Array = []
+	var holder: Container
+	if results.size() == 1:
+		holder = CenterContainer.new()
+		cards.append(_reveal_card(results[0], 300))
+		holder.add_child(cards[0])
+	else:
+		var grid := GridContainer.new()
+		grid.columns = 5
+		grid.add_theme_constant_override("h_separation", 10)
+		grid.add_theme_constant_override("v_separation", 16)
+		for r in results:
+			var c := _reveal_card(r, 122)
+			cards.append(c)
+			grid.add_child(c)
+		holder = CenterContainer.new()
+		holder.add_child(grid)
+	holder.visible = false
+	v.add_child(holder)
+
+	var done := Button.new()
+	done.text = "Lanjut"
+	done.theme_type_variation = "GoldButton"
+	done.custom_minimum_size = Vector2(300, 84)
+	done.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	done.modulate.a = 0.0
+	done.disabled = true
+	done.pressed.connect(func():
+		Audio.play("click")
+		overlay.queue_free())
+	v.add_child(done)
+
+	var tw := create_tween()
+	scroll.pivot_offset = Vector2(110, 110)
+	for i in 8:
+		tw.tween_property(scroll, "rotation", 0.12 if i % 2 == 0 else -0.12, 0.07)
+	tw.tween_property(scroll, "scale", Vector2(1.3, 1.3), 0.25)
+	tw.parallel().tween_property(scroll, "modulate", Color(3, 3, 2, 0), 0.25)
+	tw.tween_callback(func():
+		scroll.visible = false
+		holder.visible = true)
+	for c in cards:
+		var card: Control = c
+		var rarity: String = card.get_meta("rarity")
+		tw.tween_callback(func():
+			card.pivot_offset = card.size / 2
+			Audio.play("reveal_" + rarity if rarity != "r" or cards.size() == 1 else "click"))
+		var pop := 0.3 if cards.size() == 1 else 0.16
+		tw.tween_property(card, "modulate:a", 1.0, pop * 0.5)
+		tw.parallel().tween_property(card, "scale", Vector2.ONE, pop).from(Vector2(0.3, 0.3)) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		if cards.size() > 1 and rarity != "r":
+			tw.tween_interval(0.3)  # jeda dramatis untuk Epik/Legenda
+	tw.tween_callback(func(): done.disabled = false)
+	tw.tween_property(done, "modulate:a", 1.0, 0.2)
+
+
+func _reveal_card(res: Dictionary, side: float) -> Control:
+	var rarity: String = res["rarity"]
+	var def: Dictionary = Data.counselor_def(res["id"])
+	var card := VBoxContainer.new()
+	card.add_theme_constant_override("separation", 4)
+	card.set_meta("rarity", rarity)
+	card.modulate.a = 0.0
+
+	var stage := Control.new()
+	stage.custom_minimum_size = Vector2(side + 10, side + 10)
+	card.add_child(stage)
+	if rarity != "r":
+		# Sinar berputar di belakang potret untuk Epik dan Legenda.
+		var rays := _tex(Art.icon("rays"), side * 1.5)
+		rays.size = Vector2(side * 1.5, side * 1.5)
+		rays.position = Vector2(5 + side / 2, 5 + side / 2) - rays.size / 2
+		rays.pivot_offset = rays.size / 2
+		rays.modulate = Color(_rarity_color(rarity), 0.75 if rarity == "ssr" else 0.45)
+		stage.add_child(rays)
+		var spin := rays.create_tween().set_loops()
+		spin.tween_property(rays, "rotation", TAU, 6.0).from(0.0)
+	var frame := _portrait_frame(res["id"], side)
+	frame.position = Vector2(0, 0)
+	stage.add_child(frame)
+
+	var small := side < 200
+	var name_label := _label(card, def["name"], "SmallLabel" if small else "TitleLabel")
+	name_label.custom_minimum_size.x = side + 10
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if small:
+		name_label.add_theme_font_size_override("font_size", 16)
+	else:
+		name_label.add_theme_font_size_override("font_size", 30)
+	var tag: String = Data.RARITIES[rarity]["name"]
+	var status: String = "BARU!" if res["new"] else ("Bintang %d" % res["stars"] if res["stars"] > 0
+		else "+%s perak" % _num(res["silver"]))
+	var l := _label(card, "%s · %s" % [tag, status] if not small else status, "SmallLabel")
+	l.custom_minimum_size.x = side + 10
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.add_theme_font_override("font", UI.font_bold)
+	l.add_theme_color_override("font_color", UI.GOLD if res["new"] else _rarity_color(rarity).lightened(0.3))
+	if small:
+		l.add_theme_font_size_override("font_size", 15)
+	return card
 
 
 func _build_palace(box: VBoxContainer) -> void:

@@ -169,6 +169,7 @@ def save(name, x, quality=4):
             w.writeframes(pcm.tobytes())
         dst = os.path.join(OUT, name + ".ogg")
         subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", path, "-c:a", "libvorbis",
+                        "-fflags", "+bitexact", "-flags:a", "+bitexact", "-serial_offset", "1",
                         "-q:a", str(quality), dst], check=True)
     finally:
         os.remove(path)
@@ -343,6 +344,41 @@ def sfx_error():
     return master(tone * env_exp(n, 0.08, 0.003), 0.45)
 
 
+def sfx_gacha_roll():
+    """Tabuhan kendang yang makin rapat dan bonang yang naik, membangun ketegangan."""
+    sc = scale(392, SLENDRO)
+    tr = Track(1.3)
+    t = 0.0
+    gap = 0.16
+    k = 0
+    while t < 1.15:
+        tr.add(t, kendang_high(), 0.5 + 0.4 * t)
+        if k % 2 == 0:
+            tr.add(t, bonang(note(sc, 1 + (k // 2) % 8), 0.4), 0.25 + 0.2 * t)
+        t += gap
+        gap = max(0.05, gap * 0.86)
+        k += 1
+    tr.add(1.15, kendang_low(), 1.0)
+    return master(tr.once(), 0.65)
+
+
+def sfx_reveal(level):
+    """level 0 = Langka, 1 = Epik, 2 = Legenda."""
+    sc = scale([523, 587, 659][level], SLENDRO)
+    tr = Track([0.9, 1.6, 3.2][level])
+    if level == 2:
+        tr.add(0, gong(50, 3.2), 1.0)
+    if level >= 1:
+        tr.add(0, kempul(110, 1.5), 0.6)
+    run = [[1, 3, 5], [1, 2, 3, 5, 6], [1, 2, 3, 5, 6, 8, 9, 10]][level]
+    for i, d in enumerate(run):
+        tr.add(0.05 + i * 0.07, saron(note(sc, d), 1.0 + level * 0.4), 0.55)
+    if level == 2:
+        for i, d in enumerate([10, 8, 10, 11]):
+            tr.add(0.75 + i * 0.12, bonang(note(sc, d), 1.2), 0.35)
+    return master(tr.once(), [0.55, 0.65, 0.8][level])
+
+
 def main():
     save("music_city", music_city(), 3)
     save("music_palace", music_palace(), 3)
@@ -350,7 +386,9 @@ def main():
     for name, fn in [("click", sfx_click), ("coin", sfx_coin), ("grain", sfx_grain),
                      ("recruit", sfx_recruit), ("upgrade", sfx_upgrade), ("attack", sfx_attack),
                      ("win", sfx_win), ("lose", sfx_lose), ("heart", sfx_heart), ("birth", sfx_birth),
-                     ("promote", sfx_promote), ("error", sfx_error)]:
+                     ("promote", sfx_promote), ("error", sfx_error), ("gacha_roll", sfx_gacha_roll),
+                     ("reveal_r", lambda: sfx_reveal(0)), ("reveal_sr", lambda: sfx_reveal(1)),
+                     ("reveal_ssr", lambda: sfx_reveal(2))]:
         save("sfx_" + name, fade_end(fn()))
     print("Audio ditulis ke", os.path.normpath(OUT))
 

@@ -421,6 +421,25 @@ CHARACTERS = {
     "satria": dict(gender="m", skin=SKIN["medium"], hair="#1b120b", hair_style="topknot", headwear="crown",
                    outfit="#efe6d2", inner="#c9963f", trim="#b8862f", beard="mustache", brows="calm",
                    extras=["necklace"], bg=("#f2d27a", "#7a4b12")),
+    # Penasihat khusus rekrut (gacha)
+    "lintang": dict(gender="f", skin=SKIN["tan"], hair="#1d120b", hair_style="long", headwear="bandana",
+                    hat_color="#3d7a4a", outfit="#2f5e3a", inner="#e9f2e4", shawl="#8fbf7a", brows="calm",
+                    mouth="calm", extras=["earrings"], bg=("#6fc4a0", "#123d2e")),
+    "danu": dict(gender="m", skin=SKIN["medium"], hair="#24170f", hair_style="short", headwear="udeng",
+                 hat_color="#a83a22", outfit="#7a4a1e", inner="#f1e3c6", beard="stubble", brows="calm",
+                 mouth="smile", bg=("#e0a060", "#4a2410")),
+    "wening": dict(gender="f", skin=SKIN["light"], hair="#140d08", hair_style="bun", headwear="tiara",
+                   gem="#2e86c1", outfit="#1f6f78", inner="#e4f4f5", shawl="#7cc7cc",
+                   extras=["necklace", "earrings"], bg=("#62c6d0", "#0e3a40")),
+    "bagas": dict(gender="m", skin=SKIN["deep"], hair="#120b07", hair_style="short", headwear="helmet",
+                  metal="#b8c2cc", plume="#2e6fbf", outfit="#23395d", beard="goatee", brows="fierce",
+                  mouth="fierce", extras=["armor"], bg=("#6f9fd8", "#14284a")),
+    "kedaton": dict(gender="f", skin=SKIN["medium"], hair="#120a06", hair_style="long", headwear="crown",
+                    outfit="#8e1b2e", inner="#fbe3c8", shawl="#e8c070", trim="#f4d58a",
+                    extras=["necklace", "earrings"], bg=("#f0b050", "#6a0f20")),
+    "resi": dict(gender="m", skin=SKIN["tan"], hair="#ece8e0", hair_style="topknot", outfit="#d98c1e",
+                 inner="#f6ead2", trim="#8a4b12", beard="full", brows="calm", mouth="calm",
+                 extras=["necklace"], bg=("#f7dc8a", "#7a4a0a")),
     # Selir
     "melati": dict(gender="f", skin=SKIN["light"], hair="#1d120b", hair_style="long", outfit="#4f8a5b",
                    inner="#f2f7ee", shawl="#ffffff", extras=["earrings"],
@@ -509,6 +528,30 @@ ICONS["power"] = icon_doc(
     '<path d="M48 8 Q54 16 49 24 Q44 32 51 40 Q57 48 50 56" stroke="#9aa4b0" stroke-width="2" fill="none"/>'
     '<path d="M30 66 L66 66 L62 74 L34 74 Z" fill="#e8c070" stroke="#7a4b1f" stroke-width="2.5"/>'
     '<path d="M42 74 L54 74 L56 92 Q48 96 40 92 Z" fill="#7a4b1f" stroke="#4a2c10" stroke-width="2.5"/>')
+
+ICONS["gold"] = icon_doc(
+    "".join(
+        '<path d="M%d %d L%d %d L%d %d L%d %d Z" fill="#f2c14e" stroke="#9a6a12" stroke-width="3" stroke-linejoin="round"/>'
+        '<path d="M%d %d L%d %d L%d %d L%d %d Z" fill="#ffe08a"/>'
+        % (x, y + 22, x + 8, y, x + 38, y, x + 46, y + 22,
+           x + 9, y + 3, x + 37, y + 3, x + 40, y + 9, x + 6, y + 9)
+        for x, y in [(4, 66), (46, 66), (25, 44), (25, 66)])
+    + '<path d="M60 22 L64 32 L74 34 L64 38 L60 48 L56 38 L46 34 L56 32 Z" fill="#fff8d0"/>')
+
+ICONS["tab_gacha"] = icon_doc(
+    '<rect x="18" y="20" width="60" height="56" fill="#f4e4c1" stroke="#7a4b1f" stroke-width="3"/>'
+    '<path d="M28 34 L68 34 M28 44 L68 44 M28 54 L58 54" stroke="#a8742c" stroke-width="3"/>'
+    '<rect x="10" y="12" width="76" height="12" rx="6" fill="#a8742c" stroke="#5e3a12" stroke-width="3"/>'
+    '<rect x="10" y="72" width="76" height="12" rx="6" fill="#a8742c" stroke="#5e3a12" stroke-width="3"/>'
+    '<circle cx="66" cy="64" r="12" fill="#c0392b" stroke="#6b1a12" stroke-width="3"/>'
+    '<path d="M60 64 L66 58 L72 64 L66 70 Z" fill="#e8c070"/>')
+
+ICONS["rays"] = icon_doc(
+    "".join('<path d="M48 48 L%.1f %.1f L%.1f %.1f Z" fill="#fff"/>' % (
+        48 + 60 * math.cos(math.radians(a)), 48 + 60 * math.sin(math.radians(a)),
+        48 + 60 * math.cos(math.radians(a + 12)), 48 + 60 * math.sin(math.radians(a + 12)))
+        for a in range(0, 360, 30))
+    + '<circle cx="48" cy="48" r="20" fill="#fff" opacity="0.8"/>')
 
 ICONS["heart"] = icon_doc(
     '<path d="M48 86 Q10 60 12 34 Q14 14 32 14 Q44 14 48 28 Q52 14 64 14 Q82 14 84 34 Q86 60 48 86 Z" '
@@ -718,6 +761,40 @@ def bg_palace():
     return svg_doc(W, H, b, 1080, 540, defs)
 
 
+def bg_gacha():
+    """Ruang pemanggilan: candi bercahaya dengan sinar dan kelopak melayang."""
+    W, H = 720, 360
+    defs = ('<radialGradient id="glow" cx="50%" cy="62%" r="65%">'
+            '<stop offset="0" stop-color="#ffe7a0"/><stop offset="0.35" stop-color="#c46a3a"/>'
+            '<stop offset="1" stop-color="#2a0f2e"/></radialGradient>')
+    b = '<rect width="%d" height="%d" fill="url(#glow)"/>' % (W, H)
+    for i in range(18):
+        a0 = math.radians(i * 20 - 90)
+        a1 = math.radians(i * 20 - 82)
+        b += '<path d="M360 220 L%.0f %.0f L%.0f %.0f Z" fill="#fff6d0" opacity="0.10"/>' % (
+            360 + 700 * math.cos(a0), 220 + 700 * math.sin(a0), 360 + 700 * math.cos(a1), 220 + 700 * math.sin(a1))
+    # Candi bertingkat di tengah
+    tiers = [(250, 300, 470, 300), (270, 260, 450, 260), (295, 222, 425, 222), (320, 188, 400, 188), (342, 158, 378, 158)]
+    for i, (x0, y, x1, _) in enumerate(tiers):
+        b += '<rect x="%d" y="%d" width="%d" height="%d" fill="%s" stroke="#3a1a10" stroke-width="2"/>' % (
+            x0, y - 34 if i else y - 40, x1 - x0, 40 if i == 0 else 34, shade("#6b3a2a", -0.08 * i))
+    b += '<path d="M352 124 L360 90 L368 124 Z" fill="#e8c070"/>'
+    b += '<path d="M338 300 L338 268 Q360 246 382 268 L382 300 Z" fill="#fff1b8"/>'
+    b += '<circle cx="360" cy="276" r="40" fill="#fff6d0" opacity="0.35"/>'
+    b += '<rect y="300" width="%d" height="60" fill="#2a1410"/>' % W
+    b += '<path d="M200 300 L260 360 L460 360 L520 300 Z" fill="#4a2418"/>'
+    # Lampu minyak & kelopak
+    for x in (120, 600):
+        b += '<path d="M%d 300 L%d 240" stroke="#a8742c" stroke-width="5"/>' % (x, x)
+        b += '<circle cx="%d" cy="232" r="26" fill="#ffd27a" opacity="0.35"/>' % x
+        b += '<path d="M%d 240 Q%d 220 %d 240 Z" fill="#e8c070"/>' % (x - 14, x, x + 14)
+        b += '<path d="M%d 232 Q%d 214 %d 232 Q%d 238 %d 232 Z" fill="#fff1b8"/>' % (x - 5, x, x + 5, x, x - 5)
+    for i, (x, y) in enumerate([(90, 80), (180, 140), (540, 70), (640, 150), (250, 50), (470, 120), (60, 200), (680, 230)]):
+        b += '<ellipse cx="%d" cy="%d" rx="7" ry="4" fill="%s" opacity="0.8" transform="rotate(%d %d %d)"/>' % (
+            x, y, ["#ffd1e0", "#fff6d0", "#f5b041"][i % 3], i * 40, x, y)
+    return svg_doc(W, H, b, 1080, 540, defs)
+
+
 def pattern_kawung():
     """Tile motif batik kawung untuk latar aplikasi."""
     s = 96
@@ -740,6 +817,7 @@ def main():
     write("bg/counselor.svg", bg_counselor())
     write("bg/campaign.svg", bg_campaign())
     write("bg/palace.svg", bg_palace())
+    write("bg/gacha.svg", bg_gacha())
     write("bg/kawung.svg", pattern_kawung())
     print("Aset ditulis ke", os.path.normpath(ROOT))
 

@@ -20,15 +20,39 @@ const RANKS := [
 	{"name": "Perdana Menteri", "prestige": 12000, "max_charges": 8, "mult": 3.0, "level_cap": 150, "child_seats": 8},
 ]
 
-## Penasihat (hero). unlock_stage = tahap kampanye yang harus dimenangkan.
+## Kelangkaan penasihat untuk gacha. rate = peluang per tarikan.
+const RARITIES := {
+	"r": {"name": "Langka", "rate": 0.75, "color": "4a90d9", "dup_silver": 1500},
+	"sr": {"name": "Epik", "rate": 0.21, "color": "a05bd6", "dup_silver": 5000},
+	"ssr": {"name": "Legenda", "rate": 0.04, "color": "f0a830", "dup_silver": 20000},
+}
+
+## Aturan rekrut (gacha).
+const GACHA_COST := 100
+const GACHA_COST_10 := 900
+const GACHA_PITY := 50  ## Legenda dijamin paling lambat di tarikan ke-50.
+const GACHA_FREE_SECONDS := 86400
+const START_GOLD := 300
+const PROMOTE_GOLD := 150
+const MAX_STARS := 5
+const STAR_BONUS := 0.2  ## +20% atribut per bintang.
+
+## Penasihat (hero). unlock_stage = tahap kampanye yang harus dimenangkan;
+## -1 berarti hanya bisa didapat lewat rekrut (gacha).
 const COUNSELORS := [
-	{"id": "arya", "name": "Arya Wiraguna", "str": 9, "int": 6, "pol": 5, "cha": 4, "unlock_stage": 0},
-	{"id": "sekar", "name": "Sekar Pandita", "str": 3, "int": 10, "pol": 7, "cha": 5, "unlock_stage": 0},
-	{"id": "bayu", "name": "Bayu Lelana", "str": 5, "int": 5, "pol": 10, "cha": 6, "unlock_stage": 3},
-	{"id": "ratna", "name": "Ratna Kencana", "str": 4, "int": 7, "pol": 6, "cha": 11, "unlock_stage": 6},
-	{"id": "gajah", "name": "Gajah Mandala", "str": 14, "int": 5, "pol": 6, "cha": 5, "unlock_stage": 10},
-	{"id": "dewi", "name": "Dewi Prameswari", "str": 6, "int": 13, "pol": 9, "cha": 8, "unlock_stage": 15},
-	{"id": "satria", "name": "Satria Mahesa", "str": 16, "int": 9, "pol": 8, "cha": 9, "unlock_stage": 22},
+	{"id": "arya", "name": "Arya Wiraguna", "rarity": "r", "str": 9, "int": 6, "pol": 5, "cha": 4, "unlock_stage": 0},
+	{"id": "sekar", "name": "Sekar Pandita", "rarity": "r", "str": 3, "int": 10, "pol": 7, "cha": 5, "unlock_stage": 0},
+	{"id": "bayu", "name": "Bayu Lelana", "rarity": "r", "str": 5, "int": 5, "pol": 10, "cha": 6, "unlock_stage": 3},
+	{"id": "ratna", "name": "Ratna Kencana", "rarity": "sr", "str": 4, "int": 7, "pol": 6, "cha": 11, "unlock_stage": 6},
+	{"id": "gajah", "name": "Gajah Mandala", "rarity": "sr", "str": 14, "int": 5, "pol": 6, "cha": 5, "unlock_stage": 10},
+	{"id": "dewi", "name": "Dewi Prameswari", "rarity": "sr", "str": 6, "int": 13, "pol": 9, "cha": 8, "unlock_stage": 15},
+	{"id": "satria", "name": "Satria Mahesa", "rarity": "ssr", "str": 16, "int": 9, "pol": 8, "cha": 9, "unlock_stage": 22},
+	{"id": "lintang", "name": "Lintang Sari", "rarity": "r", "str": 7, "int": 6, "pol": 5, "cha": 7, "unlock_stage": -1},
+	{"id": "danu", "name": "Danu Wiradana", "rarity": "r", "str": 6, "int": 5, "pol": 8, "cha": 5, "unlock_stage": -1},
+	{"id": "wening", "name": "Wening Kirana", "rarity": "sr", "str": 5, "int": 14, "pol": 10, "cha": 7, "unlock_stage": -1},
+	{"id": "bagas", "name": "Bagas Pamungkas", "rarity": "sr", "str": 15, "int": 6, "pol": 5, "cha": 8, "unlock_stage": -1},
+	{"id": "kedaton", "name": "Ratu Sekar Kedaton", "rarity": "ssr", "str": 8, "int": 15, "pol": 12, "cha": 18, "unlock_stage": -1},
+	{"id": "resi", "name": "Resi Darma Wicaksana", "rarity": "ssr", "str": 7, "int": 19, "pol": 16, "cha": 10, "unlock_stage": -1},
 ]
 
 const BEAUTIES := [
@@ -61,6 +85,10 @@ static func counselor_def(id: String) -> Dictionary:
 	return {}
 
 
+static func counselors_of_rarity(rarity: String) -> Array:
+	return COUNSELORS.filter(func(c): return c["rarity"] == rarity)
+
+
 static func beauty_def(id: String) -> Dictionary:
 	for b in BEAUTIES:
 		if b["id"] == id:
@@ -79,4 +107,6 @@ static func stage_info(index: int) -> Dictionary:
 		"enemy_str": int(12 * pow(1.13, index)),
 		"reward_silver": 120 + 45 * index,
 		"reward_prestige": 10 + 4 * index,
+		# Tiap tahap ke-5 adalah tahap besar dengan bonus emas.
+		"reward_gold": 15 + 3 * int(index / 5.0) + (50 if (index + 1) % 5 == 0 else 0),
 	}

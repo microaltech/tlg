@@ -13,7 +13,8 @@ func _init() -> void:
 	for t in [
 		"test_new_game", "test_affair_and_charge_regen", "test_upgrade",
 		"test_campaign_win_unlock", "test_campaign_loss", "test_promote",
-		"test_palace_children", "test_save_roundtrip",
+		"test_palace_children", "test_save_roundtrip", "test_gacha_basic", "test_gacha_ten_and_pity",
+		"test_gacha_duplicates", "test_gacha_free", "test_gold_sources",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -133,3 +134,84 @@ func test_save_roundtrip() -> void:
 	check(var_to_str(m2.to_dict()) == var_to_str(m.to_dict()), "simpan/muat identik")
 	check(typeof(m2.counselors["arya"]["level"]) == TYPE_INT, "angka dikembalikan ke int")
 	check(m2.power() == m.power(), "kekuatan sama setelah muat")
+
+
+func test_gacha_basic() -> void:
+	var m := fresh(3)
+	check(m.gold == Data.START_GOLD, "emas awal")
+	check(not m.counselors.has("resi"), "penasihat gacha tidak terbuka dari tahap")
+	var before := m.counselors.size()
+	var r := m.recruit(1, 1000.0)
+	check(r["ok"] and r["results"].size() == 1, "rekrut x1 berhasil")
+	check(m.gold == Data.START_GOLD - Data.GACHA_COST, "emas terpakai")
+	var res: Dictionary = r["results"][0]
+	check(m.counselors.has(res["id"]), "hasil rekrut dimiliki")
+	check(res["new"] == (m.counselors.size() > before), "penanda penasihat baru")
+	m.gold = 50
+	check(not m.recruit(1, 1000.0)["ok"], "gagal tanpa emas")
+	check(not m.recruit(3, 1000.0)["ok"], "jumlah tidak valid")
+
+
+func test_gacha_ten_and_pity() -> void:
+	for seed in 20:
+		var m := fresh(seed)
+		m.gold = 100000
+		var r := m.recruit(10, 1000.0)
+		var epic: int = r["results"].filter(func(x): return x["rarity"] != "r").size()
+		check(r["results"].size() == 10 and epic >= 1, "10x menjamin minimal satu Epik (seed %d)" % seed)
+	var m := fresh(1)
+	m.gold = 1000000
+	m.rng.seed = 99
+	var since := 0
+	var worst := 0
+	for i in 400:
+		var rarity: String = m.recruit(1, 1000.0)["results"][0]["rarity"]
+		since += 1
+		if rarity == "ssr":
+			worst = maxi(worst, since)
+			since = 0
+	check(worst <= Data.GACHA_PITY, "Legenda dijamin dalam %d tarikan (terburuk %d)" % [Data.GACHA_PITY, worst])
+
+
+func test_gacha_duplicates() -> void:
+	var m := fresh()
+	var r := m._grant_counselor("arya", "r")
+	check(not r["new"] and r["stars"] == 1, "duplikat menambah bintang")
+	var base := m.attr("arya", "str")
+	check(base == int(9 * 1.2), "bintang menaikkan atribut")
+	for i in Data.MAX_STARS - 1:
+		m._grant_counselor("arya", "r")
+	check(m.counselors["arya"]["stars"] == Data.MAX_STARS, "bintang maksimal")
+	var silver := m.silver
+	r = m._grant_counselor("arya", "r")
+	check(r["silver"] > 0 and m.silver == silver + r["silver"], "duplikat bintang penuh jadi perak")
+	check(m._grant_counselor("resi", "ssr")["new"], "penasihat baru dari gacha")
+
+
+func test_gacha_free() -> void:
+	var m := fresh()
+	check(m.free_pull_eta(1000.0) == 0, "rekrut gratis tersedia di awal")
+	check(m.recruit(1, 1000.0, true)["ok"] and m.gold == Data.START_GOLD, "rekrut gratis tanpa emas")
+	check(not m.recruit(1, 1001.0, true)["ok"], "gratis hanya sekali per hari")
+	check(m.free_pull_eta(1000.0 + 3600) == Data.GACHA_FREE_SECONDS - 3600, "hitung mundur gratis")
+	check(m.recruit(1, 1000.0 + Data.GACHA_FREE_SECONDS, true)["ok"], "gratis lagi setelah 24 jam")
+	check(not m.recruit(10, 999999.0, true)["ok"], "gratis hanya untuk x1")
+
+
+func test_gold_sources() -> void:
+	var m := fresh()
+	m.soldiers = 10000000
+	var g := m.gold
+	for i in 5:
+		m.fight_stage()
+	check(m.gold > g + 50, "emas dari kampanye termasuk bonus tahap ke-5")
+	m.prestige = 150
+	g = m.gold
+	m.promote()
+	check(m.gold == g + Data.PROMOTE_GOLD, "emas dari naik jabatan")
+	m.gold += Data.GACHA_COST_10
+	m.recruit(10, 1000.0)
+	m.counselors["arya"]["stars"] = 3
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(var_to_str(m2.to_dict()) == var_to_str(m.to_dict()), "simpan/muat data gacha")

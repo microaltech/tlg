@@ -37,10 +37,16 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
 - **Kota** — Tarik Pajak (perak, dari Kecerdasan), Kelola Sawah (pangan, dari
   Politik), Rekrut Prajurit (dari Karisma). Tiap urusan memakai *charge* yang
   terisi 1 per 60 detik, tetap terisi saat game ditutup (offline progress).
-- **Penasihat** — 7 penasihat dengan 4 atribut; latih dengan perak. Batas level
-  ditentukan jabatan.
+- **Penasihat** — 13 penasihat dengan 4 atribut dan 3 kelangkaan (Langka, Epik,
+  Legenda); latih dengan perak. Batas level ditentukan jabatan.
+- **Rekrut (gacha)** — tarik x1 (100 emas) atau x10 (900 emas, dijamin minimal
+  satu Epik), plus 1 rekrut gratis tiap 24 jam. Peluang Legenda 4% / Epik 21% /
+  Langka 75%, dengan jaminan Legenda paling lambat di tarikan ke-50. Duplikat
+  menambah bintang (maks. 5, +20% atribut per bintang); setelah penuh menjadi
+  perak. 6 penasihat (termasuk 2 Legenda) hanya bisa didapat lewat rekrut.
+  Emas didapat dari kampanye (bonus tiap tahap ke-5) dan naik jabatan.
 - **Kampanye** — tahap tanpa batas yang dibuat prosedural. Kekuatan total
-  menentukan berapa prajurit yang gugur. Menang memberi perak & prestise serta
+  menentukan berapa prajurit yang gugur. Menang memberi perak, prestise & emas serta
   membuka penasihat/selir baru.
 - **Istana** — kunjungi selir untuk menaikkan keakraban (menambah Karisma) dan
   peluang mendapat anak. Didik anak dengan pangan, lalu nikahkan untuk bonus
@@ -166,6 +172,6 @@ lalu **Project → Install Android Build Template**.
 ## Langkah berikutnya
 
 - Aset visual: potret penasihat/selir, latar kota, ikon sumber daya, animasi.
-- Gacha/rekrut penasihat, item & inventaris, misi harian, event.
+- Item & inventaris, misi harian, event, banner rekrut berganti (rate-up).
 - Backend + akun, PvP, aliansi, leaderboard.
 - IAP (Google Play Billing) & iklan berhadiah (AdMob) lewat plugin Godot.

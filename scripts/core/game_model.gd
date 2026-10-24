@@ -55,6 +55,9 @@ var alliance := {}
 ##   "processed": [token transaksi], "once": [id produk sekali beli], "card_until": int (hari terakhir
 ##   kartu bulanan aktif), "card_claimed": int (hari klaim terakhir), "spent_idr": int}
 var iap := {}
+## VIP: {"points": int, "daily_day": int (hari klaim hadiah harian), "packs": [level paket yang dibeli],
+##   "gifts": [level yang hadiah naik levelnya sudah diberikan]}
+var vip := {}
 ## Tutorial: {"step": int, "done": bool, "intros": [id fitur yang sudah diperkenalkan]}
 var tutorial := {}
 ## Arena PvP (kosong sampai terbuka). Lihat bagian "Arena" di bawah.
@@ -92,6 +95,7 @@ func new_game(now: float) -> void:
 	arena = {}
 	tutorial = {"step": 0, "done": false, "intros": []}
 	iap = _empty_iap()
+	vip = {"points": 0, "daily_day": -1, "packs": [], "gifts": []}
 	_npc_cache = {}
 	_unlock_content()
 	ensure_daily(now)
@@ -112,7 +116,7 @@ func next_rank_info() -> Dictionary:
 
 
 func max_charges() -> int:
-	return rank_info()["max_charges"]
+	return int(rank_info()["max_charges"]) + int(vip_perk("charges"))
 
 
 func can_promote() -> bool:
@@ -236,7 +240,7 @@ func upgrade_counselor(id: String) -> Dictionary:
 func affair_yield(kind: String) -> int:
 	var a: Dictionary = AFFAIRS[kind]
 	return int((int(a["base"]) + total_attr(a["attr"]) * int(a["per_point"])) * float(rank_info()["mult"])
-		* (1.0 + event_bonus("yield_" + kind) + alliance_bonus()))
+		* (1.0 + event_bonus("yield_" + kind) + alliance_bonus() + vip_perk("yield")))
 
 
 func do_affair(kind: String, now: float) -> Dictionary:
@@ -734,11 +738,15 @@ func _alliance_log(text: String) -> void:
 		log.resize(20)
 
 
+func donations_per_day() -> int:
+	return Data.ALLIANCE_DONATIONS_PER_DAY + int(vip_perk("donations"))
+
+
 func donations_left(now: float) -> int:
 	var d: Dictionary = alliance["donations"]
 	if int(d["day"]) != day_index(now):
-		return Data.ALLIANCE_DONATIONS_PER_DAY
-	return Data.ALLIANCE_DONATIONS_PER_DAY - int(d["count"])
+		return donations_per_day()
+	return donations_per_day() - int(d["count"])
 
 
 func donate(kind: String, now: float) -> Dictionary:
@@ -861,10 +869,14 @@ func boss_info(now: float) -> Dictionary:
 	var used := int(boss["attacks"]) if int(boss["attack_day"]) == day_index(now) else 0
 	return {
 		"name": "%s Lv.%d" % [Data.BOSS_NAME, alliance_level()], "hp_max": int(boss["hp_max"]), "hp": hp,
-		"my_damage": int(boss["damage"]), "npc_damage": npc, "attacks_left": Data.BOSS_ATTACKS_PER_DAY - used,
+		"my_damage": int(boss["damage"]), "npc_damage": npc, "attacks_left": boss_attacks_per_day() - used,
 		"defeated": hp <= 0, "claimed": bool(boss["claimed"]),
 		"can_claim": hp <= 0 and not bool(boss["claimed"]) and int(boss["damage"]) > 0,
 	}
+
+
+func boss_attacks_per_day() -> int:
+	return Data.BOSS_ATTACKS_PER_DAY + int(vip_perk("boss_attacks"))
 
 
 func attack_boss(now: float) -> Dictionary:
@@ -1018,9 +1030,10 @@ func arena_stakes(opp_rating: int) -> Array:
 
 
 func arena_tickets_left(now: float) -> int:
+	var daily := Data.ARENA_TICKETS + int(vip_perk("arena_tickets"))
 	if int(arena["day"]) != day_index(now):
-		return Data.ARENA_TICKETS
-	return Data.ARENA_TICKETS + int(arena["tickets_bought"]) - int(arena["tickets_used"])
+		return daily
+	return daily + int(arena["tickets_bought"]) - int(arena["tickets_used"])
 
 
 func buy_arena_ticket(now: float) -> Dictionary:
@@ -1224,6 +1237,11 @@ func grant_purchase(id: String, token: String, now: float) -> Dictionary:
 		if iap["processed"].size() > 100:
 			iap["processed"] = iap["processed"].slice(-100)
 	iap["spent_idr"] = int(iap["spent_idr"]) + int(def["price_idr"])
+	var vip_points := int(def["price_idr"]) / Data.VIP_IDR_PER_POINT
+	parts.append("+%d poin VIP" % vip_points)
+	var vip_msg := add_vip_points(vip_points)
+	if vip_msg != "":
+		parts.append(vip_msg)
 	changed.emit()
 	var result := _ok("Pembelian %s berhasil: %s." % [def["name"], ", ".join(parts)])
 	result["product"] = id
@@ -1248,6 +1266,89 @@ func claim_card(now: float) -> Dictionary:
 	gold += daily
 	changed.emit()
 	return _ok("Kartu Bulanan: +%d emas. Sisa %d hari." % [daily, card_days_left(now) - 1])
+
+
+# --- VIP --------------------------------------------------------------------
+
+func vip_level() -> int:
+	var lv := 0
+	for i in Data.VIP_LEVELS.size():
+		if int(vip["points"]) >= int(Data.VIP_LEVELS[i]["points"]):
+			lv = i
+	return lv
+
+
+func vip_perk(key: String) -> float:
+	if vip.is_empty():
+		return 0.0
+	return float(Data.VIP_LEVELS[vip_level()]["perks"].get(key, 0))
+
+
+## [poin di level ini, poin yang dibutuhkan ke level berikutnya]; [0, 0] bila maksimal.
+func vip_progress() -> Array:
+	var lv := vip_level()
+	if lv + 1 >= Data.VIP_LEVELS.size():
+		return [0, 0]
+	var base := int(Data.VIP_LEVELS[lv]["points"])
+	return [int(vip["points"]) - base, int(Data.VIP_LEVELS[lv + 1]["points"]) - base]
+
+
+## Tambah poin VIP dan berikan hadiah naik level. Mengembalikan pesan naik level ("" bila tidak naik).
+func add_vip_points(amount: int) -> String:
+	var before := vip_level()
+	vip["points"] = int(vip["points"]) + amount
+	var after := vip_level()
+	if after == before:
+		return ""
+	var gifts := []
+	for lv in range(before + 1, after + 1):
+		if lv in vip["gifts"]:
+			continue
+		vip["gifts"].append(lv)
+		var text := _give_rewards(Data.VIP_LEVELS[lv]["gift"])
+		if text != "":
+			gifts.append(text)
+	return "naik ke VIP %d (hadiah %s)" % [after, ", ".join(gifts)] if not gifts.is_empty() \
+		else "naik ke VIP %d" % after
+
+
+func vip_daily_can_claim(now: float) -> bool:
+	return vip_level() > 0 and int(vip["daily_day"]) != day_index(now)
+
+
+func claim_vip_daily(now: float) -> Dictionary:
+	if vip_level() <= 0:
+		return _fail("Capai VIP 1 untuk hadiah harian VIP.")
+	if not vip_daily_can_claim(now):
+		return _fail("Hadiah harian VIP sudah diambil hari ini.")
+	vip["daily_day"] = day_index(now)
+	var text := _give_rewards(Data.VIP_LEVELS[vip_level()]["daily"])
+	changed.emit()
+	return _ok("Hadiah harian VIP %d: %s." % [vip_level(), text])
+
+
+func buy_vip_pack(level: int) -> Dictionary:
+	if level < 1 or level >= Data.VIP_LEVELS.size():
+		return _fail("Paket VIP tidak ditemukan.")
+	if vip_level() < level:
+		return _fail("Capai VIP %d untuk membeli paket ini." % level)
+	if level in vip["packs"]:
+		return _fail("Paket VIP %d sudah dibeli." % level)
+	var pack: Dictionary = Data.VIP_LEVELS[level]["pack"]
+	if gold < int(pack["cost"]):
+		return _fail("Emas tidak cukup (butuh %d)." % pack["cost"])
+	gold -= int(pack["cost"])
+	vip["packs"].append(level)
+	var parts := []
+	var text := _give_rewards(pack)
+	if text != "":
+		parts.append(text)
+	if pack.has("counselor"):
+		var c := Data.counselor_def(pack["counselor"])
+		var r := _grant_counselor(c["id"], c["rarity"])
+		parts.append(("%s bergabung" if r["new"] else "%s +1 bintang") % c["name"])
+	changed.emit()
+	return _ok("Paket VIP %d: %s." % [level, ", ".join(parts)])
 
 
 # --- Tutorial & pengenalan fitur -------------------------------------------
@@ -1336,8 +1437,10 @@ func claim_login(now: float) -> Dictionary:
 	login["last_day"] = day_index(now)
 	login["total"] = int(login["total"]) + 1
 	var text := _give_rewards(Data.LOGIN_REWARDS[day - 1])
+	var vip_msg := add_vip_points(Data.VIP_LOGIN_POINTS)
 	changed.emit()
-	var result := _ok("Hadiah login Hari %d: %s." % [day, text])
+	var result := _ok("Hadiah login Hari %d: %s, +%d poin VIP%s." % [day, text, Data.VIP_LOGIN_POINTS,
+		", " + vip_msg if vip_msg != "" else ""])
 	result["day"] = day
 	return result
 
@@ -1469,6 +1572,7 @@ func to_dict() -> Dictionary:
 		"arena": arena,
 		"tutorial": tutorial,
 		"iap": iap,
+		"vip": vip,
 	}
 
 
@@ -1553,6 +1657,12 @@ func from_dict(d: Dictionary, now: float) -> void:
 			iap[k].append(str(v))
 	for k in ["card_until", "card_claimed", "spent_idr"]:
 		iap[k] = int(src_iap.get(k, iap[k]))
+	var src_vip: Dictionary = d.get("vip", {})
+	vip = {"points": int(src_vip.get("points", 0)), "daily_day": int(src_vip.get("daily_day", -1)),
+		"packs": [], "gifts": []}
+	for k in ["packs", "gifts"]:
+		for v in src_vip.get(k, []):
+			vip[k].append(int(v))
 	var src_tut: Dictionary = d.get("tutorial", {})
 	if src_tut.is_empty():
 		# Save dari versi sebelum ada tutorial: pemain lama tidak perlu tutorial

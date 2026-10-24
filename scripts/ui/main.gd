@@ -65,6 +65,11 @@ var _first_visit_button: Button
 var _store_overlay: Control
 var _store_box: VBoxContainer
 var _gold_badge: Dictionary
+var _vip_tag: Label
+var _vip_badge: Dictionary
+var _vip_overlay: Control
+var _vip_box: VBoxContainer
+var _vip_view := -1  ## Level VIP yang sedang dilihat di panel (-1 = level sekarang).
 var _mission_box: VBoxContainer
 var _mission_reset_label: Label
 var _gacha_banner_done := false
@@ -143,7 +148,7 @@ func _build_header() -> Control:
 	var top := HBoxContainer.new()
 	top.add_theme_constant_override("separation", 12)
 	v.add_child(top)
-	top.add_child(_tex(Art.portrait("lord"), 104))
+	top.add_child(_build_avatar())
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	info.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -511,6 +516,8 @@ func _rebuild() -> void:
 		_fill_event()
 	if is_instance_valid(_store_overlay):
 		_fill_store()
+	if is_instance_valid(_vip_overlay):
+		_fill_vip()
 	_tick()
 	# Kembalikan posisi gulir setelah layout dihitung ulang.
 	await get_tree().process_frame
@@ -537,6 +544,9 @@ func _tick() -> void:
 	var season_ready: bool = not model.arena.is_empty() and not model.arena["season_reward"].is_empty()
 	_arena_nav_badge["badge"].visible = season_ready
 	_arena_nav_badge["badge_label"].text = "1"
+	_vip_tag.text = "VIP %d" % model.vip_level()
+	_vip_badge["badge"].visible = model.vip_daily_can_claim(now)
+	_vip_badge["badge_label"].text = "!"
 	_gold_badge["badge"].visible = model.card_can_claim(now)
 	_gold_badge["badge_label"].text = "1"
 	var event_ready: int = model.event_claimable_count()
@@ -1551,7 +1561,7 @@ func _build_alliance_choices(box: VBoxContainer, now: float) -> void:
 func _build_alliance_hq(box: VBoxContainer, now: float) -> void:
 	var don := _inner_box(box)
 	_label(don, "Sumbangan Harian", "CardTitle")
-	_label(don, "Sisa hari ini: %d / %d" % [model.donations_left(now), Data.ALLIANCE_DONATIONS_PER_DAY], "CardLabel")
+	_label(don, "Sisa hari ini: %d / %d" % [model.donations_left(now), model.donations_per_day()], "CardLabel")
 	for d in Data.ALLIANCE_DONATIONS:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)
@@ -1619,7 +1629,7 @@ func _build_alliance_boss(box: VBoxContainer, now: float) -> void:
 		else:
 			_label(card, "Anda tidak ikut menyerang, jadi tidak mendapat hadiah.", "CardLabel")
 	else:
-		_label(card, "Serangan tersisa hari ini: %d / %d" % [info["attacks_left"], Data.BOSS_ATTACKS_PER_DAY], "CardLabel")
+		_label(card, "Serangan tersisa hari ini: %d / %d" % [info["attacks_left"], model.boss_attacks_per_day()], "CardLabel")
 		var attack := _button(card, "SERANG!", func():
 			var r: Dictionary = model.attack_boss(Game.now())
 			if r["ok"]:
@@ -1690,6 +1700,155 @@ func _build_alliance_members(box: VBoxContainer, now: float) -> void:
 		_label(col, "%s  ·  %s" % [m["name"], m["role"]], "CardLabel").add_theme_font_override("font", UI.font_bold)
 		_label(col, "Kekuatan %s · Kerusakan bos %s" % [_num(m["power"]), _num(m["damage"])], "SmallLabel") \
 			.add_theme_color_override("font_color", UI.INK)
+
+
+# --- VIP --------------------------------------------------------------------
+
+## Avatar di header dengan label VIP; diketuk untuk membuka panel VIP.
+func _build_avatar() -> Control:
+	var holder := Control.new()
+	holder.custom_minimum_size = Vector2(104, 104)
+	var b := Button.new()
+	b.theme_type_variation = "NavButton"
+	b.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	b.pressed.connect(func():
+		Audio.play("click")
+		_show_vip())
+	holder.add_child(b)
+	var pic := _tex(Art.portrait("lord"), 104)
+	pic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_child(pic)
+	var tag := PanelContainer.new()
+	var st := UI.box(Color("c0392b"), UI.GOLD, 2, 10)
+	st.content_margin_left = 8
+	st.content_margin_right = 8
+	st.content_margin_top = 0
+	st.content_margin_bottom = 0
+	tag.add_theme_stylebox_override("panel", st)
+	tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tag.position = Vector2(18, 82)
+	_vip_tag = Label.new()
+	_vip_tag.add_theme_font_override("font", UI.font_bold)
+	_vip_tag.add_theme_font_size_override("font_size", 17)
+	_vip_tag.add_theme_color_override("font_color", Color("fff3d6"))
+	tag.add_child(_vip_tag)
+	holder.add_child(tag)
+	_vip_badge = _badge(holder, Vector2(82, -4))
+	return holder
+
+
+func _show_vip() -> void:
+	if is_instance_valid(_vip_overlay):
+		return
+	_vip_view = -1
+	var p := _open_panel("VIP", "vip", _close_vip)
+	_vip_overlay = p["overlay"]
+	_vip_box = p["content"]
+	p["subtitle"].text = "Keuntungan khusus para Tuan"
+	_fill_vip()
+
+
+func _close_vip() -> void:
+	if is_instance_valid(_vip_overlay):
+		Audio.play("click")
+		_vip_overlay.queue_free()
+	_vip_overlay = null
+
+
+func _fill_vip() -> void:
+	_clear(_vip_box)
+	var now: float = Game.now()
+	var lv: int = model.vip_level()
+	var top := _inner_box(_vip_box)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	top.add_child(row)
+	row.add_child(_tex(Art.icon("vip"), 90))
+	var col := _col(row)
+	_label(col, "VIP %d" % lv, "CardTitle").add_theme_font_size_override("font_size", 36)
+	var prog: Array = model.vip_progress()
+	if prog[1] > 0:
+		_label(col, "%d / %d poin ke VIP %d" % [prog[0], prog[1], lv + 1], "CardLabel")
+		_bar(col, prog[0], prog[1], Color("c0392b"))
+	else:
+		_label(col, "Level VIP tertinggi!", "CardLabel")
+	_label(top, "1 poin VIP untuk setiap %s pembelian · +%d poin tiap klaim login harian" % [
+		Data.format_idr(Data.VIP_IDR_PER_POINT), Data.VIP_LOGIN_POINTS], "SmallLabel") \
+		.add_theme_color_override("font_color", UI.INK)
+	var actions := HBoxContainer.new()
+	actions.add_theme_constant_override("separation", 8)
+	top.add_child(actions)
+	var daily_text := "Hadiah harian mulai VIP 1"
+	if lv > 0:
+		daily_text = "Hadiah Harian" if model.vip_daily_can_claim(now) else "Sudah diambil hari ini"
+	var daily := _button(actions, daily_text,
+		func(): return model.claim_vip_daily(Game.now()), model.vip_daily_can_claim(now), "chest", "GreenButton",
+		false, "reveal_sr")
+	daily.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var store := _button(actions, "Toko", func():
+		_close_vip()
+		_show_store()
+		return null, true, "store", "GoldButton")
+	store.add_theme_font_size_override("font_size", 24)
+
+	# Penjelajah level: lihat keuntungan dan paket tiap level VIP.
+	var view: int = clampi(lv if _vip_view < 0 else _vip_view, 1, Data.VIP_LEVELS.size() - 1)
+	var nav := HBoxContainer.new()
+	nav.add_theme_constant_override("separation", 8)
+	_vip_box.add_child(nav)
+	var prev := _button(nav, "<", func():
+		_vip_view = view - 1
+		_queue_rebuild()
+		return null, view > 1)
+	prev.custom_minimum_size = Vector2(80, 60)
+	var title := _label(nav, "Keuntungan VIP %d" % view, "TitleLabel")
+	title.add_theme_font_size_override("font_size", 28)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var nxt := _button(nav, ">", func():
+		_vip_view = view + 1
+		_queue_rebuild()
+		return null, view < Data.VIP_LEVELS.size() - 1)
+	nxt.custom_minimum_size = Vector2(80, 60)
+
+	var def: Dictionary = Data.VIP_LEVELS[view]
+	var perks := _inner_box(_vip_box)
+	var reached: bool = lv >= view
+	var status := _label(perks, "Aktif" if reached else "Butuh %d poin VIP" % def["points"], "CardLabel")
+	status.add_theme_font_override("font", UI.font_bold)
+	status.add_theme_color_override("font_color", UI.GREEN.darkened(0.25) if reached else UI.RED)
+	for key in Data.VIP_PERK_NAMES:
+		if not def["perks"].has(key):
+			continue
+		var value: float = def["perks"][key]
+		var shown := roundi(value * 100) if key == "yield" else int(value)
+		_label(perks, "•  " + Data.VIP_PERK_NAMES[key] % shown, "CardLabel")
+	_label(perks, "•  Hadiah harian: " + _reward_text(def["daily"]), "CardLabel")
+	_label(perks, "•  Hadiah naik level: " + _reward_text(def["gift"]), "CardLabel")
+
+	var pack: Dictionary = def["pack"]
+	var pbox := _inner_box(_vip_box)
+	pbox.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))
+	var prow := HBoxContainer.new()
+	prow.add_theme_constant_override("separation", 12)
+	pbox.add_child(prow)
+	prow.add_child(_tex(Art.portrait(pack["counselor"]) if pack.has("counselor") else Art.icon("starter"), 84))
+	var pcol := _col(prow)
+	_label(pcol, "Paket Hadiah VIP %d" % view, "CardTitle").add_theme_font_size_override("font_size", 24)
+	var contents := _reward_text(pack)
+	if pack.has("counselor"):
+		var c: Dictionary = Data.counselor_def(pack["counselor"])
+		contents = ("%s, " % contents if contents != "" else "") + "penasihat %s %s" % [
+			Data.RARITIES[c["rarity"]]["name"], c["name"]]
+	_label(pcol, contents + " · sekali beli", "SmallLabel").add_theme_color_override("font_color", UI.INK)
+	var bought: bool = view in model.vip["packs"]
+	var level := view
+	var buy := _button(prow, "Dibeli" if bought else "%d" % pack["cost"], func(): return model.buy_vip_pack(level),
+		reached and not bought and model.gold >= int(pack["cost"]), "" if bought else "gold", "GoldButton",
+		false, "reveal_ssr")
+	buy.add_theme_font_size_override("font_size", 24)
+	buy.custom_minimum_size = Vector2(140, 64)
+	buy.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 
 # --- Toko (pembelian dalam aplikasi) ----------------------------------------

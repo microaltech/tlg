@@ -790,6 +790,13 @@ ICONS["store"] = icon_doc(
     '<path d="M32 36 Q32 10 48 10 Q64 10 64 36" stroke="#e8c070" stroke-width="6" fill="none"/>'
     + gold_bar(33, 54) + '<circle cx="48" cy="80" r="5" fill="#f2c14e"/>')
 
+ICONS["vip"] = icon_doc(
+    '<path d="M10 70 L6 24 L28 42 L48 12 L68 42 L90 24 L86 70 Z" fill="#f2c14e" stroke="#7a4b1f" stroke-width="4" stroke-linejoin="round"/>'
+    '<rect x="10" y="68" width="76" height="18" rx="5" fill="#c0392b" stroke="#7a4b1f" stroke-width="4"/>'
+    '<path d="M34 40 L48 64 L62 40" stroke="#7a4b1f" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+    '<circle cx="48" cy="12" r="5" fill="#2e86c1"/><circle cx="6" cy="24" r="4" fill="#27ae60"/><circle cx="90" cy="24" r="4" fill="#27ae60"/>'
+    '<circle cx="30" cy="77" r="4" fill="#f2c14e"/><circle cx="48" cy="77" r="4" fill="#f2c14e"/><circle cx="66" cy="77" r="4" fill="#f2c14e"/>')
+
 ICONS["chest"] = chest(False)
 ICONS["chest_open"] = chest(True)
 

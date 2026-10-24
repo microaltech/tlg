@@ -301,6 +301,43 @@ const IAP_PRODUCTS := [
 	{"id": "gold_3280", "type": "gold", "name": "3.280 Emas", "icon": "gold_crown", "price_idr": 699000, "gold": 2800, "bonus": 480},
 ]
 
+## VIP: poin dari pembelian (1 poin per Rp1.000) dan klaim login harian.
+## perks bersifat total untuk level itu (bukan tambahan dari level sebelumnya):
+## yield = bonus hasil urusan kota, charges = kapasitas urusan & energi kunjungan,
+## arena_tickets / donations / boss_attacks = jatah harian tambahan.
+## gift = hadiah naik level (langsung), daily = hadiah harian, pack = paket sekali beli dengan emas.
+const VIP_IDR_PER_POINT := 1000
+const VIP_LOGIN_POINTS := 1
+const VIP_LEVELS := [
+	{"points": 0, "perks": {}, "daily": {}, "gift": {}, "pack": {}},
+	{"points": 15, "perks": {"yield": 0.02}, "daily": {"gold": 10, "silver": 2000}, "gift": {"gold": 30},
+		"pack": {"cost": 60, "silver": 20000, "soldiers": 5000}},
+	{"points": 50, "perks": {"yield": 0.04, "charges": 1}, "daily": {"gold": 15, "silver": 3000}, "gift": {"gold": 50},
+		"pack": {"cost": 120, "grain": 30000, "soldiers": 10000}},
+	{"points": 100, "perks": {"yield": 0.06, "charges": 1, "arena_tickets": 1}, "daily": {"gold": 20, "silver": 4000},
+		"gift": {"gold": 80}, "pack": {"cost": 200, "silver": 60000, "grain": 40000}},
+	{"points": 200, "perks": {"yield": 0.08, "charges": 1, "arena_tickets": 1, "donations": 1},
+		"daily": {"gold": 25, "silver": 5000}, "gift": {"gold": 100}, "pack": {"cost": 300, "silver": 50000, "soldiers": 50000}},
+	{"points": 400, "perks": {"yield": 0.10, "charges": 2, "arena_tickets": 1, "donations": 1},
+		"daily": {"gold": 30, "silver": 6000}, "gift": {"gold": 150}, "pack": {"cost": 400, "silver": 50000, "counselor": "bagas"}},
+	{"points": 700, "perks": {"yield": 0.12, "charges": 2, "arena_tickets": 2, "donations": 1},
+		"daily": {"gold": 40, "silver": 8000}, "gift": {"gold": 200}, "pack": {"cost": 500, "soldiers": 100000, "grain": 80000}},
+	{"points": 1200, "perks": {"yield": 0.14, "charges": 2, "arena_tickets": 2, "donations": 1, "boss_attacks": 1},
+		"daily": {"gold": 50, "silver": 10000}, "gift": {"gold": 300}, "pack": {"cost": 700, "counselor": "kedaton"}},
+	{"points": 2000, "perks": {"yield": 0.16, "charges": 3, "arena_tickets": 2, "donations": 2, "boss_attacks": 1},
+		"daily": {"gold": 60, "silver": 12000}, "gift": {"gold": 400}, "pack": {"cost": 900, "silver": 200000, "soldiers": 150000}},
+	{"points": 3500, "perks": {"yield": 0.18, "charges": 3, "arena_tickets": 3, "donations": 2, "boss_attacks": 1},
+		"daily": {"gold": 80, "silver": 15000}, "gift": {"gold": 600}, "pack": {"cost": 1200, "counselor": "resi"}},
+	{"points": 6000, "perks": {"yield": 0.20, "charges": 3, "arena_tickets": 3, "donations": 2, "boss_attacks": 2},
+		"daily": {"gold": 100, "silver": 20000}, "gift": {"gold": 1000},
+		"pack": {"cost": 1500, "silver": 500000, "grain": 300000, "soldiers": 300000}},
+]
+const VIP_PERK_NAMES := {
+	"yield": "Hasil urusan kota +%d%%", "charges": "Kapasitas urusan & energi kunjungan +%d",
+	"arena_tickets": "Tiket arena harian +%d", "donations": "Sumbangan aliansi harian +%d",
+	"boss_attacks": "Serangan bos aliansi harian +%d",
+}
+
 const REWARD_KEYS := ["gold", "silver", "grain", "soldiers"]
 const REWARD_NAMES := {"gold": "emas", "silver": "perak", "grain": "pangan", "soldiers": "prajurit", "jasa": "jasa"}
 

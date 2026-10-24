@@ -88,6 +88,12 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   x2 untuk pembelian pertama. Setiap transaksi hanya diproses sekali, pembelian
   tertunda dipulihkan otomatis, dan ada tombol "Pulihkan Pembelian". Lihat bagian
   "Pembelian dalam aplikasi" di bawah untuk mengaktifkan Google Play Billing.
+- **VIP** — poin VIP dari pembelian (1 poin per Rp1.000) dan +1 tiap klaim login
+  harian. VIP 1–10 memberi hasil urusan kota +2% per level, kapasitas urusan &
+  energi kunjungan +1 s.d. +3, tiket arena, sumbangan aliansi, dan serangan bos
+  tambahan; hadiah harian VIP; hadiah naik level; dan Paket Hadiah VIP sekali beli
+  dengan emas (termasuk penasihat Epik/Legenda). Ketuk avatar di header untuk
+  membuka panel VIP.
 - **Tutorial pemain baru** — 14 langkah dipandu penasihat Sekar Pandita: layar
   digelapkan kecuali tombol yang diajarkan (bingkai emas + panah), dan langkah
   berikutnya muncul setelah pemain benar-benar melakukan aksinya. Hadiah 100 emas

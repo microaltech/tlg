@@ -21,7 +21,8 @@ func _init() -> void:
 		"test_alliance_join_leave", "test_alliance_donate_level", "test_alliance_shop", "test_alliance_boss",
 		"test_alliance_npc_and_save", "test_arena_unlock_tickets", "test_arena_fight", "test_arena_season_defense",
 		"test_arena_shop_board_save", "test_tutorial_flow", "test_tutorial_skip_old_save", "test_feature_intros",
-		"test_iap_gold_packs", "test_iap_starter_card", "test_iap_save_format",
+		"test_iap_gold_packs", "test_iap_starter_card", "test_iap_save_format", "test_vip_levels",
+		"test_vip_perks", "test_vip_daily_packs_save",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -730,8 +731,15 @@ func test_feature_intros() -> void:
 	check(t.pending_intro().is_empty(), "pengenalan fitur ditunda selama tutorial")
 
 
+## Tandai semua hadiah naik level VIP sudah diberikan, agar tes IAP hanya mengukur isi paket.
+func _no_vip_gifts(m: Model) -> void:
+	for lv in range(1, Data.VIP_LEVELS.size()):
+		m.vip["gifts"].append(lv)
+
+
 func test_iap_gold_packs() -> void:
 	var m := fresh()
+	_no_vip_gifts(m)
 	var gold := m.gold
 	check(m.iap_first_bonus("gold_330"), "bonus pembelian pertama tersedia")
 	var r := m.grant_purchase("gold_330", "tok1", 1000.0)
@@ -748,6 +756,7 @@ func test_iap_gold_packs() -> void:
 
 func test_iap_starter_card() -> void:
 	var m := fresh()
+	_no_vip_gifts(m)
 	var gold := m.gold
 	check(m.grant_purchase("starter_pack", "s1", 1000.0)["ok"], "paket pemula")
 	check(m.gold == gold + 500 and m.counselors.has("wening"), "isi paket pemula termasuk penasihat Epik")
@@ -774,3 +783,62 @@ func test_iap_save_format() -> void:
 	check(not m2.grant_purchase("gold_60", "t1", 1000.0)["ok"], "token tetap tercatat setelah dimuat")
 	check(Data.format_idr(75000) == "Rp75.000" and Data.format_idr(1500000) == "Rp1.500.000"
 		and Data.format_idr(500) == "Rp500", "format rupiah")
+
+
+func test_vip_levels() -> void:
+	var m := fresh()
+	check(m.vip_level() == 0, "mulai VIP 0")
+	var gold := m.gold
+	m.grant_purchase("gold_60", "v1", 1000.0)  # Rp15.000 = 15 poin
+	check(m.vip["points"] == 15 and m.vip_level() == 1, "pembelian memberi poin VIP")
+	check(m.gold == gold + 120 + 30, "hadiah naik ke VIP 1 (+30 emas)")
+	gold = m.gold
+	m.grant_purchase("gold_680", "v2", 1000.0)  # +149 poin -> 164 = VIP 3
+	check(m.vip_level() == 3, "loncat beberapa level sekaligus")
+	check(m.gold == gold + 1280 + 50 + 80, "hadiah semua level yang dilewati")
+	var p := m.vip_progress()
+	check(p[0] == 64 and p[1] == 100, "progres ke VIP berikutnya")
+	m.claim_login(1000.0)
+	check(m.vip["points"] == 165, "klaim login memberi 1 poin VIP")
+	m.vip["points"] = 999999
+	check(m.vip_level() == Data.VIP_LEVELS.size() - 1 and m.vip_progress() == [0, 0], "VIP maksimal")
+
+
+func test_vip_perks() -> void:
+	var m := fresh()
+	m.soldiers = 100000000
+	for i in Data.ARENA_UNLOCK_STAGE:
+		m.fight_stage()
+	m.ensure_arena(1000.0)
+	m.join_alliance("garuda", 1000.0)
+	var base_yield := m.affair_yield("silver")
+	var base_charges := m.max_charges()
+	m.vip["points"] = Data.VIP_LEVELS[8]["points"]  # VIP 8
+	check(m.max_charges() == base_charges + 3, "VIP menambah kapasitas urusan")
+	check(m.affair_yield("silver") > base_yield, "VIP menaikkan hasil urusan")
+	check(m.arena_tickets_left(1000.0) == Data.ARENA_TICKETS + 2, "VIP menambah tiket arena")
+	check(m.donations_left(1000.0) == Data.ALLIANCE_DONATIONS_PER_DAY + 2, "VIP menambah sumbangan aliansi")
+	check(m.boss_info(1000.0)["attacks_left"] == Data.BOSS_ATTACKS_PER_DAY + 1, "VIP menambah serangan bos")
+	for i in Data.BOSS_ATTACKS_PER_DAY + 1:
+		check(m.attack_boss(1000.0)["ok"], "serangan bos ke-%d dengan VIP" % (i + 1))
+	check(not m.attack_boss(1000.0)["ok"], "batas serangan bos VIP")
+
+
+func test_vip_daily_packs_save() -> void:
+	var m := fresh()
+	check(not m.claim_vip_daily(1000.0)["ok"], "VIP 0 tanpa hadiah harian")
+	check(not m.buy_vip_pack(1)["ok"], "paket VIP terkunci")
+	m.vip["points"] = Data.VIP_LEVELS[7]["points"]
+	var gold := m.gold
+	check(m.claim_vip_daily(1000.0)["ok"] and m.gold == gold + 50, "hadiah harian VIP 7")
+	check(not m.claim_vip_daily(1000.0)["ok"] and m.vip_daily_can_claim(1000.0 + 86400), "harian sekali per hari")
+	m.gold = 10000
+	check(m.buy_vip_pack(7)["ok"] and m.counselors.has("kedaton") and m.gold == 10000 - 700, "paket VIP 7 berisi Legenda")
+	check(not m.buy_vip_pack(7)["ok"], "paket VIP sekali beli")
+	check(not m.buy_vip_pack(8)["ok"], "paket level lebih tinggi terkunci")
+	m.gold = 10
+	check(not m.buy_vip_pack(5)["ok"], "paket VIP butuh emas")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(var_to_str(m2.vip) == var_to_str(m.vip), "simpan/muat VIP")
+	check(m2.max_charges() == m.max_charges(), "keuntungan VIP aktif setelah dimuat")

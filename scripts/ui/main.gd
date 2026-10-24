@@ -211,7 +211,9 @@ func _build_nav() -> Control:
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		b.add_child(v)
 		var key: String = p["key"]
-		b.pressed.connect(func(): _switch_page(key))
+		b.pressed.connect(func():
+			Audio.play("click")
+			_switch_page(key))
 		h.add_child(b)
 		_nav_buttons[key] = b
 	var line := ColorRect.new()
@@ -226,6 +228,7 @@ func _build_nav() -> Control:
 
 func _switch_page(key: String, animate := true) -> void:
 	_current = key
+	Audio.play_music({"campaign": "battle", "palace": "palace"}.get(key, "city"))
 	for k in _pages:
 		var on: bool = k == key
 		_pages[k]["root"].visible = on
@@ -327,8 +330,9 @@ func _bar(parent: Node, value: float, max_value: float, color := Color("d9a540")
 
 ## Tombol yang menjalankan aksi model lalu menampilkan hasilnya.
 ## float_text: tampilkan pesan sukses sebagai teks melayang (untuk hasil cepat).
+## sound: efek suara saat berhasil (default "click"); gagal selalu "error".
 func _button(parent: Node, text: String, action: Callable, enabled := true, icon := "",
-		variation := "", float_text := false) -> Button:
+		variation := "", float_text := false, sound := "") -> Button:
 	var b := Button.new()
 	b.text = text
 	b.custom_minimum_size = Vector2(0, 72)
@@ -339,6 +343,13 @@ func _button(parent: Node, text: String, action: Callable, enabled := true, icon
 		b.theme_type_variation = variation
 	b.pressed.connect(func():
 		var result = action.call()
+		if not (result is Dictionary) or result.get("ok", true):
+			var s := sound if sound != "" else "click"
+			if result is Dictionary and result.get("born", false):
+				s = "birth"
+			Audio.play(s)
+		else:
+			Audio.play("error")
 		if result is Dictionary and result.has("msg"):
 			if float_text and result["ok"]:
 				_float(result["msg"], b)
@@ -456,7 +467,7 @@ func _build_city(box: VBoxContainer) -> void:
 			model.affair_yield(kind), model.resource_name(kind), Data.ATTR_NAMES[a["attr"]]], "CardLabel")
 		_charge_widget(col, kind, "Urusan")
 		var b := _button(card, "Kerjakan", func(): return model.do_affair(kind, Game.now()),
-			true, "", "", true)
+			true, "", "", true, {"silver": "coin", "grain": "grain", "soldiers": "recruit"}[kind])
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		b.custom_minimum_size.x = 170
 
@@ -470,7 +481,8 @@ func _build_city(box: VBoxContainer) -> void:
 	else:
 		_label(col, "Berikutnya %s · prestise %d/%d" % [nxt["name"], model.prestige, nxt["prestige"]], "CardLabel")
 		_bar(col, model.prestige, nxt["prestige"])
-		var promote := _button(col, "Naik Jabatan", model.promote, model.can_promote(), "", "GoldButton")
+		var promote := _button(col, "Naik Jabatan", model.promote, model.can_promote(), "", "GoldButton",
+			false, "promote")
 		promote.add_theme_font_size_override("font_size", 26)
 
 	var sys := _card(box)
@@ -479,6 +491,20 @@ func _build_city(box: VBoxContainer) -> void:
 		return {"ok": true, "msg": "Tersimpan"}, true, "", "GreenButton", true)
 	save.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_button(sys, "Mulai Ulang", _confirm_reset).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	var audio := _card(box)
+	var music_btn := _button(audio, "", func():
+		Audio.set_music_on(not Audio.music_on)
+		_queue_rebuild()
+		return null, true, "", "GreenButton" if Audio.music_on else "")
+	music_btn.text = "Musik: %s" % ("Nyala" if Audio.music_on else "Mati")
+	music_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var sfx_btn := _button(audio, "", func():
+		Audio.set_sfx_on(not Audio.sfx_on)
+		_queue_rebuild()
+		return null, true, "", "GreenButton" if Audio.sfx_on else "")
+	sfx_btn.text = "Suara: %s" % ("Nyala" if Audio.sfx_on else "Mati")
+	sfx_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 
 func _confirm_reset():
@@ -530,7 +556,7 @@ func _build_counselors(box: VBoxContainer) -> void:
 			l.add_theme_font_override("font", UI.font_bold)
 		var cost: int = model.upgrade_cost(id)
 		_button(col, "Latih  %s" % _num(cost), func(): return model.upgrade_counselor(id),
-			model.silver >= cost and lv < cap, "silver")
+			model.silver >= cost and lv < cap, "silver", "", false, "upgrade")
 
 	for c in Data.COUNSELORS:
 		if model.counselors.has(c["id"]):
@@ -583,7 +609,7 @@ func _build_campaign(page: Dictionary) -> void:
 	_icon_row(col, "silver", "Hadiah: %d perak" % info["reward_silver"])
 	_icon_row(col, "prestige", "Hadiah: %d prestise" % info["reward_prestige"])
 
-	var attack := _button(box, "SERANG!", _attack, true, "", "GoldButton")
+	var attack := _button(box, "SERANG!", _attack, true, "", "GoldButton", false, "attack")
 	attack.custom_minimum_size.y = 96
 	_label(box, "Tips: latih penasihat berkekuatan tinggi agar korban lebih sedikit. "
 		+ "Rekrut prajurit di menu Kota.", "SmallLabel")
@@ -609,6 +635,7 @@ func _attack():
 		_battling = false
 		var result: Dictionary = model.fight_stage()
 		_big_result(result["ok"])
+		Audio.play("win" if result["ok"] else "lose", 0.0)
 		_show(result))
 	return null
 
@@ -646,7 +673,8 @@ func _build_palace(box: VBoxContainer) -> void:
 		_label(col, Data.beauty_def(id)["name"], "CardTitle")
 		var intimacy: int = model.beauties[id]["intimacy"]
 		_icon_row(col, "heart", "Keakraban %d  ·  +%d Karisma" % [intimacy, intimacy])
-		_button(col, "Kunjungi", func(): return model.visit_beauty(id, Game.now()), true, "heart")
+		_button(col, "Kunjungi", func(): return model.visit_beauty(id, Game.now()), true, "heart",
+			"", false, "heart")
 
 	var head := _label(box, "Anak  (%d/%d kursi)" % [model.children.size(), model.child_seats()], "TitleLabel")
 	head.add_theme_font_size_override("font_size", 30)
@@ -673,8 +701,10 @@ func _build_palace(box: VBoxContainer) -> void:
 		_bar(col, child["level"], Data.CHILD_MAX_LEVEL, Color("8bc34a"))
 		if child["level"] < Data.CHILD_MAX_LEVEL:
 			var cost: int = model.train_cost(i)
-			_button(col, "Didik  %s" % _num(cost), func(): return model.train_child(i), model.grain >= cost, "grain")
+			_button(col, "Didik  %s" % _num(cost), func(): return model.train_child(i), model.grain >= cost, "grain",
+				"", false, "upgrade")
 		else:
-			var marry := _button(col, "Nikahkan", func(): return model.marry_child(i), true, "heart", "GoldButton")
+			var marry := _button(col, "Nikahkan", func(): return model.marry_child(i), true, "heart", "GoldButton",
+				false, "birth")
 			marry.add_theme_font_size_override("font_size", 26)
 	_label(box, "Anak yang telah menikah: %d" % model.married_count, "SmallLabel")

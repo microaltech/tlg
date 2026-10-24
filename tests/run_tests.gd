@@ -102,9 +102,11 @@ func test_promote() -> void:
 func test_palace_children() -> void:
 	var m := fresh(7)
 	var t := 1000.0
+	var born := false
 	while m.children.is_empty():
 		t += 60.0
-		m.visit_beauty("melati", t)
+		born = m.visit_beauty("melati", t)["born"]
+	check(born, "hasil kunjungan menandai kelahiran")
 	check(m.beauties["melati"]["intimacy"] > 0, "keakraban naik")
 	check(m.children[0]["gender"] in ["m", "f"], "anak punya jenis kelamin")
 	m.grain = 1000000

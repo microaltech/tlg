@@ -51,6 +51,11 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   avatar Tuan, dan 4 jenderal musuh; ikon sumber daya; latar bergambar tiap menu
   (gerbang candi bentar, pendopo, medan perang, istana); motif batik kawung;
   font Cinzel & Nunito. Animasi angka hadiah, serangan, dan pop-up hasil.
+- **Suara & musik** — musik latar bernuansa gamelan (saron, bonang, gong,
+  kendang, suling) yang berganti per menu: Kota/Penasihat (slendro tenang),
+  Kampanye (irama perang), Istana (pelog lembut), dengan crossfade. Efek suara
+  untuk setiap aksi (koin, panen, rekrut, latih, serang, menang/kalah, kunjungan,
+  kelahiran, naik jabatan). Musik & suara bisa dimatikan di menu Kota.
 - **Simpan otomatis** ke `user://save.json` (tiap 15 detik, saat keluar, dan
   saat aplikasi di-minimize di HP).
 
@@ -62,12 +67,15 @@ scenes/main.tscn           Scene utama
 scripts/core/game_data.gd  Data & angka balancing (jabatan, penasihat, tahap)
 scripts/core/game_model.gd Semua logika game, tanpa UI (mudah diuji)
 scripts/core/game.gd       Autoload "Game": simpan/muat & autosave
+scripts/core/audio.gd      Autoload "Audio": musik latar & efek suara
 scripts/ui/main.gd         UI dibangun lewat kode (header, 4 halaman, navigasi bawah)
 scripts/ui/ui_theme.gd     Tema visual (warna, tombol, kartu, font)
 scripts/ui/art.gd          Pemuat gambar (PNG diutamakan, lalu SVG)
 assets/portraits|icons|bg  Gambar karakter, ikon, latar (SVG)
+assets/audio               Musik & efek suara (OGG)
 assets/fonts               Font Cinzel & Nunito (lisensi SIL OFL)
 tools/gen_art.py           Generator semua gambar SVG
+tools/gen_audio.py         Generator musik & efek suara (numpy + ffmpeg)
 tools/build_android.sh     Build APK
 tests/run_tests.gd         Tes logika headless
 ```
@@ -90,6 +98,20 @@ otomatis memakainya menggantikan SVG.
 Logika dipisah dari UI, sehingga nanti UI bisa diganti dengan scene buatan
 desainer (gambar, animasi) tanpa mengubah aturan game, dan logika yang sama bisa
 dipindahkan ke server.
+
+## Suara & musik
+
+Semua audio dibuat oleh `tools/gen_audio.py` dengan sintesis suara instrumen
+gamelan (bilah logam berpartial tak harmonis dengan efek "ombak", gong dengan
+dengung panjang, kendang, suling), jadi orisinal dan bebas royalti. Ubah
+balungan (melodi inti), tempo, atau tangga nada lalu jalankan:
+
+```bash
+python3 tools/gen_audio.py   # butuh numpy dan ffmpeg (libvorbis)
+```
+
+Untuk memakai musik dari komposer, timpa file `assets/audio/*.ogg` dengan nama
+yang sama. Musik otomatis di-loop.
 
 ## Menjalankan
 

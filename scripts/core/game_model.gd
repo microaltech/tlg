@@ -271,7 +271,9 @@ func visit_beauty(id: String, now: float) -> Dictionary:
 	var name: String = Data.beauty_def(id)["name"]
 	var msg := "Keakraban dengan %s +%d." % [name, gain]
 	var chance := minf(0.25 + int(st["intimacy"]) * 0.01, 0.6)
+	var born := false
 	if children.size() < child_seats() and rng.randf() < chance:
+		born = true
 		var gender := "m" if rng.randf() < 0.5 else "f"
 		var names: Array = Data.CHILD_NAMES[gender]
 		var child := {
@@ -284,7 +286,9 @@ func visit_beauty(id: String, now: float) -> Dictionary:
 		children.append(child)
 		msg += " Seorang anak lahir: %s (bakat %d/5)!" % [child["name"], child["talent"]]
 	changed.emit()
-	return _ok(msg)
+	var result := _ok(msg)
+	result["born"] = born
+	return result
 
 
 func _roll_talent() -> int:

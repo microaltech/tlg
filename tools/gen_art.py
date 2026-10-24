@@ -797,6 +797,28 @@ ICONS["vip"] = icon_doc(
     '<circle cx="48" cy="12" r="5" fill="#2e86c1"/><circle cx="6" cy="24" r="4" fill="#27ae60"/><circle cx="90" cy="24" r="4" fill="#27ae60"/>'
     '<circle cx="30" cy="77" r="4" fill="#f2c14e"/><circle cx="48" cy="77" r="4" fill="#f2c14e"/><circle cx="66" cy="77" r="4" fill="#f2c14e"/>')
 
+def fort(flag, wall="#8a7a6a", core=False, ruined=False):
+    out = ('<path d="M12 90 L12 40 L22 40 L22 32 L32 32 L32 40 L42 40 L42 32 L54 32 L54 40 L64 40 L64 32 L74 32 '
+           'L74 40 L84 40 L84 90 Z" fill="%s" stroke="#3a2a20" stroke-width="3.5" stroke-linejoin="round"/>' % wall)
+    out += "".join('<path d="M%d %d L%d %d" stroke="%s" stroke-width="2"/>' % (12, y, 84, y, shade(wall, -0.25))
+                   for y in (56, 72))
+    out += '<path d="M38 90 L38 70 Q48 60 58 70 L58 90 Z" fill="#2a1a10"/>'
+    if core:
+        out += ('<path d="M30 32 L30 18 L48 4 L66 18 L66 32 Z" fill="%s" stroke="#3a2a20" stroke-width="3"/>' % shade(wall, 0.1)
+                + '<path d="M38 18 L44 10 L48 16 L52 10 L58 18 Z" fill="#f2c14e"/>')
+    px = 69 if core else 48  # pada Keraton, bendera di menara kanan agar tidak menutupi mahkota
+    out += '<path d="M%d 32 L%d 6" stroke="#3a2a20" stroke-width="3"/>' % (px, px)
+    out += '<path d="M%d 6 L%d 13 L%d 20 Z" fill="%s" stroke="#3a2a20" stroke-width="2"/>' % (
+        px + 2, px + 24 if not core else px + 20, px + 2, flag)
+    if ruined:
+        out += '<path d="M14 88 L30 70 L24 88 Z M70 88 L82 66 L82 88 Z" fill="#3a2a20" opacity="0.5"/>'
+    return icon_doc(out)
+
+
+ICONS["fort"] = fort("#c0392b")
+ICONS["fort_core"] = fort("#c0392b", "#9a8070", core=True)
+ICONS["fort_captured"] = fort("#f2c14e", "#7a6a5a", ruined=True)
+
 ICONS["chest"] = chest(False)
 ICONS["chest_open"] = chest(True)
 

@@ -53,6 +53,7 @@ var _city_nav_badge: Dictionary
 var _alliance_nav_badge: Dictionary
 var _alliance_tab := "markas"
 var _pending_boss_hit := 0
+var _pending_fort_hit := {}
 var _arena_tab := "lawan"
 var _arena_nav_badge: Dictionary
 var _tutorial: Control
@@ -539,6 +540,7 @@ func _tick() -> void:
 	_mission_hb["badge"].visible = claimable > 0
 	_mission_hb["badge_label"].text = str(claimable)
 	var boss_ready: bool = not model.alliance.is_empty() and model.boss_info(now)["can_claim"]
+	boss_ready = boss_ready or not model.war_reward.is_empty()
 	_alliance_nav_badge["badge"].visible = boss_ready
 	_alliance_nav_badge["badge_label"].text = "1"
 	var season_ready: bool = not model.arena.is_empty() and not model.arena["season_reward"].is_empty()
@@ -1522,9 +1524,11 @@ func _build_alliance(box: VBoxContainer) -> void:
 	buff.add_theme_color_override("font_color", Color("b5651d"))
 	_icon_row(col, "jasa", "Jasa: %s" % _num(model.alliance["jasa"]))
 
-	_segment_tabs(box, [["markas", "Markas"], ["bos", "Bos"], ["toko", "Toko"], ["anggota", "Anggota"]],
-		_alliance_tab, func(key): _alliance_tab = key)
+	_segment_tabs(box, [["markas", "Markas"], ["bos", "Bos"], ["perang", "Perang"], ["toko", "Toko"],
+		["anggota", "Anggota"]], _alliance_tab, func(key): _alliance_tab = key)
 	match _alliance_tab:
+		"perang":
+			_build_alliance_war(box, now)
 		"bos":
 			_build_alliance_boss(box, now)
 		"toko":
@@ -1659,6 +1663,129 @@ func _build_alliance_boss(box: VBoxContainer, now: float) -> void:
 		tw.tween_callback(func():
 			var dead: bool = model.boss_info(Game.now())["defeated"]
 			pic.modulate = Color(0.45, 0.45, 0.45) if dead else Color.WHITE)
+
+
+func _build_alliance_war(box: VBoxContainer, now: float) -> void:
+	if not model.war_reward.is_empty():
+		var wr: Dictionary = model.war_reward
+		var rbox := _inner_box(box)
+		rbox.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))
+		var head := _label(rbox, ("MENANG" if wr["win"] else "KALAH") + " melawan %s" % wr["enemy"], "CardTitle")
+		head.add_theme_color_override("font_color", UI.GREEN.darkened(0.2) if wr["win"] else UI.RED)
+		_label(rbox, "Skor %d - %d · jasa perang Anda %d" % [wr["ours"], wr["theirs"], wr["merit"]], "CardLabel")
+		_button(rbox, "Klaim Hadiah (+%d emas, +%d jasa)" % [wr["reward"]["gold"], wr["reward"]["jasa"]],
+			func(): return model.claim_war_reward(), true, "chest", "GreenButton", false, "reveal_ssr")
+	if model.war.is_empty():
+		return
+	var enemy: Dictionary = model.war_enemy_def()
+	var mine: Dictionary = model.alliance_def()
+
+	# Papan skor: lambang kedua aliansi dan skor.
+	var vs := _inner_box(box)
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 16)
+	vs.add_child(row)
+	for side in [[mine, model.war_score(true)], [enemy, model.war_score(false)]]:
+		var col := VBoxContainer.new()
+		col.custom_minimum_size.x = 230
+		row.add_child(col)
+		var em := _tex(Art.icon(side[0]["emblem"]), 90)
+		em.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		col.add_child(em)
+		var n := _label(col, side[0]["name"], "CardLabel")
+		n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		n.add_theme_font_override("font", UI.font_bold)
+		var sc := _label(col, str(side[1]), "CardTitle")
+		sc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		sc.add_theme_font_size_override("font_size", 40)
+		if side[0] == mine:
+			var vs_l := _label(row, "VS", "BigLabel")
+			vs_l.add_theme_font_size_override("font_size", 48)
+			vs_l.add_theme_color_override("font_color", UI.GOLD_DARK)
+	var timer := _label(vs, "", "SmallLabel")
+	timer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	timer.add_theme_color_override("font_color", UI.INK)
+	_event_timer_labels.append(timer)
+	var attacks: int = model.war_attacks_left(now)
+	var info := _label(vs, "Serangan tersisa %d / %d · jasa perang Anda %d" % [attacks, model.war_attacks_per_day(),
+		model.war["merit"]], "CardLabel")
+	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	info.add_theme_font_override("font", UI.font_bold)
+
+	# Benteng lawan.
+	_label(box, "Benteng %s" % enemy["name"], "TitleLabel").add_theme_font_size_override("font_size", 26)
+	for i in Data.WAR_FORTS.size():
+		var fdef: Dictionary = Data.WAR_FORTS[i]
+		var hp: int = model.war["their"][i]
+		var hp_max: int = model.war["their_max"][i]
+		var frow := HBoxContainer.new()
+		frow.add_theme_constant_override("separation", 10)
+		_inner_box(box).add_child(frow)
+		var core := i == Data.WAR_FORTS.size() - 1
+		var icon := _tex(Art.icon("fort_captured" if hp <= 0 else ("fort_core" if core else "fort")), 70)
+		frow.add_child(icon)
+		var col := _col(frow)
+		_label(col, "%s · %d poin" % [fdef["name"], fdef["points"]], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		if hp <= 0:
+			_label(col, "Direbut!", "CardLabel").add_theme_color_override("font_color", UI.GREEN.darkened(0.2))
+		else:
+			_bar(col, hp, hp_max, Color("c0392b"))
+			_label(col, "HP %s / %s" % [_num(hp), _num(hp_max)], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+		var idx: int = i
+		var locked: bool = model.war_fort_locked(i)
+		var b := _button(frow, "Terkunci" if locked else ("Direbut" if hp <= 0 else "Serang"), func():
+			var r: Dictionary = model.attack_fort(idx, Game.now())
+			if r["ok"]:
+				_pending_fort_hit = {"index": idx, "damage": r["damage"]}
+			return r, hp > 0 and not locked and attacks > 0, "", "GoldButton", false, "attack")
+		b.custom_minimum_size = Vector2(130, 60)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		if not _pending_fort_hit.is_empty() and _pending_fort_hit["index"] == i:
+			var dmg: int = _pending_fort_hit["damage"]
+			_pending_fort_hit = {}
+			_hit_fx.call_deferred(icon, dmg)
+
+	# Benteng sendiri.
+	var ours := _inner_box(box)
+	_label(ours, "Benteng %s" % mine["name"], "CardLabel").add_theme_font_override("font", UI.font_bold)
+	for i in Data.WAR_FORTS.size():
+		var hp: int = model.war["our"][i]
+		var r := HBoxContainer.new()
+		r.add_theme_constant_override("separation", 8)
+		ours.add_child(r)
+		var l := _label(r, Data.WAR_FORTS[i]["name"], "SmallLabel")
+		l.add_theme_color_override("font_color", UI.INK)
+		l.custom_minimum_size.x = 200
+		var bar := _bar(r, hp, model.war["our_max"][i], Color("2e86c1"))
+		bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		if hp <= 0:
+			var lost := _label(r, "Jatuh", "SmallLabel")
+			lost.add_theme_color_override("font_color", UI.RED)
+
+	var log := _inner_box(box)
+	_label(log, "Kabar Perang", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	for line in model.war["log"].slice(0, 8):
+		_label(log, "•  " + line, "SmallLabel").add_theme_color_override("font_color", UI.INK)
+	_label(box, "Rebut %d benteng untuk membuka Keraton Inti. Menang: %d emas + %d jasa; kalah: %d emas + %d jasa; "
+		% [Data.WAR_CORE_UNLOCK, Data.WAR_REWARD_WIN["gold"], Data.WAR_REWARD_WIN["jasa"], Data.WAR_REWARD_LOSE["gold"],
+		Data.WAR_REWARD_LOSE["jasa"]] + "ditambah bonus emas dari jasa perang.", "SmallLabel")
+
+
+## Efek kena serang pada ikon: kilat, guncang, dan angka kerusakan.
+func _hit_fx(target: Control, dmg: int) -> void:
+	await get_tree().process_frame
+	if not is_instance_valid(target):
+		return
+	var x := target.position.x
+	target.modulate = Color(3, 2.5, 2.5)
+	_float("-%s" % _num(dmg), target, Color("ff8a70"))
+	var tw := create_tween()
+	for i in 6:
+		tw.tween_property(target, "position:x", x + (8 if i % 2 == 0 else -8), 0.04)
+	tw.tween_property(target, "position:x", x, 0.04)
+	tw.tween_callback(func(): target.modulate = Color.WHITE)
 
 
 func _build_alliance_shop(box: VBoxContainer, now: float) -> void:

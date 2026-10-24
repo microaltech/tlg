@@ -22,7 +22,8 @@ func _init() -> void:
 		"test_alliance_npc_and_save", "test_arena_unlock_tickets", "test_arena_fight", "test_arena_season_defense",
 		"test_arena_shop_board_save", "test_tutorial_flow", "test_tutorial_skip_old_save", "test_feature_intros",
 		"test_iap_gold_packs", "test_iap_starter_card", "test_iap_save_format", "test_vip_levels",
-		"test_vip_perks", "test_vip_daily_packs_save",
+		"test_vip_perks", "test_vip_daily_packs_save", "test_war_setup", "test_war_attack", "test_war_simulation_result",
+		"test_war_save_leave",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -842,3 +843,92 @@ func test_vip_daily_packs_save() -> void:
 	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
 	check(var_to_str(m2.vip) == var_to_str(m.vip), "simpan/muat VIP")
 	check(m2.max_charges() == m.max_charges(), "keuntungan VIP aktif setelah dimuat")
+
+
+## Model dengan aliansi, dimulai hari Senin agar perang mulai penuh.
+func _war_model(seed := 1) -> Model:
+	var m := Model.new()
+	m.rng.seed = seed
+	m.new_game(4 * 86400.0)
+	m.stage = Data.ALLIANCE_UNLOCK_STAGE
+	m.join_alliance("garuda", 4 * 86400.0)
+	return m
+
+
+func test_war_setup() -> void:
+	var solo := fresh()
+	solo.sync(1000.0)
+	check(solo.war.is_empty() and not solo.attack_fort(0, 1000.0)["ok"], "perang butuh aliansi")
+	var m := _war_model()
+	check(not m.war.is_empty() and m.war["enemy"] != "garuda", "lawan adalah aliansi lain")
+	check(m.war["their"] == m.war["their_max"] and m.war["our"] == m.war["our_max"], "benteng penuh di hari Senin")
+	check(m.war_score(true) == 0 and m.war_score(false) == 0, "skor awal 0")
+	check(m.war_fort_locked(4) and not m.war_fort_locked(0), "Keraton Inti terkunci di awal")
+	var enemies := {}
+	for w in 6:
+		enemies[m._war_enemy_for(w)] = true
+	check(enemies.size() == 2 and not enemies.has("garuda"), "lawan bergiliran tiap minggu")
+
+
+func test_war_attack() -> void:
+	var m := _war_model()
+	var t := 4 * 86400.0
+	var hp: int = m.war["their"][0]
+	var r := m.attack_fort(0, t)
+	check(r["ok"] and m.war["their"][0] == hp - r["damage"], "serangan mengurangi HP benteng")
+	check(m.war["merit"] > 0 and m.war_score(true) > 0, "jasa perang dan skor bertambah")
+	check(not m.attack_fort(4, t)["ok"], "Keraton Inti tidak bisa diserang di awal")
+	m.attack_fort(1, t)
+	m.attack_fort(2, t)
+	check(not m.attack_fort(0, t)["ok"], "maksimal 3 serangan per hari")
+	check(m.war_attacks_left(t + 86400) == 3, "serangan reset besok")
+	m.vip["points"] = Data.VIP_LEVELS[6]["points"]
+	check(m.war_attacks_left(t + 86400) == 4, "VIP menambah serangan perang")
+	m.sync(t + 86400)  # terapkan dulu serangan NPC hari itu
+	for i in 3:
+		m.war["their"][i] = 1
+	var merit: int = m.war["merit"]
+	var cap := m.attack_fort(0, t + 86400)
+	check(cap["captured"] and m.war["merit"] >= merit + Data.WAR_CAPTURE_MERIT, "merebut benteng memberi bonus jasa")
+	m.attack_fort(1, t + 86400)
+	m.attack_fort(2, t + 86400)
+	check(not m.war_fort_locked(4), "Keraton Inti terbuka setelah 3 benteng direbut")
+	check(not m.attack_fort(0, t + 86400)["ok"], "benteng yang sudah direbut tidak bisa diserang")
+
+
+func test_war_simulation_result() -> void:
+	var m := _war_model()
+	var t := 4 * 86400.0
+	m.sync(t + 3 * 86400)
+	check(m.war_score(true) > 0 and m.war_score(false) > 0, "NPC kedua pihak menyerang tiap hari")
+	var mid_ours := m.war_score(true)
+	m.sync(t + 5 * 86400)
+	check(m.war_score(true) > mid_ours, "skor bertambah seiring hari")
+	check(m.war["log"].size() > 1, "kabar perang tercatat")
+	# Pemain sangat aktif: rebut semua benteng lawan agar pasti menang.
+	for i in Data.WAR_FORTS.size():
+		m.war["their"][i] = 0
+	m.war["merit"] = 1000
+	m.sync(t + 7 * 86400)
+	check(not m.war_reward.is_empty() and m.war_reward["win"], "perang selesai di akhir minggu, menang")
+	check(int(m.war["week"]) == m.week_index(t + 7 * 86400) and m.war["merit"] == 0, "perang baru di minggu berikutnya")
+	var gold := m.gold
+	var jasa: int = m.alliance["jasa"]
+	check(m.claim_war_reward()["ok"], "klaim hadiah perang")
+	check(m.gold == gold + 300 + 50 and m.alliance["jasa"] == jasa + 500, "hadiah menang + bonus jasa perang")
+	check(not m.claim_war_reward()["ok"], "hadiah perang sekali")
+	var lazy := _war_model(3)
+	for i in Data.WAR_FORTS.size():
+		lazy.war["our"][i] = 0
+	lazy.sync(t + 7 * 86400)
+	check(not lazy.war_reward["win"] and lazy.war_reward["reward"]["gold"] == 100, "kalah memberi hadiah lebih kecil")
+
+
+func test_war_save_leave() -> void:
+	var m := _war_model()
+	m.attack_fort(0, 4 * 86400.0)
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 4 * 86400.0)
+	check(var_to_str(m2.war) == var_to_str(m.war), "simpan/muat perang")
+	m.leave_alliance(4 * 86400.0)
+	check(m.war.is_empty(), "keluar aliansi menghentikan perang")

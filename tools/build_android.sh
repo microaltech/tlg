@@ -17,7 +17,15 @@ MODE="${1:-debug}"
 mkdir -p build
 
 "$GODOT" --headless --path . --import
-"$GODOT" --headless --path . --script res://tests/run_tests.gd
+# Error skrip di tengah tes menghentikan tes itu tanpa dihitung gagal, jadi periksa juga lognya.
+TEST_LOG="$(mktemp)"
+"$GODOT" --headless --path . --script res://tests/run_tests.gd 2>&1 | tee "$TEST_LOG"
+if [[ "${PIPESTATUS[0]}" -ne 0 ]] || grep -q "SCRIPT ERROR" "$TEST_LOG"; then
+	echo "Tes gagal, build dibatalkan." >&2
+	rm -f "$TEST_LOG"
+	exit 1
+fi
+rm -f "$TEST_LOG"
 
 if [[ "$MODE" == "release" ]]; then
 	"$GODOT" --headless --path . --export-release "Android" build/top-lord-like.apk

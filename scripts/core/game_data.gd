@@ -95,6 +95,7 @@ const DAILY_MISSIONS := [
 	{"id": "silver3k", "text": "Kumpulkan 3000 perak dari pajak", "event": "earn_silver", "target": 3000, "gold": 30, "grain": 800},
 	{"id": "donate1", "text": "Sumbang ke aliansi 1 kali", "event": "donate", "target": 1, "gold": 25, "silver": 500, "requires": "alliance"},
 	{"id": "boss2", "text": "Serang bos aliansi 2 kali", "event": "boss", "target": 2, "gold": 30, "soldiers": 800, "requires": "alliance"},
+	{"id": "war2", "text": "Serang benteng dalam perang aliansi 2 kali", "event": "war", "target": 2, "gold": 30, "silver": 800, "requires": "alliance"},
 	{"id": "arena3", "text": "Bertarung di arena 3 kali", "event": "arena", "target": 3, "gold": 30, "silver": 800, "requires": "arena"},
 ]
 ## Peti aktivitas: terbuka saat poin harian mencapai batas.
@@ -123,7 +124,7 @@ const EVENTS := [
 		"bonus_text": "Hasil Kelola Sawah +50%"},
 	{"id": "tournament", "name": "Turnamen Ksatria", "icon": "event_tournament", "bg": "campaign",
 		"desc": "Para ksatria berlomba di medan laga. Menangkan kampanye dan latih penasihat.",
-		"points": {"win": 60, "upgrade": 15, "boss": 20, "arena_win": 40}, "bonus": {"losses": -0.2},
+		"points": {"win": 60, "upgrade": 15, "boss": 20, "arena_win": 40, "war": 25}, "bonus": {"losses": -0.2},
 		"bonus_text": "Prajurit gugur di kampanye -20%"},
 	{"id": "market", "name": "Pasar Malam", "icon": "event_market", "bg": "city",
 		"desc": "Pedagang dari seluruh negeri datang. Tarik pajak dan rekrut prajurit.",
@@ -144,7 +145,7 @@ const EVENT_ACTION_NAMES := {
 	"affair_soldiers": "Rekrut prajurit", "upgrade": "Latih penasihat", "win": "Menang kampanye",
 	"visit": "Kunjungi selir", "train": "Didik anak", "marry": "Nikahkan anak",
 	"recruit": "Rekrut penasihat (per tarikan)", "boss": "Serang bos aliansi", "donate": "Sumbang ke aliansi",
-	"arena_win": "Menang di arena",
+	"arena_win": "Menang di arena", "war": "Serang benteng dalam perang aliansi",
 }
 const EVENT_MISSION_POINTS := 50  ## Poin event untuk tiap misi harian yang diklaim.
 const EVENT_TIERS := [
@@ -191,6 +192,26 @@ const BOSS_NPC_DAMAGE_PER_POWER := 8  ## Kerusakan harian tiap anggota NPC.
 const BOSS_HP_DAYS := 5.5  ## Tanpa bantuan pemain, NPC mengalahkan bos dalam ~5,5 hari.
 const BOSS_ATTACK_JASA := 20
 const BOSS_REWARD := {"gold": 100, "jasa": 200}
+## Perang aliansi (mingguan, Senin-Minggu). Benteng diserang berurutan oleh NPC;
+## Keraton Inti baru bisa diserang setelah WAR_CORE_UNLOCK benteng lain direbut.
+const WAR_FORTS := [
+	{"name": "Gerbang Utara", "hp": 1.0, "points": 100},
+	{"name": "Menara Timur", "hp": 1.5, "points": 100},
+	{"name": "Benteng Barat", "hp": 2.0, "points": 100},
+	{"name": "Lumbung Selatan", "hp": 2.5, "points": 100},
+	{"name": "Keraton Inti", "hp": 3.0, "points": 300},
+]
+const WAR_CORE_UNLOCK := 3
+const WAR_HP_PER_POWER := 5  ## HP satuan benteng = total kekuatan NPC penyerang x ini.
+const WAR_NPC_DAMAGE_PER_POWER := 6  ## Kerusakan harian NPC = total kekuatan x ini (±30%).
+const WAR_ATTACKS_PER_DAY := 3
+const WAR_DAMAGE_PER_POWER := 30
+const WAR_CAPTURE_MERIT := 50
+const WAR_REWARD_WIN := {"gold": 300, "jasa": 500}
+const WAR_REWARD_LOSE := {"gold": 100, "jasa": 150}
+const WAR_MERIT_PER_GOLD := 20  ## Bonus emas = jasa perang / ini (maks. WAR_MERIT_GOLD_MAX).
+const WAR_MERIT_GOLD_MAX := 200
+
 const NPC_TITLES := ["Ki", "Nyi", "Raden", "Gusti", "Mpu", "Dyah", "Arya", "Rara"]
 const NPC_NAMES := ["Rangga", "Sekar", "Bima", "Laras", "Wisnu", "Ayu", "Damar", "Kinanti", "Joko", "Sari",
 	"Panji", "Wulan", "Seta", "Rukmini", "Tejo", "Asih", "Bayu", "Ratih", "Guntur", "Lestari", "Jati", "Puspa",
@@ -320,22 +341,26 @@ const VIP_LEVELS := [
 		"daily": {"gold": 25, "silver": 5000}, "gift": {"gold": 100}, "pack": {"cost": 300, "silver": 50000, "soldiers": 50000}},
 	{"points": 400, "perks": {"yield": 0.10, "charges": 2, "arena_tickets": 1, "donations": 1},
 		"daily": {"gold": 30, "silver": 6000}, "gift": {"gold": 150}, "pack": {"cost": 400, "silver": 50000, "counselor": "bagas"}},
-	{"points": 700, "perks": {"yield": 0.12, "charges": 2, "arena_tickets": 2, "donations": 1},
+	{"points": 700, "perks": {"yield": 0.12, "charges": 2, "arena_tickets": 2, "donations": 1, "war_attacks": 1},
 		"daily": {"gold": 40, "silver": 8000}, "gift": {"gold": 200}, "pack": {"cost": 500, "soldiers": 100000, "grain": 80000}},
-	{"points": 1200, "perks": {"yield": 0.14, "charges": 2, "arena_tickets": 2, "donations": 1, "boss_attacks": 1},
+	{"points": 1200, "perks": {"yield": 0.14, "charges": 2, "arena_tickets": 2, "donations": 1, "boss_attacks": 1,
+		"war_attacks": 1},
 		"daily": {"gold": 50, "silver": 10000}, "gift": {"gold": 300}, "pack": {"cost": 700, "counselor": "kedaton"}},
-	{"points": 2000, "perks": {"yield": 0.16, "charges": 3, "arena_tickets": 2, "donations": 2, "boss_attacks": 1},
+	{"points": 2000, "perks": {"yield": 0.16, "charges": 3, "arena_tickets": 2, "donations": 2, "boss_attacks": 1,
+		"war_attacks": 1},
 		"daily": {"gold": 60, "silver": 12000}, "gift": {"gold": 400}, "pack": {"cost": 900, "silver": 200000, "soldiers": 150000}},
-	{"points": 3500, "perks": {"yield": 0.18, "charges": 3, "arena_tickets": 3, "donations": 2, "boss_attacks": 1},
+	{"points": 3500, "perks": {"yield": 0.18, "charges": 3, "arena_tickets": 3, "donations": 2, "boss_attacks": 1,
+		"war_attacks": 1},
 		"daily": {"gold": 80, "silver": 15000}, "gift": {"gold": 600}, "pack": {"cost": 1200, "counselor": "resi"}},
-	{"points": 6000, "perks": {"yield": 0.20, "charges": 3, "arena_tickets": 3, "donations": 2, "boss_attacks": 2},
+	{"points": 6000, "perks": {"yield": 0.20, "charges": 3, "arena_tickets": 3, "donations": 2, "boss_attacks": 2,
+		"war_attacks": 2},
 		"daily": {"gold": 100, "silver": 20000}, "gift": {"gold": 1000},
 		"pack": {"cost": 1500, "silver": 500000, "grain": 300000, "soldiers": 300000}},
 ]
 const VIP_PERK_NAMES := {
 	"yield": "Hasil urusan kota +%d%%", "charges": "Kapasitas urusan & energi kunjungan +%d",
 	"arena_tickets": "Tiket arena harian +%d", "donations": "Sumbangan aliansi harian +%d",
-	"boss_attacks": "Serangan bos aliansi harian +%d",
+	"boss_attacks": "Serangan bos aliansi harian +%d", "war_attacks": "Serangan perang aliansi harian +%d",
 }
 
 const REWARD_KEYS := ["gold", "silver", "grain", "soldiers"]

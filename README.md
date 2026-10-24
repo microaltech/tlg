@@ -62,6 +62,12 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   disimulasikan offline (NPC yang tumbuh, menyumbang, dan menyerang bos tiap hari)
   karena belum ada server; logika simulasinya terkumpul di bagian "Aliansi" pada
   `game_model.gd` agar mudah diganti dengan data server.
+- **Perang aliansi** — sub-tab Perang di Aliansi: perang mingguan (Senin-Minggu)
+  melawan aliansi lain yang bergiliran. Masing-masing punya 5 benteng; Keraton
+  Inti (300 poin) baru bisa diserang setelah 3 benteng lain direbut. NPC kedua
+  pihak menyerang tiap hari; pemain punya 3 serangan/hari (+VIP) untuk memilih
+  benteng dan mengumpulkan jasa perang. Skor dari benteng yang direbut/dirusak;
+  menang 300 emas + 500 jasa, kalah 100 emas + 150 jasa, plus bonus jasa perang.
 - **Arena PvP** — terbuka setelah Tahap 8. Poin arena (mulai 1000, sistem Elo)
   menentukan liga Perunggu/Perak/Emas/Berlian/Legenda. 5 tiket per hari (+ beli
   dengan emas), pilih 1 dari 3 lawan, pertarungan animasi 3 ronde dengan peluang
@@ -253,5 +259,5 @@ Catatan penting:
 
 - Aset visual: potret penasihat/selir, latar kota, ikon sumber daya, animasi.
 - Item & inventaris, toko event, papan peringkat online, banner rekrut berganti (rate-up).
-- Backend + akun: aliansi & arena online sungguhan (pemain nyata, chat, matchmaking), leaderboard global.
+- Backend + akun: aliansi, perang aliansi & arena online sungguhan (pemain nyata, chat, matchmaking), leaderboard global.
 - IAP (Google Play Billing) & iklan berhadiah (AdMob) lewat plugin Godot.

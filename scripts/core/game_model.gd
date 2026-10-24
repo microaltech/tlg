@@ -62,6 +62,10 @@ var vip := {}
 var tutorial := {}
 ## Arena PvP (kosong sampai terbuka). Lihat bagian "Arena" di bawah.
 var arena := {}
+## Perang aliansi minggu ini (kosong bila tidak beraliansi). Lihat bagian "Perang aliansi".
+var war := {}
+## Hasil perang minggu lalu yang belum diklaim (kosong bila tidak ada).
+var war_reward := {}
 ## Waktu keluar aliansi terakhir (untuk jeda sebelum bergabung lagi).
 var alliance_left_t := -1.0e12
 ## Selisih zona waktu (detik) supaya misi direset pada tengah malam lokal.
@@ -93,6 +97,8 @@ func new_game(now: float) -> void:
 	alliance = {}
 	alliance_left_t = -1.0e12
 	arena = {}
+	war = {}
+	war_reward = {}
 	tutorial = {"step": 0, "done": false, "intros": []}
 	iap = _empty_iap()
 	vip = {"points": 0, "daily_day": -1, "packs": [], "gifts": []}
@@ -146,6 +152,7 @@ func sync(now: float) -> void:
 	var daily_reset := ensure_daily(now)
 	var weekly_reset := ensure_weekly(now)
 	var alliance_changed := _alliance_rollover(now)
+	alliance_changed = ensure_war(now) or alliance_changed
 	if ensure_arena(now) or alliance_changed or weekly_reset or daily_reset:
 		changed.emit()
 
@@ -614,6 +621,7 @@ func join_alliance(id: String, now: float) -> Dictionary:
 		"boss": {}, "log": [],
 	}
 	_ensure_boss(now)
+	ensure_war(now)
 	_alliance_log("Anda bergabung dengan %s. Selamat datang!" % def["name"])
 	_alliance_log("%s: \"Selamat datang di %s, Tuan!\"" % [_npc_members()[0]["name"], def["name"]])
 	changed.emit()
@@ -625,6 +633,7 @@ func leave_alliance(now: float) -> Dictionary:
 		return _fail("Anda belum tergabung dalam aliansi.")
 	var name: String = alliance_def()["name"]
 	alliance = {}
+	war = {}
 	alliance_left_t = now
 	changed.emit()
 	return _ok("Anda keluar dari %s." % name)
@@ -663,9 +672,13 @@ func _seeded(parts: Array) -> RandomNumberGenerator:
 	return r
 
 
-## Anggota NPC: nama, jabatan, dan kekuatan dasar (tetap untuk tiap aliansi).
+## Anggota NPC aliansi sendiri.
 func _npc_members() -> Array:
-	var id: String = alliance["id"]
+	return _npc_members_of(alliance["id"])
+
+
+## Anggota NPC: nama, jabatan, dan kekuatan dasar (tetap untuk tiap aliansi).
+func _npc_members_of(id: String) -> Array:
 	if _npc_cache.has(id):
 		return _npc_cache[id]
 	var def := Data.alliance_def(id)
@@ -922,6 +935,196 @@ func claim_boss(now: float) -> Dictionary:
 	_add_jasa(int(Data.BOSS_REWARD["jasa"]))
 	changed.emit()
 	return _ok("Hadiah kemenangan: +%d emas, +%d jasa." % [Data.BOSS_REWARD["gold"], Data.BOSS_REWARD["jasa"]])
+
+
+# --- Perang aliansi -----------------------------------------------------------
+# Perang mingguan melawan aliansi NPC lain. Kerusakan harian NPC kedua pihak
+# diterapkan saat hari berganti (deterministik dari minggu & hari); pemain
+# menyerang benteng lawan dengan jatah harian.
+
+func war_enemy_def() -> Dictionary:
+	return Data.alliance_def(war["enemy"])
+
+
+func _war_enemy_for(week: int) -> String:
+	var others := []
+	for a in Data.ALLIANCES:
+		if a["id"] != alliance["id"]:
+			others.append(a["id"])
+	return others[posmod(week, others.size())]
+
+
+func _side_power(id: String, day: int) -> int:
+	var total := 0
+	for npc in _npc_members_of(id):
+		total += _npc_power(npc, day)
+	return total
+
+
+## Siapkan perang minggu ini; selesaikan perang minggu lalu. True bila ada perubahan.
+func ensure_war(now: float) -> bool:
+	if alliance.is_empty():
+		var had := not war.is_empty()
+		war = {}
+		return had
+	var week := week_index(now)
+	var today := day_index(now)
+	var changed_any := false
+	if not war.is_empty() and int(war["week"]) != week:
+		_war_simulate_until((int(war["week"]) + 1) * 7 - 3)
+		_war_finish()
+		war = {}
+		changed_any = true
+	if war.is_empty():
+		var start := week * 7 - 3
+		var enemy := _war_enemy_for(week)
+		var ours := []
+		var theirs := []
+		var our_unit := _side_power(enemy, start) * Data.WAR_HP_PER_POWER
+		var their_unit := _side_power(alliance["id"], start) * Data.WAR_HP_PER_POWER
+		for f in Data.WAR_FORTS:
+			ours.append(int(our_unit * float(f["hp"])))
+			theirs.append(int(their_unit * float(f["hp"])))
+		war = {"week": week, "enemy": enemy, "our_max": ours.duplicate(), "our": ours,
+			"their_max": theirs.duplicate(), "their": theirs, "last_day": start, "attack_day": -1,
+			"attacks": 0, "merit": 0, "log": []}
+		_war_log("Perang melawan %s dimulai!" % Data.alliance_def(enemy)["name"])
+		changed_any = true
+	if int(war["last_day"]) < today:
+		_war_simulate_until(today)
+		changed_any = true
+	return changed_any
+
+
+## Terapkan serangan harian NPC kedua pihak untuk hari-hari yang sudah lewat (sampai sebelum end_day).
+func _war_simulate_until(end_day: int) -> void:
+	for day in range(int(war["last_day"]), end_day):
+		var r := _seeded(["war", alliance["id"], int(war["week"]), day])
+		var ally := int(_side_power(alliance["id"], day) * Data.WAR_NPC_DAMAGE_PER_POWER * r.randf_range(0.7, 1.3))
+		var enemy := int(_side_power(war["enemy"], day) * Data.WAR_NPC_DAMAGE_PER_POWER * r.randf_range(0.7, 1.3))
+		for i in _war_apply(war["their"], ally):
+			_war_log("Pasukan kita merebut %s!" % Data.WAR_FORTS[i]["name"])
+		for i in _war_apply(war["our"], enemy):
+			_war_log("Musuh merebut %s kita!" % Data.WAR_FORTS[i]["name"])
+	war["last_day"] = maxi(int(war["last_day"]), end_day)
+
+
+## Kerusakan berurutan ke benteng yang masih berdiri. Mengembalikan indeks benteng yang baru direbut.
+func _war_apply(forts: Array, damage: int) -> Array:
+	var captured := []
+	for i in forts.size():
+		if damage <= 0:
+			break
+		if int(forts[i]) <= 0:
+			continue
+		if i == forts.size() - 1 and _captured_count(forts) < Data.WAR_CORE_UNLOCK:
+			break
+		var take := mini(int(forts[i]), damage)
+		forts[i] = int(forts[i]) - take
+		damage -= take
+		if int(forts[i]) <= 0:
+			captured.append(i)
+	return captured
+
+
+func _captured_count(forts: Array) -> int:
+	var n := 0
+	for i in forts.size() - 1:
+		if int(forts[i]) <= 0:
+			n += 1
+	return n
+
+
+## Skor: poin benteng sebanding dengan kerusakannya (benteng direbut = poin penuh).
+func war_score(our_side: bool) -> int:
+	var forts: Array = war["their"] if our_side else war["our"]
+	var maxes: Array = war["their_max"] if our_side else war["our_max"]
+	var total := 0.0
+	for i in forts.size():
+		total += float(Data.WAR_FORTS[i]["points"]) * (1.0 - float(forts[i]) / maxf(1.0, float(maxes[i])))
+	return int(total)
+
+
+func war_fort_locked(index: int) -> bool:
+	return index == Data.WAR_FORTS.size() - 1 and _captured_count(war["their"]) < Data.WAR_CORE_UNLOCK
+
+
+func war_attacks_per_day() -> int:
+	return Data.WAR_ATTACKS_PER_DAY + int(vip_perk("war_attacks"))
+
+
+func war_attacks_left(now: float) -> int:
+	if int(war["attack_day"]) != day_index(now):
+		return war_attacks_per_day()
+	return war_attacks_per_day() - int(war["attacks"])
+
+
+func attack_fort(index: int, now: float) -> Dictionary:
+	if alliance.is_empty():
+		return _fail("Bergabunglah dengan aliansi untuk ikut perang.")
+	ensure_war(now)
+	if index < 0 or index >= Data.WAR_FORTS.size():
+		return _fail("Benteng tidak ditemukan.")
+	if int(war["their"][index]) <= 0:
+		return _fail("%s sudah direbut." % Data.WAR_FORTS[index]["name"])
+	if war_fort_locked(index):
+		return _fail("Rebut %d benteng lain dulu untuk menyerang Keraton Inti." % Data.WAR_CORE_UNLOCK)
+	if war_attacks_left(now) <= 0:
+		return _fail("Serangan perang hari ini sudah habis.")
+	if int(war["attack_day"]) != day_index(now):
+		war["attack_day"] = day_index(now)
+		war["attacks"] = 0
+	war["attacks"] = int(war["attacks"]) + 1
+	var dmg := mini(int(power() * Data.WAR_DAMAGE_PER_POWER * rng.randf_range(0.9, 1.1)), int(war["their"][index]))
+	war["their"][index] = int(war["their"][index]) - dmg
+	var merit := maxi(1, dmg / 100)
+	var name: String = Data.WAR_FORTS[index]["name"]
+	var msg := "Anda menyerang %s: %d kerusakan, +%d jasa perang." % [name, dmg, merit]
+	var captured := int(war["their"][index]) <= 0
+	if captured:
+		merit += Data.WAR_CAPTURE_MERIT
+		msg += " %s berhasil direbut! +%d jasa perang." % [name, Data.WAR_CAPTURE_MERIT]
+		_war_log("Anda merebut %s!" % name)
+	else:
+		_war_log("Anda menyerang %s (%d kerusakan)." % [name, dmg])
+	war["merit"] = int(war["merit"]) + merit
+	_track("war")
+	changed.emit()
+	var result := _ok(msg)
+	result.merge({"damage": dmg, "captured": captured})
+	return result
+
+
+func _war_log(text: String) -> void:
+	var log: Array = war["log"]
+	log.push_front(text)
+	if log.size() > 20:
+		log.resize(20)
+
+
+func _war_finish() -> void:
+	var ours := war_score(true)
+	var theirs := war_score(false)
+	var win := ours > theirs
+	var reward: Dictionary = (Data.WAR_REWARD_WIN if win else Data.WAR_REWARD_LOSE).duplicate()
+	reward["gold"] = int(reward["gold"]) + mini(Data.WAR_MERIT_GOLD_MAX, int(war["merit"]) / Data.WAR_MERIT_PER_GOLD)
+	war_reward = {"win": win, "ours": ours, "theirs": theirs, "enemy": war_enemy_def()["name"],
+		"merit": int(war["merit"]), "reward": reward}
+
+
+func claim_war_reward() -> Dictionary:
+	if war_reward.is_empty():
+		return _fail("Tidak ada hadiah perang.")
+	var r: Dictionary = war_reward["reward"]
+	gold += int(r["gold"])
+	var parts := ["+%d emas" % r["gold"]]
+	if not alliance.is_empty():
+		_add_jasa(int(r["jasa"]))
+		parts.append("+%d jasa" % r["jasa"])
+	var msg := "Hadiah perang (%s): %s." % ["menang" if war_reward["win"] else "kalah", ", ".join(parts)]
+	war_reward = {}
+	changed.emit()
+	return _ok(msg)
 
 
 # --- Arena PvP -------------------------------------------------------------
@@ -1570,6 +1773,8 @@ func to_dict() -> Dictionary:
 		"alliance": alliance,
 		"alliance_left_t": alliance_left_t,
 		"arena": arena,
+		"war": war,
+		"war_reward": war_reward,
 		"tutorial": tutorial,
 		"iap": iap,
 		"vip": vip,
@@ -1650,6 +1855,15 @@ func from_dict(d: Dictionary, now: float) -> void:
 	alliance_left_t = float(d.get("alliance_left_t", alliance_left_t))
 	alliance = _load_alliance(d.get("alliance", {}))
 	arena = _load_arena(d.get("arena", {}))
+	war = _load_war(d.get("war", {}))
+	war_reward = {}
+	var src_wr: Dictionary = d.get("war_reward", {})
+	if not src_wr.is_empty():
+		war_reward = {"win": bool(src_wr.get("win", false)), "ours": int(src_wr.get("ours", 0)),
+			"theirs": int(src_wr.get("theirs", 0)), "enemy": str(src_wr.get("enemy", "")),
+			"merit": int(src_wr.get("merit", 0)),
+			"reward": {"gold": int(src_wr.get("reward", {}).get("gold", 0)),
+				"jasa": int(src_wr.get("reward", {}).get("jasa", 0))}}
 	var src_iap: Dictionary = d.get("iap", {})
 	iap = _empty_iap()
 	for k in ["first", "processed", "once"]:
@@ -1679,6 +1893,24 @@ func from_dict(d: Dictionary, now: float) -> void:
 	_unlock_content()
 	sync(now)
 	changed.emit()
+
+
+func _load_war(src: Dictionary) -> Dictionary:
+	if src.is_empty() or Data.alliance_def(str(src.get("enemy", ""))).is_empty():
+		return {}
+	var out := {"enemy": str(src["enemy"])}
+	for k in ["week", "last_day", "attack_day", "attacks", "merit"]:
+		out[k] = int(src.get(k, 0))
+	for k in ["our", "our_max", "their", "their_max"]:
+		out[k] = []
+		for v in src.get(k, []):
+			out[k].append(int(v))
+		if out[k].size() != Data.WAR_FORTS.size():
+			return {}
+	out["log"] = []
+	for line in src.get("log", []):
+		out["log"].append(str(line))
+	return out
 
 
 func _load_arena(src: Dictionary) -> Dictionary:

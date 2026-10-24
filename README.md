@@ -62,6 +62,12 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   disimulasikan offline (NPC yang tumbuh, menyumbang, dan menyerang bos tiap hari)
   karena belum ada server; logika simulasinya terkumpul di bagian "Aliansi" pada
   `game_model.gd` agar mudah diganti dengan data server.
+- **Chat aliansi** — sub-tab Chat di Aliansi: gelembung pesan dengan avatar,
+  jabatan, dan jam; ketik bebas atau pakai 4 pesan cepat. Anggota NPC mengobrol
+  sendiri (juga saat game ditutup) sesuai keadaan aliansi (HP bos, skor perang,
+  event, tips), membalas pesan Anda sesuai topiknya dalam beberapa detik, dan
+  bereaksi saat Anda menyumbang/menyerang bos/merebut benteng. Filter kata kasar,
+  batas 120 huruf, jeda 2 detik antar pesan, dan lencana pesan belum dibaca.
 - **Perang aliansi** — sub-tab Perang di Aliansi: perang mingguan (Senin-Minggu)
   melawan aliansi lain yang bergiliran. Masing-masing punya 5 benteng; Keraton
   Inti (300 poin) baru bisa diserang setelah 3 benteng lain direbut. NPC kedua
@@ -259,5 +265,5 @@ Catatan penting:
 
 - Aset visual: potret penasihat/selir, latar kota, ikon sumber daya, animasi.
 - Item & inventaris, toko event, papan peringkat online, banner rekrut berganti (rate-up).
-- Backend + akun: aliansi, perang aliansi & arena online sungguhan (pemain nyata, chat, matchmaking), leaderboard global.
+- Backend + akun: aliansi, chat, perang aliansi & arena online sungguhan (pemain nyata, matchmaking), leaderboard global.
 - IAP (Google Play Billing) & iklan berhadiah (AdMob) lewat plugin Godot.

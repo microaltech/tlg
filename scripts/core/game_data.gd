@@ -212,6 +212,50 @@ const WAR_REWARD_LOSE := {"gold": 100, "jasa": 150}
 const WAR_MERIT_PER_GOLD := 20  ## Bonus emas = jasa perang / ini (maks. WAR_MERIT_GOLD_MAX).
 const WAR_MERIT_GOLD_MAX := 200
 
+## Chat aliansi. Anggota NPC mengobrol tiap CHAT_SLOT_SECONDS (peluang CHAT_SLOT_CHANCE)
+## dan membalas pesan pemain setelah beberapa detik. Placeholder: {player} {boss} {hp}
+## {enemy} {ours} {theirs} {event} {alliance}.
+const CHAT_MAX_MESSAGES := 60
+const CHAT_MAX_LENGTH := 120
+const CHAT_COOLDOWN := 2.0
+const CHAT_SLOT_SECONDS := 1800
+const CHAT_SLOT_CHANCE := 0.7
+const CHAT_CATCHUP_SLOTS := 12
+const CHAT_QUICK := ["Halo semua!", "Ayo serang bos!", "Terima kasih!", "Siap, gas perang!"]
+const CHAT_BANNED := ["anjing", "bangsat", "babi", "kontol", "memek", "goblok", "tolol", "bajingan", "kampret", "asu"]
+const CHAT_AMBIENT := {
+	"greet": ["Selamat pagi semuanya!", "Halo, para Tuan!", "Ada yang sedang main?", "Semangat hari ini, kawan!"],
+	"boss": ["{boss} tinggal {hp}% lagi, ayo serang!", "Sudah serang {boss} hari ini?", "Jangan lupa serangan bos ya!"],
+	"boss_dead": ["{boss} sudah tumbang! Jangan lupa ambil hadiahnya.", "Hebat, {boss} kalah minggu ini!"],
+	"war_ahead": ["Kita unggul {ours}-{theirs} melawan {enemy}! Pertahankan!", "{enemy} mulai kewalahan, terus tekan!"],
+	"war_behind": ["Kita tertinggal {ours}-{theirs}, ayo serang benteng {enemy}!", "Butuh bantuan di perang melawan {enemy}!"],
+	"donate": ["Jangan lupa sumbangan harian, aliansi butuh exp.", "Sudah sumbang hari ini? Jasanya bisa ditukar di toko."],
+	"tips": ["Tips: latih penasihat berkekuatan tinggi untuk kampanye.", "Event minggu ini {event}, jangan sampai lewat!",
+		"Rekrut gratis tiap hari, jangan lupa ya.", "Misi harian itu sumber emas paling gampang."],
+	"chatter": ["Ada yang dapat Legenda dari rekrut?", "Arena hari ini ramai sekali.", "Siapa yang sudah liga Emas?",
+		"Panen tahun ini melimpah!", "Istirahat dulu, nanti lanjut lagi."],
+}
+## Balasan untuk pesan pemain: kata kunci (huruf kecil) -> kategori.
+const CHAT_KEYWORDS := {
+	"greet": ["halo", "hai", "pagi", "siang", "sore", "malam", "hello", "salam"],
+	"thanks": ["terima kasih", "makasih", "thanks", "trims"],
+	"boss": ["bos", "boss", "buto"],
+	"war": ["perang", "benteng", "keraton", "gas"],
+	"help": ["bantu", "tolong", "gimana", "bagaimana", "cara"],
+}
+const CHAT_REPLIES := {
+	"greet": ["Halo juga, {player}!", "Hai {player}, selamat datang!", "Salam, {player}!"],
+	"thanks": ["Sama-sama!", "Siap, kapan saja!", "Kita kan satu aliansi."],
+	"boss": ["Ayo, saya baru saja serang {boss}!", "{boss} tinggal {hp}%, sedikit lagi!"],
+	"war": ["Saya fokus ke benteng berikutnya!", "Skor kita {ours} lawan {theirs}, ayo!"],
+	"help": ["Coba latih penasihat dan rekrut prajurit dulu.", "Lihat menu Panduan di Kota, lengkap di sana.",
+		"Kerjakan misi harian, emasnya lumayan."],
+	"default": ["Siap!", "Setuju!", "Mantap, {player}!", "Hahaha, betul juga.", "Oke, lanjutkan!"],
+	"donate": ["Terima kasih atas sumbangannya, {player}!", "Mantap sumbangannya!"],
+	"boss_hit": ["Serangan yang hebat!", "Bagus, {boss} makin lemah!"],
+	"capture": ["Benteng direbut! Luar biasa!", "Hidup {alliance}!"],
+}
+
 const NPC_TITLES := ["Ki", "Nyi", "Raden", "Gusti", "Mpu", "Dyah", "Arya", "Rara"]
 const NPC_NAMES := ["Rangga", "Sekar", "Bima", "Laras", "Wisnu", "Ayu", "Damar", "Kinanti", "Joko", "Sari",
 	"Panji", "Wulan", "Seta", "Rukmini", "Tejo", "Asih", "Bayu", "Ratih", "Guntur", "Lestari", "Jati", "Puspa",

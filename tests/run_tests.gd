@@ -23,7 +23,7 @@ func _init() -> void:
 		"test_arena_shop_board_save", "test_tutorial_flow", "test_tutorial_skip_old_save", "test_feature_intros",
 		"test_iap_gold_packs", "test_iap_starter_card", "test_iap_save_format", "test_vip_levels",
 		"test_vip_perks", "test_vip_daily_packs_save", "test_war_setup", "test_war_attack", "test_war_simulation_result",
-		"test_war_save_leave",
+		"test_war_save_leave", "test_chat_send_reply", "test_chat_ambient_unread", "test_chat_save_leave",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -932,3 +932,59 @@ func test_war_save_leave() -> void:
 	check(var_to_str(m2.war) == var_to_str(m.war), "simpan/muat perang")
 	m.leave_alliance(4 * 86400.0)
 	check(m.war.is_empty(), "keluar aliansi menghentikan perang")
+
+
+func test_chat_send_reply() -> void:
+	var solo := fresh()
+	check(not solo.chat_send("halo", 1000.0)["ok"], "chat butuh aliansi")
+	var m := _allied()
+	var t := 5000.0
+	check(not m.chat_send("   ", t)["ok"], "pesan kosong ditolak")
+	check(not m.chat_send("a".repeat(Data.CHAT_MAX_LENGTH + 1), t)["ok"], "pesan terlalu panjang ditolak")
+	var before: int = m.chat_messages(t).size()
+	check(m.chat_send("Halo semua!", t)["ok"], "kirim pesan")
+	check(not m.chat_send("lagi", t + 1.0)["ok"], "jeda antar pesan")
+	var visible_now: Array = m.chat_messages(t)
+	check(visible_now.size() == before + 1 and visible_now[-1]["me"], "pesan sendiri langsung terlihat")
+	var later: Array = m.chat_messages(t + 10.0)
+	var replies := later.filter(func(x): return float(x["t"]) > t and not x.get("me", false))
+	check(replies.size() >= 1, "anggota membalas dalam beberapa detik")
+	var greet := false
+	for r in replies:
+		greet = greet or "Tuan" in r["text"] or r["text"] in Data.CHAT_REPLIES["greet"]
+	check(greet, "balasan sesuai salam")
+	check(m.chat_send("dasar goblok", t + 20.0)["ok"], "pesan dengan kata kasar tetap terkirim")
+	var last_me: Array = m.chat_messages(t + 20.0).filter(func(x): return x.get("me", false))
+	check(last_me[-1]["text"] == "dasar ******", "kata kasar disaring")
+
+
+func test_chat_ambient_unread() -> void:
+	var m := _allied()
+	var t := 1000.0
+	var base: int = m.chat_messages(t + 10).size()
+	m.chat_mark_read(t + 10)
+	var later := t + 6 * 3600.0
+	var msgs: Array = m.chat_messages(later)
+	check(msgs.size() > base, "anggota mengobrol saat game ditutup")
+	check(m.chat_unread(later) == msgs.size() - base, "jumlah pesan belum dibaca")
+	m.chat_mark_read(later)
+	check(m.chat_unread(later) == 0, "tandai sudah dibaca")
+	var m2 := _allied(77)
+	check(var_to_str(m2.chat_messages(later).map(func(x): return x["text"])).length() > 0, "obrolan terisi")
+	var far := t + 30 * 86400.0
+	var count_before: int = m.chat_messages(later).size()
+	check(m.chat_messages(far).size() - count_before <= Data.CHAT_CATCHUP_SLOTS, "obrolan terlewat dibatasi")
+	for i in 100:
+		m.chat_send("pesan %d" % i, far + i * 3.0)
+	check(m.chat_messages(far + 1000.0).size() <= Data.CHAT_MAX_MESSAGES, "riwayat chat dibatasi")
+
+
+func test_chat_save_leave() -> void:
+	var m := _allied()
+	m.chat_send("Halo", 2000.0)
+	m.chat_messages(2010.0)
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 2010.0)
+	check(var_to_str(m2.alliance["chat"]) == var_to_str(m.alliance["chat"]), "simpan/muat chat")
+	m.leave_alliance(3000.0)
+	check(m.chat_messages(3000.0).is_empty(), "keluar aliansi mengosongkan chat")

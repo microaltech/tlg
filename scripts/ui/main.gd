@@ -54,6 +54,12 @@ var _alliance_nav_badge: Dictionary
 var _alliance_tab := "markas"
 var _pending_boss_hit := 0
 var _pending_fort_hit := {}
+var _chat_list: VBoxContainer
+var _chat_scroll: ScrollContainer
+var _chat_input: LineEdit
+var _chat_draft := ""
+var _chat_focus := false
+var _chat_shown := 0
 var _arena_tab := "lawan"
 var _arena_nav_badge: Dictionary
 var _tutorial: Control
@@ -541,8 +547,14 @@ func _tick() -> void:
 	_mission_hb["badge_label"].text = str(claimable)
 	var boss_ready: bool = not model.alliance.is_empty() and model.boss_info(now)["can_claim"]
 	boss_ready = boss_ready or not model.war_reward.is_empty()
-	_alliance_nav_badge["badge"].visible = boss_ready
-	_alliance_nav_badge["badge_label"].text = "1"
+	var chat_open: bool = is_instance_valid(_chat_list) and _chat_list.is_visible_in_tree()
+	if chat_open:
+		var count: int = model.chat_messages(now).size()
+		if count != _chat_shown:
+			_fill_chat_list(now)
+	var unread: int = 0 if chat_open else model.chat_unread(now)
+	_alliance_nav_badge["badge"].visible = boss_ready or unread > 0
+	_alliance_nav_badge["badge_label"].text = str(unread) if unread > 0 else "1"
 	var season_ready: bool = not model.arena.is_empty() and not model.arena["season_reward"].is_empty()
 	_arena_nav_badge["badge"].visible = season_ready
 	_arena_nav_badge["badge_label"].text = "1"
@@ -1215,7 +1227,7 @@ func _fill_event() -> void:
 
 
 ## Baris tombol sub-tab; tombol aktif berwarna emas. on_select(key) dipanggil lalu UI dibangun ulang.
-func _segment_tabs(box: Node, items: Array, current: String, on_select: Callable) -> void:
+func _segment_tabs(box: Node, items: Array, current: String, on_select: Callable, font_size := 22) -> void:
 	var tabs := HBoxContainer.new()
 	tabs.add_theme_constant_override("separation", 6)
 	box.add_child(tabs)
@@ -1224,10 +1236,20 @@ func _segment_tabs(box: Node, items: Array, current: String, on_select: Callable
 		var b := _button(tabs, t[1], func():
 			on_select.call(key)
 			_queue_rebuild()
+			# Mulai dari atas halaman saat berpindah sub-tab.
+			for p in _pages.values():
+				if p["root"].visible:
+					p["scroll"].scroll_vertical = 0
 			return null, true, "", "GoldButton" if current == key else "")
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.custom_minimum_size.y = 60
-		b.add_theme_font_size_override("font_size", 22)
+		b.custom_minimum_size = Vector2(0, 60)
+		b.add_theme_font_size_override("font_size", font_size)
+		# Margin samping kecil agar 6 tab tetap muat di layar ponsel.
+		for state in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
+			var st: StyleBox = b.get_theme_stylebox(state).duplicate()
+			st.content_margin_left = 4
+			st.content_margin_right = 4
+			b.add_theme_stylebox_override(state, st)
 
 
 # --- Arena PvP -------------------------------------------------------------
@@ -1507,6 +1529,29 @@ func _build_alliance(box: VBoxContainer) -> void:
 		_build_alliance_choices(box, now)
 		return
 
+	if _alliance_tab != "chat":
+		_build_alliance_header(box)
+	var unread: int = model.chat_unread(now) if _alliance_tab != "chat" else 0
+	_segment_tabs(box, [["markas", "Markas"], ["bos", "Bos"], ["perang", "Perang"],
+		["chat", "Chat (%d)" % unread if unread > 0 else "Chat"], ["toko", "Toko"], ["anggota", "Anggota"]],
+		_alliance_tab, func(key): _alliance_tab = key, 19)
+	_chat_list = null
+	match _alliance_tab:
+		"chat":
+			_build_alliance_chat(box, now)
+		"perang":
+			_build_alliance_war(box, now)
+		"bos":
+			_build_alliance_boss(box, now)
+		"toko":
+			_build_alliance_shop(box, now)
+		"anggota":
+			_build_alliance_members(box, now)
+		_:
+			_build_alliance_hq(box, now)
+
+
+func _build_alliance_header(box: VBoxContainer) -> void:
 	var def: Dictionary = model.alliance_def()
 	var head := _card(box)
 	head.add_child(_tex(Art.icon(def["emblem"]), 110))
@@ -1523,20 +1568,6 @@ func _build_alliance(box: VBoxContainer) -> void:
 	buff.add_theme_font_override("font", UI.font_bold)
 	buff.add_theme_color_override("font_color", Color("b5651d"))
 	_icon_row(col, "jasa", "Jasa: %s" % _num(model.alliance["jasa"]))
-
-	_segment_tabs(box, [["markas", "Markas"], ["bos", "Bos"], ["perang", "Perang"], ["toko", "Toko"],
-		["anggota", "Anggota"]], _alliance_tab, func(key): _alliance_tab = key)
-	match _alliance_tab:
-		"perang":
-			_build_alliance_war(box, now)
-		"bos":
-			_build_alliance_boss(box, now)
-		"toko":
-			_build_alliance_shop(box, now)
-		"anggota":
-			_build_alliance_members(box, now)
-		_:
-			_build_alliance_hq(box, now)
 
 
 func _build_alliance_choices(box: VBoxContainer, now: float) -> void:
@@ -1786,6 +1817,138 @@ func _hit_fx(target: Control, dmg: int) -> void:
 		tw.tween_property(target, "position:x", x + (8 if i % 2 == 0 else -8), 0.04)
 	tw.tween_property(target, "position:x", x, 0.04)
 	tw.tween_callback(func(): target.modulate = Color.WHITE)
+
+
+func _build_alliance_chat(box: VBoxContainer, now: float) -> void:
+	var panel := _inner_box(box)
+	_chat_scroll = ScrollContainer.new()
+	# Tinggi disesuaikan agar tombol pesan cepat dan kolom ketik terlihat tanpa menggulir halaman.
+	_chat_scroll.custom_minimum_size.y = 400
+	_chat_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	panel.add_child(_chat_scroll)
+	_chat_list = VBoxContainer.new()
+	_chat_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_chat_list.add_theme_constant_override("separation", 10)
+	_chat_scroll.add_child(_chat_list)
+	_fill_chat_list(now)
+
+	var quick := HFlowContainer.new()
+	quick.add_theme_constant_override("h_separation", 6)
+	quick.add_theme_constant_override("v_separation", 6)
+	box.add_child(quick)
+	for text in Data.CHAT_QUICK:
+		var q := Button.new()
+		q.text = text
+		q.theme_type_variation = "GreenButton"
+		q.add_theme_font_size_override("font_size", 18)
+		q.custom_minimum_size.y = 48
+		q.pressed.connect(func(): _send_chat(text))
+		quick.add_child(q)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	box.add_child(row)
+	_chat_input = LineEdit.new()
+	_chat_input.placeholder_text = "Tulis pesan..."
+	_chat_input.max_length = Data.CHAT_MAX_LENGTH
+	_chat_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_chat_input.custom_minimum_size.y = 64
+	_chat_input.text = _chat_draft
+	_chat_input.add_theme_stylebox_override("normal", UI.box(Color("fffaf0"), UI.GOLD_DARK, 2, 12))
+	_chat_input.add_theme_stylebox_override("focus", UI.box(Color("fffaf0"), UI.GOLD, 3, 12))
+	_chat_input.add_theme_color_override("font_color", UI.INK)
+	_chat_input.add_theme_color_override("font_placeholder_color", Color("9a8670"))
+	_chat_input.text_changed.connect(func(t): _chat_draft = t)
+	_chat_input.text_submitted.connect(func(t): _send_chat(t))
+	_chat_input.focus_entered.connect(func(): _chat_focus = true)
+	_chat_input.focus_exited.connect(func(): _chat_focus = false)
+	row.add_child(_chat_input)
+	var send := Button.new()
+	send.text = "Kirim"
+	send.theme_type_variation = "GoldButton"
+	send.add_theme_font_size_override("font_size", 24)
+	send.custom_minimum_size = Vector2(130, 64)
+	send.pressed.connect(func(): _send_chat(_chat_input.text))
+	row.add_child(send)
+	if _chat_focus:
+		_chat_input.grab_focus.call_deferred()
+		_chat_input.caret_column = _chat_draft.length()
+
+
+func _send_chat(text: String) -> void:
+	var r: Dictionary = model.chat_send(text, Game.now())
+	if not r["ok"]:
+		Audio.play("error")
+		_show(r)
+		return
+	Audio.play("click")
+	_chat_draft = ""
+	if is_instance_valid(_chat_input):
+		_chat_input.text = ""
+	_fill_chat_list(Game.now())
+
+
+## Isi ulang daftar pesan saja (kolom ketik tidak disentuh) lalu gulir ke bawah.
+func _fill_chat_list(now: float) -> void:
+	if not is_instance_valid(_chat_list):
+		return
+	_clear(_chat_list)
+	var msgs: Array = model.chat_messages(now)
+	_chat_shown = msgs.size()
+	model.chat_mark_read(now)
+	for m in msgs:
+		_chat_list.add_child(_chat_bubble(m))
+	await get_tree().process_frame
+	if is_instance_valid(_chat_scroll):
+		_chat_scroll.scroll_vertical = int(_chat_scroll.get_v_scroll_bar().max_value)
+
+
+func _chat_bubble(m: Dictionary) -> Control:
+	var d := Time.get_datetime_dict_from_unix_time(int(float(m["t"]) + model.tz_bias))
+	var clock := "%02d:%02d" % [d["hour"], d["minute"]]
+	if m.get("system", false):
+		var l := Label.new()
+		l.text = "— %s · %s —" % [m["text"], clock]
+		l.theme_type_variation = "SmallLabel"
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.add_theme_color_override("font_color", Color("8a6a4a"))
+		return l
+	var me: bool = m.get("me", false)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	row.alignment = BoxContainer.ALIGNMENT_END if me else BoxContainer.ALIGNMENT_BEGIN
+	var avatar := _tex(Art.portrait("lord" if me else m.get("avatar", "arya")), 56)
+	avatar.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 2)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var head := Label.new()
+	head.text = ("Anda" if me else "%s · %s" % [m.get("from", "?"), m.get("role", "Anggota")]) + "  " + clock
+	head.theme_type_variation = "SmallLabel"
+	head.add_theme_font_size_override("font_size", 16)
+	head.add_theme_color_override("font_color", Color("6b4a2a"))
+	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT if me else HORIZONTAL_ALIGNMENT_LEFT
+	col.add_child(head)
+	var bubble := PanelContainer.new()
+	var st := UI.box(Color("f7d98a") if me else Color("fffaf0"), UI.GOLD_DARK, 1, 14)
+	st.set_content_margin_all(10)
+	bubble.add_theme_stylebox_override("panel", st)
+	bubble.size_flags_horizontal = Control.SIZE_SHRINK_END if me else Control.SIZE_SHRINK_BEGIN
+	var text := Label.new()
+	text.text = m["text"]
+	text.theme_type_variation = "CardLabel"
+	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	text.custom_minimum_size.x = mini(460, maxi(60, m["text"].length() * 13))
+	bubble.add_child(text)
+	col.add_child(bubble)
+	if me:
+		row.add_child(col)
+		row.add_child(avatar)
+	else:
+		row.add_child(avatar)
+		row.add_child(col)
+	return row
 
 
 func _build_alliance_shop(box: VBoxContainer, now: float) -> void:

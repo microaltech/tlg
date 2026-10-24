@@ -618,12 +618,14 @@ func join_alliance(id: String, now: float) -> Dictionary:
 	alliance = {
 		"id": id, "join_day": today, "last_day": today, "exp": int(def["exp"]), "jasa": 0, "jasa_total": 0,
 		"donations": {"day": today, "count": 0}, "shop": {"day": today, "bought": {}},
-		"boss": {}, "log": [],
+		"boss": {}, "log": [], "chat": {"msgs": [], "slot": int(now / Data.CHAT_SLOT_SECONDS), "read_t": now, "sent_t": 0.0},
 	}
 	_ensure_boss(now)
 	ensure_war(now)
 	_alliance_log("Anda bergabung dengan %s. Selamat datang!" % def["name"])
 	_alliance_log("%s: \"Selamat datang di %s, Tuan!\"" % [_npc_members()[0]["name"], def["name"]])
+	_chat_add({"t": now, "system": true, "text": "Anda bergabung dengan %s." % def["name"]})
+	_chat_npc_reply("greet", now, 1.5, _npc_members()[0])
 	changed.emit()
 	return _ok("Anda bergabung dengan %s!" % def["name"])
 
@@ -787,6 +789,7 @@ func donate(kind: String, now: float) -> Dictionary:
 	alliance["exp"] = int(alliance["exp"]) + int(def["exp"])
 	_add_jasa(int(def["jasa"]))
 	_alliance_log("Anda: %s (+%d exp)." % [def["label"], def["exp"]])
+	_chat_react("donate", now)
 	var msg := "%s: +%d exp aliansi, +%d jasa." % [def["label"], def["exp"], def["jasa"]]
 	if alliance_level() > before:
 		_alliance_log("Aliansi naik ke level %d!" % alliance_level())
@@ -911,6 +914,7 @@ func attack_boss(now: float) -> Dictionary:
 	_track("boss")
 	var msg := "Anda memberi %d kerusakan ke %s! +%d jasa." % [dmg, Data.BOSS_NAME, Data.BOSS_ATTACK_JASA]
 	_alliance_log("Anda menyerang %s: %d kerusakan." % [Data.BOSS_NAME, dmg])
+	_chat_react("boss_hit", now)
 	if boss_info(now)["defeated"]:
 		msg += " %s tumbang!" % Data.BOSS_NAME
 		_alliance_log("%s berhasil dikalahkan!" % Data.BOSS_NAME)
@@ -935,6 +939,154 @@ func claim_boss(now: float) -> Dictionary:
 	_add_jasa(int(Data.BOSS_REWARD["jasa"]))
 	changed.emit()
 	return _ok("Hadiah kemenangan: +%d emas, +%d jasa." % [Data.BOSS_REWARD["gold"], Data.BOSS_REWARD["jasa"]])
+
+
+# --- Chat aliansi ------------------------------------------------------------
+# Pesan disimpan dengan waktu "t"; balasan NPC dijadwalkan beberapa detik ke depan
+# dan baru terlihat saat waktunya tiba (chat_messages). Tanpa timer, mudah diuji.
+
+func _chat() -> Dictionary:
+	if not alliance.has("chat"):
+		alliance["chat"] = {"msgs": [], "slot": 0, "read_t": 0.0, "sent_t": 0.0}
+	return alliance["chat"]
+
+
+func _chat_add(msg: Dictionary) -> void:
+	var msgs: Array = _chat()["msgs"]
+	msgs.append(msg)
+	msgs.sort_custom(func(a, b): return float(a["t"]) < float(b["t"]))
+	if msgs.size() > Data.CHAT_MAX_MESSAGES:
+		_chat()["msgs"] = msgs.slice(-Data.CHAT_MAX_MESSAGES)
+
+
+## Pesan yang sudah terlihat pada waktu `now` (lama ke baru). Obrolan NPC yang
+## terlewat saat game ditutup ditambahkan lebih dulu.
+func chat_messages(now: float) -> Array:
+	if alliance.is_empty():
+		return []
+	_chat_catch_up(now)
+	return _chat()["msgs"].filter(func(m): return float(m["t"]) <= now)
+
+
+func chat_unread(now: float) -> int:
+	if alliance.is_empty():
+		return 0
+	var read_t := float(_chat()["read_t"])
+	return chat_messages(now).filter(func(m): return float(m["t"]) > read_t and not m.get("me", false)).size()
+
+
+func chat_mark_read(now: float) -> void:
+	if not alliance.is_empty():
+		_chat()["read_t"] = now
+
+
+## Saring kata kasar menjadi bintang.
+static func chat_filter(text: String) -> String:
+	var out := text
+	for word in Data.CHAT_BANNED:
+		var i := out.to_lower().find(word)
+		while i >= 0:
+			out = out.substr(0, i) + "*".repeat(word.length()) + out.substr(i + word.length())
+			i = out.to_lower().find(word)
+	return out
+
+
+func chat_send(text: String, now: float) -> Dictionary:
+	if alliance.is_empty():
+		return _fail("Bergabunglah dengan aliansi untuk chat.")
+	var clean := text.strip_edges()
+	if clean == "":
+		return _fail("Pesan kosong.")
+	if clean.length() > Data.CHAT_MAX_LENGTH:
+		return _fail("Pesan terlalu panjang (maks. %d huruf)." % Data.CHAT_MAX_LENGTH)
+	if now - float(_chat()["sent_t"]) < Data.CHAT_COOLDOWN:
+		return _fail("Tunggu sebentar sebelum mengirim lagi.")
+	_chat()["sent_t"] = now
+	clean = chat_filter(clean)
+	_chat_add({"t": now, "me": true, "from": "Anda", "text": clean})
+	_chat()["read_t"] = now
+	# 1-2 anggota membalas sesuai isi pesan.
+	var category := "default"
+	var lower := clean.to_lower()
+	for cat in Data.CHAT_KEYWORDS:
+		for kw in Data.CHAT_KEYWORDS[cat]:
+			if lower.contains(kw):
+				category = cat
+				break
+		if category != "default":
+			break
+	var replies := 1 if rng.randf() < 0.6 else 2
+	var used := {}
+	for i in replies:
+		var npc: Dictionary = _npc_members()[rng.randi_range(0, _npc_members().size() - 1)]
+		if used.has(npc["name"]):
+			continue
+		used[npc["name"]] = true
+		_chat_npc_reply(category, now, rng.randf_range(1.5, 4.0) + i * 2.0, npc)
+	return _ok("")
+
+
+func _chat_npc_reply(category: String, now: float, delay: float, npc: Dictionary) -> void:
+	var lines: Array = Data.CHAT_REPLIES.get(category, Data.CHAT_AMBIENT.get(category, Data.CHAT_REPLIES["default"]))
+	_chat_add(_npc_msg(npc, lines[rng.randi_range(0, lines.size() - 1)], now + delay))
+
+
+## Reaksi anggota atas aksi pemain (tidak selalu, agar tidak berlebihan).
+func _chat_react(category: String, now: float, chance := 0.5) -> void:
+	if rng.randf() >= chance:
+		return
+	var npc: Dictionary = _npc_members()[rng.randi_range(0, _npc_members().size() - 1)]
+	_chat_npc_reply(category, now, rng.randf_range(2.0, 5.0), npc)
+
+
+func _npc_msg(npc: Dictionary, template: String, t: float) -> Dictionary:
+	return {"t": t, "from": npc["name"], "role": npc["role"], "avatar": _npc_avatar(npc["name"]),
+		"text": _chat_fill(template, t)}
+
+
+func _npc_avatar(name: String) -> String:
+	return Data.ARENA_AVATARS[posmod(hash(name), Data.ARENA_AVATARS.size())]
+
+
+func _chat_fill(template: String, t: float) -> String:
+	var vals := {"player": "Tuan", "alliance": alliance_def()["name"], "boss": Data.BOSS_NAME, "hp": 100,
+		"enemy": "-", "ours": 0, "theirs": 0, "event": event_def()["name"] if not weekly.is_empty() else "-"}
+	if not alliance["boss"].is_empty():
+		var b := boss_info(t)
+		vals["hp"] = int(100.0 * b["hp"] / maxf(1.0, b["hp_max"]))
+	if not war.is_empty():
+		vals["enemy"] = war_enemy_def()["name"]
+		vals["ours"] = war_score(true)
+		vals["theirs"] = war_score(false)
+	return template.format(vals)
+
+
+## Obrolan NPC untuk slot waktu yang terlewat (paling banyak CHAT_CATCHUP_SLOTS slot).
+func _chat_catch_up(now: float) -> void:
+	var chat := _chat()
+	var current := int(now / Data.CHAT_SLOT_SECONDS)
+	var start := maxi(int(chat["slot"]) + 1, current - Data.CHAT_CATCHUP_SLOTS + 1)
+	if start > current:
+		return
+	chat["slot"] = current
+	var members := _npc_members()
+	for slot in range(start, current + 1):
+		var r := _seeded(["chat", alliance["id"], slot])
+		if r.randf() >= Data.CHAT_SLOT_CHANCE:
+			continue
+		var t := slot * float(Data.CHAT_SLOT_SECONDS) + r.randf_range(0, Data.CHAT_SLOT_SECONDS)
+		var lines: Array = Data.CHAT_AMBIENT[_chat_topic(r, t)]
+		var npc: Dictionary = members[r.randi_range(0, members.size() - 1)]
+		_chat_add(_npc_msg(npc, lines[r.randi_range(0, lines.size() - 1)], t))
+
+
+func _chat_topic(r: RandomNumberGenerator, t: float) -> String:
+	var topics := ["greet", "donate", "tips", "chatter", "chatter"]
+	if not alliance["boss"].is_empty():
+		topics.append("boss_dead" if boss_info(t)["defeated"] else "boss")
+	if not war.is_empty():
+		topics.append("war_ahead" if war_score(true) >= war_score(false) else "war_behind")
+	return topics[r.randi_range(0, topics.size() - 1)]
 
 
 # --- Perang aliansi -----------------------------------------------------------
@@ -1085,6 +1237,7 @@ func attack_fort(index: int, now: float) -> Dictionary:
 		merit += Data.WAR_CAPTURE_MERIT
 		msg += " %s berhasil direbut! +%d jasa perang." % [name, Data.WAR_CAPTURE_MERIT]
 		_war_log("Anda merebut %s!" % name)
+		_chat_react("capture", now, 1.0)
 	else:
 		_war_log("Anda menyerang %s (%d kerusakan)." % [name, dmg])
 	war["merit"] = int(war["merit"]) + merit
@@ -1965,6 +2118,18 @@ func _load_alliance(src: Dictionary) -> Dictionary:
 			"attacks": int(boss.get("attacks", 0)), "claimed": bool(boss.get("claimed", false))}
 	for line in src.get("log", []):
 		out["log"].append(str(line))
+	var chat: Dictionary = src.get("chat", {})
+	out["chat"] = {"msgs": [], "slot": int(chat.get("slot", 0)), "read_t": float(chat.get("read_t", 0.0)),
+		"sent_t": float(chat.get("sent_t", 0.0))}
+	for m in chat.get("msgs", []):
+		var msg := {"t": float(m.get("t", 0.0)), "text": str(m.get("text", ""))}
+		for k in ["from", "role", "avatar"]:
+			if m.has(k):
+				msg[k] = str(m[k])
+		for k in ["me", "system"]:
+			if m.get(k, false):
+				msg[k] = true
+		out["chat"]["msgs"].append(msg)
 	return out
 
 

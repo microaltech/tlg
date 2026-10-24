@@ -26,8 +26,9 @@ func _process(delta: float) -> void:
 
 
 func _notification(what: int) -> void:
-	# Simpan saat aplikasi ditutup atau di-minimize (penting di mobile).
-	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_PAUSED:
+	# Simpan saat aplikasi ditutup, tombol Back Android, atau di-minimize.
+	if what in [NOTIFICATION_WM_CLOSE_REQUEST, NOTIFICATION_WM_GO_BACK_REQUEST,
+			NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_APPLICATION_FOCUS_OUT]:
 		save_game()
 
 

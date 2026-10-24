@@ -1,4 +1,4 @@
-# Top Lord Like — Prototipe Game Idle Strategi Kerajaan (Godot 4)
+# Top Lord Like — Game Android Idle Strategi Kerajaan (Godot 4)
 
 Prototipe game bergaya *Top Lord*: Anda seorang Tuan yang mengurus kota,
 melatih penasihat, menaklukkan tahap kampanye, mengurus istana (selir & anak),
@@ -78,8 +78,43 @@ godot --headless --path . --import
 godot --headless --path . --script res://tests/run_tests.gd
 ```
 
-Ekspor ke Android: **Project → Export → Add… → Android** (perlu Android SDK &
-JDK 17, lihat dokumentasi Godot "Exporting for Android").
+## Build Android (APK)
+
+Proyek sudah berisi preset ekspor **Android** (`export_presets.cfg`):
+package `com.microaltech.toplordlike`, arm64-v8a + armeabi-v7a, layar portrait
+penuh (immersive). Progres otomatis tersimpan saat tombol Back ditekan atau
+aplikasi di-minimize.
+
+Persiapan sekali saja:
+
+1. Di Godot: **Editor → Manage Export Templates → Download and Install** (4.3).
+2. Pasang Android SDK (cukup *build-tools* dan *platform-tools*, misalnya lewat
+   Android Studio) dan JDK 17+.
+3. **Editor → Editor Settings → Export → Android**: isi `Android SDK Path`,
+   `Java SDK Path`, dan `Debug Keystore` (buat dengan perintah di bawah bila
+   belum ada).
+
+```bash
+keytool -genkeypair -v -keystore debug.keystore -storepass android \
+  -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 \
+  -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+```
+
+Build lewat editor: **Project → Export → Android → Export Project**, atau
+lewat terminal:
+
+```bash
+GODOT=/path/ke/godot tools/build_android.sh           # build/top-lord-like-debug.apk
+GODOT=/path/ke/godot tools/build_android.sh release   # APK release
+adb install -r build/top-lord-like-debug.apk          # pasang ke HP via USB
+```
+
+Untuk rilis, buat keystore release sendiri, simpan baik-baik (kalau hilang
+aplikasi tidak bisa di-update di Play Store), dan isi lewat environment variable
+`GODOT_ANDROID_KEYSTORE_RELEASE_PATH`, `GODOT_ANDROID_KEYSTORE_RELEASE_USER`,
+`GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD`. Google Play mewajibkan format
+**AAB**: aktifkan `gradle_build/use_gradle_build`, set `export_format` ke AAB,
+lalu **Project → Install Android Build Template**.
 
 ## Langkah berikutnya
 

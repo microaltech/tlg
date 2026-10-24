@@ -726,6 +726,7 @@ func _build_counselors(box: VBoxContainer) -> void:
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		l.add_theme_color_override("font_color", UI.ATTR_COLORS[key])
 		l.add_theme_font_override("font", UI.font_bold)
+	_build_bonds(box)
 
 	for id in model.counselors:
 		var def: Dictionary = Data.counselor_def(id)
@@ -738,6 +739,12 @@ func _build_counselors(box: VBoxContainer) -> void:
 		var col := _col(card)
 		_label(col, def["name"], "CardTitle")
 		_stars(col, int(model.counselors[id].get("stars", 0)))
+		if Data.SKILLS.has(id):
+			var sk: Dictionary = Data.SKILLS[id]
+			var skill := _label(col, "%s: %s" % [sk["name"], Data.SKILL_EFFECT_NAMES[sk["effect"]] % roundi(
+				model.skill_value(id) * 100)], "SmallLabel")
+			skill.add_theme_color_override("font_color", Color("6c3483"))
+			skill.add_theme_font_override("font", UI.font_bold)
 		var lv: int = model.counselors[id]["level"]
 		var cap: int = model.rank_info()["level_cap"]
 		_label(col, "Level %d / %d" % [lv, cap], "CardLabel")
@@ -1356,7 +1363,7 @@ func _build_arena_opponents(box: VBoxContainer, now: float) -> void:
 		model.arena_refresh_left() > 0)
 	refresh.custom_minimum_size = Vector2(190, 60)
 
-	var my_power: int = model.power()
+	var my_power: int = model.combat_power()
 	for i in model.arena["opponents"].size():
 		var opp: Dictionary = model.arena["opponents"][i]
 		var card := _card(box)
@@ -1461,7 +1468,7 @@ func _show_arena_battle(r: Dictionary) -> void:
 	fighters.add_theme_constant_override("separation", 40)
 	v.add_child(fighters)
 	var sides := []
-	for who in [["Anda", "lord", model.power()], [opp["name"], opp["avatar"], opp["power"]]]:
+	for who in [["Anda", "lord", model.combat_power()], [opp["name"], opp["avatar"], opp["power"]]]:
 		var col := VBoxContainer.new()
 		col.add_theme_constant_override("separation", 6)
 		fighters.add_child(col)
@@ -1713,6 +1720,42 @@ func _build_alliance_boss(box: VBoxContainer, now: float) -> void:
 		tw.tween_callback(func():
 			var dead: bool = model.boss_info(Game.now())["defeated"]
 			pic.modulate = Color(0.45, 0.45, 0.45) if dead else Color.WHITE)
+
+
+## Kartu ikatan penasihat dan ringkasan bonus skill.
+func _build_bonds(box: VBoxContainer) -> void:
+	var panel := PanelContainer.new()  # kartu perkamen agar teks terbaca di atas latar gelap
+	box.add_child(panel)
+	var card := VBoxContainer.new()
+	card.add_theme_constant_override("separation", 6)
+	panel.add_child(card)
+	_label(card, "Ikatan Penasihat", "CardTitle").add_theme_font_size_override("font_size", 24)
+	for b in Data.BONDS:
+		var owned: int = b["members"].filter(func(id): return model.counselors.has(id)).size()
+		var active: bool = owned == b["members"].size()
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		card.add_child(row)
+		for id in b["members"]:
+			var pic := _tex(Art.portrait(id), 40)
+			if not model.counselors.has(id):
+				pic.modulate = Color(0.25, 0.2, 0.18)
+			row.add_child(pic)
+		var text := _label(row, "%s (%d/%d): %s" % [b["name"], owned, b["members"].size(),
+			Data.SKILL_EFFECT_NAMES[b["effect"]] % roundi(float(b["value"]) * 100)], "SmallLabel")
+		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		text.add_theme_color_override("font_color", UI.GREEN.darkened(0.25) if active else Color("8a7a6a"))
+		if active:
+			text.add_theme_font_override("font", UI.font_bold)
+	var totals := []
+	for effect in Data.SKILL_EFFECT_NAMES:
+		var v: float = model.skill_bonus(effect)
+		if v > 0.0:
+			totals.append(Data.SKILL_EFFECT_NAMES[effect] % roundi(v * 100))
+	if not totals.is_empty():
+		var t := _label(card, "Total bonus: " + "; ".join(totals), "SmallLabel")
+		t.add_theme_color_override("font_color", Color("6c3483"))
 
 
 func _build_alliance_war(box: VBoxContainer, now: float) -> void:

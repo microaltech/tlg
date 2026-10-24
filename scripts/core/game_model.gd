@@ -233,7 +233,37 @@ func power() -> int:
 
 
 func upgrade_cost(id: String) -> int:
-	return int(50 * pow(int(counselors[id]["level"]), 1.6))
+	return int(50 * pow(int(counselors[id]["level"]), 1.6) * (1.0 - skill_bonus("train_cost")))
+
+
+# --- Skill & ikatan ----------------------------------------------------------
+
+func skill_value(id: String) -> float:
+	var sk: Dictionary = Data.SKILLS.get(id, {})
+	if sk.is_empty() or not counselors.has(id):
+		return 0.0
+	return float(sk["base"]) + float(sk["per_star"]) * int(counselors[id].get("stars", 0))
+
+
+func bonds_active() -> Array:
+	return Data.BONDS.filter(func(b): return b["members"].all(func(id): return counselors.has(id)))
+
+
+## Total bonus suatu efek dari skill dan ikatan (dibatasi SKILL_CAP).
+func skill_bonus(effect: String) -> float:
+	var total := 0.0
+	for id in counselors:
+		if Data.SKILLS.has(id) and Data.SKILLS[id]["effect"] == effect:
+			total += skill_value(id)
+	for b in bonds_active():
+		if b["effect"] == effect:
+			total += float(b["value"])
+	return minf(total, Data.SKILL_CAP)
+
+
+## Kekuatan yang dipakai untuk pertarungan arena, bos aliansi, dan perang.
+func combat_power() -> int:
+	return int(power() * (1.0 + skill_bonus("combat")))
 
 
 func upgrade_counselor(id: String) -> Dictionary:
@@ -257,7 +287,8 @@ func upgrade_counselor(id: String) -> Dictionary:
 func affair_yield(kind: String) -> int:
 	var a: Dictionary = AFFAIRS[kind]
 	return int((int(a["base"]) + total_attr(a["attr"]) * int(a["per_point"])) * float(rank_info()["mult"])
-		* (1.0 + event_bonus("yield_" + kind) + alliance_bonus() + vip_perk("yield")))
+		* (1.0 + event_bonus("yield_" + kind) + alliance_bonus() + vip_perk("yield"))
+		* (1.0 + skill_bonus("yield_" + kind) + skill_bonus("yield_all")))
 
 
 func do_affair(kind: String, now: float) -> Dictionary:
@@ -295,7 +326,7 @@ func current_stage_info() -> Dictionary:
 func expected_losses() -> int:
 	var info := current_stage_info()
 	var ratio := clampf(float(info["enemy_str"]) / maxi(1, total_attr("str")), 0.25, 4.0)
-	return int(ceil(int(info["enemy_soldiers"]) * ratio * (1.0 + event_bonus("losses"))))
+	return int(ceil(int(info["enemy_soldiers"]) * ratio * (1.0 + event_bonus("losses")) * (1.0 - skill_bonus("battle"))))
 
 
 func fight_stage() -> Dictionary:
@@ -309,7 +340,8 @@ func fight_stage() -> Dictionary:
 		return _fail("Kalah di %s! %d prajurit gugur. Butuh sekitar %d prajurit." % [info["name"], lost, losses])
 	soldiers -= losses
 	silver += int(info["reward_silver"])
-	prestige += int(info["reward_prestige"])
+	var gained_prestige := int(int(info["reward_prestige"]) * (1.0 + skill_bonus("prestige")))
+	prestige += gained_prestige
 	gold += int(info["reward_gold"])
 	var stage_item := ""
 	if (stage + 1) % 5 == 0:
@@ -321,7 +353,7 @@ func fight_stage() -> Dictionary:
 	var unlocked := _unlock_content()
 	changed.emit()
 	var msg := "Menang di %s! -%d prajurit, +%d perak, +%d prestise, +%d emas." % [
-		info["name"], losses, info["reward_silver"], info["reward_prestige"], info["reward_gold"]]
+		info["name"], losses, info["reward_silver"], gained_prestige, info["reward_gold"]]
 	if stage_item != "":
 		msg += " Rampasan: %s." % Data.ITEMS[stage_item]["name"]
 	if not unlocked.is_empty():
@@ -932,7 +964,7 @@ func attack_boss(now: float) -> Dictionary:
 		boss["attack_day"] = day_index(now)
 		boss["attacks"] = 0
 	boss["attacks"] = int(boss["attacks"]) + 1
-	var dmg := mini(int(power() * Data.BOSS_DAMAGE_PER_POWER * rng.randf_range(0.9, 1.1)), int(info["hp"]))
+	var dmg := mini(int(combat_power() * Data.BOSS_DAMAGE_PER_POWER * rng.randf_range(0.9, 1.1)), int(info["hp"]))
 	boss["damage"] = int(boss["damage"]) + dmg
 	_add_jasa(Data.BOSS_ATTACK_JASA)
 	_track("boss")
@@ -1251,7 +1283,7 @@ func attack_fort(index: int, now: float) -> Dictionary:
 		war["attack_day"] = day_index(now)
 		war["attacks"] = 0
 	war["attacks"] = int(war["attacks"]) + 1
-	var dmg := mini(int(power() * Data.WAR_DAMAGE_PER_POWER * rng.randf_range(0.9, 1.1)), int(war["their"][index]))
+	var dmg := mini(int(combat_power() * Data.WAR_DAMAGE_PER_POWER * rng.randf_range(0.9, 1.1)), int(war["their"][index]))
 	war["their"][index] = int(war["their"][index]) - dmg
 	var merit := maxi(1, dmg / 100)
 	var name: String = Data.WAR_FORTS[index]["name"]
@@ -1394,7 +1426,7 @@ func _refresh_opponents() -> void:
 
 ## Peluang menang berdasarkan perbandingan kekuatan (pangkat 3 agar selisih terasa).
 func arena_win_chance(opp_power: int) -> float:
-	var a := pow(float(maxi(1, power())), 3.0)
+	var a := pow(float(maxi(1, combat_power())), 3.0)
 	var b := pow(float(maxi(1, opp_power)), 3.0)
 	return a / (a + b)
 
@@ -2083,7 +2115,7 @@ func visit_beauty(id: String, now: float) -> Dictionary:
 	st["intimacy"] = int(st["intimacy"]) + gain
 	var name: String = Data.beauty_def(id)["name"]
 	var msg := "Keakraban dengan %s +%d." % [name, gain]
-	var chance := minf(0.25 + int(st["intimacy"]) * 0.01, 0.6) + event_bonus("child_chance")
+	var chance := minf(0.25 + int(st["intimacy"]) * 0.01, 0.6) + event_bonus("child_chance") + skill_bonus("visit")
 	var born := false
 	if children.size() < child_seats() and rng.randf() < chance:
 		born = true

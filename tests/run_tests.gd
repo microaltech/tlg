@@ -25,6 +25,7 @@ func _init() -> void:
 		"test_vip_perks", "test_vip_daily_packs_save", "test_war_setup", "test_war_attack", "test_war_simulation_result",
 		"test_war_save_leave", "test_chat_send_reply", "test_chat_ambient_unread", "test_chat_save_leave",
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
+		"test_skills", "test_bonds",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1104,3 +1105,46 @@ func test_items_sources() -> void:
 	for i in 7:
 		m.claim_login(1000.0 + i * 86400)
 	check(m.item_count("recruit_ticket") >= 1 and m.item_count("pill_intimacy") >= 2, "hadiah login berisi item")
+
+
+func test_skills() -> void:
+	var m := fresh()
+	check(is_equal_approx(m.skill_value("sekar"), 0.05), "skill awal Sekar 5%")
+	m.counselors["sekar"]["stars"] = 3
+	check(is_equal_approx(m.skill_value("sekar"), 0.11), "skill naik dengan bintang")
+	check(m.skill_value("resi") == 0.0, "penasihat yang belum dimiliki tanpa skill")
+	var silver_before := m.affair_yield("silver")
+	m.counselors["sekar"]["stars"] = 0
+	check(m.affair_yield("silver") < silver_before, "skill pajak menaikkan hasil pajak")
+	var losses := m.expected_losses()
+	m._grant_counselor("gajah", "sr")
+	check(m.expected_losses() < losses, "skill Gajah mengurangi korban")
+	var cost := m.upgrade_cost("arya")
+	m.counselors["arya"]["level"] = 10
+	cost = m.upgrade_cost("arya")
+	m._grant_counselor("danu", "r")
+	check(m.upgrade_cost("arya") < cost, "skill Danu memotong biaya latih")
+	check(m.combat_power() == m.power(), "tanpa skill tempur, kekuatan tempur = kekuatan")
+	m._grant_counselor("satria", "ssr")
+	check(m.combat_power() > m.power(), "skill tempur menaikkan kekuatan tempur")
+	for id in ["sekar", "wening"]:
+		m._grant_counselor(id, "r")
+		m.counselors[id]["stars"] = 5
+	m._grant_counselor("dewi", "sr")
+	m._grant_counselor("resi", "ssr")
+	check(m.skill_bonus("yield_silver") <= Data.SKILL_CAP, "bonus skill dibatasi")
+
+
+func test_bonds() -> void:
+	var m := fresh()
+	check(m.bonds_active().is_empty(), "belum ada ikatan")
+	m._grant_counselor("gajah", "sr")
+	check(m.bonds_active().is_empty(), "ikatan butuh semua anggota")
+	m._grant_counselor("satria", "ssr")
+	var names: Array = m.bonds_active().map(func(b): return b["name"])
+	check("Pendekar Nusantara" in names, "ikatan Pendekar Nusantara aktif")
+	var sk := m.skill_bonus("combat")
+	check(is_equal_approx(sk, m.skill_value("satria") + 0.10), "bonus ikatan ditambahkan")
+	for b in Data.BONDS:
+		for id in b["members"]:
+			check(Data.SKILLS.has(id) and not Data.counselor_def(id).is_empty(), "anggota ikatan valid: %s" % id)

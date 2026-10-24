@@ -55,6 +55,42 @@ const COUNSELORS := [
 	{"id": "resi", "name": "Resi Darma Wicaksana", "rarity": "ssr", "str": 7, "int": 19, "pol": 16, "cha": 10, "unlock_stage": -1},
 ]
 
+## Skill pasif penasihat: nilai = base + per_star x bintang (dalam pecahan, 0.05 = 5%).
+## Efek: yield_silver/yield_grain/yield_soldiers/yield_all (hasil urusan), battle (korban
+## kampanye berkurang), combat (kekuatan tempur arena/bos/perang), visit (peluang anak),
+## train_cost (biaya latih berkurang), prestige (prestise kampanye).
+const SKILLS := {
+	"arya": {"name": "Tombak Garuda", "effect": "battle", "base": 0.05, "per_star": 0.02},
+	"sekar": {"name": "Kitab Pajak", "effect": "yield_silver", "base": 0.05, "per_star": 0.02},
+	"bayu": {"name": "Irigasi Subur", "effect": "yield_grain", "base": 0.05, "per_star": 0.02},
+	"ratna": {"name": "Pesona Ratna", "effect": "yield_soldiers", "base": 0.06, "per_star": 0.02},
+	"gajah": {"name": "Benteng Baja", "effect": "battle", "base": 0.08, "per_star": 0.03},
+	"dewi": {"name": "Diplomasi Dewi", "effect": "prestige", "base": 0.10, "per_star": 0.03},
+	"satria": {"name": "Panji Satria", "effect": "combat", "base": 0.10, "per_star": 0.03},
+	"lintang": {"name": "Panah Lintang", "effect": "combat", "base": 0.04, "per_star": 0.02},
+	"danu": {"name": "Hemat Bendahara", "effect": "train_cost", "base": 0.08, "per_star": 0.02},
+	"wening": {"name": "Strategi Wening", "effect": "yield_silver", "base": 0.08, "per_star": 0.03},
+	"bagas": {"name": "Pukulan Bagas", "effect": "combat", "base": 0.06, "per_star": 0.02},
+	"kedaton": {"name": "Titah Ratu", "effect": "visit", "base": 0.08, "per_star": 0.02},
+	"resi": {"name": "Kebijaksanaan Resi", "effect": "yield_all", "base": 0.08, "per_star": 0.02},
+}
+## Ikatan: aktif bila semua anggota dimiliki.
+const BONDS := [
+	{"name": "Pendekar Nusantara", "members": ["arya", "gajah", "satria"], "effect": "combat", "value": 0.10},
+	{"name": "Cendekia Istana", "members": ["sekar", "dewi", "resi"], "effect": "yield_silver", "value": 0.10},
+	{"name": "Penjaga Lumbung", "members": ["bayu", "danu"], "effect": "yield_grain", "value": 0.10},
+	{"name": "Bunga Keraton", "members": ["ratna", "wening", "kedaton"], "effect": "prestige", "value": 0.15},
+	{"name": "Busur dan Tinju", "members": ["lintang", "bagas"], "effect": "combat", "value": 0.05},
+]
+const SKILL_CAP := 0.6
+const SKILL_EFFECT_NAMES := {
+	"yield_silver": "Hasil Tarik Pajak +%d%%", "yield_grain": "Hasil Kelola Sawah +%d%%",
+	"yield_soldiers": "Hasil Rekrut Prajurit +%d%%", "yield_all": "Semua hasil urusan kota +%d%%",
+	"battle": "Korban kampanye -%d%%", "combat": "Kekuatan tempur (arena, bos, perang) +%d%%",
+	"visit": "Peluang anak lahir +%d%%", "train_cost": "Biaya latih penasihat -%d%%",
+	"prestige": "Prestise dari kampanye +%d%%",
+}
+
 const BEAUTIES := [
 	{"id": "melati", "name": "Melati", "unlock_stage": 0},
 	{"id": "kenanga", "name": "Kenanga", "unlock_stage": 5},

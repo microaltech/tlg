@@ -39,6 +39,10 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   terisi 1 per 60 detik, tetap terisi saat game ditutup (offline progress).
 - **Penasihat** — 13 penasihat dengan 4 atribut dan 3 kelangkaan (Langka, Epik,
   Legenda); latih dengan perak. Batas level ditentukan jabatan.
+- **Skill & ikatan penasihat** — tiap penasihat punya skill pasif (mis. hasil pajak,
+  korban kampanye, kekuatan tempur, biaya latih) yang menguat dengan bintang; 5
+  ikatan memberi bonus tambahan bila semua anggotanya dimiliki. Kekuatan tempur
+  (dengan skill) dipakai di arena, bos aliansi, dan perang.
 - **Rekrut (gacha)** — tarik x1 (100 emas) atau x10 (900 emas, dijamin minimal
   satu Epik), plus 1 rekrut gratis tiap 24 jam. Peluang Legenda 4% / Epik 21% /
   Langka 75%, dengan jaminan Legenda paling lambat di tarikan ke-50. Duplikat

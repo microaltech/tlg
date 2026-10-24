@@ -11,6 +11,8 @@ var _autosave := 0.0
 
 func _ready() -> void:
 	model.rng.randomize()
+	# Misi harian direset pada tengah malam waktu setempat (bias dalam menit).
+	model.tz_bias = int(Time.get_time_zone_from_system().get("bias", 0)) * 60
 	load_game()
 
 

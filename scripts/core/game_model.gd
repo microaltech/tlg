@@ -4,6 +4,8 @@ extends RefCounted
 ## Semua fungsi yang bergantung waktu menerima `now` (detik unix).
 
 signal changed
+## Dipancarkan saat progres sebuah misi harian mencapai target.
+signal mission_completed(text: String)
 
 const Data := preload("res://scripts/core/game_data.gd")
 
@@ -37,6 +39,11 @@ var beauties := {}
 var children: Array = []
 ## key -> {"value": int, "t": float}
 var charges := {}
+## Misi harian: {"day": int, "missions": [{"id", "progress", "claimed"}],
+##   "points": int, "chests": [bool, ...]}
+var daily := {}
+## Selisih zona waktu (detik) supaya misi direset pada tengah malam lokal.
+var tz_bias := 0
 var rng := RandomNumberGenerator.new()
 
 
@@ -57,7 +64,9 @@ func new_game(now: float) -> void:
 	charges = {}
 	for key in CHARGE_KEYS:
 		charges[key] = {"value": max_charges(), "t": now}
+	daily = {}
 	_unlock_content()
+	ensure_daily(now)
 	changed.emit()
 
 
@@ -96,6 +105,8 @@ func promote() -> Dictionary:
 func sync(now: float) -> void:
 	for key in CHARGE_KEYS:
 		_sync_charge(key, now)
+	if ensure_daily(now):
+		changed.emit()
 
 
 func charge_value(key: String, now: float) -> int:
@@ -178,6 +189,7 @@ func upgrade_counselor(id: String) -> Dictionary:
 		return _fail("Perak tidak cukup (butuh %d)." % cost)
 	silver -= cost
 	st["level"] = int(st["level"]) + 1
+	_track("upgrade")
 	changed.emit()
 	return _ok("%s naik ke level %d." % [Data.counselor_def(id)["name"], st["level"]])
 
@@ -202,6 +214,10 @@ func do_affair(kind: String, now: float) -> Dictionary:
 			grain += amount
 		"soldiers":
 			soldiers += amount
+	_track("affair")
+	_track("affair_" + kind)
+	if kind == "silver":
+		_track("earn_silver", amount)
 	changed.emit()
 	return _ok("+%d %s" % [amount, resource_name(kind)])
 
@@ -236,6 +252,7 @@ func fight_stage() -> Dictionary:
 	prestige += int(info["reward_prestige"])
 	gold += int(info["reward_gold"])
 	stage += 1
+	_track("win")
 	var unlocked := _unlock_content()
 	changed.emit()
 	var msg := "Menang di %s! -%d prajurit, +%d perak, +%d prestise, +%d emas." % [
@@ -296,6 +313,7 @@ func recruit(count: int, now: float, free := false) -> Dictionary:
 		var pool := Data.counselors_of_rarity(rarity)
 		var def: Dictionary = pool[rng.randi_range(0, pool.size() - 1)]
 		results.append(_grant_counselor(def["id"], rarity))
+	_track("recruit", count)
 	changed.emit()
 	var names := []
 	for r in results:
@@ -338,6 +356,116 @@ func _grant_counselor(id: String, rarity: String) -> Dictionary:
 	return out
 
 
+# --- Misi harian ----------------------------------------------------------
+
+func day_index(now: float) -> int:
+	return int(floor((now + tz_bias) / 86400.0))
+
+
+func seconds_until_reset(now: float) -> int:
+	return int(ceil((day_index(now) + 1) * 86400.0 - tz_bias - now))
+
+
+## Buat misi baru bila hari berganti. Mengembalikan true jika direset.
+func ensure_daily(now: float) -> bool:
+	var day := day_index(now)
+	if not daily.is_empty() and int(daily["day"]) == day:
+		return false
+	# Pilihan misi ditentukan oleh tanggal, jadi stabil walau game dibuka ulang.
+	var pick := RandomNumberGenerator.new()
+	pick.seed = day * 7919 + 13
+	var pool := []
+	for m in Data.DAILY_MISSIONS:
+		if m.get("requires", "") == "children" and children.is_empty():
+			continue
+		pool.append(m["id"])
+	for i in range(pool.size() - 1, 0, -1):
+		var j := pick.randi_range(0, i)
+		var tmp = pool[i]
+		pool[i] = pool[j]
+		pool[j] = tmp
+	var missions := []
+	for id in pool.slice(0, Data.DAILY_COUNT):
+		missions.append({"id": id, "progress": 0, "claimed": false})
+	var chests := []
+	for c in Data.DAILY_CHESTS:
+		chests.append(false)
+	daily = {"day": day, "missions": missions, "points": 0, "chests": chests}
+	return true
+
+
+func _track(event: String, amount := 1) -> void:
+	for m in daily.get("missions", []):
+		var def := Data.mission_def(m["id"])
+		if def["event"] != event:
+			continue
+		var target := int(def["target"])
+		var before := int(m["progress"])
+		m["progress"] = mini(target, before + amount)
+		if before < target and int(m["progress"]) >= target:
+			mission_completed.emit(def["text"])
+
+
+func mission_done(index: int) -> bool:
+	var m: Dictionary = daily["missions"][index]
+	return int(m["progress"]) >= int(Data.mission_def(m["id"])["target"])
+
+
+## Jumlah misi/peti yang siap diklaim (untuk lencana di UI).
+func claimable_count() -> int:
+	var n := 0
+	for i in daily["missions"].size():
+		if mission_done(i) and not daily["missions"][i]["claimed"]:
+			n += 1
+	for i in Data.DAILY_CHESTS.size():
+		if can_claim_chest(i):
+			n += 1
+	return n
+
+
+func claim_mission(index: int) -> Dictionary:
+	if index < 0 or index >= daily["missions"].size():
+		return _fail("Misi tidak ditemukan.")
+	var m: Dictionary = daily["missions"][index]
+	if m["claimed"]:
+		return _fail("Hadiah misi sudah diambil.")
+	if not mission_done(index):
+		return _fail("Misi belum selesai.")
+	m["claimed"] = true
+	daily["points"] = int(daily["points"]) + Data.DAILY_POINTS
+	var text := _give_rewards(Data.mission_def(m["id"]))
+	changed.emit()
+	return _ok("Hadiah misi: %s, +%d poin aktivitas." % [text, Data.DAILY_POINTS])
+
+
+func can_claim_chest(index: int) -> bool:
+	return not daily["chests"][index] and int(daily["points"]) >= int(Data.DAILY_CHESTS[index]["points"])
+
+
+func claim_chest(index: int) -> Dictionary:
+	if index < 0 or index >= Data.DAILY_CHESTS.size():
+		return _fail("Peti tidak ditemukan.")
+	if daily["chests"][index]:
+		return _fail("Peti sudah dibuka.")
+	if not can_claim_chest(index):
+		return _fail("Poin aktivitas belum cukup.")
+	daily["chests"][index] = true
+	var text := _give_rewards(Data.DAILY_CHESTS[index])
+	changed.emit()
+	return _ok("Peti dibuka: %s." % text)
+
+
+func _give_rewards(def: Dictionary) -> String:
+	var parts := []
+	for key in Data.REWARD_KEYS:
+		var amount := int(def.get(key, 0))
+		if amount <= 0:
+			continue
+		set(key, int(get(key)) + amount)
+		parts.append("+%d %s" % [amount, Data.REWARD_NAMES[key]])
+	return ", ".join(parts)
+
+
 # --- Istana: selir & anak -------------------------------------------------
 
 func total_intimacy() -> int:
@@ -376,6 +504,7 @@ func visit_beauty(id: String, now: float) -> Dictionary:
 		}
 		children.append(child)
 		msg += " Seorang anak lahir: %s (bakat %d/5)!" % [child["name"], child["talent"]]
+	_track("visit")
 	changed.emit()
 	var result := _ok(msg)
 	result["born"] = born
@@ -410,6 +539,7 @@ func train_child(index: int) -> Dictionary:
 		return _fail("Pangan tidak cukup (butuh %d)." % cost)
 	grain -= cost
 	child["level"] = int(child["level"]) + 1
+	_track("train")
 	changed.emit()
 	return _ok("%s tumbuh ke level %d." % [child["name"], child["level"]])
 
@@ -454,6 +584,7 @@ func to_dict() -> Dictionary:
 		"beauties": beauties,
 		"children": children,
 		"charges": charges,
+		"daily": daily,
 	}
 
 
@@ -500,6 +631,20 @@ func from_dict(d: Dictionary, now: float) -> void:
 	for key in CHARGE_KEYS:
 		var c: Dictionary = d.get("charges", {}).get(key, {})
 		charges[key] = {"value": int(c.get("value", max_charges())), "t": float(c.get("t", now))}
+	daily = {}
+	var src_daily: Dictionary = d.get("daily", {})
+	if not src_daily.is_empty():
+		var missions := []
+		for m in src_daily.get("missions", []):
+			if not Data.mission_def(str(m.get("id", ""))).is_empty():
+				missions.append({"id": str(m["id"]), "progress": int(m.get("progress", 0)),
+					"claimed": bool(m.get("claimed", false))})
+		var chests := []
+		for i in Data.DAILY_CHESTS.size():
+			var saved: Array = src_daily.get("chests", [])
+			chests.append(bool(saved[i]) if i < saved.size() else false)
+		daily = {"day": int(src_daily.get("day", -1)), "missions": missions,
+			"points": int(src_daily.get("points", 0)), "chests": chests}
 	_unlock_content()
 	sync(now)
 	changed.emit()

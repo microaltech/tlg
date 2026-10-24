@@ -33,6 +33,12 @@ var _battling := false
 var _vs_lord: TextureRect
 var _vs_enemy: TextureRect
 var _free_button: Button
+var _mission_button: Control
+var _mission_badge: PanelContainer
+var _mission_badge_label: Label
+var _mission_overlay: Control
+var _mission_box: VBoxContainer
+var _mission_reset_label: Label
 var _gacha_banner_done := false
 
 
@@ -73,6 +79,9 @@ func _ready() -> void:
 	_build_toast()
 
 	model.changed.connect(_queue_rebuild)
+	model.mission_completed.connect(func(_text):
+		Audio.play("upgrade")
+		_float("Misi selesai!", _mission_button, Color("b8f0a8")))
 	var timer := Timer.new()
 	timer.wait_time = 1.0
 	timer.autostart = true
@@ -110,6 +119,7 @@ func _build_header() -> Control:
 	var prestige := _chip("prestige")
 	prestige.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	top.add_child(prestige)
+	top.add_child(_build_mission_button())
 
 	var res := HBoxContainer.new()
 	res.add_theme_constant_override("separation", 8)
@@ -419,6 +429,8 @@ func _rebuild() -> void:
 	_build_gacha(_pages["gacha"])
 	_build_campaign(_pages["campaign"])
 	_build_palace(_pages["palace"]["content"])
+	if is_instance_valid(_mission_overlay):
+		_fill_missions()
 	_tick()
 	# Kembalikan posisi gulir setelah layout dihitung ulang.
 	await get_tree().process_frame
@@ -436,6 +448,12 @@ func _tick() -> void:
 	_res_labels["soldiers"].text = _num(model.soldiers)
 	_res_labels["prestige"].text = _num(model.prestige)
 	_res_labels["gold"].text = _num(model.gold)
+	var claimable: int = model.claimable_count()
+	_mission_badge.visible = claimable > 0
+	_mission_badge_label.text = str(claimable)
+	if is_instance_valid(_mission_reset_label):
+		var left: int = model.seconds_until_reset(now)
+		_mission_reset_label.text = "Reset dalam %02d:%02d:%02d" % [left / 3600, left / 60 % 60, left % 60]
 	if is_instance_valid(_free_button):
 		var free_eta: int = model.free_pull_eta(now)
 		_free_button.disabled = free_eta > 0
@@ -677,6 +695,216 @@ func _big_result(win: bool) -> void:
 	tw.tween_interval(0.7)
 	tw.tween_property(l, "modulate:a", 0.0, 0.4)
 	tw.tween_callback(l.queue_free)
+
+
+# --- Misi harian ----------------------------------------------------------
+
+## Halaman tujuan tombol "Pergi" untuk tiap jenis misi.
+const MISSION_PAGES := {
+	"affair": "city", "affair_silver": "city", "affair_grain": "city", "affair_soldiers": "city",
+	"earn_silver": "city", "upgrade": "counselor", "win": "campaign", "visit": "palace",
+	"train": "palace", "recruit": "gacha",
+}
+
+
+func _build_mission_button() -> Control:
+	var holder := Control.new()
+	holder.custom_minimum_size = Vector2(84, 84)
+	holder.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var b := Button.new()
+	b.theme_type_variation = "NavButton"
+	b.set_anchors_preset(Control.PRESET_FULL_RECT)
+	b.pressed.connect(func():
+		Audio.play("click")
+		_show_missions())
+	holder.add_child(b)
+	var icon := _tex(Art.icon("mission"), 64)
+	icon.position = Vector2(10, 4)
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_child(icon)
+	var cap := Label.new()
+	cap.text = "Misi"
+	cap.theme_type_variation = "SmallLabel"
+	cap.add_theme_font_size_override("font_size", 16)
+	cap.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	cap.position = Vector2(0, 64)
+	cap.size = Vector2(84, 20)
+	cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_child(cap)
+	_mission_badge = PanelContainer.new()
+	var red := UI.box(Color("d63a2f"), Color("fff3d6"), 2, 14)
+	red.content_margin_left = 8
+	red.content_margin_right = 8
+	red.content_margin_top = 0
+	red.content_margin_bottom = 0
+	_mission_badge.add_theme_stylebox_override("panel", red)
+	_mission_badge.position = Vector2(54, -4)
+	_mission_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_mission_badge_label = Label.new()
+	_mission_badge_label.add_theme_font_override("font", UI.font_bold)
+	_mission_badge_label.add_theme_font_size_override("font_size", 18)
+	_mission_badge.add_child(_mission_badge_label)
+	holder.add_child(_mission_badge)
+	_mission_button = holder
+	return holder
+
+
+func _show_missions() -> void:
+	if is_instance_valid(_mission_overlay):
+		return
+	_mission_overlay = Control.new()
+	_mission_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(_mission_overlay)
+	move_child(_mission_overlay, _toast.get_index())  # toast tetap di atas panel
+	var dim := Button.new()
+	dim.flat = true
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	var dim_style := StyleBoxFlat.new()
+	dim_style.bg_color = Color(0.04, 0.01, 0.03, 0.82)
+	for st in ["normal", "hover", "pressed", "hover_pressed", "focus"]:
+		dim.add_theme_stylebox_override(st, dim_style)
+	dim.pressed.connect(_close_missions)
+	_mission_overlay.add_child(dim)
+
+	var panel := PanelContainer.new()
+	panel.anchor_left = 0.03
+	panel.anchor_right = 0.97
+	panel.anchor_top = 0.06
+	panel.anchor_bottom = 0.94
+	_mission_overlay.add_child(panel)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 10)
+	panel.add_child(v)
+	var head := HBoxContainer.new()
+	v.add_child(head)
+	head.add_child(_tex(Art.icon("mission"), 64))
+	var titles := _col(head)
+	_label(titles, "Misi Harian", "CardTitle").add_theme_font_size_override("font_size", 34)
+	_mission_reset_label = _label(titles, "", "CardLabel")
+	var close := Button.new()
+	close.text = "Tutup"
+	close.custom_minimum_size = Vector2(130, 64)
+	close.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	close.pressed.connect(_close_missions)
+	head.add_child(close)
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	v.add_child(scroll)
+	_mission_box = VBoxContainer.new()
+	_mission_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_mission_box.add_theme_constant_override("separation", 12)
+	scroll.add_child(_mission_box)
+	_fill_missions()
+	_tick()
+
+	panel.pivot_offset = Vector2(size.x * 0.47, size.y * 0.44)
+	panel.scale = Vector2(0.9, 0.9)
+	_mission_overlay.modulate.a = 0.0
+	var tw := create_tween().set_parallel()
+	tw.tween_property(_mission_overlay, "modulate:a", 1.0, 0.15)
+	tw.tween_property(panel, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _close_missions() -> void:
+	if is_instance_valid(_mission_overlay):
+		Audio.play("click")
+		_mission_overlay.queue_free()
+	_mission_overlay = null
+
+
+func _fill_missions() -> void:
+	_clear(_mission_box)
+	var daily: Dictionary = model.daily
+	var max_points: int = Data.DAILY_CHESTS[-1]["points"]
+
+	# Peti aktivitas
+	var chest_box := _inner_box(_mission_box)
+	_label(chest_box, "Poin Aktivitas: %d / %d" % [daily["points"], max_points], "CardLabel") \
+		.add_theme_font_override("font", UI.font_bold)
+	_bar(chest_box, daily["points"], max_points, Color("e0a030"))
+	var chests := HBoxContainer.new()
+	chests.add_theme_constant_override("separation", 8)
+	chest_box.add_child(chests)
+	for i in Data.DAILY_CHESTS.size():
+		var def: Dictionary = Data.DAILY_CHESTS[i]
+		var opened: bool = daily["chests"][i]
+		var ready: bool = model.can_claim_chest(i)
+		var cell := VBoxContainer.new()
+		cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		cell.add_theme_constant_override("separation", 2)
+		chests.add_child(cell)
+		var icon := _tex(Art.icon("chest_open" if opened else "chest"), 84)
+		icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		if not opened and not ready:
+			icon.modulate = Color(0.6, 0.55, 0.5)
+		cell.add_child(icon)
+		if ready:
+			icon.pivot_offset = Vector2(42, 42)
+			var bob := icon.create_tween().set_loops()
+			bob.tween_property(icon, "scale", Vector2(1.12, 1.12), 0.4)
+			bob.tween_property(icon, "scale", Vector2.ONE, 0.4)
+		var l := _label(cell, "%d poin" % def["points"], "CardLabel")
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		var idx: int = i
+		var b := _button(cell, "Dibuka" if opened else "Buka", func(): return model.claim_chest(idx),
+			ready, "", "GreenButton" if ready else "", false, "reveal_sr")
+		b.custom_minimum_size.y = 56
+		var reward := _label(cell, _reward_text(def), "SmallLabel")
+		reward.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		reward.add_theme_color_override("font_color", UI.INK)
+		reward.add_theme_font_size_override("font_size", 16)
+
+	# Daftar misi
+	for i in daily["missions"].size():
+		var m: Dictionary = daily["missions"][i]
+		var def: Dictionary = Data.mission_def(m["id"])
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		_inner_box(_mission_box).add_child(row)
+		var col := _col(row)
+		_label(col, def["text"], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		var target: int = def["target"]
+		_bar(col, m["progress"], target, Color("8bc34a") if model.mission_done(i) else Color("d9a540"))
+		_label(col, "%s / %s   ·   %s, +%d poin" % [_num(m["progress"]), _num(target), _reward_text(def),
+			Data.DAILY_POINTS], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+		var idx: int = i
+		var b: Button
+		if m["claimed"]:
+			b = _button(row, "Diambil", func(): return null, false)
+		elif model.mission_done(i):
+			b = _button(row, "Klaim", func(): return model.claim_mission(idx), true, "", "GreenButton",
+				false, "coin")
+		else:
+			var page: String = MISSION_PAGES.get(def["event"], "city")
+			b = _button(row, "Pergi", func():
+				_close_missions()
+				_switch_page(page)
+				return null)
+		b.custom_minimum_size = Vector2(140, 64)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+
+## Kotak bergaris di dalam panel perkamen.
+func _inner_box(parent: Node) -> VBoxContainer:
+	var p := PanelContainer.new()
+	var st := UI.box(Color(1, 1, 1, 0.35), UI.GOLD_DARK, 2, 12)
+	st.set_content_margin_all(12)
+	p.add_theme_stylebox_override("panel", st)
+	parent.add_child(p)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 6)
+	p.add_child(v)
+	return v
+
+
+static func _reward_text(def: Dictionary) -> String:
+	var parts := []
+	for key in Data.REWARD_KEYS:
+		if int(def.get(key, 0)) > 0:
+			parts.append("+%s %s" % [_num(def[key]), Data.REWARD_NAMES[key]])
+	return ", ".join(parts)
 
 
 # --- Rekrut (gacha) -------------------------------------------------------

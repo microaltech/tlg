@@ -15,6 +15,7 @@ func _init() -> void:
 		"test_campaign_win_unlock", "test_campaign_loss", "test_promote",
 		"test_palace_children", "test_save_roundtrip", "test_gacha_basic", "test_gacha_ten_and_pity",
 		"test_gacha_duplicates", "test_gacha_free", "test_gold_sources",
+		"test_daily_generate", "test_daily_progress_claim", "test_daily_chests_reset", "test_daily_save",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -215,3 +216,97 @@ func test_gold_sources() -> void:
 	var m2 := Model.new()
 	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
 	check(var_to_str(m2.to_dict()) == var_to_str(m.to_dict()), "simpan/muat data gacha")
+
+
+func _mission_index(m: Model, id: String) -> int:
+	for i in m.daily["missions"].size():
+		if m.daily["missions"][i]["id"] == id:
+			return i
+	return -1
+
+
+## Paksa daftar misi hari ini (supaya tes tidak bergantung pada pilihan acak).
+func _set_missions(m: Model, ids: Array) -> void:
+	m.daily["missions"] = []
+	for id in ids:
+		m.daily["missions"].append({"id": id, "progress": 0, "claimed": false})
+
+
+func test_daily_generate() -> void:
+	var m := fresh()
+	check(m.daily["missions"].size() == Data.DAILY_COUNT, "%d misi harian" % Data.DAILY_COUNT)
+	var ids := {}
+	for x in m.daily["missions"]:
+		ids[x["id"]] = true
+	check(ids.size() == Data.DAILY_COUNT, "misi tidak kembar")
+	check(not ids.has("train3"), "misi didik anak tidak muncul tanpa anak")
+	var m2 := fresh(42)
+	check(var_to_str(m2.daily["missions"]) == var_to_str(m.daily["missions"]), "misi hari yang sama selalu sama")
+	m.tz_bias = 0
+	check(m.seconds_until_reset(86400.0 * 10 + 3600) == 82800, "hitung mundur reset")
+	m.tz_bias = 7 * 3600
+	check(m.day_index(86400.0 * 10 + 18 * 3600) == 11, "zona waktu WIB menggeser pergantian hari")
+
+
+func test_daily_progress_claim() -> void:
+	var m := fresh()
+	_set_missions(m, ["tax5", "upgrade5", "win3", "visit3", "silver3k"])
+	var completed := []
+	m.mission_completed.connect(func(t): completed.append(t))
+	var t := 1000.0
+	for i in 5:
+		t += 60.0
+		m.do_affair("silver", t)
+	check(m.mission_done(_mission_index(m, "tax5")), "misi pajak selesai")
+	check(completed.size() == 1, "sinyal misi selesai sekali")
+	check(m.daily["missions"][_mission_index(m, "silver3k")]["progress"] > 0, "perak dari pajak terhitung")
+	check(not m.claim_mission(_mission_index(m, "win3"))["ok"], "misi belum selesai tidak bisa diklaim")
+	var gold := m.gold
+	var grain := m.grain
+	check(m.claim_mission(_mission_index(m, "tax5"))["ok"], "klaim misi")
+	check(m.gold == gold + 20 and m.grain == grain + 500, "hadiah misi diterima")
+	check(m.daily["points"] == Data.DAILY_POINTS, "poin aktivitas bertambah")
+	check(not m.claim_mission(_mission_index(m, "tax5"))["ok"], "tidak bisa klaim dua kali")
+	m.soldiers = 10000000
+	m.silver = 1000000
+	for i in 3:
+		m.fight_stage()
+		m.upgrade_counselor("arya")
+	check(m.mission_done(_mission_index(m, "win3")), "misi kampanye selesai")
+	check(m.daily["missions"][_mission_index(m, "upgrade5")]["progress"] == 3, "progres latih 3/5")
+	check(m.claimable_count() == 1, "satu hadiah siap diklaim")
+
+
+func test_daily_chests_reset() -> void:
+	var m := fresh()
+	check(not m.claim_chest(0)["ok"], "peti terkunci tanpa poin")
+	m.daily["points"] = 80
+	check(m.can_claim_chest(0) and m.can_claim_chest(1) and not m.can_claim_chest(2), "peti terbuka sesuai poin")
+	var gold := m.gold
+	check(m.claim_chest(0)["ok"] and m.gold == gold + 30, "hadiah peti")
+	check(not m.claim_chest(0)["ok"], "peti hanya sekali")
+	m.daily["missions"][0]["progress"] = 999
+	m.sync(1000.0 + 86400.0)
+	check(m.daily["points"] == 0 and not m.daily["chests"][0], "reset poin & peti di hari baru")
+	check(m.daily["missions"][0]["progress"] == 0, "progres misi direset")
+	m.children.append({"name": "Adi", "gender": "m", "mother": "melati", "talent": 1, "level": 1})
+	var seen := false
+	for d in 30:
+		m.sync(1000.0 + 86400.0 * (d + 2))
+		if _mission_index(m, "train3") >= 0:
+			seen = true
+	check(seen, "misi didik anak muncul setelah punya anak")
+
+
+func test_daily_save() -> void:
+	var m := fresh()
+	m.daily["missions"][0]["progress"] = 2
+	m.daily["missions"][1]["claimed"] = true
+	m.daily["points"] = 40
+	m.daily["chests"][0] = true
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(var_to_str(m2.daily) == var_to_str(m.daily), "simpan/muat misi harian")
+	var m3 := Model.new()
+	m3.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0 + 86400.0)
+	check(m3.daily["points"] == 0, "muat di hari berikutnya mereset misi")

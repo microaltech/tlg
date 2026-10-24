@@ -77,6 +77,32 @@ const ENEMIES := [
 
 const CHILD_MAX_LEVEL := 10
 
+## Misi harian: tiap hari dipilih DAILY_COUNT misi acak dari kumpulan ini.
+## event = aksi yang dihitung; requires = syarat agar misi boleh muncul.
+## Hadiah memakai kunci gold/silver/grain/soldiers.
+const DAILY_COUNT := 5
+const DAILY_POINTS := 20  ## Poin aktivitas per misi yang diklaim.
+const DAILY_MISSIONS := [
+	{"id": "affair10", "text": "Kerjakan urusan kota 10 kali", "event": "affair", "target": 10, "gold": 20, "silver": 500},
+	{"id": "tax5", "text": "Tarik pajak 5 kali", "event": "affair_silver", "target": 5, "gold": 20, "grain": 500},
+	{"id": "farm5", "text": "Kelola sawah 5 kali", "event": "affair_grain", "target": 5, "gold": 20, "silver": 500},
+	{"id": "troops5", "text": "Rekrut prajurit 5 kali", "event": "affair_soldiers", "target": 5, "gold": 20, "grain": 500},
+	{"id": "upgrade5", "text": "Latih penasihat 5 kali", "event": "upgrade", "target": 5, "gold": 30, "silver": 800},
+	{"id": "win3", "text": "Menangkan 3 tahap kampanye", "event": "win", "target": 3, "gold": 40, "soldiers": 1000},
+	{"id": "visit3", "text": "Kunjungi selir 3 kali", "event": "visit", "target": 3, "gold": 25, "grain": 600},
+	{"id": "train3", "text": "Didik anak 3 kali", "event": "train", "target": 3, "gold": 25, "silver": 600, "requires": "children"},
+	{"id": "gacha1", "text": "Rekrut penasihat 1 kali", "event": "recruit", "target": 1, "gold": 30, "silver": 500},
+	{"id": "silver3k", "text": "Kumpulkan 3000 perak dari pajak", "event": "earn_silver", "target": 3000, "gold": 30, "grain": 800},
+]
+## Peti aktivitas: terbuka saat poin harian mencapai batas.
+const DAILY_CHESTS := [
+	{"points": 40, "gold": 30, "silver": 1000},
+	{"points": 80, "gold": 50, "grain": 1500},
+	{"points": 100, "gold": 100, "soldiers": 2000},
+]
+const REWARD_KEYS := ["gold", "silver", "grain", "soldiers"]
+const REWARD_NAMES := {"gold": "emas", "silver": "perak", "grain": "pangan", "soldiers": "prajurit"}
+
 
 static func counselor_def(id: String) -> Dictionary:
 	for c in COUNSELORS:
@@ -87,6 +113,13 @@ static func counselor_def(id: String) -> Dictionary:
 
 static func counselors_of_rarity(rarity: String) -> Array:
 	return COUNSELORS.filter(func(c): return c["rarity"] == rarity)
+
+
+static func mission_def(id: String) -> Dictionary:
+	for m in DAILY_MISSIONS:
+		if m["id"] == id:
+			return m
+	return {}
 
 
 static func beauty_def(id: String) -> Dictionary:

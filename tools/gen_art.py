@@ -553,6 +553,38 @@ ICONS["rays"] = icon_doc(
         for a in range(0, 360, 30))
     + '<circle cx="48" cy="48" r="20" fill="#fff" opacity="0.8"/>')
 
+ICONS["mission"] = icon_doc(
+    '<rect x="16" y="10" width="64" height="80" rx="8" fill="#f4e4c1" stroke="#7a4b1f" stroke-width="4"/>'
+    '<rect x="34" y="4" width="28" height="14" rx="5" fill="#a8742c" stroke="#5e3a12" stroke-width="3"/>'
+    + "".join(
+        '<rect x="26" y="%d" width="12" height="12" rx="2" fill="#fff" stroke="#7a4b1f" stroke-width="2.5"/>'
+        '<path d="M44 %d L70 %d" stroke="#a8742c" stroke-width="4" stroke-linecap="round"/>' % (y, y + 6, y + 6)
+        for y in (28, 48, 68))
+    + '<path d="M27 33 L31 38 L39 26" stroke="#2e9a4a" stroke-width="4" fill="none" stroke-linecap="round"/>'
+      '<path d="M27 53 L31 58 L39 46" stroke="#2e9a4a" stroke-width="4" fill="none" stroke-linecap="round"/>')
+
+
+def chest(open_):
+    lid = ('<path d="M12 40 L12 26 Q12 12 28 12 L68 12 Q84 12 84 26 L84 40 Z" fill="#a8582a" stroke="#4a2410" stroke-width="3"/>'
+           '<path d="M12 30 L84 30" stroke="#e8c070" stroke-width="5"/>')
+    if open_:
+        lid = ('<circle cx="48" cy="40" r="30" fill="#fff1b0" opacity="0.6"/>'
+               '<path d="M12 40 L20 8 Q22 2 30 4 L76 14 Q82 16 82 24 L76 42 Z" fill="#8e4a22" stroke="#4a2410" stroke-width="3"/>'
+               '<path d="M18 22 L80 32" stroke="#e8c070" stroke-width="5"/>'
+               '<ellipse cx="48" cy="44" rx="30" ry="8" fill="#f2c14e"/>'
+               '<circle cx="36" cy="40" r="5" fill="#ffe08a"/><circle cx="56" cy="38" r="5" fill="#ffe08a"/>')
+    return icon_doc(
+        '<rect x="12" y="40" width="72" height="44" rx="4" fill="#a8582a" stroke="#4a2410" stroke-width="3"/>'
+        '<path d="M12 52 L84 52 M12 74 L84 74" stroke="#e8c070" stroke-width="5"/>'
+        '<rect x="20" y="40" width="8" height="44" fill="#e8c070"/><rect x="68" y="40" width="8" height="44" fill="#e8c070"/>'
+        + lid +
+        '<rect x="40" y="44" width="16" height="18" rx="3" fill="#e8c070" stroke="#7a4b1f" stroke-width="2.5"/>'
+        '<circle cx="48" cy="52" r="3" fill="#4a2410"/>')
+
+
+ICONS["chest"] = chest(False)
+ICONS["chest_open"] = chest(True)
+
 ICONS["heart"] = icon_doc(
     '<path d="M48 86 Q10 60 12 34 Q14 14 32 14 Q44 14 48 28 Q52 14 64 14 Q82 14 84 34 Q86 60 48 86 Z" '
     'fill="#e0507a" stroke="#8e1f45" stroke-width="4"/>'

@@ -102,17 +102,17 @@ const DAILY_MISSIONS := [
 const DAILY_CHESTS := [
 	{"points": 40, "gold": 30, "silver": 1000},
 	{"points": 80, "gold": 50, "grain": 1500},
-	{"points": 100, "gold": 100, "soldiers": 2000},
+	{"points": 100, "gold": 100, "soldiers": 2000, "items": {"scroll_train": 1}},
 ]
 ## Hadiah login harian (7 hari berturut-turut). Terlewat sehari = kembali ke Hari 1.
 const LOGIN_REWARDS := [
 	{"gold": 50, "silver": 1000},
 	{"grain": 2000, "soldiers": 1000},
-	{"gold": 80},
+	{"gold": 80, "items": {"energy_tea": 1}},
 	{"silver": 3000, "grain": 2000},
 	{"gold": 100, "soldiers": 2000},
-	{"silver": 5000, "grain": 3000},
-	{"gold": 300, "soldiers": 5000},
+	{"silver": 5000, "grain": 3000, "items": {"pill_intimacy": 2}},
+	{"gold": 300, "soldiers": 5000, "items": {"recruit_ticket": 1}},
 ]
 ## Event mingguan: bergiliran tiap minggu (Senin 00:00 waktu setempat).
 ## points = poin event per aksi (nama aksi sama dengan event misi harian);
@@ -153,9 +153,9 @@ const EVENT_TIERS := [
 	{"points": 300, "grain": 3000, "soldiers": 2000},
 	{"points": 600, "gold": 80},
 	{"points": 1000, "silver": 8000, "grain": 5000},
-	{"points": 1500, "gold": 150, "soldiers": 5000},
+	{"points": 1500, "gold": 150, "soldiers": 5000, "items": {"recruit_ticket": 1}},
 	{"points": 2200, "silver": 15000, "grain": 10000},
-	{"points": 3000, "gold": 400},
+	{"points": 3000, "gold": 400, "items": {"star_stone": 1}},
 ]
 ## Aliansi (anggota disimulasikan secara offline; lihat bagian Aliansi di game_model.gd).
 const ALLIANCE_UNLOCK_STAGE := 5
@@ -184,6 +184,8 @@ const ALLIANCE_SHOP := [
 	{"id": "grain10k", "name": "Lumbung Pangan", "icon": "grain", "reward": {"grain": 10000}, "cost": 80, "limit": 3, "level": 2},
 	{"id": "soldiers5k", "name": "Pasukan Bantuan", "icon": "soldiers", "reward": {"soldiers": 5000}, "cost": 120, "limit": 2, "level": 3},
 	{"id": "gold100", "name": "Peti Emas Besar", "icon": "chest", "reward": {"gold": 100}, "cost": 300, "limit": 1, "level": 5},
+	{"id": "al_scroll", "name": "Gulungan Latihan", "icon": "item_scroll", "reward": {"items": {"scroll_train": 1}}, "cost": 150, "limit": 2, "level": 2},
+	{"id": "al_star", "name": "Batu Bintang", "icon": "item_star", "reward": {"items": {"star_stone": 1}}, "cost": 600, "limit": 1, "level": 6},
 ]
 const BOSS_NAME := "Buto Ijo"
 const BOSS_ATTACKS_PER_DAY := 3
@@ -284,6 +286,8 @@ const ARENA_SHOP := [
 	{"id": "a_silver", "name": "Peti Perak", "icon": "silver", "reward": {"silver": 15000}, "cost": 60, "limit": 3},
 	{"id": "a_grain", "name": "Lumbung Pangan", "icon": "grain", "reward": {"grain": 15000}, "cost": 60, "limit": 3},
 	{"id": "a_soldiers", "name": "Pasukan Bayaran", "icon": "soldiers", "reward": {"soldiers": 8000}, "cost": 80, "limit": 3},
+	{"id": "a_ticket", "name": "Tiket Rekrut", "icon": "ticket_recruit", "reward": {"items": {"recruit_ticket": 1}}, "cost": 250, "limit": 1},
+	{"id": "a_tea", "name": "Teh Semangat", "icon": "item_tea", "reward": {"items": {"energy_tea": 1}}, "cost": 120, "limit": 2},
 ]
 ## Potret yang dipakai sebagai avatar lawan arena.
 const ARENA_AVATARS := ["arya", "sekar", "bayu", "ratna", "gajah", "lintang", "danu", "wening", "bagas",
@@ -430,6 +434,32 @@ const LB_REWARDS := [
 const LB_ALLIANCE_COUNT := 30
 const LB_ALLIANCE_WORDS := ["Naga", "Rajawali", "Banteng", "Kijang", "Elang", "Singa", "Merak", "Badak", "Harimau",
 	"Gagak", "Kencana", "Wijaya", "Samudra", "Mahameru", "Surya", "Candra", "Bintang", "Pusaka", "Nusantara", "Dirgantara"]
+
+## Item di tas. target: "counselor" / "beauty" / "" (tanpa target).
+## Hadiah apa pun bisa berisi {"items": {id: jumlah}}.
+const ITEMS := {
+	"scroll_train": {"name": "Gulungan Latihan", "icon": "item_scroll", "target": "counselor",
+		"desc": "Penasihat pilihan naik 1 level tanpa biaya (tetap mengikuti batas jabatan)."},
+	"star_stone": {"name": "Batu Bintang", "icon": "item_star", "target": "counselor",
+		"desc": "Penasihat pilihan +1 bintang (+20% atribut)."},
+	"pill_intimacy": {"name": "Pil Keakraban", "icon": "item_pill", "target": "beauty",
+		"desc": "Keakraban selir pilihan +10."},
+	"recruit_ticket": {"name": "Tiket Rekrut", "icon": "ticket_recruit", "target": "",
+		"desc": "Rekrut 1 penasihat tanpa emas (pakai di halaman Rekrut)."},
+	"energy_tea": {"name": "Teh Semangat", "icon": "item_tea", "target": "",
+		"desc": "Mengisi penuh semua urusan kota dan energi kunjungan."},
+	"silver_box": {"name": "Peti Perak", "icon": "silver", "target": "", "desc": "Berisi 10.000 perak.",
+		"open": {"silver": 10000}},
+	"grain_box": {"name": "Karung Pangan", "icon": "grain", "target": "", "desc": "Berisi 10.000 pangan.",
+		"open": {"grain": 10000}},
+	"troop_writ": {"name": "Surat Wajib Militer", "icon": "soldiers", "target": "", "desc": "Berisi 5.000 prajurit.",
+		"open": {"soldiers": 5000}},
+}
+const ITEM_ORDER := ["recruit_ticket", "star_stone", "scroll_train", "pill_intimacy", "energy_tea", "silver_box",
+	"grain_box", "troop_writ"]
+## Item acak dari tahap besar kampanye (tiap tahap ke-5).
+const STAGE_ITEM_POOL := ["scroll_train", "scroll_train", "pill_intimacy", "energy_tea", "silver_box", "troop_writ",
+	"recruit_ticket"]
 
 const REWARD_KEYS := ["gold", "silver", "grain", "soldiers"]
 const REWARD_NAMES := {"gold": "emas", "silver": "perak", "grain": "pangan", "soldiers": "prajurit", "jasa": "jasa"}

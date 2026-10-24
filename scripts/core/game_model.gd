@@ -58,6 +58,8 @@ var iap := {}
 ## VIP: {"points": int, "daily_day": int (hari klaim hadiah harian), "packs": [level paket yang dibeli],
 ##   "gifts": [level yang hadiah naik levelnya sudah diberikan]}
 var vip := {}
+## Tas: id item -> jumlah.
+var inventory := {}
 ## Hari pertama bermain (umur akun, dipakai untuk mensimulasikan pertumbuhan server).
 var start_day := 0
 ## Leaderboard: {"week": int, "reward": {} hadiah minggu lalu yang belum diklaim}
@@ -108,6 +110,7 @@ func new_game(now: float) -> void:
 	vip = {"points": 0, "daily_day": -1, "packs": [], "gifts": []}
 	start_day = day_index(now)
 	leaderboard = {"week": week_index(now), "reward": {}}
+	inventory = {"recruit_ticket": 1, "scroll_train": 2}
 	_npc_cache = {}
 	_unlock_content()
 	ensure_daily(now)
@@ -308,6 +311,10 @@ func fight_stage() -> Dictionary:
 	silver += int(info["reward_silver"])
 	prestige += int(info["reward_prestige"])
 	gold += int(info["reward_gold"])
+	var stage_item := ""
+	if (stage + 1) % 5 == 0:
+		stage_item = Data.STAGE_ITEM_POOL[rng.randi_range(0, Data.STAGE_ITEM_POOL.size() - 1)]
+		add_item(stage_item)
 	stage += 1
 	_track("win")
 	ensure_arena(_last_now)
@@ -315,6 +322,8 @@ func fight_stage() -> Dictionary:
 	changed.emit()
 	var msg := "Menang di %s! -%d prajurit, +%d perak, +%d prestise, +%d emas." % [
 		info["name"], losses, info["reward_silver"], info["reward_prestige"], info["reward_gold"]]
+	if stage_item != "":
+		msg += " Rampasan: %s." % Data.ITEMS[stage_item]["name"]
 	if not unlocked.is_empty():
 		msg += " Bergabung: " + ", ".join(unlocked)
 	return _ok(msg)
@@ -346,11 +355,15 @@ func pity_left() -> int:
 
 ## count: 1 atau 10. free: rekrut gratis harian (hanya untuk 1 tarikan).
 ## Hasil: {"ok", "msg", "results": [{"id", "rarity", "new", "stars", "silver"}]}
-func recruit(count: int, now: float, free := false) -> Dictionary:
+func recruit(count: int, now: float, free := false, ticket := false) -> Dictionary:
 	if count != 1 and count != 10:
 		return _fail("Jumlah rekrut tidak valid.")
 	var cost := 0
-	if free:
+	if ticket:
+		if count != 1 or item_count("recruit_ticket") <= 0:
+			return _fail("Tidak punya Tiket Rekrut.")
+		add_item("recruit_ticket", -1)
+	elif free:
 		if count != 1 or free_pull_eta(now) > 0:
 			return _fail("Rekrut gratis belum tersedia.")
 	else:
@@ -531,6 +544,10 @@ func _give_rewards(def: Dictionary) -> String:
 			continue
 		set(key, int(get(key)) + amount)
 		parts.append("+%d %s" % [amount, Data.REWARD_NAMES[key]])
+	var items: Dictionary = def.get("items", {})
+	for id in items:
+		add_item(id, int(items[id]))
+		parts.append("+%d %s" % [int(items[id]), Data.ITEMS[id]["name"]])
 	return ", ".join(parts)
 
 
@@ -1889,6 +1906,66 @@ func claim_lb_reward() -> Dictionary:
 	return _ok("Hadiah peringkat mingguan (%s, #%d): +%d emas." % [r["tier"], r["rank"], r["gold"]])
 
 
+# --- Tas & item ---------------------------------------------------------------
+
+func item_count(id: String) -> int:
+	return int(inventory.get(id, 0))
+
+
+func add_item(id: String, amount := 1) -> void:
+	if not Data.ITEMS.has(id):
+		return
+	var n := item_count(id) + amount
+	if n <= 0:
+		inventory.erase(id)
+	else:
+		inventory[id] = n
+
+
+## Pakai item. target = id penasihat/selir untuk item bertarget.
+func use_item(id: String, target: String, now: float) -> Dictionary:
+	if not Data.ITEMS.has(id) or item_count(id) <= 0:
+		return _fail("Item tidak ada di tas.")
+	var def: Dictionary = Data.ITEMS[id]
+	var msg := ""
+	match id:
+		"scroll_train":
+			if not counselors.has(target):
+				return _fail("Pilih penasihat.")
+			var st: Dictionary = counselors[target]
+			if int(st["level"]) >= int(rank_info()["level_cap"]):
+				return _fail("Level maksimal untuk jabatan ini.")
+			st["level"] = int(st["level"]) + 1
+			_track("upgrade")
+			msg = "%s naik ke level %d." % [Data.counselor_def(target)["name"], st["level"]]
+		"star_stone":
+			if not counselors.has(target):
+				return _fail("Pilih penasihat.")
+			var st: Dictionary = counselors[target]
+			if int(st["stars"]) >= Data.MAX_STARS:
+				return _fail("Bintang %s sudah penuh." % Data.counselor_def(target)["name"])
+			st["stars"] = int(st["stars"]) + 1
+			msg = "%s kini bintang %d." % [Data.counselor_def(target)["name"], st["stars"]]
+		"pill_intimacy":
+			if not beauties.has(target):
+				return _fail("Pilih selir.")
+			beauties[target]["intimacy"] = int(beauties[target]["intimacy"]) + 10
+			msg = "Keakraban dengan %s +10." % Data.beauty_def(target)["name"]
+		"energy_tea":
+			for key in CHARGE_KEYS:
+				charges[key] = {"value": max_charges(), "t": now}
+			msg = "Semua urusan dan energi kunjungan terisi penuh."
+		"recruit_ticket":
+			return _fail("Pakai Tiket Rekrut di halaman Rekrut.")
+		_:
+			if not def.has("open"):
+				return _fail("Item ini tidak bisa dipakai.")
+			msg = "Dibuka: %s." % _give_rewards(def["open"])
+	add_item(id, -1)
+	changed.emit()
+	return _ok("%s: %s" % [def["name"], msg])
+
+
 # --- Tutorial & pengenalan fitur -------------------------------------------
 
 func tutorial_active() -> bool:
@@ -2113,6 +2190,7 @@ func to_dict() -> Dictionary:
 		"tutorial": tutorial,
 		"iap": iap,
 		"vip": vip,
+		"inventory": inventory,
 		"start_day": start_day,
 		"leaderboard": leaderboard,
 	}
@@ -2208,6 +2286,10 @@ func from_dict(d: Dictionary, now: float) -> void:
 			iap[k].append(str(v))
 	for k in ["card_until", "card_claimed", "spent_idr"]:
 		iap[k] = int(src_iap.get(k, iap[k]))
+	inventory = {}
+	for id in d.get("inventory", {}):
+		if Data.ITEMS.has(str(id)) and int(d["inventory"][id]) > 0:
+			inventory[str(id)] = int(d["inventory"][id])
 	start_day = int(d.get("start_day", day_index(now)))
 	var src_lb: Dictionary = d.get("leaderboard", {})
 	leaderboard = {"week": int(src_lb.get("week", week_index(now))), "reward": {}}

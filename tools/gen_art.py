@@ -828,6 +828,44 @@ ICONS["trophy"] = icon_doc(
     '<rect x="28" y="76" width="40" height="14" rx="3" fill="#7a4b1f" stroke="#4a2c10" stroke-width="3"/>'
     '<rect x="38" y="80" width="20" height="5" rx="2" fill="#f2c14e"/>')
 
+ICONS["item_scroll"] = icon_doc(
+    '<rect x="22" y="18" width="52" height="60" fill="#f4e4c1" stroke="#7a4b1f" stroke-width="3"/>'
+    '<path d="M32 32 L64 32 M32 42 L64 42 M32 52 L56 52" stroke="#2e86c1" stroke-width="3"/>'
+    '<rect x="14" y="10" width="68" height="12" rx="6" fill="#2e86c1" stroke="#14284a" stroke-width="3"/>'
+    '<rect x="14" y="74" width="68" height="12" rx="6" fill="#2e86c1" stroke="#14284a" stroke-width="3"/>'
+    '<path d="M62 56 L68 62 L80 46" stroke="#27ae60" stroke-width="5" fill="none" stroke-linecap="round"/>')
+
+ICONS["item_star"] = icon_doc(
+    '<path d="M48 6 L74 30 L64 84 L32 84 L22 30 Z" fill="#8e44ad" stroke="#4a235a" stroke-width="4" stroke-linejoin="round"/>'
+    '<path d="M48 6 L48 84 M22 30 L74 30" stroke="#c39bd3" stroke-width="2.5"/>'
+    '<path d="M48 34 L53 46 L66 47 L56 55 L59 68 L48 61 L37 68 L40 55 L30 47 L43 46 Z" fill="#f4c542" stroke="#9a6a12" stroke-width="2"/>')
+
+ICONS["item_pill"] = icon_doc(
+    '<path d="M20 30 Q20 14 34 14 L62 14 Q76 14 76 30 L76 74 Q76 88 62 88 L34 88 Q20 88 20 74 Z" fill="#f5b7c8" '
+    'stroke="#8e1f45" stroke-width="3.5"/>'
+    '<rect x="30" y="6" width="36" height="12" rx="4" fill="#c0392b" stroke="#6b1a12" stroke-width="3"/>'
+    '<path d="M48 70 Q30 58 31 46 Q32 38 40 38 Q46 38 48 45 Q50 38 56 38 Q64 38 65 46 Q66 58 48 70 Z" fill="#e0507a"/>')
+
+ICONS["item_tea"] = icon_doc(
+    '<path d="M16 40 L72 40 L66 82 Q48 90 22 82 Z" fill="#f4e4c1" stroke="#7a4b1f" stroke-width="3.5"/>'
+    '<path d="M72 48 Q90 48 86 62 Q82 72 68 70" stroke="#7a4b1f" stroke-width="5" fill="none"/>'
+    '<ellipse cx="44" cy="42" rx="26" ry="5" fill="#8a9a3a"/>'
+    '<path d="M34 30 Q28 20 36 12 M50 32 Q44 20 52 10" stroke="#c9d1da" stroke-width="3.5" fill="none" stroke-linecap="round"/>'
+    '<path d="M30 60 L58 60" stroke="#27ae60" stroke-width="4"/>')
+
+ICONS["ticket_recruit"] = icon_doc(
+    '<path d="M8 26 L88 26 L88 40 Q80 48 88 56 L88 70 L8 70 L8 56 Q16 48 8 40 Z" fill="#f2c14e" stroke="#7a4b1f" stroke-width="3.5"/>'
+    '<path d="M30 28 L30 68" stroke="#7a4b1f" stroke-width="2.5" stroke-dasharray="4 4"/>'
+    '<rect x="44" y="34" width="34" height="28" rx="3" fill="#f4e4c1" stroke="#7a4b1f" stroke-width="2.5"/>'
+    '<path d="M50 42 L72 42 M50 48 L72 48 M50 54 L64 54" stroke="#a8742c" stroke-width="2.5"/>'
+    '<circle cx="18" cy="48" r="6" fill="#c0392b"/>')
+
+ICONS["bag"] = icon_doc(
+    '<path d="M18 40 Q14 88 30 90 L66 90 Q82 88 78 40 Z" fill="#a8582a" stroke="#4a2410" stroke-width="3.5"/>'
+    '<path d="M30 40 Q30 14 48 14 Q66 14 66 40" stroke="#4a2410" stroke-width="6" fill="none"/>'
+    '<rect x="14" y="36" width="68" height="12" rx="5" fill="#e8c070" stroke="#4a2410" stroke-width="3"/>'
+    '<rect x="40" y="56" width="16" height="14" rx="3" fill="#e8c070" stroke="#4a2410" stroke-width="2.5"/>')
+
 ICONS["chest"] = chest(False)
 ICONS["chest_open"] = chest(True)
 

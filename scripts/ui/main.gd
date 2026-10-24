@@ -80,7 +80,10 @@ var _vip_view := -1
 var _lb_hb: Dictionary
 var _lb_overlay: Control
 var _lb_box: VBoxContainer
-var _lb_cat := "power"  ## Level VIP yang sedang dilihat di panel (-1 = level sekarang).
+var _lb_cat := "power"
+var _bag_overlay: Control
+var _bag_box: VBoxContainer
+var _bag_pick := ""  ## Item yang sedang menunggu pilihan target.  ## Level VIP yang sedang dilihat di panel (-1 = level sekarang).
 var _mission_box: VBoxContainer
 var _mission_reset_label: Label
 var _gacha_banner_done := false
@@ -533,6 +536,8 @@ func _rebuild() -> void:
 		_fill_vip()
 	if is_instance_valid(_lb_overlay):
 		_fill_leaderboard()
+	if is_instance_valid(_bag_overlay):
+		_fill_bag()
 	_tick()
 	# Kembalikan posisi gulir setelah layout dihitung ulang.
 	await get_tree().process_frame
@@ -633,6 +638,7 @@ func _charge_widget(parent: Node, key: String, prefix: String) -> void:
 func _build_city(box: VBoxContainer) -> void:
 	_clear(box)
 	box.add_child(_event_banner())
+	_build_quick_row(box)
 	for kind in model.AFFAIRS:
 		var a: Dictionary = model.AFFAIRS[kind]
 		var card := _card(box)
@@ -1085,6 +1091,9 @@ static func _reward_text(def: Dictionary) -> String:
 	for key in Data.REWARD_KEYS:
 		if int(def.get(key, 0)) > 0:
 			parts.append("+%s %s" % [_num(def[key]), Data.REWARD_NAMES[key]])
+	var items: Dictionary = def.get("items", {})
+	for id in items:
+		parts.append("+%d %s" % [items[id], Data.ITEMS[id]["name"]])
 	return ", ".join(parts)
 
 
@@ -2002,6 +2011,123 @@ func _build_alliance_members(box: VBoxContainer, now: float) -> void:
 			.add_theme_color_override("font_color", UI.INK)
 
 
+# --- Tombol cepat Kota & tas ---------------------------------------------------
+
+## Baris tombol cepat di menu Kota (Tas, dll.).
+func _build_quick_row(box: VBoxContainer) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	box.add_child(row)
+	var count := 0
+	for id in model.inventory:
+		count += int(model.inventory[id])
+	var bag := _button(row, "Tas (%d)" % count, func():
+		_show_bag()
+		return null, true, "bag", "GoldButton")
+	bag.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bag.add_theme_font_size_override("font_size", 22)
+
+
+func _show_bag() -> void:
+	if is_instance_valid(_bag_overlay):
+		return
+	_bag_pick = ""
+	var p := _open_panel("Tas", "bag", _close_bag)
+	_bag_overlay = p["overlay"]
+	_bag_box = p["content"]
+	p["subtitle"].text = "Item dari misi, event, toko, dan kampanye"
+	_fill_bag()
+
+
+func _close_bag() -> void:
+	if is_instance_valid(_bag_overlay):
+		Audio.play("click")
+		_bag_overlay.queue_free()
+	_bag_overlay = null
+
+
+func _fill_bag() -> void:
+	_clear(_bag_box)
+	if _bag_pick != "":
+		_fill_bag_targets()
+		return
+	var any := false
+	for id in Data.ITEM_ORDER:
+		var n: int = model.item_count(id)
+		if n <= 0:
+			continue
+		any = true
+		var def: Dictionary = Data.ITEMS[id]
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		_inner_box(_bag_box).add_child(row)
+		row.add_child(_tex(Art.icon(def["icon"]), 64))
+		var col := _col(row)
+		_label(col, "%s  x%d" % [def["name"], n], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		_label(col, def["desc"], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+		var item_id: String = id
+		var b: Button
+		if id == "recruit_ticket":
+			b = _button(row, "Rekrut", func():
+				_close_bag()
+				_switch_page("gacha")
+				return null, true, "", "")
+		elif def["target"] != "":
+			b = _button(row, "Pakai", func():
+				_bag_pick = item_id
+				_queue_rebuild()
+				return null, true, "", "GreenButton")
+		else:
+			b = _button(row, "Pakai", func(): return model.use_item(item_id, "", Game.now()), true, "",
+				"GreenButton", false, "upgrade")
+		b.custom_minimum_size = Vector2(120, 60)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	if not any:
+		_label(_bag_box, "Tas kosong. Item didapat dari misi harian, login, event, toko, dan tahap besar kampanye.",
+			"CardLabel")
+
+
+## Daftar penasihat/selir untuk item bertarget.
+func _fill_bag_targets() -> void:
+	var def: Dictionary = Data.ITEMS[_bag_pick]
+	var head := HBoxContainer.new()
+	_bag_box.add_child(head)
+	var back := _button(head, "Kembali", func():
+		_bag_pick = ""
+		_queue_rebuild()
+		return null)
+	back.custom_minimum_size = Vector2(150, 56)
+	var title := _label(head, "%s: pilih %s" % [def["name"], "penasihat" if def["target"] == "counselor" else "selir"],
+		"CardLabel")
+	title.add_theme_font_override("font", UI.font_bold)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var ids: Array = model.counselors.keys() if def["target"] == "counselor" else model.beauties.keys()
+	for id in ids:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		_inner_box(_bag_box).add_child(row)
+		row.add_child(_tex(Art.portrait(id), 64))
+		var col := _col(row)
+		if def["target"] == "counselor":
+			var st: Dictionary = model.counselors[id]
+			_label(col, Data.counselor_def(id)["name"], "CardLabel").add_theme_font_override("font", UI.font_bold)
+			_label(col, "Level %d · bintang %d" % [st["level"], st.get("stars", 0)], "SmallLabel") \
+				.add_theme_color_override("font_color", UI.INK)
+		else:
+			_label(col, Data.beauty_def(id)["name"], "CardLabel").add_theme_font_override("font", UI.font_bold)
+			_label(col, "Keakraban %d" % model.beauties[id]["intimacy"], "SmallLabel") \
+				.add_theme_color_override("font_color", UI.INK)
+		var target: String = id
+		var item_id: String = _bag_pick
+		var b := _button(row, "Pilih", func():
+			var r: Dictionary = model.use_item(item_id, target, Game.now())
+			if r["ok"] and model.item_count(item_id) <= 0:
+				_bag_pick = ""
+			return r, true, "", "GreenButton", false, "upgrade")
+		b.custom_minimum_size = Vector2(120, 56)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+
 # --- Leaderboard global -----------------------------------------------------
 
 func _show_leaderboard() -> void:
@@ -2643,6 +2769,13 @@ func _build_gacha(page: Dictionary) -> void:
 	ten.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_label(pcol, "x10 dijamin minimal satu Epik. Duplikat menambah bintang (+%d%% atribut), "
 		% int(Data.STAR_BONUS * 100) + "atau perak bila bintang sudah penuh.", "CardLabel")
+	if model.item_count("recruit_ticket") > 0:
+		_button(pcol, "Pakai Tiket Rekrut (%d)" % model.item_count("recruit_ticket"), func():
+			var r: Dictionary = model.recruit(1, Game.now(), false, true)
+			if r["ok"]:
+				_show_recruit(r["results"])
+				return {"ok": true}
+			return r, true, "ticket_recruit", "GoldButton", false, "gacha_roll").add_theme_font_size_override("font_size", 24)
 	_label(pcol, "Emas didapat dari kampanye (bonus tiap 5 tahap) dan naik jabatan.", "CardLabel")
 	if model.gold < Data.GACHA_COST_10:
 		_button(pcol, "Beli Emas di Toko", func():

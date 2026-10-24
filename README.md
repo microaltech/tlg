@@ -62,6 +62,10 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   disimulasikan offline (NPC yang tumbuh, menyumbang, dan menyerang bos tiap hari)
   karena belum ada server; logika simulasinya terkumpul di bagian "Aliansi" pada
   `game_model.gd` agar mudah diganti dengan data server.
+- **Tas & item** — tombol Tas di menu Kota: Tiket Rekrut, Batu Bintang, Gulungan
+  Latihan, Pil Keakraban, Teh Semangat (isi penuh urusan), dan peti sumber daya.
+  Item bertarget memakai pemilih penasihat/selir. Item didapat dari tahap besar
+  kampanye, peti aktivitas, hadiah login, event, toko aliansi/arena, dan fitur lain.
 - **Leaderboard global** — tombol Peringkat di header: kategori Kekuatan,
   Kampanye, Prestise, Arena, dan Aliansi. Peringkat Anda di antara 100.001 pemain
   (mis. "#12.345 · Top 12,3%"), 50 teratas dengan tag aliansi dan medali, serta

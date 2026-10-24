@@ -24,7 +24,7 @@ func _init() -> void:
 		"test_iap_gold_packs", "test_iap_starter_card", "test_iap_save_format", "test_vip_levels",
 		"test_vip_perks", "test_vip_daily_packs_save", "test_war_setup", "test_war_attack", "test_war_simulation_result",
 		"test_war_save_leave", "test_chat_send_reply", "test_chat_ambient_unread", "test_chat_save_leave",
-		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward",
+		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1055,3 +1055,52 @@ func test_lb_alliances_reward() -> void:
 	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0 + 14 * 86400)
 	check(m2.start_day == m.start_day and var_to_str(m2.leaderboard) == var_to_str(m.leaderboard),
 		"simpan/muat leaderboard")
+
+
+func test_items_use() -> void:
+	var m := fresh()
+	check(m.item_count("recruit_ticket") == 1 and m.item_count("scroll_train") == 2, "item awal pemain baru")
+	var lv: int = m.counselors["arya"]["level"]
+	check(m.use_item("scroll_train", "arya", 1000.0)["ok"] and m.counselors["arya"]["level"] == lv + 1, "gulungan latihan")
+	check(not m.use_item("scroll_train", "bukan", 1000.0)["ok"], "item bertarget butuh target valid")
+	m.use_item("scroll_train", "arya", 1000.0)
+	check(m.item_count("scroll_train") == 0 and not m.use_item("scroll_train", "arya", 1000.0)["ok"], "item habis")
+	m.add_item("star_stone", 1)
+	check(m.use_item("star_stone", "sekar", 1000.0)["ok"] and m.counselors["sekar"]["stars"] == 1, "batu bintang")
+	m.add_item("pill_intimacy", 1)
+	check(m.use_item("pill_intimacy", "melati", 1000.0)["ok"] and m.beauties["melati"]["intimacy"] == 10, "pil keakraban")
+	m.do_affair("silver", 1000.0)
+	m.do_affair("silver", 1000.0)
+	m.add_item("energy_tea", 1)
+	check(m.use_item("energy_tea", "", 1000.0)["ok"] and m.charge_value("silver", 1000.0) == m.max_charges(), "teh semangat")
+	m.add_item("silver_box", 1)
+	var silver := m.silver
+	check(m.use_item("silver_box", "", 1000.0)["ok"] and m.silver == silver + 10000, "buka peti perak")
+	var gold := m.gold
+	var r := m.recruit(1, 1000.0, false, true)
+	check(r["ok"] and m.gold == gold and m.item_count("recruit_ticket") == 0, "rekrut dengan tiket tanpa emas")
+	check(not m.recruit(1, 1000.0, false, true)["ok"], "tiket habis")
+	m.add_item("palsu", 3)
+	check(m.item_count("palsu") == 0, "item tidak dikenal diabaikan")
+	var m2 := Model.new()
+	m.add_item("troop_writ", 4)
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(var_to_str(m2.inventory) == var_to_str(m.inventory), "simpan/muat tas")
+
+
+func test_items_sources() -> void:
+	var m := fresh()
+	m.inventory = {}
+	m.soldiers = 100000000
+	for i in 5:
+		m.fight_stage()
+	var total := 0
+	for id in m.inventory:
+		total += m.inventory[id]
+	check(total == 1, "tahap besar memberi item rampasan")
+	m.daily["points"] = 100
+	m.claim_chest(2)
+	check(m.item_count("scroll_train") >= 1, "peti aktivitas berisi item")
+	for i in 7:
+		m.claim_login(1000.0 + i * 86400)
+	check(m.item_count("recruit_ticket") >= 1 and m.item_count("pill_intimacy") >= 2, "hadiah login berisi item")

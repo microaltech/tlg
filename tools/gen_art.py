@@ -743,6 +743,53 @@ ICONS["help"] = icon_doc(
     'fill="none" stroke-linecap="round"/>'
     '<circle cx="48" cy="74" r="6" fill="#fff"/>')
 
+def gold_bar(x, y, w=30):
+    return ('<path d="M%d %d L%d %d L%d %d L%d %d Z" fill="#f2c14e" stroke="#9a6a12" stroke-width="2.5" stroke-linejoin="round"/>'
+            '<path d="M%d %d L%d %d" stroke="#ffe08a" stroke-width="3"/>'
+            % (x, y + 14, x + 5, y, x + w - 5, y, x + w, y + 14, x + 6, y + 4, x + w - 6, y + 4))
+
+
+ICONS["gold_pile"] = icon_doc(
+    "".join(gold_bar(x, y) for x, y in [(6, 76), (34, 76), (62, 76), (20, 62), (48, 62), (34, 48)])
+    + '<path d="M70 20 L73 28 L81 30 L73 33 L70 41 L67 33 L59 30 L67 28 Z" fill="#fff8d0"/>')
+
+ICONS["gold_sack"] = icon_doc(
+    '<path d="M24 90 Q8 60 30 40 L66 40 Q88 60 72 90 Z" fill="#b8864a" stroke="#5e3a12" stroke-width="3.5"/>'
+    '<path d="M32 40 Q48 30 64 40 L60 30 Q48 24 36 30 Z" fill="#9a6a32" stroke="#5e3a12" stroke-width="3"/>'
+    '<rect x="34" y="36" width="28" height="7" rx="3" fill="#c0392b"/>'
+    + gold_bar(24, 18) + gold_bar(44, 12)
+    + '<circle cx="48" cy="66" r="12" fill="#f2c14e" stroke="#9a6a12" stroke-width="2.5"/>'
+      '<rect x="44" y="62" width="8" height="8" fill="#9a6a12"/>')
+
+ICONS["gold_crown"] = icon_doc(
+    "".join(gold_bar(x, y, 26) for x, y in [(4, 80), (28, 80), (52, 80), (70, 80), (16, 68), (40, 68), (62, 68), (28, 56), (52, 56)])
+    + '<path d="M22 46 L18 16 L34 30 L48 8 L62 30 L78 16 L74 46 Z" fill="#f2c14e" stroke="#9a6a12" stroke-width="3" stroke-linejoin="round"/>'
+      '<circle cx="48" cy="34" r="5" fill="#c0392b"/><circle cx="32" cy="38" r="3.5" fill="#2e86c1"/><circle cx="64" cy="38" r="3.5" fill="#2e86c1"/>')
+
+ICONS["card_monthly"] = icon_doc(
+    '<rect x="8" y="18" width="80" height="60" rx="10" fill="#2c3e78" stroke="#e8c070" stroke-width="4"/>'
+    '<path d="M8 34 L88 34" stroke="#e8c070" stroke-width="3"/>'
+    '<circle cx="66" cy="56" r="13" fill="#fff4c8"/><circle cx="72" cy="51" r="11" fill="#2c3e78"/>'
+    + "".join('<rect x="%d" y="%d" width="7" height="6" rx="1" fill="#f2c14e"/>' % (16 + c * 10, 42 + r * 9)
+              for r in range(3) for c in range(4)) +
+    '<path d="M60 22 L63 28 L69 29 L64 32 L66 38 L60 34 L54 38 L56 32 L51 29 L57 28 Z" fill="#f2c14e"/>')
+
+ICONS["starter"] = icon_doc(
+    '<rect x="14" y="42" width="68" height="46" rx="6" fill="#c0392b" stroke="#6b1a12" stroke-width="3.5"/>'
+    '<rect x="8" y="30" width="80" height="16" rx="5" fill="#e74c3c" stroke="#6b1a12" stroke-width="3.5"/>'
+    '<rect x="42" y="30" width="12" height="58" fill="#f2c14e"/>'
+    '<path d="M48 30 Q30 8 22 20 Q18 30 48 30 Q78 30 74 20 Q66 8 48 30 Z" fill="#f2c14e" stroke="#9a6a12" stroke-width="3"/>'
+    '<path d="M74 56 L77 63 L84 64 L79 68 L80 75 L74 71 L68 75 L69 68 L64 64 L71 63 Z" fill="#fff8d0"/>')
+
+ICONS["plus"] = icon_doc(
+    '<circle cx="48" cy="48" r="40" fill="#4f9a4a" stroke="#fff3d6" stroke-width="7"/>'
+    '<path d="M48 26 L48 70 M26 48 L70 48" stroke="#fff" stroke-width="12" stroke-linecap="round"/>')
+
+ICONS["store"] = icon_doc(
+    '<path d="M14 36 L82 36 L76 90 L20 90 Z" fill="#c0392b" stroke="#6b1a12" stroke-width="3.5"/>'
+    '<path d="M32 36 Q32 10 48 10 Q64 10 64 36" stroke="#e8c070" stroke-width="6" fill="none"/>'
+    + gold_bar(33, 54) + '<circle cx="48" cy="80" r="5" fill="#f2c14e"/>')
+
 ICONS["chest"] = chest(False)
 ICONS["chest_open"] = chest(True)
 

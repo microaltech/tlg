@@ -21,6 +21,7 @@ func _init() -> void:
 		"test_alliance_join_leave", "test_alliance_donate_level", "test_alliance_shop", "test_alliance_boss",
 		"test_alliance_npc_and_save", "test_arena_unlock_tickets", "test_arena_fight", "test_arena_season_defense",
 		"test_arena_shop_board_save", "test_tutorial_flow", "test_tutorial_skip_old_save", "test_feature_intros",
+		"test_iap_gold_packs", "test_iap_starter_card", "test_iap_save_format",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -727,3 +728,49 @@ func test_feature_intros() -> void:
 	var t := fresh()
 	t.stage = 10
 	check(t.pending_intro().is_empty(), "pengenalan fitur ditunda selama tutorial")
+
+
+func test_iap_gold_packs() -> void:
+	var m := fresh()
+	var gold := m.gold
+	check(m.iap_first_bonus("gold_330"), "bonus pembelian pertama tersedia")
+	var r := m.grant_purchase("gold_330", "tok1", 1000.0)
+	check(r["ok"] and m.gold == gold + 300 + 30 + 300, "paket emas + bonus + x2 pembelian pertama")
+	check(not m.iap_first_bonus("gold_330"), "bonus pertama hanya sekali")
+	gold = m.gold
+	check(m.grant_purchase("gold_330", "tok2", 1000.0)["ok"] and m.gold == gold + 330, "pembelian kedua tanpa bonus x2")
+	gold = m.gold
+	var dup := m.grant_purchase("gold_330", "tok2", 1000.0)
+	check(not dup["ok"] and dup.get("duplicate", false) and m.gold == gold, "token yang sama tidak diproses dua kali")
+	check(not m.grant_purchase("palsu", "tok3", 1000.0)["ok"], "produk tidak dikenal ditolak")
+	check(m.iap["spent_idr"] == 150000, "total belanja tercatat")
+
+
+func test_iap_starter_card() -> void:
+	var m := fresh()
+	var gold := m.gold
+	check(m.grant_purchase("starter_pack", "s1", 1000.0)["ok"], "paket pemula")
+	check(m.gold == gold + 500 and m.counselors.has("wening"), "isi paket pemula termasuk penasihat Epik")
+	check(m.iap_owned("starter_pack") and not m.grant_purchase("starter_pack", "s2", 1000.0)["ok"], "paket pemula sekali beli")
+	gold = m.gold
+	check(m.grant_purchase("monthly_card", "c1", 1000.0)["ok"] and m.gold == gold + 300, "kartu bulanan: emas langsung")
+	check(m.card_days_left(1000.0) == 30, "kartu aktif 30 hari")
+	gold = m.gold
+	check(m.claim_card(1000.0)["ok"] and m.gold == gold + 100, "ambil emas harian kartu")
+	check(not m.claim_card(1000.0)["ok"], "emas kartu sekali per hari")
+	check(m.card_can_claim(1000.0 + 86400), "bisa diambil lagi besok")
+	check(m.card_days_left(1000.0 + 29 * 86400) == 1 and m.card_days_left(1000.0 + 30 * 86400) == 0, "kartu berakhir setelah 30 hari")
+	m.grant_purchase("monthly_card", "c2", 1000.0 + 10 * 86400)
+	check(m.card_days_left(1000.0 + 10 * 86400) == 50, "membeli lagi memperpanjang kartu")
+
+
+func test_iap_save_format() -> void:
+	var m := fresh()
+	m.grant_purchase("gold_60", "t1", 1000.0)
+	m.grant_purchase("monthly_card", "t2", 1000.0)
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(var_to_str(m2.iap) == var_to_str(m.iap), "simpan/muat data pembelian")
+	check(not m2.grant_purchase("gold_60", "t1", 1000.0)["ok"], "token tetap tercatat setelah dimuat")
+	check(Data.format_idr(75000) == "Rp75.000" and Data.format_idr(1500000) == "Rp1.500.000"
+		and Data.format_idr(500) == "Rp500", "format rupiah")

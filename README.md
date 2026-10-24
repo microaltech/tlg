@@ -82,6 +82,12 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   atribut permanen ke penasihat.
 - **Jabatan** — 6 tingkat; menaikkan batas charge, pengali hasil, batas level,
   dan kursi anak.
+- **Toko & pembelian dalam aplikasi** — buka lewat tombol "+" di chip Emas atau
+  dari halaman Rekrut. Paket Pemula (sekali beli, termasuk penasihat Epik), Kartu
+  Bulanan (300 emas + 100 emas/hari selama 30 hari), dan 5 paket emas dengan bonus
+  x2 untuk pembelian pertama. Setiap transaksi hanya diproses sekali, pembelian
+  tertunda dipulihkan otomatis, dan ada tombol "Pulihkan Pembelian". Lihat bagian
+  "Pembelian dalam aplikasi" di bawah untuk mengaktifkan Google Play Billing.
 - **Tutorial pemain baru** — 14 langkah dipandu penasihat Sekar Pandita: layar
   digelapkan kecuali tombol yang diajarkan (bingkai emas + panah), dan langkah
   berikutnya muncul setelah pemain benar-benar melakukan aksinya. Hadiah 100 emas
@@ -109,6 +115,7 @@ scripts/core/game_data.gd  Data & angka balancing (jabatan, penasihat, tahap)
 scripts/core/game_model.gd Semua logika game, tanpa UI (mudah diuji)
 scripts/core/game.gd       Autoload "Game": simpan/muat & autosave
 scripts/core/audio.gd      Autoload "Audio": musik latar & efek suara
+scripts/core/store.gd      Autoload "Store": Google Play Billing / Mode Uji
 scripts/ui/main.gd         UI dibangun lewat kode (header, 4 halaman, navigasi bawah)
 scripts/ui/ui_theme.gd     Tema visual (warna, tombol, kartu, font)
 scripts/ui/art.gd          Pemuat gambar (PNG diutamakan, lalu SVG)
@@ -204,6 +211,37 @@ aplikasi tidak bisa di-update di Play Store), dan isi lewat environment variable
 `GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD`. Google Play mewajibkan format
 **AAB**: aktifkan `gradle_build/use_gradle_build`, set `export_format` ke AAB,
 lalu **Project → Install Android Build Template**.
+
+## Pembelian dalam aplikasi
+
+`scripts/core/store.gd` punya tiga mode:
+
+| Mode | Kapan | Perilaku |
+|---|---|---|
+| Google Play Billing | Plugin `GodotGooglePlayBilling` terpasang di build Android | Pembayaran sungguhan lewat Google Play |
+| Mode Uji | Build debug tanpa plugin (editor, APK debug) | Pembayaran disimulasikan, ditandai "MODE UJI" |
+| Tidak tersedia | Build rilis tanpa plugin | Tombol beli dinonaktifkan (mencegah emas gratis) |
+
+Mengaktifkan pembayaran sungguhan:
+
+1. Unduh plugin dari <https://github.com/godotengine/godot-google-play-billing> (versi
+   yang cocok dengan Godot 4.3), lalu **Project → Install Android Build Template** dan
+   pasang plugin sesuai petunjuknya. Aktifkan `gradle_build/use_gradle_build` dan
+   centang plugin di preset ekspor Android. Izin BILLING ditambahkan oleh plugin.
+2. Di Google Play Console buat produk dalam aplikasi dengan ID yang sama seperti
+   `IAP_PRODUCTS` di `game_data.gd`: `starter_pack`, `monthly_card`, `gold_60`,
+   `gold_330`, `gold_680`, `gold_1380`, `gold_3280`. Harga di game diambil dari
+   Google Play (harga di `game_data.gd` hanya cadangan tampilan).
+3. Uji di jalur **Internal testing** dengan akun penguji lisensi sebelum rilis.
+
+Catatan penting:
+- `store.gd` ditulis mengikuti API plugin v1 (`startConnection`, `querySkuDetails`,
+  `purchase`, `consumePurchase`, `acknowledgePurchase`, `queryPurchases`) dan **belum
+  diuji di perangkat** karena butuh akun Play Console. Bila versi plugin yang dipakai
+  berbeda, sesuaikan nama method/sinyal di bagian "Callback Google Play Billing".
+- Untuk mencegah kecurangan, idealnya token pembelian diverifikasi di server
+  (Google Play Developer API) sebelum hadiah diberikan. Game ini belum punya server,
+  jadi verifikasi masih di perangkat.
 
 ## Langkah berikutnya
 

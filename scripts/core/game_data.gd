@@ -284,6 +284,23 @@ const HELP_TOPICS := [
 		+ "kumpulkan poin event mingguan. Semuanya sumber emas utama."},
 ]
 
+## Produk pembelian dalam aplikasi. id harus sama dengan ID produk di Google Play Console.
+## type: "gold" (habis pakai, bonus x2 pembelian pertama), "card" (kartu bulanan, habis pakai),
+## "once" (sekali beli). price_idr = harga cadangan bila harga dari Play belum termuat.
+const IAP_PRODUCTS := [
+	{"id": "starter_pack", "type": "once", "name": "Paket Pemula", "icon": "starter", "price_idr": 29000,
+		"gold": 500, "silver": 50000, "soldiers": 20000, "counselor": "wening",
+		"desc": "Sekali beli: 500 emas, 50.000 perak, 20.000 prajurit, dan penasihat Epik Wening Kirana."},
+	{"id": "monthly_card", "type": "card", "name": "Kartu Bulanan", "icon": "card_monthly", "price_idr": 49000,
+		"gold": 300, "daily_gold": 100, "days": 30,
+		"desc": "Langsung 300 emas, lalu ambil 100 emas setiap hari selama 30 hari (total 3.300 emas)."},
+	{"id": "gold_60", "type": "gold", "name": "60 Emas", "icon": "gold", "price_idr": 15000, "gold": 60, "bonus": 0},
+	{"id": "gold_330", "type": "gold", "name": "330 Emas", "icon": "gold_pile", "price_idr": 75000, "gold": 300, "bonus": 30},
+	{"id": "gold_680", "type": "gold", "name": "680 Emas", "icon": "gold_sack", "price_idr": 149000, "gold": 600, "bonus": 80},
+	{"id": "gold_1380", "type": "gold", "name": "1.380 Emas", "icon": "chest_open", "price_idr": 299000, "gold": 1200, "bonus": 180},
+	{"id": "gold_3280", "type": "gold", "name": "3.280 Emas", "icon": "gold_crown", "price_idr": 699000, "gold": 2800, "bonus": 480},
+]
+
 const REWARD_KEYS := ["gold", "silver", "grain", "soldiers"]
 const REWARD_NAMES := {"gold": "emas", "silver": "perak", "grain": "pangan", "soldiers": "prajurit", "jasa": "jasa"}
 
@@ -318,6 +335,23 @@ static func shop_def(id: String) -> Dictionary:
 		if item["id"] == id:
 			return item
 	return {}
+
+
+static func iap_def(id: String) -> Dictionary:
+	for p in IAP_PRODUCTS:
+		if p["id"] == id:
+			return p
+	return {}
+
+
+## Format rupiah: 75000 -> "Rp75.000".
+static func format_idr(amount: int) -> String:
+	var digits := str(amount)
+	var out := ""
+	while digits.length() > 3:
+		out = "." + digits.substr(digits.length() - 3) + out
+		digits = digits.substr(0, digits.length() - 3)
+	return "Rp" + digits + out
 
 
 static func league_of(rating: int) -> Dictionary:

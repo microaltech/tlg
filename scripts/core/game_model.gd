@@ -51,6 +51,10 @@ var login := {}
 var weekly := {}
 ## Aliansi (kosong bila belum bergabung). Lihat bagian "Aliansi" di bawah.
 var alliance := {}
+## Pembelian dalam aplikasi: {"first": [id paket emas yang sudah pernah dibeli],
+##   "processed": [token transaksi], "once": [id produk sekali beli], "card_until": int (hari terakhir
+##   kartu bulanan aktif), "card_claimed": int (hari klaim terakhir), "spent_idr": int}
+var iap := {}
 ## Tutorial: {"step": int, "done": bool, "intros": [id fitur yang sudah diperkenalkan]}
 var tutorial := {}
 ## Arena PvP (kosong sampai terbuka). Lihat bagian "Arena" di bawah.
@@ -87,6 +91,7 @@ func new_game(now: float) -> void:
 	alliance_left_t = -1.0e12
 	arena = {}
 	tutorial = {"step": 0, "done": false, "intros": []}
+	iap = _empty_iap()
 	_npc_cache = {}
 	_unlock_content()
 	ensure_daily(now)
@@ -1162,6 +1167,89 @@ func arena_leaderboard() -> Dictionary:
 	return {"rows": all.slice(0, 10), "rank": rank, "total": all.size(), "me": mine}
 
 
+# --- Pembelian dalam aplikasi ------------------------------------------------
+# Hanya mencatat dan memberi hadiah; proses pembayaran ada di autoload Store.
+
+func _empty_iap() -> Dictionary:
+	return {"first": [], "processed": [], "once": [], "card_until": -1, "card_claimed": -1, "spent_idr": 0}
+
+
+func iap_first_bonus(id: String) -> bool:
+	var def := Data.iap_def(id)
+	return def.get("type", "") == "gold" and not (id in iap["first"])
+
+
+func iap_owned(id: String) -> bool:
+	return id in iap["once"]
+
+
+## Berikan isi produk untuk satu transaksi. Aman dipanggil berulang: token yang sama
+## hanya diproses sekali (hasil {"ok": false, "duplicate": true}).
+func grant_purchase(id: String, token: String, now: float) -> Dictionary:
+	var def := Data.iap_def(id)
+	if def.is_empty():
+		return _fail("Produk tidak dikenal: %s" % id)
+	if token != "" and token in iap["processed"]:
+		var dup := _fail("Transaksi ini sudah diproses.")
+		dup["duplicate"] = true
+		return dup
+	var parts := []
+	match def["type"]:
+		"gold":
+			var amount := int(def["gold"]) + int(def.get("bonus", 0))
+			if iap_first_bonus(id):
+				amount += int(def["gold"])
+				iap["first"].append(id)
+				parts.append("bonus pembelian pertama")
+			gold += amount
+			parts.push_front("+%d emas" % amount)
+		"card":
+			var today := day_index(now)
+			var start := maxi(today, int(iap["card_until"]) + 1)
+			iap["card_until"] = start + int(def["days"]) - 1
+			gold += int(def["gold"])
+			parts.append("+%d emas" % def["gold"])
+			parts.append("kartu aktif %d hari" % card_days_left(now))
+		"once":
+			if iap_owned(id):
+				return _fail("%s hanya bisa dibeli sekali." % def["name"])
+			iap["once"].append(id)
+			parts.append(_give_rewards(def))
+			if def.has("counselor"):
+				var c := Data.counselor_def(def["counselor"])
+				var r := _grant_counselor(c["id"], c["rarity"])
+				parts.append(("%s bergabung" if r["new"] else "%s +1 bintang") % c["name"])
+	if token != "":
+		iap["processed"].append(token)
+		if iap["processed"].size() > 100:
+			iap["processed"] = iap["processed"].slice(-100)
+	iap["spent_idr"] = int(iap["spent_idr"]) + int(def["price_idr"])
+	changed.emit()
+	var result := _ok("Pembelian %s berhasil: %s." % [def["name"], ", ".join(parts)])
+	result["product"] = id
+	return result
+
+
+func card_days_left(now: float) -> int:
+	return maxi(0, int(iap["card_until"]) - day_index(now) + 1)
+
+
+func card_can_claim(now: float) -> bool:
+	return card_days_left(now) > 0 and int(iap["card_claimed"]) != day_index(now)
+
+
+func claim_card(now: float) -> Dictionary:
+	if card_days_left(now) <= 0:
+		return _fail("Kartu Bulanan tidak aktif.")
+	if not card_can_claim(now):
+		return _fail("Emas Kartu Bulanan hari ini sudah diambil.")
+	var daily := int(Data.iap_def("monthly_card")["daily_gold"])
+	iap["card_claimed"] = day_index(now)
+	gold += daily
+	changed.emit()
+	return _ok("Kartu Bulanan: +%d emas. Sisa %d hari." % [daily, card_days_left(now) - 1])
+
+
 # --- Tutorial & pengenalan fitur -------------------------------------------
 
 func tutorial_active() -> bool:
@@ -1380,6 +1468,7 @@ func to_dict() -> Dictionary:
 		"alliance_left_t": alliance_left_t,
 		"arena": arena,
 		"tutorial": tutorial,
+		"iap": iap,
 	}
 
 
@@ -1457,6 +1546,13 @@ func from_dict(d: Dictionary, now: float) -> void:
 	alliance_left_t = float(d.get("alliance_left_t", alliance_left_t))
 	alliance = _load_alliance(d.get("alliance", {}))
 	arena = _load_arena(d.get("arena", {}))
+	var src_iap: Dictionary = d.get("iap", {})
+	iap = _empty_iap()
+	for k in ["first", "processed", "once"]:
+		for v in src_iap.get(k, []):
+			iap[k].append(str(v))
+	for k in ["card_until", "card_claimed", "spent_idr"]:
+		iap[k] = int(src_iap.get(k, iap[k]))
 	var src_tut: Dictionary = d.get("tutorial", {})
 	if src_tut.is_empty():
 		# Save dari versi sebelum ada tutorial: pemain lama tidak perlu tutorial

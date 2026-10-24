@@ -62,6 +62,9 @@ var _affair_buttons := {}
 var _first_upgrade_button: Button
 var _attack_button: Button
 var _first_visit_button: Button
+var _store_overlay: Control
+var _store_box: VBoxContainer
+var _gold_badge: Dictionary
 var _mission_box: VBoxContainer
 var _mission_reset_label: Label
 var _gacha_banner_done := false
@@ -107,6 +110,13 @@ func _ready() -> void:
 	_tutorial.setup(self)
 
 	model.changed.connect(_queue_rebuild)
+	Store.purchase_completed.connect(func(r):
+		Audio.play("reveal_ssr", 0.0)
+		_show(r))
+	Store.purchase_failed.connect(func(msg):
+		Audio.play("error")
+		_show({"ok": false, "msg": msg}))
+	Store.prices_updated.connect(_queue_rebuild)
 	model.mission_completed.connect(func(_text):
 		Audio.play("upgrade")
 		_float("Misi selesai!", _mission_hb["root"], Color("b8f0a8")))
@@ -182,7 +192,21 @@ func _chip(kind: String) -> PanelContainer:
 	h.add_child(_tex(Art.icon(kind), 38))
 	var l := _label(h, "0")
 	l.add_theme_font_override("font", UI.font_bold)
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_res_labels[kind] = l
+	if kind == "gold":
+		# Tombol "+" membuka toko emas.
+		var plus := Button.new()
+		plus.theme_type_variation = "NavButton"
+		plus.icon = Art.icon("plus")
+		plus.expand_icon = true
+		plus.custom_minimum_size = Vector2(36, 36)
+		plus.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		plus.pressed.connect(func():
+			Audio.play("click")
+			_show_store())
+		h.add_child(plus)
+		_gold_badge = _badge(plus, Vector2(22, -12))
 	return chip
 
 
@@ -485,6 +509,8 @@ func _rebuild() -> void:
 		_fill_login()
 	if is_instance_valid(_event_overlay):
 		_fill_event()
+	if is_instance_valid(_store_overlay):
+		_fill_store()
 	_tick()
 	# Kembalikan posisi gulir setelah layout dihitung ulang.
 	await get_tree().process_frame
@@ -511,6 +537,8 @@ func _tick() -> void:
 	var season_ready: bool = not model.arena.is_empty() and not model.arena["season_reward"].is_empty()
 	_arena_nav_badge["badge"].visible = season_ready
 	_arena_nav_badge["badge_label"].text = "1"
+	_gold_badge["badge"].visible = model.card_can_claim(now)
+	_gold_badge["badge_label"].text = "1"
 	var event_ready: int = model.event_claimable_count()
 	_city_nav_badge["badge"].visible = event_ready > 0
 	_city_nav_badge["badge_label"].text = str(event_ready)
@@ -1664,6 +1692,104 @@ func _build_alliance_members(box: VBoxContainer, now: float) -> void:
 			.add_theme_color_override("font_color", UI.INK)
 
 
+# --- Toko (pembelian dalam aplikasi) ----------------------------------------
+
+func _show_store() -> void:
+	if is_instance_valid(_store_overlay):
+		return
+	var p := _open_panel("Toko Emas", "store", _close_store)
+	_store_overlay = p["overlay"]
+	_store_box = p["content"]
+	p["subtitle"].text = {Store.Mode.PLAY_BILLING: "Pembayaran lewat Google Play",
+		Store.Mode.TEST: "MODE UJI · pembayaran disimulasikan"}.get(Store.mode, "Toko belum tersedia")
+	_fill_store()
+
+
+func _close_store() -> void:
+	if is_instance_valid(_store_overlay):
+		Audio.play("click")
+		_store_overlay.queue_free()
+	_store_overlay = null
+
+
+func _fill_store() -> void:
+	_clear(_store_box)
+	var now: float = Game.now()
+	var can_buy: bool = Store.available()
+	if Store.mode == Store.Mode.TEST:
+		var warn := _label(_store_box, "Mode Uji: tidak ada uang sungguhan yang ditagih. Di versi rilis, "
+			+ "pembayaran diproses oleh Google Play.", "CardLabel")
+		warn.add_theme_color_override("font_color", Color("b5651d"))
+		warn.add_theme_font_override("font", UI.font_bold)
+	elif not can_buy:
+		_label(_store_box, "Toko belum tersedia. Pastikan terhubung ke internet dan Google Play.", "CardLabel") \
+			.add_theme_color_override("font_color", UI.RED)
+
+	for def in Data.IAP_PRODUCTS:
+		var id: String = def["id"]
+		if def["type"] == "once" and model.iap_owned(id):
+			continue
+		var box := _inner_box(_store_box)
+		if def["type"] != "gold":
+			box.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		box.add_child(row)
+		row.add_child(_tex(Art.icon(def["icon"]), 84))
+		var col := _col(row)
+		_label(col, def["name"], "CardTitle").add_theme_font_size_override("font_size", 24)
+		if def.has("desc"):
+			_label(col, def["desc"], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+		elif int(def.get("bonus", 0)) > 0:
+			_label(col, "%d + bonus %d emas" % [def["gold"], def["bonus"]], "SmallLabel") \
+				.add_theme_color_override("font_color", UI.INK)
+		if model.iap_first_bonus(id):
+			var first := _label(col, "x2 untuk pembelian pertama! (+%d emas)" % def["gold"], "SmallLabel")
+			first.add_theme_color_override("font_color", Color("c0392b"))
+			first.add_theme_font_override("font", UI.font_bold)
+		if def["type"] == "card" and model.card_days_left(now) > 0:
+			_label(col, "Aktif · sisa %d hari" % model.card_days_left(now), "CardLabel") \
+				.add_theme_font_override("font", UI.font_bold)
+			if model.card_can_claim(now):
+				_button(col, "Ambil %d Emas Hari Ini" % def["daily_gold"], func(): return model.claim_card(Game.now()),
+					true, "gold", "GreenButton", false, "coin")
+		var buy := _button(row, Store.price_text(id), func():
+			_buy(id)
+			return null, can_buy, "", "GoldButton")
+		buy.add_theme_font_size_override("font_size", 22)
+		buy.custom_minimum_size = Vector2(160, 64)
+		buy.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+	var foot := HBoxContainer.new()
+	_store_box.add_child(foot)
+	var restore := _button(foot, "Pulihkan Pembelian", func():
+		Store.restore()
+		return null, Store.mode == Store.Mode.PLAY_BILLING)
+	restore.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_label(_store_box, "Total pembelian: %s" % Data.format_idr(model.iap["spent_idr"]), "SmallLabel") \
+		.add_theme_color_override("font_color", UI.INK)
+
+
+func _buy(id: String) -> void:
+	if Store.mode != Store.Mode.TEST:
+		Store.purchase(id)
+		return
+	var def: Dictionary = Data.iap_def(id)
+	var dlg := ConfirmationDialog.new()
+	dlg.add_to_group("modal")
+	dlg.title = "Mode Uji"
+	dlg.dialog_text = "Beli %s seharga %s?\n(Mode uji: tidak ada uang sungguhan yang ditagih.)" % [
+		def["name"], Store.price_text(id)]
+	dlg.ok_button_text = "Beli"
+	dlg.cancel_button_text = "Batal"
+	dlg.confirmed.connect(func(): Store.purchase(id))
+	dlg.visibility_changed.connect(func():
+		if not dlg.visible:
+			dlg.queue_free())
+	add_child(dlg)
+	dlg.popup_centered()
+
+
 # --- Tutorial, pengenalan fitur, panduan ------------------------------------
 
 ## Elemen UI untuk kunci target di Data.TUTORIAL_STEPS.
@@ -1948,6 +2074,10 @@ func _build_gacha(page: Dictionary) -> void:
 	_label(pcol, "x10 dijamin minimal satu Epik. Duplikat menambah bintang (+%d%% atribut), "
 		% int(Data.STAR_BONUS * 100) + "atau perak bila bintang sudah penuh.", "CardLabel")
 	_label(pcol, "Emas didapat dari kampanye (bonus tiap 5 tahap) dan naik jabatan.", "CardLabel")
+	if model.gold < Data.GACHA_COST_10:
+		_button(pcol, "Beli Emas di Toko", func():
+			_show_store()
+			return null, true, "store", "GreenButton")
 
 	var head := _label(box, "Daftar Penasihat", "TitleLabel")
 	head.add_theme_font_size_override("font_size", 30)

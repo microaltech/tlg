@@ -6,6 +6,8 @@ extends RefCounted
 signal changed
 ## Dipancarkan saat progres sebuah misi harian mencapai target.
 signal mission_completed(text: String)
+## Dipancarkan untuk setiap aksi pemain yang dicatat (dipakai tutorial).
+signal tracked(event: String)
 
 const Data := preload("res://scripts/core/game_data.gd")
 
@@ -49,6 +51,8 @@ var login := {}
 var weekly := {}
 ## Aliansi (kosong bila belum bergabung). Lihat bagian "Aliansi" di bawah.
 var alliance := {}
+## Tutorial: {"step": int, "done": bool, "intros": [id fitur yang sudah diperkenalkan]}
+var tutorial := {}
 ## Arena PvP (kosong sampai terbuka). Lihat bagian "Arena" di bawah.
 var arena := {}
 ## Waktu keluar aliansi terakhir (untuk jeda sebelum bergabung lagi).
@@ -82,6 +86,7 @@ func new_game(now: float) -> void:
 	alliance = {}
 	alliance_left_t = -1.0e12
 	arena = {}
+	tutorial = {"step": 0, "done": false, "intros": []}
 	_npc_cache = {}
 	_unlock_content()
 	ensure_daily(now)
@@ -270,6 +275,7 @@ func expected_losses() -> int:
 func fight_stage() -> Dictionary:
 	var info := current_stage_info()
 	var losses := expected_losses()
+	_track("battle")
 	if soldiers < losses:
 		var lost := int(soldiers * 0.5)
 		soldiers -= lost
@@ -429,6 +435,7 @@ func ensure_daily(now: float) -> bool:
 
 
 func _track(event: String, amount := 1) -> void:
+	tracked.emit(event)
 	for m in daily.get("missions", []):
 		var def := Data.mission_def(m["id"])
 		if def["event"] != event:
@@ -1155,6 +1162,54 @@ func arena_leaderboard() -> Dictionary:
 	return {"rows": all.slice(0, 10), "rank": rank, "total": all.size(), "me": mine}
 
 
+# --- Tutorial & pengenalan fitur -------------------------------------------
+
+func tutorial_active() -> bool:
+	return not bool(tutorial.get("done", true))
+
+
+func tutorial_step_def() -> Dictionary:
+	return Data.TUTORIAL_STEPS[clampi(int(tutorial["step"]), 0, Data.TUTORIAL_STEPS.size() - 1)]
+
+
+## Maju ke langkah berikutnya; selesai (dengan hadiah) setelah langkah terakhir.
+func tutorial_advance() -> Dictionary:
+	if not tutorial_active():
+		return _fail("Tutorial sudah selesai.")
+	tutorial["step"] = int(tutorial["step"]) + 1
+	if int(tutorial["step"]) < Data.TUTORIAL_STEPS.size():
+		return _ok("")
+	tutorial["done"] = true
+	var text := _give_rewards(Data.TUTORIAL_REWARD)
+	changed.emit()
+	var result := _ok("Tutorial selesai! %s." % text)
+	result["done"] = true
+	return result
+
+
+func skip_tutorial() -> Dictionary:
+	if not tutorial_active():
+		return _fail("Tutorial sudah selesai.")
+	tutorial["done"] = true
+	changed.emit()
+	return _ok("Tutorial dilewati. Buka Panduan di menu Kota kapan saja.")
+
+
+## Fitur yang baru terbuka tapi belum diperkenalkan (kosong bila tidak ada).
+func pending_intro() -> Dictionary:
+	if tutorial_active():
+		return {}
+	for intro in Data.FEATURE_INTROS:
+		if stage >= int(intro["stage"]) and not (intro["id"] in tutorial["intros"]):
+			return intro
+	return {}
+
+
+func mark_intro_seen(id: String) -> void:
+	if not (id in tutorial["intros"]):
+		tutorial["intros"].append(id)
+
+
 # --- Hadiah login harian --------------------------------------------------
 
 ## Hari (1..7) yang hadiahnya bisa/terakhir diklaim hari ini.
@@ -1324,6 +1379,7 @@ func to_dict() -> Dictionary:
 		"alliance": alliance,
 		"alliance_left_t": alliance_left_t,
 		"arena": arena,
+		"tutorial": tutorial,
 	}
 
 
@@ -1401,6 +1457,19 @@ func from_dict(d: Dictionary, now: float) -> void:
 	alliance_left_t = float(d.get("alliance_left_t", alliance_left_t))
 	alliance = _load_alliance(d.get("alliance", {}))
 	arena = _load_arena(d.get("arena", {}))
+	var src_tut: Dictionary = d.get("tutorial", {})
+	if src_tut.is_empty():
+		# Save dari versi sebelum ada tutorial: pemain lama tidak perlu tutorial
+		# maupun pengenalan fitur yang sudah lama terbuka.
+		tutorial = {"step": Data.TUTORIAL_STEPS.size(), "done": true, "intros": []}
+		for intro in Data.FEATURE_INTROS:
+			if stage >= int(intro["stage"]):
+				tutorial["intros"].append(intro["id"])
+	else:
+		var intros := []
+		for id in src_tut.get("intros", []):
+			intros.append(str(id))
+		tutorial = {"step": int(src_tut.get("step", 0)), "done": bool(src_tut.get("done", false)), "intros": intros}
 	_unlock_content()
 	sync(now)
 	changed.emit()

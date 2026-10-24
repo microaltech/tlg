@@ -732,6 +732,17 @@ def league_badge(color, stars):
 for i, (c, n) in enumerate([("#b07a45", 1), ("#9aa4b0", 2), ("#e0a830", 3), ("#4fb3d9", 4), ("#c0392b", 5)]):
     ICONS["league_%d" % i] = league_badge(c, n)
 
+ICONS["pointer"] = icon_doc(
+    '<path d="M34 6 L62 6 L62 46 L82 46 L48 90 L14 46 L34 46 Z" fill="#f2c14e" stroke="#5e3a12" '
+    'stroke-width="5" stroke-linejoin="round"/>'
+    '<path d="M40 12 L40 50" stroke="#fff6d0" stroke-width="5" stroke-linecap="round" opacity="0.8"/>')
+
+ICONS["help"] = icon_doc(
+    '<circle cx="48" cy="48" r="40" fill="#2e86c1" stroke="#fff3d6" stroke-width="5"/>'
+    '<path d="M34 36 Q34 20 48 20 Q64 20 64 34 Q64 44 52 48 Q48 50 48 58" stroke="#fff" stroke-width="9" '
+    'fill="none" stroke-linecap="round"/>'
+    '<circle cx="48" cy="74" r="6" fill="#fff"/>')
+
 ICONS["chest"] = chest(False)
 ICONS["chest_open"] = chest(True)
 

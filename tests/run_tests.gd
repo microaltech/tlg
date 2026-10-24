@@ -20,7 +20,7 @@ func _init() -> void:
 		"test_event_calendar", "test_event_points", "test_event_bonuses", "test_event_tiers_reset_save",
 		"test_alliance_join_leave", "test_alliance_donate_level", "test_alliance_shop", "test_alliance_boss",
 		"test_alliance_npc_and_save", "test_arena_unlock_tickets", "test_arena_fight", "test_arena_season_defense",
-		"test_arena_shop_board_save",
+		"test_arena_shop_board_save", "test_tutorial_flow", "test_tutorial_skip_old_save", "test_feature_intros",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -672,3 +672,58 @@ func test_arena_shop_board_save() -> void:
 			if x["id"] == "arena3":
 				seen = true
 	check(seen, "misi arena muncul setelah arena terbuka")
+
+
+func test_tutorial_flow() -> void:
+	var m := fresh()
+	check(m.tutorial_active() and m.tutorial["step"] == 0, "pemain baru mulai tutorial")
+	var events := []
+	m.tracked.connect(func(e): events.append(e))
+	m.do_affair("silver", 1000.0)
+	m.fight_stage()
+	check("affair_silver" in events and "battle" in events, "aksi dilaporkan untuk tutorial")
+	var gold := m.gold
+	var silver := m.silver
+	var last := {}
+	for i in Data.TUTORIAL_STEPS.size():
+		last = m.tutorial_advance()
+	check(last.get("done", false) and not m.tutorial_active(), "tutorial selesai setelah langkah terakhir")
+	check(m.gold == gold + 100 and m.silver == silver + 2000, "hadiah tutorial")
+	check(not m.tutorial_advance()["ok"], "hadiah tutorial hanya sekali")
+	for step in Data.TUTORIAL_STEPS:
+		var w: String = step["wait"]
+		check(w == "next" or w.begins_with("page:") or w in ["affair_silver", "affair_soldiers", "upgrade", "battle",
+			"recruit", "visit"], "langkah tutorial menunggu aksi yang dikenal (%s)" % w)
+
+
+func test_tutorial_skip_old_save() -> void:
+	var m := fresh()
+	var gold := m.gold
+	check(m.skip_tutorial()["ok"] and not m.tutorial_active() and m.gold == gold, "lewati tanpa hadiah")
+	var old := fresh().to_dict()
+	old.erase("tutorial")
+	old["stage"] = 9
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(old)), 1000.0)
+	check(not m2.tutorial_active(), "save lama tidak memulai tutorial")
+	check(m2.pending_intro().is_empty(), "save lama tidak menampilkan pengenalan fitur lama")
+	var m3 := fresh()
+	m3.tutorial_advance()
+	var m4 := Model.new()
+	m4.from_dict(JSON.parse_string(JSON.stringify(m3.to_dict())), 1000.0)
+	check(m4.tutorial_active() and m4.tutorial["step"] == 1, "progres tutorial tersimpan")
+
+
+func test_feature_intros() -> void:
+	var m := fresh()
+	m.skip_tutorial()
+	check(m.pending_intro().is_empty(), "belum ada fitur baru")
+	m.stage = Data.ALLIANCE_UNLOCK_STAGE
+	check(m.pending_intro().get("id", "") == "alliance", "pengenalan aliansi di tahap 5")
+	m.mark_intro_seen("alliance")
+	check(m.pending_intro().is_empty(), "pengenalan hanya sekali")
+	m.stage = Data.ARENA_UNLOCK_STAGE
+	check(m.pending_intro().get("id", "") == "arena", "pengenalan arena di tahap 8")
+	var t := fresh()
+	t.stage = 10
+	check(t.pending_intro().is_empty(), "pengenalan fitur ditunda selama tutorial")

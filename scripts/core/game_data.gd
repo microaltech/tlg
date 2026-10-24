@@ -224,6 +224,66 @@ const ARENA_SHOP := [
 const ARENA_AVATARS := ["arya", "sekar", "bayu", "ratna", "gajah", "lintang", "danu", "wening", "bagas",
 	"enemy_bandit", "enemy_rebel", "enemy_pirate"]
 
+## Tutorial pemain baru. target = elemen UI yang disorot (lihat main.gd tutorial_target);
+## wait = "next" (tombol Lanjut), nama aksi (lihat _track di game_model.gd), atau "page:<halaman>".
+const TUTORIAL_GUIDE := {"name": "Sekar Pandita", "portrait": "sekar"}
+const TUTORIAL_STEPS := [
+	{"text": "Selamat datang, Tuan! Saya Sekar Pandita, penasihat Anda. Mari saya tunjukkan cara memimpin kota ini.",
+		"wait": "next"},
+	{"text": "Ini sumber daya Anda: Perak, Pangan, Prajurit, dan Emas. Semuanya dibutuhkan untuk membangun kekuatan.",
+		"target": "resources", "wait": "next"},
+	{"text": "Tarik pajak dari rakyat untuk mendapat perak. Ketuk \"Kerjakan\" pada Tarik Pajak.",
+		"target": "affair_silver", "wait": "affair_silver"},
+	{"text": "Bagus! Sekarang rekrut prajurit untuk pasukan Anda.", "target": "affair_soldiers", "wait": "affair_soldiers"},
+	{"text": "Urusan kota terisi lagi seiring waktu, bahkan saat game ditutup. Sekarang buka menu Penasihat.",
+		"target": "nav_counselor", "wait": "page:counselor"},
+	{"text": "Penasihat adalah kekuatan Anda. Latih penasihat dengan perak untuk menaikkan atributnya.",
+		"target": "upgrade", "wait": "upgrade"},
+	{"text": "Kekuatan penasihat menentukan hasil pertempuran. Ayo ke medan perang! Buka menu Kampanye.",
+		"target": "nav_campaign", "wait": "page:campaign"},
+	{"text": "Serang musuh untuk mendapat perak, prestise, dan emas. Ketuk \"SERANG!\".",
+		"target": "attack", "wait": "battle"},
+	{"text": "Emas bisa dipakai merekrut penasihat baru. Buka menu Rekrut.", "target": "nav_gacha", "wait": "page:gacha"},
+	{"text": "Anda punya satu rekrut gratis setiap hari. Cobalah sekarang!", "target": "free_recruit", "wait": "recruit"},
+	{"text": "Di Istana Anda bisa mengunjungi selir dan membesarkan anak. Buka menu Istana.",
+		"target": "nav_palace", "wait": "page:palace"},
+	{"text": "Kunjungi selir untuk menambah keakraban. Siapa tahu seorang anak akan lahir!",
+		"target": "visit", "wait": "visit"},
+	{"text": "Selesaikan misi harian dan ambil hadiah login setiap hari untuk mendapat Emas. Tombolnya ada di sini.",
+		"target": "missions", "wait": "next"},
+	{"text": "Hebat, Tuan! Anda siap memimpin. Terimalah hadiah dari rakyat: 100 emas dan 2000 perak.",
+		"wait": "next"},
+]
+const TUTORIAL_REWARD := {"gold": 100, "silver": 2000}
+## Pengenalan fitur yang muncul sekali saat fitur terbuka.
+const FEATURE_INTROS := [
+	{"id": "alliance", "stage": ALLIANCE_UNLOCK_STAGE, "title": "Aliansi Terbuka!", "icon": "tab_alliance",
+		"page": "alliance", "text": "Bergabunglah dengan aliansi untuk bonus hasil urusan kota, sumbangan harian, "
+		+ "toko aliansi, dan bos mingguan Buto Ijo yang dilawan bersama."},
+	{"id": "arena", "stage": ARENA_UNLOCK_STAGE, "title": "Arena Terbuka!", "icon": "tab_arena",
+		"page": "arena", "text": "Tantang para tuan lain di Arena! Naikkan poin untuk mencapai liga lebih tinggi "
+		+ "dan raih hadiah musim setiap minggu."},
+]
+## Isi menu Panduan.
+const HELP_TOPICS := [
+	{"icon": "tab_city", "title": "Kota", "text": "Kerjakan urusan kota untuk perak, pangan, dan prajurit. "
+		+ "Urusan terisi 1 tiap menit. Kumpulkan prestise untuk naik jabatan: batas level dan hasil meningkat."},
+	{"icon": "tab_counselor", "title": "Penasihat", "text": "Latih penasihat dengan perak. Kekuatan menentukan "
+		+ "kampanye dan arena, Kecerdasan hasil pajak, Politik hasil sawah, Karisma jumlah prajurit."},
+	{"icon": "tab_gacha", "title": "Rekrut", "text": "Rekrut penasihat dengan emas: Legenda 4%, Epik 21%. "
+		+ "x10 dijamin Epik, Legenda dijamin dalam 50 tarikan. Duplikat menambah bintang."},
+	{"icon": "tab_campaign", "title": "Kampanye", "text": "Kalahkan musuh tahap demi tahap. Korban bergantung "
+		+ "pada kekuatan Anda dibanding musuh. Tiap tahap ke-5 memberi bonus emas."},
+	{"icon": "tab_palace", "title": "Istana", "text": "Kunjungi selir untuk keakraban (+Karisma) dan peluang anak. "
+		+ "Didik anak dengan pangan, lalu nikahkan untuk bonus atribut permanen."},
+	{"icon": "tab_alliance", "title": "Aliansi", "text": "Terbuka di Tahap %d. Sumbang tiap hari, lawan bos "
+		% ALLIANCE_UNLOCK_STAGE + "mingguan, dan belanja di toko aliansi dengan Jasa."},
+	{"icon": "tab_arena", "title": "Arena", "text": "Terbuka di Tahap %d. Tantang lawan dengan tiket harian, naik "
+		% ARENA_UNLOCK_STAGE + "liga, dan tukar koin arena di toko."},
+	{"icon": "mission", "title": "Harian & Mingguan", "text": "Ambil hadiah login, selesaikan misi harian, dan "
+		+ "kumpulkan poin event mingguan. Semuanya sumber emas utama."},
+]
+
 const REWARD_KEYS := ["gold", "silver", "grain", "soldiers"]
 const REWARD_NAMES := {"gold": "emas", "silver": "perak", "grain": "pangan", "soldiers": "prajurit", "jasa": "jasa"}
 

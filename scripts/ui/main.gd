@@ -5,6 +5,7 @@ extends Control
 const Data := preload("res://scripts/core/game_data.gd")
 const Art := preload("res://scripts/ui/art.gd")
 const UI := preload("res://scripts/ui/ui_theme.gd")
+const TutorialLayer := preload("res://scripts/ui/tutorial_layer.gd")
 
 const PAGES := [
 	{"key": "city", "title": "Kota", "icon": "tab_city", "bg": "city"},
@@ -54,6 +55,13 @@ var _alliance_tab := "markas"
 var _pending_boss_hit := 0
 var _arena_tab := "lawan"
 var _arena_nav_badge: Dictionary
+var _tutorial: Control
+## Elemen yang bisa disorot tutorial (diisi saat halaman dibangun).
+var _res_row: Control
+var _affair_buttons := {}
+var _first_upgrade_button: Button
+var _attack_button: Button
+var _first_visit_button: Button
 var _mission_box: VBoxContainer
 var _mission_reset_label: Label
 var _gacha_banner_done := false
@@ -94,6 +102,9 @@ func _ready() -> void:
 	_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_fx)
 	_build_toast()
+	_tutorial = TutorialLayer.new()
+	add_child(_tutorial)
+	_tutorial.setup(self)
 
 	model.changed.connect(_queue_rebuild)
 	model.mission_completed.connect(func(_text):
@@ -146,6 +157,7 @@ func _build_header() -> Control:
 	var res := HBoxContainer.new()
 	res.add_theme_constant_override("separation", 8)
 	v.add_child(res)
+	_res_row = res
 	for kind in ["silver", "grain", "soldiers", "gold"]:
 		var c := _chip(kind)
 		c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -269,6 +281,8 @@ func _build_nav() -> Control:
 
 func _switch_page(key: String, animate := true) -> void:
 	_current = key
+	if _tutorial:
+		_tutorial.on_page(key)
 	Audio.play_music({"campaign": "battle", "palace": "palace", "gacha": "palace"}.get(key, "city"))
 	for k in _pages:
 		var on: bool = k == key
@@ -504,6 +518,9 @@ func _tick() -> void:
 	for l in _event_timer_labels:
 		if is_instance_valid(l):
 			l.text = "Berakhir dalam " + event_left
+	if not model.tutorial_active() and get_tree().get_nodes_in_group("modal").is_empty() \
+			and not model.pending_intro().is_empty():
+		_show_intro(model.pending_intro())
 	var login_ready: bool = model.login_can_claim(now)
 	_login_hb["badge"].visible = login_ready
 	_login_hb["badge_label"].text = "1"
@@ -566,6 +583,7 @@ func _build_city(box: VBoxContainer) -> void:
 		_charge_widget(col, kind, "Urusan")
 		var b := _button(card, "Kerjakan", func(): return model.do_affair(kind, Game.now()),
 			true, "", "", true, {"silver": "coin", "grain": "grain", "soldiers": "recruit"}[kind])
+		_affair_buttons[kind] = b
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		b.custom_minimum_size.x = 170
 
@@ -589,6 +607,11 @@ func _build_city(box: VBoxContainer) -> void:
 		return {"ok": true, "msg": "Tersimpan"}, true, "", "GreenButton", true)
 	save.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_button(sys, "Mulai Ulang", _confirm_reset).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var help := _button(sys, "Panduan", func():
+		_show_help()
+		return null, true, "help", "GoldButton")
+	help.add_theme_font_size_override("font_size", 24)
+	help.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	var audio := _card(box)
 	var music_btn := _button(audio, "", func():
@@ -607,6 +630,7 @@ func _build_city(box: VBoxContainer) -> void:
 
 func _confirm_reset():
 	var dlg := ConfirmationDialog.new()
+	dlg.add_to_group("modal")
 	dlg.dialog_text = "Hapus semua progres dan mulai dari awal?"
 	dlg.ok_button_text = "Hapus"
 	dlg.cancel_button_text = "Batal"
@@ -658,8 +682,10 @@ func _build_counselors(box: VBoxContainer) -> void:
 			l.add_theme_color_override("font_color", UI.ATTR_COLORS[key])
 			l.add_theme_font_override("font", UI.font_bold)
 		var cost: int = model.upgrade_cost(id)
-		_button(col, "Latih  %s" % _num(cost), func(): return model.upgrade_counselor(id),
+		var train := _button(col, "Latih  %s" % _num(cost), func(): return model.upgrade_counselor(id),
 			model.silver >= cost and lv < cap, "silver", "", false, "upgrade")
+		if id == model.counselors.keys()[0]:
+			_first_upgrade_button = train
 
 	for c in Data.COUNSELORS:
 		if model.counselors.has(c["id"]):
@@ -720,6 +746,7 @@ func _build_campaign(page: Dictionary) -> void:
 		"  (tahap besar!)" if (model.stage + 1) % 5 == 0 else ""])
 
 	var attack := _button(box, "SERANG!", _attack, true, "", "GoldButton", false, "attack")
+	_attack_button = attack
 	attack.custom_minimum_size.y = 96
 	_label(box, "Tips: latih penasihat berkekuatan tinggi agar korban lebih sedikit. "
 		+ "Rekrut prajurit di menu Kota.", "SmallLabel")
@@ -835,6 +862,7 @@ func _open_panel(title: String, icon_name: String, on_close: Callable, top := 0.
 		bottom := 0.94) -> Dictionary:
 	var overlay := Control.new()
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.add_to_group("modal")
 	add_child(overlay)
 	move_child(overlay, _toast.get_index())  # toast tetap di atas panel
 	var dim := Button.new()
@@ -1325,6 +1353,7 @@ func _show_arena_battle(r: Dictionary) -> void:
 	var overlay := Control.new()
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.add_to_group("modal")
 	add_child(overlay)
 	move_child(overlay, _toast.get_index())
 	var bg := TextureRect.new()
@@ -1522,6 +1551,7 @@ func _build_alliance_hq(box: VBoxContainer, now: float) -> void:
 
 func _confirm_leave():
 	var dlg := ConfirmationDialog.new()
+	dlg.add_to_group("modal")
 	dlg.dialog_text = "Keluar dari aliansi? Jasa dan progres aliansi akan hilang, dan Anda harus menunggu 24 jam untuk bergabung lagi."
 	dlg.ok_button_text = "Keluar"
 	dlg.cancel_button_text = "Batal"
@@ -1634,10 +1664,97 @@ func _build_alliance_members(box: VBoxContainer, now: float) -> void:
 			.add_theme_color_override("font_color", UI.INK)
 
 
+# --- Tutorial, pengenalan fitur, panduan ------------------------------------
+
+## Elemen UI untuk kunci target di Data.TUTORIAL_STEPS.
+func tutorial_target(key: String) -> Control:
+	if key.begins_with("nav_"):
+		return _nav_buttons.get(key.substr(4))
+	match key:
+		"resources":
+			return _res_row
+		"affair_silver":
+			return _affair_buttons.get("silver")
+		"affair_soldiers":
+			return _affair_buttons.get("soldiers")
+		"upgrade":
+			return _first_upgrade_button
+		"attack":
+			return _attack_button
+		"free_recruit":
+			return _free_button
+		"visit":
+			return _first_visit_button
+		"missions":
+			return _mission_hb["root"]
+	return null
+
+
+## Gulirkan halaman agar elemen yang disorot terlihat.
+func tutorial_reveal(target: Control) -> void:
+	var n: Node = target.get_parent()
+	while n:
+		if n is ScrollContainer:
+			n.ensure_control_visible(target)
+			return
+		n = n.get_parent()
+
+
+func tutorial_finished() -> void:
+	_maybe_prompt_login.call_deferred()
+
+
+func _show_intro(intro: Dictionary) -> void:
+	model.mark_intro_seen(intro["id"])
+	Audio.play("promote", 0.0)
+	var holder := {}
+	var close := func():
+		Audio.play("click")
+		if is_instance_valid(holder.get("overlay")):
+			holder["overlay"].queue_free()
+	var p := _open_panel(intro["title"], intro["icon"], close, 0.25, 0.68)
+	var overlay: Control = p["overlay"]
+	holder["overlay"] = overlay
+	p["subtitle"].text = "Fitur baru"
+	var box: VBoxContainer = p["content"]
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	box.add_child(row)
+	row.add_child(_tex(Art.icon(intro["icon"]), 110))
+	_label(_col(row), intro["text"], "CardLabel")
+	var page: String = intro["page"]
+	var go := _button(box, "Lihat Sekarang", func():
+		overlay.queue_free()
+		_switch_page(page)
+		return null, true, "", "GoldButton")
+	go.custom_minimum_size.y = 80
+
+
+func _show_help() -> void:
+	var holder := {}
+	var close := func():
+		Audio.play("click")
+		if is_instance_valid(holder.get("overlay")):
+			holder["overlay"].queue_free()
+	var p := _open_panel("Panduan", "help", close)
+	holder["overlay"] = p["overlay"]
+	p["subtitle"].text = "Ringkasan semua fitur"
+	for topic in Data.HELP_TOPICS:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		_inner_box(p["content"]).add_child(row)
+		row.add_child(_tex(Art.icon(topic["icon"]), 64))
+		var col := _col(row)
+		_label(col, topic["title"], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		_label(col, topic["text"], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+
+
 # --- Hadiah login harian --------------------------------------------------
 
 ## Buka kalender login sekali per hari bila hadiahnya belum diklaim.
 func _maybe_prompt_login() -> void:
+	if model.tutorial_active():
+		return  # ditampilkan setelah tutorial selesai (tutorial_finished)
 	var now: float = Game.now()
 	if _login_prompted_day == model.day_index(now):
 		return
@@ -1867,7 +1984,9 @@ func _show_recruit(results: Array) -> void:
 	var overlay := Control.new()
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.add_to_group("modal")
 	add_child(overlay)
+	move_child(overlay, _toast.get_index())
 	var dim := ColorRect.new()
 	dim.color = Color(0.04, 0.01, 0.03, 0.92)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -2006,8 +2125,10 @@ func _build_palace(box: VBoxContainer) -> void:
 		_label(col, Data.beauty_def(id)["name"], "CardTitle")
 		var intimacy: int = model.beauties[id]["intimacy"]
 		_icon_row(col, "heart", "Keakraban %d  ·  +%d Karisma" % [intimacy, intimacy])
-		_button(col, "Kunjungi", func(): return model.visit_beauty(id, Game.now()), true, "heart",
+		var visit := _button(col, "Kunjungi", func(): return model.visit_beauty(id, Game.now()), true, "heart",
 			"", false, "heart")
+		if id == model.beauties.keys()[0]:
+			_first_visit_button = visit
 
 	var head := _label(box, "Anak  (%d/%d kursi)" % [model.children.size(), model.child_seats()], "TitleLabel")
 	head.add_theme_font_size_override("font_size", 30)

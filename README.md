@@ -82,6 +82,12 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   atribut permanen ke penasihat.
 - **Jabatan** — 6 tingkat; menaikkan batas charge, pengali hasil, batas level,
   dan kursi anak.
+- **Tutorial pemain baru** — 14 langkah dipandu penasihat Sekar Pandita: layar
+  digelapkan kecuali tombol yang diajarkan (bingkai emas + panah), dan langkah
+  berikutnya muncul setelah pemain benar-benar melakukan aksinya. Hadiah 100 emas
+  + 2000 perak; bisa dilewati (tanpa hadiah). Pengenalan fitur muncul sekali saat
+  Aliansi/Arena terbuka, dan menu Panduan di Kota merangkum semua fitur. Save
+  lama otomatis dianggap sudah selesai tutorial.
 - **Grafis** — potret untuk 7 penasihat, 4 selir, anak (laki-laki/perempuan),
   avatar Tuan, dan 4 jenderal musuh; ikon sumber daya; latar bergambar tiap menu
   (gerbang candi bentar, pendopo, medan perang, istana); motif batik kawung;
@@ -106,6 +112,7 @@ scripts/core/audio.gd      Autoload "Audio": musik latar & efek suara
 scripts/ui/main.gd         UI dibangun lewat kode (header, 4 halaman, navigasi bawah)
 scripts/ui/ui_theme.gd     Tema visual (warna, tombol, kartu, font)
 scripts/ui/art.gd          Pemuat gambar (PNG diutamakan, lalu SVG)
+scripts/ui/tutorial_layer.gd  Lapisan tutorial (sorotan, dialog, panah)
 assets/portraits|icons|bg  Gambar karakter, ikon, latar (SVG)
 assets/audio               Musik & efek suara (OGG)
 assets/fonts               Font Cinzel & Nunito (lisensi SIL OFL)

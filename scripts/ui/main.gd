@@ -41,6 +41,12 @@ var _login_box: VBoxContainer
 var _login_subtitle: Label
 var _login_next_label: Label
 var _login_prompted_day := -1
+var _event_overlay: Control
+var _event_box: VBoxContainer
+var _event_subtitle: Label
+## Label hitung mundur event yang diperbarui tiap detik.
+var _event_timer_labels: Array = []
+var _city_nav_badge: Dictionary
 var _mission_box: VBoxContainer
 var _mission_reset_label: Label
 var _gacha_banner_done := false
@@ -237,6 +243,8 @@ func _build_nav() -> Control:
 			Audio.play("click")
 			_switch_page(key))
 		h.add_child(b)
+		if key == "city":
+			_city_nav_badge = _badge(b, Vector2(80, 4))
 		_nav_buttons[key] = b
 	var line := ColorRect.new()
 	line.color = UI.GOLD_DARK
@@ -433,6 +441,12 @@ func _rebuild() -> void:
 	for k in _pages:
 		scrolls[k] = _pages[k]["scroll"].scroll_vertical
 	_charge_widgets.clear()
+	# Buang label hitung mundur milik kartu yang sudah dihapus.
+	var alive := []
+	for l in _event_timer_labels:
+		if is_instance_valid(l) and not l.is_queued_for_deletion():
+			alive.append(l)
+	_event_timer_labels = alive
 	_build_city(_pages["city"]["content"])
 	_build_counselors(_pages["counselor"]["content"])
 	_build_gacha(_pages["gacha"])
@@ -442,6 +456,8 @@ func _rebuild() -> void:
 		_fill_missions()
 	if is_instance_valid(_login_overlay):
 		_fill_login()
+	if is_instance_valid(_event_overlay):
+		_fill_event()
 	_tick()
 	# Kembalikan posisi gulir setelah layout dihitung ulang.
 	await get_tree().process_frame
@@ -462,6 +478,13 @@ func _tick() -> void:
 	var claimable: int = model.claimable_count()
 	_mission_hb["badge"].visible = claimable > 0
 	_mission_hb["badge_label"].text = str(claimable)
+	var event_ready: int = model.event_claimable_count()
+	_city_nav_badge["badge"].visible = event_ready > 0
+	_city_nav_badge["badge_label"].text = str(event_ready)
+	var event_left := _duration(model.seconds_until_week_end(now))
+	for l in _event_timer_labels:
+		if is_instance_valid(l):
+			l.text = "Berakhir dalam " + event_left
 	var login_ready: bool = model.login_can_claim(now)
 	_login_hb["badge"].visible = login_ready
 	_login_hb["badge_label"].text = "1"
@@ -490,6 +513,11 @@ func _tick() -> void:
 		w["bar"].value = model.CHARGE_SECONDS - eta if eta > 0 else model.CHARGE_SECONDS
 
 
+static func _duration(seconds: int) -> String:
+	var clock := "%02d:%02d:%02d" % [seconds / 3600 % 24, seconds / 60 % 60, seconds % 60]
+	return clock if seconds < 86400 else "%d hari %s" % [seconds / 86400, clock]
+
+
 static func _num(n: int) -> String:
 	if n >= 1000000:
 		return "%.1fJt" % (n / 1000000.0)
@@ -506,6 +534,7 @@ func _charge_widget(parent: Node, key: String, prefix: String) -> void:
 
 func _build_city(box: VBoxContainer) -> void:
 	_clear(box)
+	box.add_child(_event_banner())
 	for kind in model.AFFAIRS:
 		var a: Dictionary = model.AFFAIRS[kind]
 		var card := _card(box)
@@ -514,6 +543,7 @@ func _build_city(box: VBoxContainer) -> void:
 		_label(col, a["label"], "CardTitle")
 		_label(col, "Hasil +%d %s · dari %s" % [
 			model.affair_yield(kind), model.resource_name(kind), Data.ATTR_NAMES[a["attr"]]], "CardLabel")
+		_event_tag(col, "yield_" + kind)
 		_charge_widget(col, kind, "Urusan")
 		var b := _button(card, "Kerjakan", func(): return model.do_affair(kind, Game.now()),
 			true, "", "", true, {"silver": "coin", "grain": "grain", "soldiers": "recruit"}[kind])
@@ -664,6 +694,7 @@ func _build_campaign(page: Dictionary) -> void:
 	_icon_row(col, "power", "Kekuatan musuh %d  ·  Anda %d" % [info["enemy_str"], model.total_attr("str")])
 	_icon_row(col, "soldiers", "Perkiraan gugur: %s dari %s prajurit" % [_num(losses), _num(model.soldiers)],
 		UI.GREEN.darkened(0.25) if model.soldiers >= losses else UI.RED)
+	_event_tag(col, "losses")
 	_icon_row(col, "silver", "Hadiah: %d perak" % info["reward_silver"])
 	_icon_row(col, "prestige", "Hadiah: %d prestise" % info["reward_prestige"])
 	_icon_row(col, "gold", "Hadiah: %d emas%s" % [info["reward_gold"],
@@ -754,6 +785,13 @@ func _header_button(icon_name: String, caption: String, on_press: Callable) -> D
 	cap.size = Vector2(72, 20)
 	cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	holder.add_child(cap)
+	var badge := _badge(holder, Vector2(46, -4))
+	badge["root"] = holder
+	return badge
+
+
+## Lencana angka merah. Mengembalikan {"badge": PanelContainer, "badge_label": Label}.
+func _badge(parent: Control, pos: Vector2) -> Dictionary:
 	var badge := PanelContainer.new()
 	var red := UI.box(Color("d63a2f"), Color("fff3d6"), 2, 14)
 	red.content_margin_left = 8
@@ -761,14 +799,15 @@ func _header_button(icon_name: String, caption: String, on_press: Callable) -> D
 	red.content_margin_top = 0
 	red.content_margin_bottom = 0
 	badge.add_theme_stylebox_override("panel", red)
-	badge.position = Vector2(46, -4)
+	badge.position = pos
 	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	badge.visible = false
 	var badge_label := Label.new()
 	badge_label.add_theme_font_override("font", UI.font_bold)
 	badge_label.add_theme_font_size_override("font_size", 18)
 	badge.add_child(badge_label)
-	holder.add_child(badge)
-	return {"root": holder, "badge": badge, "badge_label": badge_label}
+	parent.add_child(badge)
+	return {"badge": badge, "badge_label": badge_label}
 
 
 ## Panel pop-up perkamen di atas layar dengan judul, subjudul, dan isi bergulir.
@@ -938,6 +977,154 @@ static func _reward_text(def: Dictionary) -> String:
 		if int(def.get(key, 0)) > 0:
 			parts.append("+%s %s" % [_num(def[key]), Data.REWARD_NAMES[key]])
 	return ", ".join(parts)
+
+
+# --- Event mingguan --------------------------------------------------------
+
+## Label kecil "bonus event" di menu yang terpengaruh (kosong bila tidak ada).
+func _event_tag(parent: Node, bonus: String) -> void:
+	if model.event_bonus(bonus) == 0.0:
+		return
+	var ev: Dictionary = model.event_def()
+	var l := _label(parent, "%s: %s" % [ev["name"], ev["bonus_text"]], "CardLabel")
+	l.add_theme_font_override("font", UI.font_bold)
+	l.add_theme_color_override("font_color", Color("b5651d"))
+
+
+func _event_banner() -> Control:
+	var ev: Dictionary = model.event_def()
+	var holder := Control.new()
+	holder.custom_minimum_size.y = 230
+	holder.clip_contents = true
+	var pic := TextureRect.new()
+	pic.texture = Art.bg(ev["bg"])
+	pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	pic.set_anchors_preset(Control.PRESET_FULL_RECT)
+	holder.add_child(pic)
+	var shade := ColorRect.new()
+	shade.color = Color(0.08, 0.03, 0.02, 0.62)
+	shade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	holder.add_child(shade)
+	var frame := Panel.new()
+	frame.set_anchors_preset(Control.PRESET_FULL_RECT)
+	frame.add_theme_stylebox_override("panel", UI.box(Color.TRANSPARENT, UI.GOLD, 3, 16))
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_child(frame)
+
+	var row := HBoxContainer.new()
+	row.set_anchors_preset(Control.PRESET_FULL_RECT)
+	row.offset_left = 16
+	row.offset_right = -16
+	row.offset_top = 10
+	row.offset_bottom = -10
+	row.add_theme_constant_override("separation", 14)
+	holder.add_child(row)
+	var icon := _tex(Art.icon(ev["icon"]), 110)
+	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(icon)
+	var col := _col(row)
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_theme_constant_override("separation", 0)
+	var kicker := _label(col, "EVENT MINGGUAN", "SmallLabel")
+	kicker.add_theme_color_override("font_color", UI.GOLD)
+	kicker.add_theme_font_override("font", UI.font_bold)
+	_label(col, ev["name"], "TitleLabel").add_theme_font_size_override("font_size", 30)
+	_label(col, ev["bonus_text"], "SmallLabel")
+	var timer := _label(col, "", "SmallLabel")
+	timer.add_theme_color_override("font_color", Color("f5d08a"))
+	_event_timer_labels.append(timer)
+	var ready: int = model.event_claimable_count()
+	var status := _label(col, "%d hadiah siap diklaim!" % ready if ready > 0
+		else "Poin event: %s" % _num(model.weekly["points"]), "SmallLabel")
+	status.add_theme_font_override("font", UI.font_bold)
+	status.add_theme_color_override("font_color", Color("b8f0a8") if ready > 0 else UI.PARCHMENT)
+	var b := _button(row, "Lihat", func():
+		_show_event()
+		return null, true, "", "GoldButton")
+	b.add_theme_font_size_override("font_size", 24)
+	b.custom_minimum_size = Vector2(120, 64)
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	if ready > 0:
+		b.pivot_offset = Vector2(60, 32)
+		var pulse := b.create_tween().set_loops()
+		pulse.tween_property(b, "scale", Vector2(1.08, 1.08), 0.45)
+		pulse.tween_property(b, "scale", Vector2.ONE, 0.45)
+	return holder
+
+
+func _show_event() -> void:
+	if is_instance_valid(_event_overlay):
+		return
+	var ev: Dictionary = model.event_def()
+	var p := _open_panel(ev["name"], ev["icon"], _close_event)
+	_event_overlay = p["overlay"]
+	_event_box = p["content"]
+	_event_subtitle = p["subtitle"]
+	_event_timer_labels.append(_event_subtitle)
+	_fill_event()
+	_tick()
+
+
+func _close_event() -> void:
+	if is_instance_valid(_event_overlay):
+		Audio.play("click")
+		_event_overlay.queue_free()
+	_event_overlay = null
+
+
+func _fill_event() -> void:
+	_clear(_event_box)
+	var ev: Dictionary = model.event_def()
+	var points: int = model.weekly["points"]
+
+	var info := _inner_box(_event_box)
+	_label(info, ev["desc"], "CardLabel")
+	var bonus := _label(info, "Bonus minggu ini: " + ev["bonus_text"], "CardLabel")
+	bonus.add_theme_font_override("font", UI.font_bold)
+	bonus.add_theme_color_override("font_color", Color("b5651d"))
+	_label(info, "Cara mendapat poin:", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	for action in ev["points"]:
+		_label(info, "•  %s: +%d poin" % [Data.EVENT_ACTION_NAMES.get(action, action), ev["points"][action]], "CardLabel")
+	_label(info, "•  Klaim misi harian: +%d poin" % Data.EVENT_MISSION_POINTS, "CardLabel")
+
+	var progress := _inner_box(_event_box)
+	var next_tier := -1
+	for i in Data.EVENT_TIERS.size():
+		if points < int(Data.EVENT_TIERS[i]["points"]):
+			next_tier = i
+			break
+	var top: int = Data.EVENT_TIERS[-1]["points"]
+	_label(progress, "Poin event: %s" % _num(points) + ("" if next_tier < 0
+		else "  ·  %s lagi ke hadiah berikutnya" % _num(int(Data.EVENT_TIERS[next_tier]["points"]) - points)),
+		"CardLabel").add_theme_font_override("font", UI.font_bold)
+	_bar(progress, mini(points, top), top, Color("e0a030"))
+
+	for i in Data.EVENT_TIERS.size():
+		var tier: Dictionary = Data.EVENT_TIERS[i]
+		var claimed: bool = model.weekly["claimed"][i]
+		var ready: bool = model.can_claim_event_tier(i)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		_inner_box(_event_box).add_child(row)
+		var icon := _tex(Art.icon("chest_open" if claimed else "chest"), 64)
+		if not claimed and not ready:
+			icon.modulate = Color(0.6, 0.55, 0.5)
+		row.add_child(icon)
+		var col := _col(row)
+		_label(col, "%s poin" % _num(tier["points"]), "CardLabel").add_theme_font_override("font", UI.font_bold)
+		_label(col, _reward_text(tier), "SmallLabel").add_theme_color_override("font_color", UI.INK)
+		var idx: int = i
+		var b: Button
+		if claimed:
+			b = _button(row, "Diambil", func(): return null, false)
+		elif ready:
+			b = _button(row, "Klaim", func(): return model.claim_event_tier(idx), true, "", "GreenButton",
+				false, "reveal_sr")
+		else:
+			b = _button(row, "%d%%" % int(100.0 * points / int(tier["points"])), func(): return null, false)
+		b.custom_minimum_size = Vector2(130, 60)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 
 # --- Hadiah login harian --------------------------------------------------
@@ -1112,10 +1299,11 @@ func _build_gacha(page: Dictionary) -> void:
 	info.add_child(_tex(Art.icon("gold"), 92))
 	var col := _col(info)
 	_label(col, "Emas: %s" % _num(model.gold), "CardTitle")
-	var rates := []
-	for r in ["ssr", "sr", "r"]:
-		rates.append("%s %d%%" % [Data.RARITIES[r]["name"], int(Data.RARITIES[r]["rate"] * 100)])
-	_label(col, " · ".join(rates), "CardLabel")
+	var ssr_rate: float = Data.RARITIES["ssr"]["rate"] + model.event_bonus("ssr_rate")
+	var sr_rate: float = Data.RARITIES["sr"]["rate"]
+	_label(col, "Legenda %d%% · Epik %d%% · Langka %d%%" % [
+		roundi(ssr_rate * 100), roundi(sr_rate * 100), roundi((1.0 - ssr_rate - sr_rate) * 100)], "CardLabel")
+	_event_tag(col, "ssr_rate")
 	_label(col, "Legenda dijamin dalam %d tarikan" % model.pity_left(), "CardLabel")
 	_bar(col, Data.GACHA_PITY - model.pity_left(), Data.GACHA_PITY, _rarity_color("ssr"))
 
@@ -1302,6 +1490,7 @@ func _build_palace(box: VBoxContainer) -> void:
 	var ecol := _col(energy)
 	_label(ecol, "Energi Kunjungan", "CardTitle")
 	_charge_widget(ecol, "visit", "Energi")
+	_event_tag(ecol, "child_chance")
 
 	for id in model.beauties:
 		var card := _card(box)

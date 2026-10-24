@@ -45,6 +45,8 @@ var daily := {}
 ## Hadiah login: streak = hari yang sudah diklaim di siklus ini (0..7),
 ## last_day = indeks hari klaim terakhir, total = total hari login.
 var login := {}
+## Event mingguan: {"week": int, "points": int, "claimed": [bool, ...]}
+var weekly := {}
 ## Selisih zona waktu (detik) supaya misi direset pada tengah malam lokal.
 var tz_bias := 0
 var rng := RandomNumberGenerator.new()
@@ -69,8 +71,10 @@ func new_game(now: float) -> void:
 		charges[key] = {"value": max_charges(), "t": now}
 	daily = {}
 	login = {"streak": 0, "last_day": -1, "total": 0}
+	weekly = {}
 	_unlock_content()
 	ensure_daily(now)
+	ensure_weekly(now)
 	changed.emit()
 
 
@@ -109,7 +113,8 @@ func promote() -> Dictionary:
 func sync(now: float) -> void:
 	for key in CHARGE_KEYS:
 		_sync_charge(key, now)
-	if ensure_daily(now):
+	var daily_reset := ensure_daily(now)
+	if ensure_weekly(now) or daily_reset:
 		changed.emit()
 
 
@@ -202,7 +207,8 @@ func upgrade_counselor(id: String) -> Dictionary:
 
 func affair_yield(kind: String) -> int:
 	var a: Dictionary = AFFAIRS[kind]
-	return int((int(a["base"]) + total_attr(a["attr"]) * int(a["per_point"])) * float(rank_info()["mult"]))
+	return int((int(a["base"]) + total_attr(a["attr"]) * int(a["per_point"])) * float(rank_info()["mult"])
+		* (1.0 + event_bonus("yield_" + kind)))
 
 
 func do_affair(kind: String, now: float) -> Dictionary:
@@ -240,7 +246,7 @@ func current_stage_info() -> Dictionary:
 func expected_losses() -> int:
 	var info := current_stage_info()
 	var ratio := clampf(float(info["enemy_str"]) / maxi(1, total_attr("str")), 0.25, 4.0)
-	return int(ceil(int(info["enemy_soldiers"]) * ratio))
+	return int(ceil(int(info["enemy_soldiers"]) * ratio * (1.0 + event_bonus("losses"))))
 
 
 func fight_stage() -> Dictionary:
@@ -335,9 +341,10 @@ func _roll_rarity(min_epic: bool) -> String:
 	if pity >= Data.GACHA_PITY - 1:
 		return "ssr"
 	var r := rng.randf()
-	if r < float(Data.RARITIES["ssr"]["rate"]):
+	var ssr_rate := float(Data.RARITIES["ssr"]["rate"]) + event_bonus("ssr_rate")
+	if r < ssr_rate:
 		return "ssr"
-	if min_epic or r < float(Data.RARITIES["ssr"]["rate"]) + float(Data.RARITIES["sr"]["rate"]):
+	if min_epic or r < ssr_rate + float(Data.RARITIES["sr"]["rate"]):
 		return "sr"
 	return "r"
 
@@ -408,6 +415,8 @@ func _track(event: String, amount := 1) -> void:
 		m["progress"] = mini(target, before + amount)
 		if before < target and int(m["progress"]) >= target:
 			mission_completed.emit(def["text"])
+	if not weekly.is_empty():
+		weekly["points"] = int(weekly["points"]) + int(event_def()["points"].get(event, 0)) * amount
 
 
 func mission_done(index: int) -> bool:
@@ -437,9 +446,11 @@ func claim_mission(index: int) -> Dictionary:
 		return _fail("Misi belum selesai.")
 	m["claimed"] = true
 	daily["points"] = int(daily["points"]) + Data.DAILY_POINTS
+	weekly["points"] = int(weekly["points"]) + Data.EVENT_MISSION_POINTS
 	var text := _give_rewards(Data.mission_def(m["id"]))
 	changed.emit()
-	return _ok("Hadiah misi: %s, +%d poin aktivitas." % [text, Data.DAILY_POINTS])
+	return _ok("Hadiah misi: %s, +%d poin aktivitas, +%d poin event." % [
+		text, Data.DAILY_POINTS, Data.EVENT_MISSION_POINTS])
 
 
 func can_claim_chest(index: int) -> bool:
@@ -468,6 +479,66 @@ func _give_rewards(def: Dictionary) -> String:
 		set(key, int(get(key)) + amount)
 		parts.append("+%d %s" % [amount, Data.REWARD_NAMES[key]])
 	return ", ".join(parts)
+
+
+# --- Event mingguan --------------------------------------------------------
+
+## Minggu dimulai hari Senin (1 Jan 1970 adalah hari Kamis, jadi digeser 3 hari).
+func week_index(now: float) -> int:
+	return int(floor((day_index(now) + 3) / 7.0))
+
+
+func seconds_until_week_end(now: float) -> int:
+	var end_day := (week_index(now) + 1) * 7 - 3
+	return int(ceil(end_day * 86400.0 - tz_bias - now))
+
+
+## Mulai event baru bila minggu berganti. Mengembalikan true jika direset.
+func ensure_weekly(now: float) -> bool:
+	var week := week_index(now)
+	if not weekly.is_empty() and int(weekly["week"]) == week:
+		return false
+	var claimed := []
+	for t in Data.EVENT_TIERS:
+		claimed.append(false)
+	weekly = {"week": week, "points": 0, "claimed": claimed}
+	return true
+
+
+func event_def() -> Dictionary:
+	return Data.EVENTS[posmod(int(weekly["week"]), Data.EVENTS.size())]
+
+
+## Besar bonus event untuk efek tertentu (0 bila event minggu ini tidak memilikinya).
+func event_bonus(kind: String) -> float:
+	if weekly.is_empty():
+		return 0.0
+	return float(event_def()["bonus"].get(kind, 0.0))
+
+
+func can_claim_event_tier(index: int) -> bool:
+	return not weekly["claimed"][index] and int(weekly["points"]) >= int(Data.EVENT_TIERS[index]["points"])
+
+
+func event_claimable_count() -> int:
+	var n := 0
+	for i in Data.EVENT_TIERS.size():
+		if can_claim_event_tier(i):
+			n += 1
+	return n
+
+
+func claim_event_tier(index: int) -> Dictionary:
+	if index < 0 or index >= Data.EVENT_TIERS.size():
+		return _fail("Hadiah event tidak ditemukan.")
+	if weekly["claimed"][index]:
+		return _fail("Hadiah event sudah diambil.")
+	if not can_claim_event_tier(index):
+		return _fail("Poin event belum cukup.")
+	weekly["claimed"][index] = true
+	var text := _give_rewards(Data.EVENT_TIERS[index])
+	changed.emit()
+	return _ok("Hadiah %s: %s." % [event_def()["name"], text])
 
 
 # --- Hadiah login harian --------------------------------------------------
@@ -537,7 +608,7 @@ func visit_beauty(id: String, now: float) -> Dictionary:
 	st["intimacy"] = int(st["intimacy"]) + gain
 	var name: String = Data.beauty_def(id)["name"]
 	var msg := "Keakraban dengan %s +%d." % [name, gain]
-	var chance := minf(0.25 + int(st["intimacy"]) * 0.01, 0.6)
+	var chance := minf(0.25 + int(st["intimacy"]) * 0.01, 0.6) + event_bonus("child_chance")
 	var born := false
 	if children.size() < child_seats() and rng.randf() < chance:
 		born = true
@@ -607,6 +678,7 @@ func marry_child(index: int) -> Dictionary:
 	b[key] = int(b.get(key, 0)) + bonus
 	children.remove_at(index)
 	married_count += 1
+	_track("marry")
 	prestige += 20 * int(child["talent"])
 	changed.emit()
 	return _ok("%s menikah! %s mendapat +%d %s." % [
@@ -634,6 +706,7 @@ func to_dict() -> Dictionary:
 		"charges": charges,
 		"daily": daily,
 		"login": login,
+		"weekly": weekly,
 	}
 
 
@@ -700,6 +773,14 @@ func from_dict(d: Dictionary, now: float) -> void:
 		"last_day": int(src_login.get("last_day", -1)),
 		"total": int(src_login.get("total", 0)),
 	}
+	var src_weekly: Dictionary = d.get("weekly", {})
+	if not src_weekly.is_empty():
+		var saved: Array = src_weekly.get("claimed", [])
+		var claimed := []
+		for i in Data.EVENT_TIERS.size():
+			claimed.append(bool(saved[i]) if i < saved.size() else false)
+		weekly = {"week": int(src_weekly.get("week", -1)), "points": int(src_weekly.get("points", 0)),
+			"claimed": claimed}
 	_unlock_content()
 	sync(now)
 	changed.emit()

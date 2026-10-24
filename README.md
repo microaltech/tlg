@@ -54,6 +54,11 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   20 poin aktivitas; 3 peti aktivitas terbuka di 40/80/100 poin. Tombol Misi di
   header menampilkan lencana jumlah hadiah yang siap diklaim, dan tombol "Pergi"
   langsung membuka menu terkait.
+- **Event mingguan** — 5 event bergiliran tiap Senin: Festival Panen (sawah +50%),
+  Turnamen Ksatria (korban -20%), Pasar Malam (pajak +50%), Pesta Istana (peluang
+  anak +15%), Ritual Purnama (Legenda 4% → 7%). Poin event dari aksi sesuai tema
+  dan +50 per misi harian yang diklaim; 7 tingkat hadiah sampai 3000 poin (total
+  660 emas). Banner event di menu Kota dan label bonus di menu yang terpengaruh.
 - **Hadiah login harian** — kalender 7 hari dengan hadiah yang makin besar
   (Hari 7: 300 emas + 5000 prajurit). Harus berturut-turut: terlewat sehari
   kembali ke Hari 1. Muncul otomatis saat game dibuka bila belum diklaim, dan
@@ -182,6 +187,6 @@ lalu **Project → Install Android Build Template**.
 ## Langkah berikutnya
 
 - Aset visual: potret penasihat/selir, latar kota, ikon sumber daya, animasi.
-- Item & inventaris, event, banner rekrut berganti (rate-up).
+- Item & inventaris, toko event, papan peringkat online, banner rekrut berganti (rate-up).
 - Backend + akun, PvP, aliansi, leaderboard.
 - IAP (Google Play Billing) & iklan berhadiah (AdMob) lewat plugin Godot.

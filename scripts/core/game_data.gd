@@ -110,6 +110,48 @@ const LOGIN_REWARDS := [
 	{"silver": 5000, "grain": 3000},
 	{"gold": 300, "soldiers": 5000},
 ]
+## Event mingguan: bergiliran tiap minggu (Senin 00:00 waktu setempat).
+## points = poin event per aksi (nama aksi sama dengan event misi harian);
+## bonus = efek khusus selama event berlangsung.
+const EVENTS := [
+	{"id": "harvest", "name": "Festival Panen", "icon": "event_harvest", "bg": "city",
+		"desc": "Lumbung rakyat penuh! Kelola sawah dan didik anak untuk mengumpulkan poin.",
+		"points": {"affair_grain": 10, "train": 30}, "bonus": {"yield_grain": 0.5},
+		"bonus_text": "Hasil Kelola Sawah +50%"},
+	{"id": "tournament", "name": "Turnamen Ksatria", "icon": "event_tournament", "bg": "campaign",
+		"desc": "Para ksatria berlomba di medan laga. Menangkan kampanye dan latih penasihat.",
+		"points": {"win": 60, "upgrade": 15}, "bonus": {"losses": -0.2},
+		"bonus_text": "Prajurit gugur di kampanye -20%"},
+	{"id": "market", "name": "Pasar Malam", "icon": "event_market", "bg": "city",
+		"desc": "Pedagang dari seluruh negeri datang. Tarik pajak dan rekrut prajurit.",
+		"points": {"affair_silver": 10, "affair_soldiers": 10}, "bonus": {"yield_silver": 0.5},
+		"bonus_text": "Hasil Tarik Pajak +50%"},
+	{"id": "palace", "name": "Pesta Istana", "icon": "event_palace", "bg": "palace",
+		"desc": "Istana berhias bunga. Kunjungi selir, didik dan nikahkan anak.",
+		"points": {"visit": 25, "train": 20, "marry": 150}, "bonus": {"child_chance": 0.15},
+		"bonus_text": "Peluang anak lahir +15%"},
+	{"id": "ritual", "name": "Ritual Purnama", "icon": "event_ritual", "bg": "gacha",
+		"desc": "Bulan purnama memanggil para legenda. Rekrut penasihat dan urus kota.",
+		"points": {"recruit": 60, "affair": 5, "upgrade": 10}, "bonus": {"ssr_rate": 0.03},
+		"bonus_text": "Peluang Legenda di Rekrut 4% menjadi 7%"},
+]
+## Nama aksi untuk penjelasan cara mendapat poin event.
+const EVENT_ACTION_NAMES := {
+	"affair": "Urusan kota apa saja", "affair_silver": "Tarik pajak", "affair_grain": "Kelola sawah",
+	"affair_soldiers": "Rekrut prajurit", "upgrade": "Latih penasihat", "win": "Menang kampanye",
+	"visit": "Kunjungi selir", "train": "Didik anak", "marry": "Nikahkan anak",
+	"recruit": "Rekrut penasihat (per tarikan)",
+}
+const EVENT_MISSION_POINTS := 50  ## Poin event untuk tiap misi harian yang diklaim.
+const EVENT_TIERS := [
+	{"points": 100, "gold": 30, "silver": 1000},
+	{"points": 300, "grain": 3000, "soldiers": 2000},
+	{"points": 600, "gold": 80},
+	{"points": 1000, "silver": 8000, "grain": 5000},
+	{"points": 1500, "gold": 150, "soldiers": 5000},
+	{"points": 2200, "silver": 15000, "grain": 10000},
+	{"points": 3000, "gold": 400},
+]
 const REWARD_KEYS := ["gold", "silver", "grain", "soldiers"]
 const REWARD_NAMES := {"gold": "emas", "silver": "perak", "grain": "pangan", "soldiers": "prajurit"}
 

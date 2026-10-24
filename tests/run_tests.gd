@@ -17,6 +17,7 @@ func _init() -> void:
 		"test_gacha_duplicates", "test_gacha_free", "test_gold_sources",
 		"test_daily_generate", "test_daily_progress_claim", "test_daily_chests_reset", "test_daily_save",
 		"test_login_streak", "test_login_break_and_save",
+		"test_event_calendar", "test_event_points", "test_event_bonuses", "test_event_tiers_reset_save",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -348,3 +349,96 @@ func test_login_break_and_save() -> void:
 	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0 + 3 * day)
 	check(var_to_str(m2.login) == var_to_str(m.login), "simpan/muat data login")
 	check(not m2.login_can_claim(1000.0 + 3 * day), "status klaim bertahan setelah dimuat")
+
+
+## Paksa event tertentu untuk minggu ini.
+func _set_event(m: Model, id: String) -> void:
+	for i in Data.EVENTS.size():
+		if Data.EVENTS[i]["id"] == id:
+			m.weekly["week"] = i
+	m.weekly["points"] = 0
+
+
+func test_event_calendar() -> void:
+	var m := fresh()
+	m.tz_bias = 0
+	var monday := 4 * 86400.0  # 5 Jan 1970 adalah hari Senin
+	check(m.week_index(monday - 1) == 0 and m.week_index(monday) == 1, "minggu berganti hari Senin 00:00")
+	check(m.seconds_until_week_end(monday - 3600) == 3600, "hitung mundur akhir minggu")
+	check(m.seconds_until_week_end(monday) == 7 * 86400, "minggu penuh 7 hari")
+	var ids := {}
+	for w in Data.EVENTS.size():
+		m.sync(monday + w * 7 * 86400.0)
+		ids[m.event_def()["id"]] = true
+	check(ids.size() == Data.EVENTS.size(), "semua event bergiliran")
+
+
+func test_event_points() -> void:
+	var m := fresh()
+	_set_event(m, "market")
+	var t := 1000.0
+	for i in 3:
+		t += 60.0
+		m.do_affair("silver", t)
+	m.do_affair("grain", t)
+	check(m.weekly["points"] == 30, "poin event dari aksi sesuai tema saja")
+	_set_missions(m, ["tax5", "farm5", "win3", "visit3", "gacha1"])
+	m.daily["missions"][0]["progress"] = 5
+	m.claim_mission(0)
+	check(m.weekly["points"] == 30 + Data.EVENT_MISSION_POINTS, "misi harian menambah poin event")
+	_set_event(m, "ritual")
+	m.gold = 10000
+	m.recruit(10, t)
+	check(m.weekly["points"] == 600, "rekrut x10 dihitung per tarikan")
+	_set_event(m, "palace")
+	m.children.append({"name": "Adi", "gender": "m", "mother": "melati", "talent": 2, "level": Data.CHILD_MAX_LEVEL})
+	m.marry_child(0)
+	check(m.weekly["points"] == 150, "menikahkan anak memberi poin Pesta Istana")
+
+
+func test_event_bonuses() -> void:
+	var m := fresh()
+	_set_event(m, "tournament")
+	var base_grain := m.affair_yield("grain")
+	var base_silver := m.affair_yield("silver")
+	var base_losses := m.expected_losses()
+	_set_event(m, "harvest")
+	check(m.affair_yield("grain") == int(base_grain * 1.5) or absi(m.affair_yield("grain") - int(base_grain * 1.5)) <= 1,
+		"Festival Panen: hasil sawah +50%")
+	check(m.affair_yield("silver") == base_silver, "bonus panen tidak mempengaruhi pajak")
+	_set_event(m, "market")
+	check(absi(m.affair_yield("silver") - int(base_silver * 1.5)) <= 1, "Pasar Malam: hasil pajak +50%")
+	_set_event(m, "harvest")
+	var normal_losses := m.expected_losses()
+	_set_event(m, "tournament")
+	check(m.expected_losses() < normal_losses and absi(m.expected_losses() - int(ceil(normal_losses * 0.8))) <= 1,
+		"Turnamen Ksatria: korban -20%")
+	check(base_losses == m.expected_losses(), "korban konsisten")
+	_set_event(m, "ritual")
+	check(is_equal_approx(m.event_bonus("ssr_rate"), 0.03), "Ritual Purnama menaikkan peluang Legenda")
+	m.gold = 100000000
+	m.rng.seed = 11
+	var ssr := 0
+	var n := 3000
+	for i in n:
+		if m.recruit(1, 1000.0)["results"][0]["rarity"] == "ssr":
+			ssr += 1
+	var rate := float(ssr) / n
+	check(rate > 0.06, "peluang Legenda efektif naik saat ritual (%.3f)" % rate)
+	_set_event(m, "palace")
+	check(is_equal_approx(m.event_bonus("child_chance"), 0.15), "Pesta Istana menaikkan peluang anak")
+
+
+func test_event_tiers_reset_save() -> void:
+	var m := fresh()
+	check(not m.claim_event_tier(0)["ok"], "hadiah terkunci tanpa poin")
+	m.weekly["points"] = 650
+	check(m.event_claimable_count() == 3, "tiga hadiah terbuka di 650 poin")
+	var gold := m.gold
+	check(m.claim_event_tier(2)["ok"] and m.gold == gold + 80, "klaim hadiah tingkat 3")
+	check(not m.claim_event_tier(2)["ok"], "hadiah event hanya sekali")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(var_to_str(m2.weekly) == var_to_str(m.weekly), "simpan/muat event mingguan")
+	m.sync(1000.0 + 7 * 86400.0)
+	check(m.weekly["points"] == 0 and not m.weekly["claimed"][2], "event direset di minggu baru")

@@ -596,6 +596,55 @@ ICONS["check"] = icon_doc(
     '<circle cx="48" cy="48" r="40" fill="#2e9a4a" stroke="#fff3d6" stroke-width="6"/>'
     '<path d="M28 50 L42 64 L68 34" stroke="#fff" stroke-width="11" fill="none" stroke-linecap="round" stroke-linejoin="round"/>')
 
+ICONS["event_harvest"] = icon_doc(
+    "".join('<path d="M48 70 Q%d 40 %d 10" stroke="#9a8a2a" stroke-width="3" fill="none"/>'
+            '<ellipse cx="%d" cy="%d" rx="5" ry="9" fill="#f2c14e" stroke="#a8742c" stroke-width="1.5" transform="rotate(%d %d %d)"/>'
+            '<ellipse cx="%d" cy="%d" rx="5" ry="9" fill="#f2c14e" stroke="#a8742c" stroke-width="1.5" transform="rotate(%d %d %d)"/>'
+            % (48 + dx // 2, 48 + dx, 48 + dx, 14, dx // 2, 48 + dx, 14,
+               48 + dx * 0.8, 26, dx // 2 + 10, 48 + dx * 0.8, 26) for dx in (-24, -12, 0, 12, 24))
+    + '<path d="M36 64 L60 64 L56 92 L40 92 Z" fill="#c9a24a" stroke="#7a5a1f" stroke-width="3"/>'
+      '<rect x="32" y="62" width="32" height="9" rx="4" fill="#c0392b" stroke="#6b1a12" stroke-width="2"/>'
+      '<path d="M66 92 Q90 80 84 56 Q80 70 66 76" fill="#d6dde6" stroke="#5d6670" stroke-width="2.5"/>'
+      '<rect x="60" y="76" width="8" height="18" rx="3" fill="#7a4b1f" transform="rotate(-30 64 85)"/>')
+
+ICONS["event_tournament"] = icon_doc(
+    '<path d="M14 92 L70 6" stroke="#7a5a32" stroke-width="5"/><path d="M82 92 L26 6" stroke="#7a5a32" stroke-width="5"/>'
+    '<path d="M70 6 L78 0 L74 14 Z" fill="#c9d1da"/><path d="M26 6 L18 0 L22 14 Z" fill="#c9d1da"/>'
+    '<path d="M28 22 L68 22 L66 44 Q64 62 48 64 Q32 62 30 44 Z" fill="#f2c14e" stroke="#9a6a12" stroke-width="3"/>'
+    '<path d="M28 28 Q14 28 16 40 Q18 50 31 50" stroke="#f2c14e" stroke-width="5" fill="none"/>'
+    '<path d="M68 28 Q82 28 80 40 Q78 50 65 50" stroke="#f2c14e" stroke-width="5" fill="none"/>'
+    '<rect x="43" y="64" width="10" height="12" fill="#c9963f"/>'
+    '<rect x="32" y="76" width="32" height="12" rx="3" fill="#a8742c" stroke="#5e3a12" stroke-width="3"/>'
+    '<path d="M48 30 L52 39 L61 40 L54 46 L56 55 L48 50 L40 55 L42 46 L35 40 L44 39 Z" fill="#fff6d8"/>')
+
+ICONS["event_market"] = icon_doc(
+    '<path d="M6 46 L18 24 L78 24 L90 46 Z" fill="#c0392b" stroke="#6b1a12" stroke-width="3"/>'
+    + "".join('<path d="M%d 46 Q%d 54 %d 46" fill="#f4e4c1" stroke="#6b1a12" stroke-width="2"/>' % (x, x + 7, x + 14)
+              for x in range(6, 90, 14))
+    + '<rect x="14" y="52" width="6" height="40" fill="#7a4b1f"/><rect x="76" y="52" width="6" height="40" fill="#7a4b1f"/>'
+      '<rect x="20" y="70" width="56" height="10" fill="#a8742c" stroke="#5e3a12" stroke-width="2"/>'
+      '<circle cx="34" cy="66" r="6" fill="#e67e22"/><circle cx="48" cy="65" r="7" fill="#27ae60"/>'
+      '<circle cx="62" cy="66" r="6" fill="#f1c40f"/>'
+      '<path d="M48 4 L48 12" stroke="#e8c070" stroke-width="3"/>'
+      '<ellipse cx="48" cy="18" rx="10" ry="8" fill="#e74c3c" stroke="#e8c070" stroke-width="2"/>')
+
+ICONS["event_palace"] = icon_doc(
+    "".join('<path d="M48 82 L%.1f %.1f A44 44 0 0 1 %.1f %.1f Z" fill="%s" stroke="#8e1f45" stroke-width="2"/>' % (
+        48 + 44 * math.cos(math.radians(a0)), 82 + 44 * math.sin(math.radians(a0)),
+        48 + 44 * math.cos(math.radians(a0 + 20)), 82 + 44 * math.sin(math.radians(a0 + 20)),
+        "#f5b7c8" if k % 2 == 0 else "#e8829e") for k, a0 in enumerate(range(-170, -10, 20)))
+    + '<path d="M10 72 A44 44 0 0 1 86 72" stroke="#e8c070" stroke-width="4" fill="none"/>'
+      '<circle cx="48" cy="82" r="6" fill="#e8c070" stroke="#7a4b1f" stroke-width="2"/>'
+    + flower(66, 30, "#ffffff", 8))
+
+ICONS["event_ritual"] = icon_doc(
+    '<circle cx="48" cy="34" r="28" fill="#fff4c8" stroke="#e8c070" stroke-width="3"/>'
+    '<circle cx="40" cy="28" r="5" fill="#efe0a8"/><circle cx="58" cy="40" r="4" fill="#efe0a8"/><circle cx="52" cy="22" r="3" fill="#efe0a8"/>'
+    '<path d="M48 62 Q40 54 48 48 Q56 42 48 36" stroke="#d8d0e8" stroke-width="3" fill="none" opacity="0.8"/>'
+    '<path d="M30 74 L66 74 L60 92 L36 92 Z" fill="#a8742c" stroke="#5e3a12" stroke-width="3"/>'
+    '<rect x="26" y="70" width="44" height="8" rx="3" fill="#e8c070" stroke="#5e3a12" stroke-width="2"/>'
+    '<path d="M48 70 L48 60" stroke="#7a4b1f" stroke-width="3"/><circle cx="48" cy="59" r="3" fill="#e74c3c"/>')
+
 ICONS["chest"] = chest(False)
 ICONS["chest_open"] = chest(True)
 

@@ -89,6 +89,8 @@ var _bag_pick := ""  ## Item yang sedang menunggu pilihan target.
 var _equip_overlay: Control
 var _equip_box: VBoxContainer
 var _equip_pick := -1  ## uid pusaka yang sedang menunggu pilihan penasihat.
+var _tower_overlay: Control
+var _tower_box: VBoxContainer
 var _story_overlay: Control
 var _story_box: VBoxContainer  ## Level VIP yang sedang dilihat di panel (-1 = level sekarang).
 var _mission_box: VBoxContainer
@@ -582,6 +584,8 @@ func _rebuild() -> void:
 		_fill_bag()
 	if is_instance_valid(_equip_overlay):
 		_fill_equipment()
+	if is_instance_valid(_tower_overlay):
+		_fill_tower()
 	if is_instance_valid(_story_overlay):
 		_fill_story()
 	_tick()
@@ -881,6 +885,21 @@ func _build_campaign(page: Dictionary) -> void:
 	attack.custom_minimum_size.y = 96
 	_label(box, "Tips: latih penasihat berkekuatan tinggi agar korban lebih sedikit. "
 		+ "Rekrut prajurit di menu Kota.", "SmallLabel")
+
+	var tower_card := _card(box)
+	tower_card.add_child(_tex(Art.icon("tower"), 92))
+	var tcol := _col(tower_card)
+	_label(tcol, "Menara Ujian", "CardTitle")
+	if model.tower_unlocked():
+		model.ensure_tower(Game.now())
+		_label(tcol, "Lantai minggu ini %d · rekor %d" % [model.tower["floor"], model.tower["best"]], "CardLabel")
+		var tb := _button(tower_card, "Masuk", func():
+			_show_tower()
+			return null, true, "", "GoldButton")
+		tb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		tb.custom_minimum_size.x = 150
+	else:
+		_label(tcol, "Terbuka setelah menang Tahap %d." % Data.TOWER_UNLOCK_STAGE, "CardLabel")
 
 
 func _attack():
@@ -2399,6 +2418,69 @@ func _fill_bag_targets() -> void:
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 
+# --- Menara Ujian ------------------------------------------------------------
+
+func _show_tower() -> void:
+	if is_instance_valid(_tower_overlay):
+		return
+	var p := _open_panel("Menara Ujian", "tower", _close_tower)
+	_tower_overlay = p["overlay"]
+	_tower_box = p["content"]
+	p["subtitle"].text = "Reset tiap Senin · rekor terbaik masuk peringkat"
+	_fill_tower()
+
+
+func _close_tower() -> void:
+	if is_instance_valid(_tower_overlay):
+		Audio.play("click")
+		_tower_overlay.queue_free()
+	_tower_overlay = null
+
+
+func _tower_reward_text(info: Dictionary) -> String:
+	var parts := ["+%s perak" % _num(info["silver"]), "+%d emas" % info["gold"]]
+	if info["rare"]:
+		parts.append("pusaka langka")
+	elif info["equip"]:
+		parts.append("pusaka")
+	return ", ".join(parts)
+
+
+func _fill_tower() -> void:
+	_clear(_tower_box)
+	var now: float = Game.now()
+	model.ensure_tower(now)
+	var next: int = int(model.tower["floor"]) + 1
+	var info: Dictionary = Data.tower_floor(next)
+	var head := _inner_box(_tower_box)
+	_label(head, "Lantai %d" % next, "CardTitle").add_theme_font_size_override("font_size", 30)
+	_label(head, "Kekuatan penjaga %s · kekuatan tempur Anda %s" % [_num(info["power"]), _num(model.combat_power())],
+		"CardLabel")
+	var chance: float = model.tower_win_chance(next)
+	var chance_l := _label(head, "Peluang menang %d%%" % roundi(chance * 100), "CardLabel")
+	chance_l.add_theme_color_override("font_color", UI.GREEN if chance >= 0.5 else UI.RED)
+	chance_l.add_theme_font_override("font", UI.font_bold)
+	_label(head, "Hadiah: %s" % _tower_reward_text(info), "SmallLabel").add_theme_color_override("font_color", UI.INK)
+	var left: int = model.tower_attempts_left(now)
+	var fight := _button(head, "Serang Lantai %d  (%d percobaan)" % [next, left], func():
+		var r: Dictionary = model.tower_fight(Game.now())
+		return r, left > 0, "", "GoldButton", false, "win")
+	fight.custom_minimum_size.y = 84
+	_label(_tower_box, "Lantai minggu ini %d · rekor %d · percobaan hari ini %d / %d" % [
+		model.tower["floor"], model.tower["best"], left, Data.TOWER_ATTEMPTS + int(model.vip_perk("arena_tickets"))],
+		"SmallLabel").add_theme_color_override("font_color", UI.INK)
+	_label(_tower_box, "Lantai berikutnya", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	for f in range(next + 1, next + 6):
+		var fi: Dictionary = Data.tower_floor(f)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		_inner_box(_tower_box).add_child(row)
+		row.add_child(_tex(Art.icon("eq_weapon" if fi["equip"] else "tower"), 48))
+		var col := _col(row)
+		_label(col, "Lantai %d · kekuatan %s" % [f, _num(fi["power"])], "CardLabel")
+		_label(col, _tower_reward_text(fi), "SmallLabel").add_theme_color_override("font_color", UI.INK)
+
+
 # --- Pusaka -----------------------------------------------------------------
 
 func _show_equipment() -> void:
@@ -2940,9 +3022,12 @@ func _show_intro(intro: Dictionary) -> void:
 	row.add_child(_tex(Art.icon(intro["icon"]), 110))
 	_label(_col(row), intro["text"], "CardLabel")
 	var page: String = intro["page"]
+	var panel: String = intro.get("panel", "")
 	var go := _button(box, "Lihat Sekarang", func():
 		overlay.queue_free()
 		_switch_page(page)
+		if panel == "tower":
+			_show_tower()
 		return null, true, "", "GoldButton")
 	go.custom_minimum_size.y = 80
 

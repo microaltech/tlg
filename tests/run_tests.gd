@@ -26,7 +26,7 @@ func _init() -> void:
 		"test_war_save_leave", "test_chat_send_reply", "test_chat_ambient_unread", "test_chat_save_leave",
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
-		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment",
+		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1499,3 +1499,39 @@ func test_equipment() -> void:
 	for i in 50:
 		m3.fight_stage()
 	check(m3.equipment.size() > 0, "pusaka jatuh dari tahap besar kampanye (%d)" % m3.equipment.size())
+
+
+func test_tower() -> void:
+	var m := fresh()
+	var t := 20000 * 86400.0
+	check(not m.tower_fight(t)["ok"], "menara terkunci di awal")
+	m.stage = Data.TOWER_UNLOCK_STAGE
+	check(m.tower_unlocked(), "menara terbuka")
+	m.counselors["arya"]["level"] = 2000  # sangat kuat: pasti menang
+	var gold := m.gold
+	var r := m.tower_fight(t)
+	check(r["ok"] and r["win"] and m.tower["floor"] == 1 and m.tower["best"] == 1 and m.gold > gold, "taklukkan lantai 1")
+	for i in 4:
+		m.tower_fight(t)
+	check(m.tower["floor"] == 5 and m.equipment.size() >= 1, "lantai 5 memberi pusaka")
+	check(m.tower_attempts_left(t) == 0 and not m.tower_fight(t)["ok"], "percobaan harian habis")
+	check(m.tower_attempts_left(t + 86400.0) == Data.TOWER_ATTEMPTS, "percobaan reset besok")
+	check(m.tower_win_chance(1) > 0.99 and Data.tower_floor(40)["power"] > Data.tower_floor(10)["power"] * 50,
+		"lantai makin kuat")
+	var next_week := t + 7 * 86400.0
+	m.ensure_tower(next_week)
+	check(m.tower["floor"] == 0 and m.tower["best"] == 5, "kemajuan reset mingguan, rekor tetap")
+	check(m.lb_value("tower") == 5, "rekor menara masuk peringkat")
+	var weak := fresh()
+	weak.stage = Data.TOWER_UNLOCK_STAGE
+	var lost := 0
+	weak.ensure_tower(t)
+	weak.tower["floor"] = 39
+	for i in 5:
+		var lr := weak.tower_fight(t)
+		if not lr["ok"]:
+			lost += 1
+	check(lost >= 4 and weak.tower["floor"] == 39, "kalah tidak menaikkan lantai")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
+	check(var_to_str(m2.tower) == var_to_str(m.tower), "simpan/muat menara")

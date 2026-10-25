@@ -90,6 +90,8 @@ var tz_bias := 0
 var lord_name := ""
 ## Pusaka milik pemain: [{"uid", "id", "level", "owner"}]; owner = id penasihat atau "".
 var equipment: Array = []
+## Menara Ujian: {"week", "floor" (lantai tertinggi minggu ini), "best", "day", "attempts"}
+var tower := {}
 var _equip_uid := 0
 var rng := RandomNumberGenerator.new()
 
@@ -99,6 +101,7 @@ func new_game(now: float) -> void:
 	lord_name = ""
 	equipment = []
 	_equip_uid = 0
+	tower = {}
 	silver = 500
 	grain = 500
 	soldiers = 2500
@@ -1934,6 +1937,8 @@ func lb_value(id: String) -> int:
 			return prestige
 		"arena":
 			return int(arena["rating"]) if not arena.is_empty() else 0
+		"tower":
+			return int(tower.get("best", 0))
 	return 0
 
 
@@ -2783,6 +2788,68 @@ func salvage_equipment(uid: int) -> Dictionary:
 	return _ok("%s dilebur: +%d perak." % [Data.equip_def(eq["id"])["name"], value])
 
 
+# --- Menara Ujian -------------------------------------------------------------
+
+func tower_unlocked() -> bool:
+	return stage >= Data.TOWER_UNLOCK_STAGE
+
+
+## Reset kemajuan mingguan dan percobaan harian bila perlu.
+func ensure_tower(now: float) -> void:
+	if tower.is_empty():
+		tower = {"week": week_index(now), "floor": 0, "best": 0, "day": day_index(now), "attempts": 0}
+	if int(tower["week"]) != week_index(now):
+		tower["week"] = week_index(now)
+		tower["floor"] = 0
+	if int(tower["day"]) != day_index(now):
+		tower["day"] = day_index(now)
+		tower["attempts"] = 0
+
+
+func tower_attempts_left(now: float) -> int:
+	ensure_tower(now)
+	return maxi(0, Data.TOWER_ATTEMPTS + int(vip_perk("arena_tickets")) - int(tower["attempts"]))
+
+
+func tower_win_chance(level: int) -> float:
+	var a := pow(float(maxi(1, combat_power())), 3.0)
+	var b := pow(float(maxi(1, Data.tower_floor(level)["power"])), 3.0)
+	return a / (a + b)
+
+
+## Lawan lantai berikutnya. Menang naik satu lantai dan mendapat hadiahnya;
+## kalah hanya memakai percobaan.
+func tower_fight(now: float) -> Dictionary:
+	if not tower_unlocked():
+		return _fail("Menangkan Tahap %d untuk membuka Menara Ujian." % Data.TOWER_UNLOCK_STAGE)
+	if tower_attempts_left(now) <= 0:
+		return _fail("Percobaan menara hari ini habis. Kembali besok!")
+	var level := int(tower["floor"]) + 1
+	var info := Data.tower_floor(level)
+	tower["attempts"] = int(tower["attempts"]) + 1
+	_track("tower")
+	var win := rng.randf() < tower_win_chance(level)
+	if not win:
+		changed.emit()
+		var lost := _fail("Gagal di lantai %d. Perkuat penasihat lalu coba lagi." % level)
+		lost["win"] = false
+		return lost
+	tower["floor"] = level
+	tower["best"] = maxi(int(tower["best"]), level)
+	silver += int(info["silver"])
+	gold += int(info["gold"])
+	var parts := ["+%d perak" % info["silver"], "+%d emas" % info["gold"]]
+	if info["equip"]:
+		var eq := add_equipment(Data.equip_roll(level * 4 + (60 if info["rare"] else 0), rng.randf(), rng.randf()))
+		if not eq.is_empty():
+			parts.append(Data.equip_def(eq["id"])["name"])
+	_track("tower_win")
+	changed.emit()
+	var r := _ok("Lantai %d ditaklukkan! %s." % [level, ", ".join(parts)])
+	r["win"] = true
+	return r
+
+
 # --- Nama Tuan -------------------------------------------------------------
 
 const NAME_MIN := 2
@@ -2920,6 +2987,7 @@ func to_dict() -> Dictionary:
 		"leaderboard": leaderboard,
 		"lord_name": lord_name,
 		"equipment": equipment,
+		"tower": tower,
 		"equip_uid": _equip_uid,
 	}
 
@@ -3054,6 +3122,11 @@ func from_dict(d: Dictionary, now: float) -> void:
 			"level": clampi(int(e.get("level", 1)), 1, Data.EQUIP_MAX_LEVEL),
 			"owner": owner if counselors.has(owner) else ""})
 	_equip_uid = int(d.get("equip_uid", equipment.size()))
+	tower = {}
+	var src_tower: Dictionary = d.get("tower", {})
+	if not src_tower.is_empty():
+		for k in ["week", "floor", "best", "day", "attempts"]:
+			tower[k] = int(src_tower.get(k, 0))
 	var src_lb: Dictionary = d.get("leaderboard", {})
 	leaderboard = {"week": int(src_lb.get("week", week_index(now))), "reward": {}}
 	var src_lbr: Dictionary = src_lb.get("reward", {})

@@ -480,6 +480,23 @@ const TUTORIAL_STEPS := [
 ]
 const TUTORIAL_REWARD := {"gold": 100, "silver": 2000}
 ## Pengenalan fitur yang muncul sekali saat fitur terbuka.
+## Menara Ujian: lantai bertingkat, dilawan dengan kekuatan tempur; reset tiap minggu.
+const TOWER_UNLOCK_STAGE := 15
+const TOWER_BASE := 80
+const TOWER_GROWTH := 1.15
+const TOWER_ATTEMPTS := 5  ## percobaan per hari (kalah memakai percobaan)
+
+
+static func tower_floor(level: int) -> Dictionary:
+	return {
+		"power": int(TOWER_BASE * pow(TOWER_GROWTH, level - 1)),
+		"silver": 500 + 200 * level,
+		"gold": 5 + level / 2,
+		"equip": level % 5 == 0,
+		"rare": level % 10 == 0,
+	}
+
+
 const FEATURE_INTROS := [
 	{"id": "alliance", "stage": ALLIANCE_UNLOCK_STAGE, "title": "Aliansi Terbuka!", "icon": "tab_alliance",
 		"page": "alliance", "text": "Bergabunglah dengan aliansi untuk bonus hasil urusan kota, sumbangan harian, "
@@ -487,6 +504,9 @@ const FEATURE_INTROS := [
 	{"id": "arena", "stage": ARENA_UNLOCK_STAGE, "title": "Arena Terbuka!", "icon": "tab_arena",
 		"page": "arena", "text": "Tantang para tuan lain di Arena! Naikkan poin untuk mencapai liga lebih tinggi "
 		+ "dan raih hadiah musim setiap minggu."},
+	{"id": "tower", "stage": TOWER_UNLOCK_STAGE, "title": "Menara Ujian Terbuka!", "icon": "tower",
+		"page": "campaign", "panel": "tower", "text": "Daki lantai demi lantai dengan kekuatan tempur penasihat. "
+		+ "Tiap lantai ke-5 memberi pusaka. Kemajuan direset tiap minggu, rekor terbaik masuk peringkat."},
 ]
 ## Isi menu Panduan.
 const HELP_TOPICS := [
@@ -576,6 +596,7 @@ const LEADERBOARDS := [
 	{"id": "stage", "name": "Kampanye", "icon": "tab_campaign", "dist": "log", "median": 6.0, "sigma": 0.7, "growth": 0.05},
 	{"id": "prestige", "name": "Prestise", "icon": "prestige", "dist": "log", "median": 150.0, "sigma": 1.2, "growth": 0.12},
 	{"id": "arena", "name": "Arena", "icon": "tab_arena", "dist": "normal", "median": 1050.0, "sigma": 220.0, "growth": 0.002},
+	{"id": "tower", "name": "Menara", "icon": "tower", "dist": "log", "median": 8.0, "sigma": 0.6, "growth": 0.04},
 	{"id": "alliance", "name": "Aliansi", "icon": "tab_alliance"},
 ]
 ## Hadiah mingguan berdasarkan persentil Kekuatan di akhir minggu (top = batas persen, inklusif).

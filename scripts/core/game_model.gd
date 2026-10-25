@@ -31,6 +31,8 @@ var married_count := 0
 var gold := 0
 ## Tarikan sejak Legenda terakhir (untuk jaminan pity).
 var pity := 0
+## true bila Legenda terakhir bukan unggulan: Legenda berikutnya pasti unggulan.
+var rateup_guarantee := false
 ## Waktu rekrut gratis terakhir (detik unix).
 var free_pull_t := 0.0
 ## id -> {"level": int, "stars": int, "bonus": {attr: int}}
@@ -101,6 +103,7 @@ func new_game(now: float) -> void:
 	married_count = 0
 	gold = Data.START_GOLD
 	pity = 0
+	rateup_guarantee = false
 	free_pull_t = now - Data.GACHA_FREE_SECONDS
 	counselors = {}
 	beauties = {}
@@ -494,8 +497,14 @@ func recruit(count: int, now: float, free := false, ticket := false) -> Dictiona
 		if rarity != "r":
 			got_epic = true
 		var pool := Data.counselors_of_rarity(rarity)
-		var def: Dictionary = pool[rng.randi_range(0, pool.size() - 1)]
-		results.append(_grant_counselor(def["id"], rarity))
+		var id: String = pool[rng.randi_range(0, pool.size() - 1)]["id"]
+		var featured := false
+		if rarity == "ssr":
+			id = _pick_ssr(now)
+			featured = id == rateup_id(now)
+		var granted := _grant_counselor(id, rarity)
+		granted["featured"] = featured
+		results.append(granted)
 	_track("recruit", count)
 	changed.emit()
 	var names := []
@@ -508,6 +517,22 @@ func recruit(count: int, now: float, free := false, ticket := false) -> Dictiona
 	var result := _ok(msg)
 	result["results"] = results
 	return result
+
+
+## Legenda unggulan minggu ini (bergilir di antara semua Legenda).
+func rateup_id(now: float) -> String:
+	var pool := Data.counselors_of_rarity("ssr")
+	return pool[posmod(week_index(now), pool.size())]["id"]
+
+
+func _pick_ssr(now: float) -> String:
+	var feat := rateup_id(now)
+	if rateup_guarantee or rng.randf() < Data.RATEUP_CHANCE:
+		rateup_guarantee = false
+		return feat
+	var others := Data.counselors_of_rarity("ssr").filter(func(c): return c["id"] != feat)
+	rateup_guarantee = true
+	return others[rng.randi_range(0, others.size() - 1)]["id"] if not others.is_empty() else feat
 
 
 func _roll_rarity(min_epic: bool) -> String:
@@ -2746,6 +2771,7 @@ func to_dict() -> Dictionary:
 		"married_count": married_count,
 		"gold": gold,
 		"pity": pity,
+		"rateup_guarantee": rateup_guarantee,
 		"free_pull_t": free_pull_t,
 		"counselors": counselors,
 		"beauties": beauties,
@@ -2784,6 +2810,7 @@ func from_dict(d: Dictionary, now: float) -> void:
 	married_count = int(d.get("married_count", 0))
 	gold = int(d.get("gold", gold))
 	pity = int(d.get("pity", 0))
+	rateup_guarantee = bool(d.get("rateup_guarantee", false))
 	free_pull_t = float(d.get("free_pull_t", free_pull_t))
 	# JSON mengubah semua angka menjadi float, jadi normalisasi ke int.
 	counselors = {}

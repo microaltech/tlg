@@ -3238,18 +3238,47 @@ func _stars(parent: Node, count: int, side := 26.0) -> HBoxContainer:
 	return row
 
 
+func _build_rateup(box: VBoxContainer) -> void:
+	var now: float = Game.now()
+	var feat: String = model.rateup_id(now)
+	var def: Dictionary = Data.counselor_def(feat)
+	var card := _card(box)
+	card.add_child(_portrait_frame(feat, 110))
+	var col := _col(card)
+	_label(col, "BANNER MINGGU INI", "SmallLabel").add_theme_color_override("font_color", _rarity_color("ssr"))
+	_label(col, def["name"], "CardTitle")
+	var skill: Dictionary = Data.SKILLS.get(feat, {})
+	if not skill.is_empty():
+		_label(col, "%s: %s" % [skill["name"], Data.SKILL_EFFECT_NAMES[skill["effect"]] % roundi(model.skill_value(feat) * 100
+			if model.counselors.has(feat) else float(skill["base"]) * 100)], "SmallLabel") \
+			.add_theme_color_override("font_color", Color("6c3483"))
+	var chance := roundi(Data.RATEUP_CHANCE * 100)
+	if model.rateup_guarantee:
+		_label(col, "Legenda berikutnya dijamin %s!" % def["name"], "CardLabel") \
+			.add_theme_color_override("font_color", UI.GREEN)
+	else:
+		_label(col, "%d%% Legenda yang didapat adalah %s. Bila meleset, Legenda berikutnya pasti %s." % [
+			chance, def["name"], def["name"]], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+	var left := _label(col, "", "SmallLabel")
+	left.add_theme_color_override("font_color", UI.INK)
+	left.text = "Berganti dalam %s" % _duration(model.seconds_until_week_end(now))
+
+
 func _build_gacha(page: Dictionary) -> void:
 	if not _gacha_banner_done:
 		_gacha_banner_done = true
 		var banner: Control = page["banner"]
+		var feat: String = model.rateup_id(Game.now())
+		var other: String = Data.counselors_of_rarity("ssr").filter(func(c): return c["id"] != feat)[0]["id"]
 		for i in 2:
-			var f := _portrait_frame(["kedaton", "resi"][i], 120)
+			var f := _portrait_frame([feat, other][i], 120)
 			f.position = Vector2(30 if i == 0 else 720 - 30 - 132, 30)
 			banner.add_child(f)
 		page["title"].position.x = 20
 
 	var box: VBoxContainer = page["content"]
 	_clear(box)
+	_build_rateup(box)
 	var info := _card(box)
 	info.add_child(_tex(Art.icon("gold"), 92))
 	var col := _col(info)

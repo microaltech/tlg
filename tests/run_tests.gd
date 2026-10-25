@@ -26,7 +26,7 @@ func _init() -> void:
 		"test_war_save_leave", "test_chat_send_reply", "test_chat_ambient_unread", "test_chat_save_leave",
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
-		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all",
+		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1425,3 +1425,34 @@ func test_do_all() -> void:
 	check(not m.do_all(t)["ok"], "tidak ada lagi yang bisa dikerjakan")
 	var hasil := m.do_all(t + 3600.0)
 	check(hasil["ok"], "bisa lagi setelah terisi")
+
+
+func test_rateup() -> void:
+	var m := fresh(11)
+	var t := 1000.0
+	var feat := m.rateup_id(t)
+	check(Data.counselor_def(feat)["rarity"] == "ssr", "unggulan adalah Legenda")
+	check(m.rateup_id(t + 7 * 86400.0) != feat, "unggulan berganti tiap minggu")
+	var featured := 0
+	var total := 0
+	var guaranteed_ok := true
+	for i in 400:
+		var guarantee := m.rateup_guarantee
+		var id := m._pick_ssr(t)
+		total += 1
+		if id == feat:
+			featured += 1
+		elif guarantee:
+			guaranteed_ok = false
+	check(guaranteed_ok, "setelah meleset, Legenda berikutnya pasti unggulan")
+	check(featured > total * 0.6, "unggulan lebih sering dari 50%% berkat jaminan (%d/%d)" % [featured, total])
+	m.gold = 100000
+	m.pity = Data.GACHA_PITY - 1
+	m.rateup_guarantee = true
+	var r := m.recruit(1, t)
+	check(r["results"][0]["id"] == feat and r["results"][0]["featured"], "jaminan terpakai saat rekrut")
+	check(not m.rateup_guarantee, "jaminan habis setelah dapat unggulan")
+	m.rateup_guarantee = true
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
+	check(m2.rateup_guarantee, "simpan/muat jaminan rate-up")

@@ -32,6 +32,9 @@ const GACHA_COST := 100
 const GACHA_COST_10 := 900
 const GACHA_PITY := 50  ## Legenda dijamin paling lambat di tarikan ke-50.
 const GACHA_FREE_SECONDS := 86400
+## Banner rate-up: tiap minggu satu Legenda unggulan. Peluang Legenda yang didapat
+## adalah unggulan; bila meleset, Legenda berikutnya pasti unggulan.
+const RATEUP_CHANCE := 0.5
 const START_GOLD := 300
 const PROMOTE_GOLD := 150
 const MAX_STARS := 5

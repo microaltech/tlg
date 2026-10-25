@@ -338,6 +338,57 @@ func do_affair(kind: String, now: float) -> Dictionary:
 	return _ok("+%d %s" % [amount, resource_name(kind)])
 
 
+## Jabatan minimal untuk tombol "Kerjakan Semua" (pemain baru belajar satu per satu dulu).
+const DO_ALL_RANK := 1
+
+
+func do_all_unlocked() -> bool:
+	return rank >= DO_ALL_RANK
+
+
+## Habiskan semua urusan kota, energi kunjungan (bergiliran ke tiap selir), dan
+## didik semua anak yang siap. Hasil sama dengan menekan tiap tombol satu per satu.
+func do_all(now: float) -> Dictionary:
+	if not do_all_unlocked():
+		return _fail("Kerjakan Semua terbuka setelah naik jabatan menjadi %s." % Data.RANKS[DO_ALL_RANK]["name"])
+	var gained := {"silver": 0, "grain": 0, "soldiers": 0}
+	# Pangan dulu agar prajurit baru bisa diberi makan.
+	for kind in ["silver", "grain", "soldiers"]:
+		var before: int = get(kind)
+		while do_affair(kind, now)["ok"]:
+			pass
+		gained[kind] = int(get(kind)) - before
+	var visits := 0
+	var births := 0
+	var ids := beauties.keys()
+	while not ids.is_empty():
+		var r := visit_beauty(ids[visits % ids.size()], now)
+		if not r["ok"]:
+			break
+		visits += 1
+		if r.get("born", false):
+			births += 1
+	var trained := 0
+	for i in children.size():
+		if train_child(i, now)["ok"]:
+			trained += 1
+	var parts := []
+	for kind in ["silver", "grain", "soldiers"]:
+		if gained[kind] != 0:
+			parts.append("%+d %s" % [gained[kind], resource_name(kind)])
+	if visits > 0:
+		parts.append("%d kunjungan" % visits)
+	if births > 0:
+		parts.append("%d anak lahir" % births)
+	if trained > 0:
+		parts.append("%d anak dididik" % trained)
+	if parts.is_empty():
+		return _fail("Belum ada yang bisa dikerjakan. Tunggu urusan dan energi terisi.")
+	var result := _ok("Semua dikerjakan: %s." % ", ".join(parts))
+	result["born"] = births > 0
+	return result
+
+
 static func resource_name(kind: String) -> String:
 	return {"silver": "Perak", "grain": "Pangan", "soldiers": "Prajurit"}.get(kind, kind)
 

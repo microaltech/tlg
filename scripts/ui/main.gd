@@ -2275,6 +2275,11 @@ func _build_quick_row(box: VBoxContainer) -> void:
 		return null, true, "bag", "GoldButton")
 	bag.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bag.add_theme_font_size_override("font_size", 22)
+	if model.do_all_unlocked():
+		var all := _button(row, "Kerjakan Semua", func(): return model.do_all(Game.now()), true, "",
+			"GreenButton", false, "coin")
+		all.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		all.add_theme_font_size_override("font_size", 22)
 
 
 func _show_bag() -> void:

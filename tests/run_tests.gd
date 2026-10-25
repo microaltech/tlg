@@ -26,7 +26,7 @@ func _init() -> void:
 		"test_war_save_leave", "test_chat_send_reply", "test_chat_ambient_unread", "test_chat_save_leave",
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
-		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation",
+		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1407,3 +1407,21 @@ func test_pattern_translation() -> void:
 		na.sort()
 		nb.sort()
 		check(a == b and na == nb, "placeholder cocok: %s" % cols[0])
+
+
+func test_do_all() -> void:
+	var m := fresh()
+	var t := 1000.0
+	check(not m.do_all(t)["ok"], "Kerjakan Semua terkunci sebelum Camat")
+	m.rank = 1
+	m.sync(t)
+	m.grain = 100000
+	var silver := m.silver
+	var r := m.do_all(t)
+	check(r["ok"] and m.silver > silver, "Kerjakan Semua menjalankan urusan")
+	for key in ["silver", "grain", "soldiers", "visit"]:
+		check(m.charge_value(key, t) == 0, "charge %s habis" % key)
+	check("kunjungan" in r["msg"], "kunjungan ikut dikerjakan")
+	check(not m.do_all(t)["ok"], "tidak ada lagi yang bisa dikerjakan")
+	var hasil := m.do_all(t + 3600.0)
+	check(hasil["ok"], "bisa lagi setelah terisi")

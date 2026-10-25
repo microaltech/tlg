@@ -84,7 +84,9 @@ var _lb_box: VBoxContainer
 var _lb_cat := "power"
 var _bag_overlay: Control
 var _bag_box: VBoxContainer
-var _bag_pick := ""  ## Item yang sedang menunggu pilihan target.  ## Level VIP yang sedang dilihat di panel (-1 = level sekarang).
+var _bag_pick := ""  ## Item yang sedang menunggu pilihan target.
+var _story_overlay: Control
+var _story_box: VBoxContainer  ## Level VIP yang sedang dilihat di panel (-1 = level sekarang).
 var _mission_box: VBoxContainer
 var _mission_reset_label: Label
 var _gacha_banner_done := false
@@ -539,6 +541,8 @@ func _rebuild() -> void:
 		_fill_leaderboard()
 	if is_instance_valid(_bag_overlay):
 		_fill_bag()
+	if is_instance_valid(_story_overlay):
+		_fill_story()
 	_tick()
 	# Kembalikan posisi gulir setelah layout dihitung ulang.
 	await get_tree().process_frame
@@ -589,6 +593,9 @@ func _tick() -> void:
 	if not model.tutorial_active() and get_tree().get_nodes_in_group("modal").is_empty() \
 			and not model.pending_intro().is_empty():
 		_show_intro(model.pending_intro())
+	elif not model.tutorial_active() and get_tree().get_nodes_in_group("modal").is_empty() \
+			and model.story_pending_dialog() >= 0:
+		_show_story_dialog(model.story_pending_dialog())
 	var login_ready: bool = model.login_can_claim(now)
 	_login_hb["badge"].visible = login_ready
 	_login_hb["badge_label"].text = "1"
@@ -640,6 +647,7 @@ func _build_city(box: VBoxContainer) -> void:
 	_clear(box)
 	box.add_child(_event_banner())
 	_build_quick_row(box)
+	_build_story_tracker(box)
 	for kind in model.AFFAIRS:
 		var a: Dictionary = model.AFFAIRS[kind]
 		var card := _card(box)
@@ -2053,6 +2061,167 @@ func _build_alliance_members(box: VBoxContainer, now: float) -> void:
 		_label(col, "%s  ·  %s" % [m["name"], m["role"]], "CardLabel").add_theme_font_override("font", UI.font_bold)
 		_label(col, "Kekuatan %s · Kerusakan bos %s" % [_num(m["power"]), _num(m["damage"])], "SmallLabel") \
 			.add_theme_color_override("font_color", UI.INK)
+
+
+# --- Cerita & misi utama -------------------------------------------------------
+
+func _build_story_tracker(box: VBoxContainer) -> void:
+	var card := _card(box)
+	card.add_child(_tex(Art.icon("item_scroll"), 72))
+	var col := _col(card)
+	if model.story_done():
+		_label(col, "Kisah Tamat", "CardTitle")
+		_label(col, "Anda telah menjadi Perdana Menteri. Terima kasih telah bermain!", "CardLabel")
+		return
+	var def: Dictionary = model.story_chapter_def()
+	_label(col, "Bab %d: %s" % [int(model.story["chapter"]) + 1, def["title"]], "CardTitle") \
+		.add_theme_font_size_override("font_size", 24)
+	var next := {}
+	for q in model.story_quests():
+		if not q["claimed"]:
+			next = q
+			break
+	if next.is_empty():
+		_label(col, "Semua misi selesai! Ambil hadiah bab.", "CardLabel")
+	else:
+		_label(col, "%s (%s/%s)" % [next["text"], _num(mini(next["current"], next["target"])), _num(next["target"])],
+			"CardLabel")
+		_bar(col, mini(next["current"], next["target"]), next["target"], Color("8e44ad"))
+	var ready: int = model.story_claimable()
+	var b := _button(card, "Klaim (%d)" % ready if ready > 0 else "Lihat", func():
+		_show_story()
+		return null, true, "", "GreenButton" if ready > 0 else "GoldButton")
+	b.custom_minimum_size = Vector2(140, 64)
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.add_theme_font_size_override("font_size", 22)
+
+
+func _show_story() -> void:
+	if is_instance_valid(_story_overlay):
+		return
+	var holder := {}
+	var close := func():
+		Audio.play("click")
+		if is_instance_valid(holder.get("overlay")):
+			holder["overlay"].queue_free()
+		_story_overlay = null
+	var p := _open_panel("Misi Utama", "item_scroll", close)
+	holder["overlay"] = p["overlay"]
+	_story_overlay = p["overlay"]
+	_story_box = p["content"]
+	p["subtitle"].text = "Kisah dari Kepala Desa menuju Perdana Menteri"
+	_fill_story()
+
+
+func _fill_story() -> void:
+	_clear(_story_box)
+	if model.story_done():
+		_label(_story_box, "Semua bab telah tamat. Anda adalah Perdana Menteri negeri ini!", "CardTitle")
+		return
+	var chapter: int = model.story["chapter"]
+	var def: Dictionary = model.story_chapter_def()
+	var head := HBoxContainer.new()
+	_story_box.add_child(head)
+	var t := _label(head, "Bab %d dari %d: %s" % [chapter + 1, Data.STORY_CHAPTERS.size(), def["title"]], "CardTitle")
+	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var replay := _button(head, "Cerita", func():
+		_show_story_dialog(chapter)
+		return null)
+	replay.custom_minimum_size = Vector2(130, 56)
+	var quests: Array = model.story_quests()
+	for i in quests.size():
+		var q: Dictionary = quests[i]
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		_inner_box(_story_box).add_child(row)
+		var col := _col(row)
+		_label(col, q["text"], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		_bar(col, mini(q["current"], q["target"]), q["target"], Color("8bc34a") if q["done"] else Color("8e44ad"))
+		_label(col, "%s/%s · %s" % [_num(mini(q["current"], q["target"])), _num(q["target"]), _reward_text(q["reward"])],
+			"SmallLabel").add_theme_color_override("font_color", UI.INK)
+		var idx: int = i
+		var b: Button
+		if q["claimed"]:
+			b = _button(row, "Diambil", func(): return null, false)
+		else:
+			b = _button(row, "Klaim", func(): return model.claim_quest(idx), q["done"], "", "GreenButton", false, "coin")
+		b.custom_minimum_size = Vector2(130, 60)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var all_claimed: bool = model.story["claimed"].size() == quests.size()
+	var reward := _inner_box(_story_box)
+	reward.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))
+	_label(reward, "Hadiah tamat bab: " + _reward_text(def["reward"]), "CardLabel").add_theme_font_override("font", UI.font_bold)
+	_button(reward, "Tamatkan Bab", func(): return model.claim_chapter(), all_claimed, "chest", "GoldButton", false,
+		"promote").add_theme_font_size_override("font_size", 24)
+
+
+## Dialog cerita bab: potret pembicara dan teks, maju dengan tombol Lanjut.
+func _show_story_dialog(chapter: int) -> void:
+	model.mark_story_seen(chapter)
+	var lines: Array = Data.STORY_CHAPTERS[chapter]["story"]
+	var overlay := Control.new()
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.add_to_group("modal")
+	add_child(overlay)
+	move_child(overlay, _toast.get_index())
+	var dim := ColorRect.new()
+	dim.color = Color(0.03, 0.01, 0.02, 0.8)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(dim)
+	var title := Label.new()
+	title.text = "Bab %d\n%s" % [chapter + 1, Data.STORY_CHAPTERS[chapter]["title"]]
+	title.theme_type_variation = "TitleLabel"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	title.offset_top = 220
+	overlay.add_child(title)
+	var pic := _tex(null, 300)
+	pic.size = Vector2(300, 300)
+	pic.position = Vector2(size.x / 2 - 150, 380)
+	overlay.add_child(pic)
+	var panel := PanelContainer.new()
+	panel.anchor_left = 0.04
+	panel.anchor_right = 0.96
+	panel.anchor_top = 1.0
+	panel.anchor_bottom = 1.0
+	panel.offset_top = -470
+	panel.offset_bottom = -150
+	overlay.add_child(panel)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 10)
+	panel.add_child(v)
+	var name := _label(v, "", "CardTitle")
+	var text := _label(v, "", "CardLabel")
+	text.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	text.add_theme_font_size_override("font_size", 26)
+	var next := Button.new()
+	next.theme_type_variation = "GoldButton"
+	next.custom_minimum_size = Vector2(0, 72)
+	next.add_theme_font_size_override("font_size", 26)
+	v.add_child(next)
+	var state := {"i": 0}
+	var show_line := func():
+		var line: Dictionary = lines[state["i"]]
+		var sp: String = line["speaker"]
+		pic.texture = Art.portrait(sp)
+		var who: String = Data.STORY_SPEAKER_NAMES.get(sp, "")
+		if who == "":
+			who = Data.counselor_def(sp).get("name", Data.beauty_def(sp).get("name", sp))
+		name.text = who
+		text.text = line["text"]
+		next.text = "Mulai Bab" if state["i"] == lines.size() - 1 else "Lanjut"
+		pic.modulate.a = 0.0
+		create_tween().tween_property(pic, "modulate:a", 1.0, 0.25)
+	next.pressed.connect(func():
+		Audio.play("click")
+		state["i"] += 1
+		if state["i"] >= lines.size():
+			overlay.queue_free()
+		else:
+			show_line.call())
+	show_line.call()
 
 
 # --- Tombol cepat Kota & tas ---------------------------------------------------

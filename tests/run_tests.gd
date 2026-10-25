@@ -26,6 +26,7 @@ func _init() -> void:
 		"test_war_save_leave", "test_chat_send_reply", "test_chat_ambient_unread", "test_chat_save_leave",
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
+		"test_story",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1231,3 +1232,37 @@ func test_banquet() -> void:
 	var m2 := Model.new()
 	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
 	check(var_to_str(m2.banquet) == var_to_str(m.banquet), "simpan/muat perjamuan")
+
+
+func test_story() -> void:
+	var m := fresh()
+	check(m.story["chapter"] == 0 and m.story_quests().size() == 3, "bab 1 dengan 3 misi")
+	check(m.story_pending_dialog() == -1, "cerita ditunda selama tutorial")
+	m.skip_tutorial()
+	check(m.story_pending_dialog() == 0, "cerita bab 1 menunggu ditampilkan")
+	m.mark_story_seen(0)
+	check(m.story_pending_dialog() == -1, "cerita tampil sekali")
+	check(not m.claim_quest(0)["ok"], "misi belum selesai")
+	m.soldiers = 100000000
+	m.fight_stage()
+	var gold := m.gold
+	check(m.claim_quest(0)["ok"] and m.gold == gold + 30, "klaim misi utama")
+	check(not m.claim_quest(0)["ok"], "misi utama sekali")
+	check(not m.claim_chapter()["ok"], "bab belum tamat")
+	m.counselors["arya"]["level"] = 5
+	m.claim_quest(1)
+	m.claim_quest(2)
+	check(m.story_claimable() == 1, "hadiah bab siap")
+	gold = m.gold
+	check(m.claim_chapter()["ok"] and m.story["chapter"] == 1 and m.gold == gold + 100, "bab tamat, lanjut bab 2")
+	check(m.story_pending_dialog() == 1, "cerita bab 2 menunggu")
+	for ch in Data.STORY_CHAPTERS:
+		for q in ch["quests"]:
+			check(m.story_metric(q["type"]) >= 0 and q["type"] in ["stage", "power", "rank", "counselors", "max_level",
+				"prestige", "children_total", "intimacy", "alliance", "arena_wins", "officials", "stars_total"],
+				"jenis misi dikenal: %s" % q["type"])
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(var_to_str(m2.story) == var_to_str(m.story), "simpan/muat misi utama")
+	m.story["chapter"] = Data.STORY_CHAPTERS.size()
+	check(m.story_done() and m.story_quests().is_empty() and not m.claim_chapter()["ok"], "cerita tamat")

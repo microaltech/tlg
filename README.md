@@ -125,6 +125,10 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   tambahan; hadiah harian VIP; hadiah naik level; dan Paket Hadiah VIP sekali beli
   dengan emas (termasuk penasihat Epik/Legenda). Ketuk avatar di header untuk
   membuka panel VIP.
+- **Cerita & misi utama** — 6 bab dari Kepala Desa sampai Perdana Menteri, tiap
+  bab dibuka dengan dialog bergambar dan berisi 3-4 misi berbasis pencapaian
+  (tahap, kekuatan, jabatan, anak, aliansi, arena, pejabat, bintang) dengan hadiah
+  per misi dan hadiah tamat bab. Pelacak misi utama ada di menu Kota.
 - **Tutorial pemain baru** — 14 langkah dipandu penasihat Sekar Pandita: layar
   digelapkan kecuali tombol yang diajarkan (bingkai emas + panah), dan langkah
   berikutnya muncul setelah pemain benar-benar melakukan aksinya. Hadiah 100 emas

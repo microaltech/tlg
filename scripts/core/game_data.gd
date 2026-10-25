@@ -545,6 +545,65 @@ const ITEM_ORDER := ["recruit_ticket", "star_stone", "scroll_train", "pill_intim
 const STAGE_ITEM_POOL := ["scroll_train", "scroll_train", "pill_intimacy", "energy_tea", "silver_box", "troop_writ",
 	"recruit_ticket"]
 
+## Cerita & misi utama. Progres misi dihitung dari keadaan game (lihat story_progress).
+## type: stage, power, rank, counselors, max_level, prestige, children_total, intimacy,
+## alliance, arena_wins, officials, stars_total.
+const STORY_CHAPTERS := [
+	{"title": "Kepala Desa yang Baru", "story": [
+		{"speaker": "sekar", "text": "Tuan, desa ini sudah lama tanpa pemimpin. Begal menjarah lumbung, rakyat ketakutan."},
+		{"speaker": "arya", "text": "Beri saya prajurit, Tuan. Saya akan mengusir para begal dari perbatasan desa!"},
+		{"speaker": "lord", "text": "Mulai hari ini, desa ini di bawah perlindunganku. Kita bangun kembali bersama."}],
+		"quests": [
+			{"type": "stage", "target": 1, "text": "Usir begal: menangkan Tahap 1", "reward": {"gold": 30, "silver": 1000}},
+			{"type": "max_level", "target": 3, "text": "Latih seorang penasihat ke level 3", "reward": {"silver": 2000}},
+			{"type": "power", "target": 80, "text": "Capai kekuatan 80", "reward": {"items": {"scroll_train": 1}}},
+		], "reward": {"gold": 100, "items": {"recruit_ticket": 1}}},
+	{"title": "Tangan Besi", "story": [
+		{"speaker": "bayu", "text": "Kabar Tuan sampai ke kota kecamatan. Para pejabat menunggu bukti kepemimpinan Tuan."},
+		{"speaker": "sekar", "text": "Kumpulkan penasihat yang cakap dan buktikan diri di medan perang. Jabatan Camat menanti."}],
+		"quests": [
+			{"type": "stage", "target": 5, "text": "Taklukkan Tahap 5", "reward": {"gold": 50}},
+			{"type": "counselors", "target": 4, "text": "Miliki 4 penasihat", "reward": {"silver": 5000}},
+			{"type": "prestige", "target": 150, "text": "Kumpulkan 150 prestise", "reward": {"items": {"energy_tea": 1}}},
+			{"type": "rank", "target": 1, "text": "Naik jabatan menjadi Camat", "reward": {"gold": 80}},
+		], "reward": {"gold": 150, "items": {"star_stone": 1}}},
+	{"title": "Keluarga Bangsawan", "story": [
+		{"speaker": "melati", "text": "Tuan selalu sibuk dengan urusan negeri. Istana terasa sepi tanpa tawa anak-anak."},
+		{"speaker": "ratna", "text": "Para bangsawan menghormati tuan yang punya keluarga dan sekutu. Aliansi akan memperkuat kita."}],
+		"quests": [
+			{"type": "children_total", "target": 1, "text": "Dikaruniai seorang anak", "reward": {"grain": 5000}},
+			{"type": "intimacy", "target": 20, "text": "Capai total keakraban 20", "reward": {"items": {"pill_intimacy": 2}}},
+			{"type": "alliance", "target": 1, "text": "Bergabung dengan aliansi", "reward": {"gold": 80}},
+			{"type": "stage", "target": 8, "text": "Taklukkan Tahap 8", "reward": {"soldiers": 10000}},
+		], "reward": {"gold": 200, "items": {"recruit_ticket": 2}}},
+	{"title": "Panggung Bupati", "story": [
+		{"speaker": "dewi", "text": "Kabupaten ini butuh pemimpin yang disegani di arena dan didukung pejabat yang setia."},
+		{"speaker": "gajah", "text": "Para tuan dari seluruh negeri berlaga di arena. Tunjukkan kekuatan kita, Tuan!"}],
+		"quests": [
+			{"type": "rank", "target": 2, "text": "Naik jabatan menjadi Bupati", "reward": {"gold": 100}},
+			{"type": "power", "target": 1000, "text": "Capai kekuatan 1.000", "reward": {"items": {"scroll_train": 3}}},
+			{"type": "arena_wins", "target": 3, "text": "Menangi 3 pertarungan arena", "reward": {"silver": 15000}},
+			{"type": "officials", "target": 1, "text": "Angkat seorang anak menjadi pejabat", "reward": {"gold": 100}},
+		], "reward": {"gold": 300, "items": {"star_stone": 1, "recruit_ticket": 2}}},
+	{"title": "Badai di Perbatasan", "story": [
+		{"speaker": "enemy_warlord", "text": "Hahaha! Tanah ini akan menjadi milik Panglima Lalim! Siapa yang berani menghalangiku?"},
+		{"speaker": "satria", "text": "Saya, Tuan. Bersama pasukan dan para penasihat terbaik, kita hancurkan pemberontakan ini."}],
+		"quests": [
+			{"type": "stage", "target": 20, "text": "Hancurkan pemberontakan: Tahap 20", "reward": {"gold": 150}},
+			{"type": "rank", "target": 3, "text": "Naik jabatan menjadi Gubernur", "reward": {"gold": 150}},
+			{"type": "stars_total", "target": 5, "text": "Kumpulkan total 5 bintang penasihat", "reward": {"items": {"star_stone": 1}}},
+		], "reward": {"gold": 400, "items": {"recruit_ticket": 3}}},
+	{"title": "Menuju Istana Raja", "story": [
+		{"speaker": "resi", "text": "Negeri ini menanti pemimpin yang bijak. Jalan menuju istana raja terbuka bagi Tuan."},
+		{"speaker": "kedaton", "text": "Buktikan bahwa Tuan layak menjadi tangan kanan raja: Perdana Menteri negeri ini."}],
+		"quests": [
+			{"type": "stage", "target": 40, "text": "Taklukkan Tahap 40", "reward": {"gold": 200}},
+			{"type": "power", "target": 10000, "text": "Capai kekuatan 10.000", "reward": {"items": {"star_stone": 2}}},
+			{"type": "rank", "target": 5, "text": "Menjadi Perdana Menteri", "reward": {"gold": 300}},
+		], "reward": {"gold": 1000, "items": {"star_stone": 3, "recruit_ticket": 5}}},
+]
+const STORY_SPEAKER_NAMES := {"lord": "Anda", "enemy_warlord": "Panglima Lalim"}
+
 const REWARD_KEYS := ["gold", "silver", "grain", "soldiers"]
 const REWARD_NAMES := {"gold": "emas", "silver": "perak", "grain": "pangan", "soldiers": "prajurit", "jasa": "jasa"}
 

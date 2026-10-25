@@ -58,6 +58,8 @@ var iap := {}
 ## VIP: {"points": int, "daily_day": int (hari klaim hadiah harian), "packs": [level paket yang dibeli],
 ##   "gifts": [level yang hadiah naik levelnya sudah diberikan]}
 var vip := {}
+## Misi utama: {"chapter": int, "claimed": [indeks misi bab ini], "seen": [bab yang ceritanya sudah tampil]}
+var story := {}
 ## Pejabat dari anak yang lulus ujian: [{"name", "gender", "talent", "title"}]
 var officials: Array = []
 ## Perjamuan: {"day": hari pesta terakhir per jenis {jenis: hari}, "invite_day": int, "attended": [indeks]}
@@ -120,6 +122,7 @@ func new_game(now: float) -> void:
 	prison = {"prisoners": [], "day": -1, "used": 0}
 	officials = []
 	banquet = {"held": {}, "invite_day": -1, "attended": []}
+	story = {"chapter": 0, "claimed": [], "seen": []}
 	_npc_cache = {}
 	_unlock_content()
 	ensure_daily(now)
@@ -1952,6 +1955,116 @@ func claim_lb_reward() -> Dictionary:
 	return _ok("Hadiah peringkat mingguan (%s, #%d): +%d emas." % [r["tier"], r["rank"], r["gold"]])
 
 
+# --- Cerita & misi utama -------------------------------------------------------
+
+func story_done() -> bool:
+	return int(story["chapter"]) >= Data.STORY_CHAPTERS.size()
+
+
+func story_chapter_def() -> Dictionary:
+	return {} if story_done() else Data.STORY_CHAPTERS[int(story["chapter"])]
+
+
+## Nilai sekarang untuk jenis misi tertentu.
+func story_metric(type: String) -> int:
+	match type:
+		"stage":
+			return stage
+		"power":
+			return power()
+		"rank":
+			return rank
+		"counselors":
+			return counselors.size()
+		"max_level":
+			var best := 0
+			for id in counselors:
+				best = maxi(best, int(counselors[id]["level"]))
+			return best
+		"prestige":
+			return prestige
+		"children_total":
+			return children.size() + married_count + officials.size()
+		"intimacy":
+			return total_intimacy()
+		"alliance":
+			return 0 if alliance.is_empty() else 1
+		"arena_wins":
+			return 0 if arena.is_empty() else int(arena["wins"])
+		"officials":
+			return officials.size()
+		"stars_total":
+			var total := 0
+			for id in counselors:
+				total += int(counselors[id].get("stars", 0))
+			return total
+	return 0
+
+
+## Misi bab sekarang: [{"text", "current", "target", "done", "claimed", "reward"}]
+func story_quests() -> Array:
+	var out := []
+	var def := story_chapter_def()
+	for i in def.get("quests", []).size():
+		var q: Dictionary = def["quests"][i]
+		var cur := story_metric(q["type"])
+		out.append({"text": q["text"], "current": cur, "target": int(q["target"]), "done": cur >= int(q["target"]),
+			"claimed": i in story["claimed"], "reward": q["reward"]})
+	return out
+
+
+func story_claimable() -> int:
+	var n := 0
+	for q in story_quests():
+		if q["done"] and not q["claimed"]:
+			n += 1
+	if not story_done() and story["claimed"].size() == story_quests().size():
+		n += 1
+	return n
+
+
+func claim_quest(index: int) -> Dictionary:
+	var quests := story_quests()
+	if index < 0 or index >= quests.size():
+		return _fail("Misi tidak ditemukan.")
+	if quests[index]["claimed"]:
+		return _fail("Hadiah misi sudah diambil.")
+	if not quests[index]["done"]:
+		return _fail("Misi belum selesai.")
+	story["claimed"].append(index)
+	var text := _give_rewards(quests[index]["reward"])
+	changed.emit()
+	return _ok("Misi utama selesai: %s." % text)
+
+
+func claim_chapter() -> Dictionary:
+	if story_done():
+		return _fail("Semua bab sudah tamat.")
+	if story["claimed"].size() < story_quests().size():
+		return _fail("Selesaikan semua misi bab ini dulu.")
+	var def := story_chapter_def()
+	var text := _give_rewards(def["reward"])
+	story["chapter"] = int(story["chapter"]) + 1
+	story["claimed"] = []
+	changed.emit()
+	var msg := "Bab \"%s\" tamat! %s." % [def["title"], text]
+	if story_done():
+		msg += " Selamat, kisah Anda sebagai Perdana Menteri telah tamat!"
+	return _ok(msg)
+
+
+## Bab yang ceritanya belum ditampilkan (-1 bila tidak ada).
+func story_pending_dialog() -> int:
+	if story_done() or tutorial_active() or int(story["chapter"]) in story["seen"]:
+		return -1
+	return int(story["chapter"])
+
+
+func mark_story_seen(chapter: int) -> void:
+	if not (chapter in story["seen"]):
+		story["seen"].append(chapter)
+
+
 # --- Ujian anak & pejabat ---------------------------------------------------
 
 func exam_chance(index: int) -> float:
@@ -2436,6 +2549,7 @@ func to_dict() -> Dictionary:
 		"inventory": inventory,
 		"prison": prison,
 		"officials": officials,
+		"story": story,
 		"banquet": banquet,
 		"start_day": start_day,
 		"leaderboard": leaderboard,
@@ -2538,6 +2652,11 @@ func from_dict(d: Dictionary, now: float) -> void:
 	for id in d.get("inventory", {}):
 		if Data.ITEMS.has(str(id)) and int(d["inventory"][id]) > 0:
 			inventory[str(id)] = int(d["inventory"][id])
+	var src_story: Dictionary = d.get("story", {})
+	story = {"chapter": clampi(int(src_story.get("chapter", 0)), 0, Data.STORY_CHAPTERS.size()), "claimed": [], "seen": []}
+	for k in ["claimed", "seen"]:
+		for v in src_story.get(k, []):
+			story[k].append(int(v))
 	officials = []
 	for o in d.get("officials", []):
 		officials.append({"name": str(o.get("name", "")), "gender": str(o.get("gender", "m")),

@@ -56,6 +56,12 @@ const COUNSELORS := [
 	{"id": "bagas", "name": "Bagas Pamungkas", "rarity": "sr", "str": 15, "int": 6, "pol": 5, "cha": 8, "unlock_stage": -1},
 	{"id": "kedaton", "name": "Ratu Sekar Kedaton", "rarity": "ssr", "str": 8, "int": 15, "pol": 12, "cha": 18, "unlock_stage": -1},
 	{"id": "resi", "name": "Resi Darma Wicaksana", "rarity": "ssr", "str": 7, "int": 19, "pol": 16, "cha": 10, "unlock_stage": -1},
+	{"id": "rangga", "name": "Rangga Lawe", "rarity": "sr", "str": 16, "int": 5, "pol": 6, "cha": 9, "unlock_stage": 30},
+	{"id": "sora", "name": "Lembu Sora", "rarity": "r", "str": 8, "int": 6, "pol": 11, "cha": 5, "unlock_stage": 40},
+	{"id": "tantular", "name": "Mpu Tantular", "rarity": "ssr", "str": 5, "int": 20, "pol": 15, "cha": 11, "unlock_stage": 50},
+	{"id": "kusuma", "name": "Kusuma Wardhani", "rarity": "sr", "str": 5, "int": 9, "pol": 15, "cha": 8, "unlock_stage": -1},
+	{"id": "jaka", "name": "Jaka Tingkir", "rarity": "ssr", "str": 20, "int": 9, "pol": 7, "cha": 12, "unlock_stage": -1},
+	{"id": "nawang", "name": "Nawang Wulan", "rarity": "ssr", "str": 6, "int": 12, "pol": 10, "cha": 20, "unlock_stage": -1},
 ]
 
 ## Skill pasif penasihat: nilai = base + per_star x bintang (dalam pecahan, 0.05 = 5%).
@@ -76,6 +82,12 @@ const SKILLS := {
 	"bagas": {"name": "Pukulan Bagas", "effect": "combat", "base": 0.06, "per_star": 0.02},
 	"kedaton": {"name": "Titah Ratu", "effect": "visit", "base": 0.08, "per_star": 0.02},
 	"resi": {"name": "Kebijaksanaan Resi", "effect": "yield_all", "base": 0.08, "per_star": 0.02},
+	"rangga": {"name": "Amuk Ranggalawe", "effect": "combat", "base": 0.08, "per_star": 0.03},
+	"sora": {"name": "Sawah Tuban", "effect": "yield_grain", "base": 0.06, "per_star": 0.02},
+	"tantular": {"name": "Kakawin Sutasoma", "effect": "train_cost", "base": 0.12, "per_star": 0.03},
+	"kusuma": {"name": "Lumbung Kusuma", "effect": "yield_grain", "base": 0.08, "per_star": 0.03},
+	"jaka": {"name": "Banteng Tingkir", "effect": "battle", "base": 0.10, "per_star": 0.03},
+	"nawang": {"name": "Selendang Bidadari", "effect": "visit", "base": 0.10, "per_star": 0.03},
 }
 ## Ikatan: aktif bila semua anggota dimiliki.
 const BONDS := [
@@ -84,6 +96,9 @@ const BONDS := [
 	{"name": "Penjaga Lumbung", "members": ["bayu", "danu"], "effect": "yield_grain", "value": 0.10},
 	{"name": "Bunga Keraton", "members": ["ratna", "wening", "kedaton"], "effect": "prestige", "value": 0.15},
 	{"name": "Busur dan Tinju", "members": ["lintang", "bagas"], "effect": "combat", "value": 0.05},
+	{"name": "Laskar Majapahit", "members": ["gajah", "rangga", "sora"], "effect": "combat", "value": 0.10},
+	{"name": "Putri Kahyangan", "members": ["dewi", "kedaton", "nawang"], "effect": "visit", "value": 0.10},
+	{"name": "Para Pujangga", "members": ["resi", "tantular", "kusuma"], "effect": "yield_all", "value": 0.05},
 ]
 const SKILL_CAP := 0.6
 const SKILL_EFFECT_NAMES := {
@@ -99,6 +114,8 @@ const BEAUTIES := [
 	{"id": "kenanga", "name": "Kenanga", "unlock_stage": 5},
 	{"id": "anggrek", "name": "Anggrek", "unlock_stage": 12},
 	{"id": "cempaka", "name": "Cempaka", "unlock_stage": 20},
+	{"id": "kemuning", "name": "Kemuning", "unlock_stage": 28},
+	{"id": "kantil", "name": "Kantil", "unlock_stage": 38},
 ]
 
 const CHILD_NAMES := {

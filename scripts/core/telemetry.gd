@@ -162,8 +162,10 @@ func problem_report() -> String:
 		var c: Dictionary = crashes[-1]
 		lines.append("Crash terakhir: sesi mulai %s (versi %s), total %d crash tercatat" % [
 			Time.get_datetime_string_from_unix_time(int(c["t"]), true), c["version"], crashes.size()])
+	lines = lines.map(func(line): return tr(line))
+	if not crashes.is_empty():
 		lines.append("--- log ---")
-		lines.append(str(c["log"]))
+		lines.append(str(crashes[-1]["log"]))
 	return "\n".join(lines)
 
 

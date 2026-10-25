@@ -26,7 +26,7 @@ func _init() -> void:
 		"test_war_save_leave", "test_chat_send_reply", "test_chat_ambient_unread", "test_chat_save_leave",
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
-		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain",
+		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -964,6 +964,12 @@ func test_chat_send_reply() -> void:
 	check(m.chat_send("dasar goblok", t + 20.0)["ok"], "pesan dengan kata kasar tetap terkirim")
 	var last_me: Array = m.chat_messages(t + 20.0).filter(func(x): return x.get("me", false))
 	check(last_me[-1]["text"] == "dasar ******", "kata kasar disaring")
+	# Pemain berbahasa Inggris: kata kunci dan filter juga mengenali bahasa Inggris.
+	var t2 := t + 100.0
+	check(m.chat_send("Thank you everyone!", t2)["ok"], "kirim pesan bahasa Inggris")
+	var thanks: Array = m.chat_messages(t2 + 10.0).filter(func(x): return float(x["t"]) > t2 and not x.get("me", false))
+	check(thanks.any(func(x): return x["text"] in Data.CHAT_REPLIES["thanks"]), "balasan sesuai ucapan terima kasih (Inggris)")
+	check(Model.chat_filter("oh shit") == "oh ****", "kata kasar bahasa Inggris disaring")
 
 
 func test_chat_ambient_unread() -> void:
@@ -1347,3 +1353,57 @@ func test_soldiers_eat_grain() -> void:
 	m.grain = 0
 	var charges := m.charge_value("soldiers", t)
 	check(not m.do_affair("soldiers", t)["ok"] and m.charge_value("soldiers", t) == charges, "tanpa pangan tidak memakai urusan")
+
+
+func test_pattern_translation() -> void:
+	var t = load("res://scripts/core/pattern_translation.gd").new()
+	t.add_entry("Kerjakan", "Do")
+	t.add_entry("Perak", "Silver")
+	t.add_entry("Kecerdasan", "Intelligence")
+	t.add_entry("Hasil +%d %s · dari %s", "Yield +%d %s · from %s")
+	t.add_entry("Menang di %s! -%d prajurit.", "Victory at %s! -%d soldiers.")
+	t.add_entry("Tahap %d", "Stage %d")
+	t.add_entry("Rampasan: %s.", "Loot: %s.")
+	t.add_entry("Teh Semangat", "Spirit Tea")
+	t.add_entry("Halo, {player}! HP {hp}%", "Hi {player}! {hp}% HP")
+	t.add_entry("Diskon %d%%", "%d%% off")
+	t.add_entry("%d hari %s", "%dd %s")
+	check(t.translate_text("Kerjakan") == "Do", "terjemahan persis")
+	check(t.translate_text("Arya Wiraguna") == "Arya Wiraguna", "nama tidak berubah")
+	check(t.translate_text("Hasil +120 Perak · dari Kecerdasan") == "Yield +120 Silver · from Intelligence",
+		"templat dengan argumen yang ikut diterjemahkan")
+	check(t.translate_text("Menang di Tahap 5! -300 prajurit. Rampasan: Teh Semangat.")
+		== "Victory at Stage 5! -300 soldiers. Loot: Spirit Tea.", "pesan gabungan dipecah per kalimat")
+	check(t.translate_text("Halo, Wira! HP 40%") == "Hi Wira! 40% HP", "placeholder bernama boleh pindah urutan")
+	check(t.translate_text("Diskon 20%") == "20% off", "persen literal")
+	check(t.translate_text("2 hari 03:00:00") == "2d 03:00:00", "durasi")
+	check(t.translate_text("1.5Rb") == "1.5K" and t.translate_text("2.0Jt") == "2.0M", "singkatan angka")
+	check(t.translate_text("  Kerjakan ") == "  Do ", "spasi di tepi dipertahankan")
+	check(t.translate_text("Perak\nKerjakan") == "Silver\nDo", "per baris")
+	# kamus sungguhan termuat dan tiap templat memakai jumlah placeholder % yang sama
+	var en = load("res://scripts/core/pattern_translation.gd").new()
+	var n: int = en.load_tsv("res://translations/en.tsv")
+	check(n > 700, "kamus bahasa Inggris termuat (%d entri)" % n)
+	check(en._get_message(&"Kekuatan 12", &"") == &"Strength 12", "Kekuatan sebagai atribut")
+	check(en._get_message(&"Kekuatan %s", &"power") == &"Power %s", "Kekuatan dengan konteks power")
+	check(en.translate_text("Hadiah login Hari 6: +5000 perak, +3000 pangan, +2 Pil Keakraban, +1 poin VIP.")
+		== "Login reward Day 6: +5000 silver, +3000 food, +2 Intimacy Pill, +1 VIP points.", "pesan daftar panjang")
+	var keys := {}
+	for line in FileAccess.get_file_as_string("res://translations/en.tsv").split("\n"):
+		var key := line.split("\t")[0]
+		if line != "" and not line.begins_with("#"):
+			check(not keys.has(key), "kunci kamus tidak ganda: %s" % key)
+			keys[key] = true
+	var ph := RegEx.create_from_string("%[-+0 #]*\\d*(?:\\.\\d+)?[dfsx]")
+	var named := RegEx.create_from_string("\\{[a-z_]+\\}")
+	for line in FileAccess.get_file_as_string("res://translations/en.tsv").split("\n"):
+		var cols := line.split("\t")
+		if cols.size() < 2 or line.begins_with("#") or cols[1].is_empty():
+			continue
+		var a := ph.search_all(cols[0].replace("%%", "")).map(func(m): return m.get_string().right(1))
+		var b := ph.search_all(cols[1].replace("%%", "")).map(func(m): return m.get_string().right(1))
+		var na := named.search_all(cols[0]).map(func(m): return m.get_string())
+		var nb := named.search_all(cols[1]).map(func(m): return m.get_string())
+		na.sort()
+		nb.sort()
+		check(a == b and na == nb, "placeholder cocok: %s" % cols[0])

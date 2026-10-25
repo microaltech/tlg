@@ -386,7 +386,7 @@ func fight_stage() -> Dictionary:
 	if captured != "":
 		msg += " Tertangkap: %s!" % captured
 	if not unlocked.is_empty():
-		msg += " Bergabung: " + ", ".join(unlocked)
+		msg += " Bergabung: %s" % ", ".join(unlocked)
 	return _ok(msg)
 
 
@@ -453,7 +453,7 @@ func recruit(count: int, now: float, free := false, ticket := false) -> Dictiona
 			names.append(Data.counselor_def(r["id"])["name"])
 	var msg := "Rekrut selesai."
 	if not names.is_empty():
-		msg += " Bergabung: " + ", ".join(names)
+		msg += " Bergabung: %s" % ", ".join(names)
 	var result := _ok(msg)
 	result["results"] = results
 	return result
@@ -1530,15 +1530,15 @@ func arena_fight(index: int, now: float) -> Dictionary:
 	else:
 		arena["losses"] = int(arena["losses"]) + 1
 	_track("arena")
-	_arena_log("Anda %s melawan %s (%+d poin)." % ["menang" if win else "kalah", opp["name"], delta])
+	_arena_log(("Anda menang melawan %s (%+d poin)." if win else "Anda kalah melawan %s (%+d poin).") % [
+		opp["name"], delta])
 	var rounds := _arena_rounds(win)
 	_refresh_opponents()
 	changed.emit()
-	var msg := "%s melawan %s! %+d poin arena, +%d koin arena" % [
-		"Menang" if win else "Kalah", opp["name"], delta, reward.get("coins", 0)]
-	if win:
-		msg += ", +%d perak" % reward["silver"]
-	var result := _ok(msg + ".")
+	var msg := ("Menang melawan %s! %+d poin arena, +%d koin arena, +%d perak." % [
+		opp["name"], delta, reward.get("coins", 0), reward["silver"]]) if win \
+		else "Kalah melawan %s! %+d poin arena, +%d koin arena." % [opp["name"], delta, reward.get("coins", 0)]
+	var result := _ok(msg)
 	result.merge({"win": win, "delta": delta, "opponent": opp, "rounds": rounds,
 		"coins": int(reward.get("coins", 0))})
 	return result
@@ -1574,7 +1574,8 @@ func _arena_defense(days: int) -> void:
 			var held := rng.randf() < arena_win_chance(int(opp["power"]))
 			var delta := rng.randi_range(3, 8) * (1 if held else -1)
 			arena["rating"] = maxi(0, int(arena["rating"]) + delta)
-			_arena_log("%s menyerang Anda dan %s (%+d poin)." % [opp["name"], "kalah" if held else "menang", delta])
+			_arena_log(("%s menyerang Anda dan kalah (%+d poin)." if held else "%s menyerang Anda dan menang (%+d poin).")
+				% [opp["name"], delta])
 
 
 func claim_arena_season() -> Dictionary:
@@ -2209,7 +2210,8 @@ func _capture_prisoner(info: Dictionary) -> String:
 	if prison["prisoners"].size() >= Data.PRISON_CAPACITY or rng.randf() >= Data.PRISON_CAPTURE_CHANCE:
 		return ""
 	var st := Data.prisoner_stats(stage - 1)
-	var name := "%s %s" % [info["enemy_name"], Data.NPC_NAMES[rng.randi_range(0, Data.NPC_NAMES.size() - 1)]]
+	# "Nama (Kelompok)": kelompok musuh tetap bisa diterjemahkan, nama orang tidak.
+	var name := "%s (%s)" % [Data.NPC_NAMES[rng.randi_range(0, Data.NPC_NAMES.size() - 1)], info["enemy_name"]]
 	prison["prisoners"].append({"name": name, "avatar": info["enemy_id"], "stage": stage - 1, "hp": st["hp"],
 		"max": st["hp"]})
 	return name
@@ -2654,7 +2656,7 @@ func away_report(snap: Dictionary, now: float) -> Dictionary:
 		if after > before:
 			refilled.append("%s +%d%s" % [AWAY_CHARGE_NAMES[key], after - before, " (penuh)" if after >= cap else ""])
 	if not refilled.is_empty():
-		lines.append({"icon": "tab_city", "text": "Urusan terisi kembali: " + ", ".join(refilled) + "."})
+		lines.append({"icon": "tab_city", "text": "Urusan terisi kembali: %s." % ", ".join(refilled)})
 	if free_pull_eta(now) == 0 and not bool(snap.get("free", false)):
 		lines.append({"icon": "ticket_recruit", "text": "Rekrut gratis sudah siap."})
 	if day_index(now) != int(snap.get("day", day_index(now))):

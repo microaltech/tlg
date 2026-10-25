@@ -38,7 +38,7 @@ func schedule_plan() -> void:
 	if not available() or not Settings.notifications:
 		return
 	for n in Game.model.notification_plan(Game.now()):
-		_plugin.schedule(int(n["id"]), str(n["title"]), str(n["text"]), int(n["delay"]))
+		_plugin.schedule(int(n["id"]), tr(str(n["title"])), tr(str(n["text"])), int(n["delay"]))
 
 
 func cancel_all() -> void:

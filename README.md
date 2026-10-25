@@ -42,6 +42,8 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   baterai (30 FPS + gambar ulang hanya saat ada perubahan), nyala/mati
   notifikasi, simpan manual, dan mulai ulang. Preferensi perangkat disimpan di
   `user://settings.cfg`, terpisah dari progres game.
+- **Dua bahasa** — Indonesia dan English, pilih di Pengaturan (default mengikuti
+  bahasa perangkat). Lihat bagian "Bahasa".
 - **Selamat datang kembali** — setelah pergi minimal 5 menit (game ditutup atau
   diminimalkan), panel ringkasan menampilkan lama pergi dan apa yang terjadi:
   urusan yang terisi, rekrut gratis siap, hari/event baru, pesan chat aliansi,
@@ -167,6 +169,9 @@ scripts/core/game.gd       Autoload "Game": simpan/muat & autosave
 scripts/core/settings.gd   Autoload "Settings": volume, hemat baterai, notifikasi
 scripts/core/notifier.gd   Autoload "Notifier": notifikasi lokal Android (via plugin)
 scripts/core/telemetry.gd  Autoload "Telemetry": statistik lokal & deteksi crash
+scripts/core/i18n.gd       Autoload "I18n": pilihan bahasa (Otomatis/Indonesia/English)
+scripts/core/pattern_translation.gd  Penerjemah kamus + templat (lihat "Bahasa")
+translations/en.tsv        Kamus bahasa Inggris
 scripts/core/audio.gd      Autoload "Audio": musik latar & efek suara
 scripts/core/store.gd      Autoload "Store": Google Play Billing / Mode Uji
 scripts/ui/main.gd         UI dibangun lewat kode (header, 4 halaman, navigasi bawah)
@@ -181,6 +186,8 @@ tools/gen_audio.py         Generator musik & efek suara (numpy + ffmpeg)
 tools/sim_economy.gd       Bot simulasi ekonomi N hari (lihat docs/balance.md)
 tools/gen_launcher_icons.gd Ikon peluncur Android & Play Store dari icon.svg
 tools/make_keystore.sh     Membuat keystore rilis
+tools/i18n_extract.gd      Daftar teks yang belum ada di kamus terjemahan
+tools/i18n_check.tscn      Pemeriksa cakupan terjemahan (menjelajah UI + bot)
 docs/                      Penyeimbangan, kebijakan privasi, Data Safety, checklist rilis
 tools/build_android.sh     Build APK
 tests/run_tests.gd         Tes logika headless
@@ -298,6 +305,39 @@ pemanggilan `Notifier` aman. **Catatan:** kode plugin belum dikompilasi atau diu
 di perangkat karena lingkungan pengembangan ini tidak bisa mengakses Maven Google.
 Uji di HP sungguhan sebelum rilis.
 
+## Bahasa (Indonesia & English)
+
+Game tersedia dalam bahasa Indonesia dan Inggris. Pilihannya ada di
+**Pengaturan → Bahasa / Language**: Otomatis (mengikuti bahasa perangkat), Bahasa
+Indonesia, atau English. Bahasa bisa diganti kapan saja tanpa memulai ulang.
+
+Teks sumber di kode tetap bahasa Indonesia, sedangkan terjemahan ada di
+`translations/en.tsv` (format `sumber<TAB>terjemahan[<TAB>konteks]`).
+`PatternTranslation` diterapkan otomatis ke semua Label/Button:
+- Teks berformat dikenali dari templatnya, misalnya `Hasil +%d %s · dari %s` atau
+  `Halo, {player}!`. Argumennya ikut diterjemahkan (Perak → Silver), sedangkan
+  nama orang dibiarkan.
+- Pesan gabungan dipecah per kalimat atau per butir daftar.
+
+Save menyimpan teks sumber, sehingga log, chat, dan gelar yang tersimpan ikut
+berganti bahasa. Nama diri (penasihat, selir, aliansi, NPC) sengaja tidak
+diterjemahkan.
+
+Alur saat menambah atau mengubah teks:
+
+```bash
+# 1. Daftar teks yang belum ada di kamus -> build/i18n/missing_en.tsv
+godot --headless --path . --script res://tools/i18n_extract.gd -- en
+# 2. Isi terjemahannya, salin ke translations/en.tsv
+# 3. Jelajahi semua layar + bot dalam bahasa Inggris; laporkan sisa teks Indonesia
+xvfb-run godot --path . res://tools/i18n_check.tscn -- en     # keluar kode 1 bila ada sisa
+```
+
+Tes otomatis memeriksa bahwa setiap templat terjemahan memakai placeholder
+yang sama dan tidak ada kunci ganda. Untuk bahasa lain: buat
+`translations/<kode>.tsv`, daftarkan di `I18n.LANGUAGES`, lalu jalankan kedua alat
+di atas dengan kode bahasa tersebut.
+
 ## Rilis ke Google Play
 
 - `tools/make_keystore.sh` membuat keystore rilis dan menampilkan environment
@@ -358,7 +398,5 @@ Catatan penting:
   dan build AAB (tidak bisa diuji di lingkungan pengembangan ini).
 - Backend online sesuai `docs/server_design.md`, mulai dari fase 0 (akun dan
   validasi IAP), lalu fase 1 (aliansi, chat, peringkat sungguhan).
-- Terjemahan bahasa Inggris (teks saat ini masih ditulis langsung di
-  `game_data.gd`/`main.gd`; perlu dipindah ke file terjemahan Godot).
 - Konten lanjutan: penasihat dan selir baru, banner rekrut *rate-up*, toko event,
   iklan berhadiah (AdMob), serta bab cerita setelah Perdana Menteri.

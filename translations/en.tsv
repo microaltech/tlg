@@ -1,0 +1,867 @@
+# Kamus bahasa Inggris. Format: teks sumber (Indonesia)<TAB>terjemahan[<TAB>konteks]. \n = baris baru.
+# Konteks dipakai bila satu teks sumber punya arti berbeda (kode: tr("teks", "konteks")).
+Kekuatan	Strength
+Kecerdasan	Intelligence
+Politik	Politics
+Karisma	Charisma
+Kepala Desa	Village Head
+Camat	District Chief
+Bupati	Regent
+Gubernur	Governor
+Menteri	Minister
+Perdana Menteri	Prime Minister
+Langka	Rare
+Epik	Epic
+Legenda	Legend
+Tombak Garuda	Garuda Spear
+Kitab Pajak	Book of Taxes
+Irigasi Subur	Fertile Irrigation
+Pesona Ratna	Ratna's Charm
+Benteng Baja	Iron Fortress
+Diplomasi Dewi	Dewi's Diplomacy
+Panji Satria	Satria's Banner
+Panah Lintang	Lintang's Arrow
+Hemat Bendahara	Thrifty Treasurer
+Strategi Wening	Wening's Strategy
+Pukulan Bagas	Bagas's Strike
+Titah Ratu	Queen's Decree
+Kebijaksanaan Resi	Wisdom of the Sage
+Pendekar Nusantara	Warriors of the Archipelago
+Cendekia Istana	Palace Scholars
+Penjaga Lumbung	Granary Guardians
+Bunga Keraton	Flowers of the Court
+Busur dan Tinju	Bow and Fist
+Hasil Tarik Pajak +%d%%	Tax Collection yield +%d%%
+Hasil Kelola Sawah +%d%%	Farm Management yield +%d%%
+Hasil Rekrut Prajurit +%d%%	Troop Recruitment yield +%d%%
+Semua hasil urusan kota +%d%%	All city affair yields +%d%%
+Korban kampanye -%d%%	Campaign losses -%d%%
+Kekuatan tempur (arena/bos/perang) +%d%%	Combat power (arena/boss/war) +%d%%
+Peluang anak lahir +%d%%	Child birth chance +%d%%
+Biaya latih penasihat -%d%%	Advisor training cost -%d%%
+Prestise dari kampanye +%d%%	Prestige from campaign +%d%%
+Kepala Begal	Bandit Chief
+Pemimpin Pemberontak	Rebel Leader
+Bajak Laut Selat	Strait Pirates
+Panglima Lalim	Tyrant Warlord
+Juru Tulis	Scribe
+Hakim	Judge
+Adipati	Duke
+Menteri Muda	Junior Minister
+Jamuan Sederhana	Simple Banquet
+Pesta Agung	Grand Feast
+Interogasi	Interrogate
+Gertak	Intimidate
+Kerjakan urusan kota 10 kali	Do city affairs 10 times
+Tarik pajak 5 kali	Collect taxes 5 times
+Kelola sawah 5 kali	Manage farms 5 times
+Rekrut prajurit 5 kali	Recruit troops 5 times
+Latih penasihat 5 kali	Train advisors 5 times
+Menangkan 3 tahap kampanye	Win 3 campaign stages
+Kunjungi selir 3 kali	Visit consorts 3 times
+Didik anak 3 kali	Educate children 3 times
+Rekrut penasihat 1 kali	Recruit an advisor once
+Kumpulkan 3000 perak dari pajak	Collect 3000 silver from taxes
+Sumbang ke aliansi 1 kali	Donate to the alliance once
+Serang bos aliansi 2 kali	Attack the alliance boss 2 times
+Serang benteng dalam perang aliansi 2 kali	Attack forts in the alliance war 2 times
+Interogasi tahanan 3 kali	Interrogate prisoners 3 times
+Adakan perjamuan 1 kali	Hold a banquet once
+Bertarung di arena 3 kali	Fight in the arena 3 times
+Festival Panen	Harvest Festival
+Lumbung rakyat penuh! Kelola sawah dan didik anak untuk mengumpulkan poin.	The people's granaries are full! Manage farms and educate children to earn points.
+Hasil Kelola Sawah +50%	Farm Management yield +50%
+Turnamen Ksatria	Knights' Tournament
+Para ksatria berlomba di medan laga. Menangkan kampanye dan latih penasihat.	Knights compete on the battlefield. Win campaigns and train advisors.
+Prajurit gugur di kampanye -20%	Soldiers lost in campaign -20%
+Pasar Malam	Night Market
+Pedagang dari seluruh negeri datang. Tarik pajak dan rekrut prajurit.	Merchants arrive from across the land. Collect taxes and recruit troops.
+Hasil Tarik Pajak +50%	Tax Collection yield +50%
+Pesta Istana	Palace Festival
+Istana berhias bunga. Kunjungi selir, didik dan nikahkan anak.	The palace is adorned with flowers. Visit consorts, educate and marry off children.
+Peluang anak lahir +15%	Child birth chance +15%
+Ritual Purnama	Full Moon Ritual
+Bulan purnama memanggil para legenda. Rekrut penasihat dan urus kota.	The full moon calls the legends. Recruit advisors and manage the city.
+Peluang Legenda di Rekrut 4% menjadi 7%	Legend chance in Recruit raised from 4% to 7%
+Urusan kota apa saja	Any city affair
+Tarik pajak	Collect taxes
+Kelola sawah	Manage farms
+Rekrut prajurit	Recruit troops
+Latih penasihat	Train advisors
+Menang kampanye	Win a campaign stage
+Kunjungi selir	Visit consorts
+Didik anak	Educate children
+Nikahkan anak	Marry off a child
+Rekrut penasihat (per tarikan)	Recruit advisors (per pull)
+Serang bos aliansi	Attack the alliance boss
+Sumbang ke aliansi	Donate to the alliance
+Menang di arena	Win in the arena
+Serang benteng dalam perang aliansi	Attack forts in the alliance war
+Terbang tinggi bersama!	Soaring high together!
+Damai, makmur, sejahtera.	Peace, prosperity, welfare.
+Kuat di medan laga.	Strong on the battlefield.
+Sumbang Perak	Donate Silver
+Sumbang Pangan	Donate Food
+Sumbang Emas	Donate Gold
+Kantong Emas	Gold Pouch
+Peti Perak	Silver Chest
+Lumbung Pangan	Food Granary
+Pasukan Bantuan	Reinforcements
+Peti Emas Besar	Large Gold Chest
+Gulungan Latihan	Training Scroll
+Batu Bintang	Star Stone
+Buto Ijo	Buto Ijo
+Gerbang Utara	North Gate
+Menara Timur	East Tower
+Benteng Barat	West Fort
+Lumbung Selatan	South Granary
+Keraton Inti	Inner Palace
+Halo semua!	Hello everyone!
+Ayo serang bos!	Let's attack the boss!
+Terima kasih!	Thank you!
+Siap, gas perang!	Ready, let's go to war!
+Selamat pagi semuanya!	Good morning, everyone!
+Halo, para Tuan!	Hello, my Lords!
+Ada yang sedang main?	Anyone playing right now?
+Semangat hari ini, kawan!	Keep it up today, friends!
+{boss} tinggal {hp}% lagi, ayo serang!	{boss} has only {hp}% left, let's attack!
+Sudah serang {boss} hari ini?	Already attacked {boss} today?
+Jangan lupa serangan bos ya!	Don't forget the boss attacks!
+{boss} sudah tumbang! Jangan lupa ambil hadiahnya.	{boss} has fallen! Don't forget to claim the reward.
+Hebat, {boss} kalah minggu ini!	Great, {boss} is defeated this week!
+Kita unggul {ours}-{theirs} melawan {enemy}! Pertahankan!	We're ahead {ours}-{theirs} against {enemy}! Hold the line!
+{enemy} mulai kewalahan, terus tekan!	{enemy} is starting to struggle, keep pushing!
+Kita tertinggal {ours}-{theirs}, ayo serang benteng {enemy}!	We're behind {ours}-{theirs}, let's attack {enemy}'s forts!
+Butuh bantuan di perang melawan {enemy}!	Need help in the war against {enemy}!
+Jangan lupa sumbangan harian, aliansi butuh exp.	Don't forget the daily donation, the alliance needs exp.
+Sudah sumbang hari ini? Jasanya bisa ditukar di toko.	Donated today? Merit can be exchanged in the shop.
+Tips: latih penasihat berkekuatan tinggi untuk kampanye.	Tip: train high-Strength advisors for the campaign.
+Event minggu ini {event}, jangan sampai lewat!	This week's event is {event}, don't miss it!
+Rekrut gratis tiap hari, jangan lupa ya.	Free recruit every day, don't forget.
+Misi harian itu sumber emas paling gampang.	Daily missions are the easiest source of gold.
+Ada yang dapat Legenda dari rekrut?	Anyone got a Legend from recruiting?
+Arena hari ini ramai sekali.	The arena is really busy today.
+Siapa yang sudah liga Emas?	Who's in the Gold league already?
+Panen tahun ini melimpah!	This year's harvest is abundant!
+Istirahat dulu, nanti lanjut lagi.	Taking a break, back later.
+Halo juga, {player}!	Hello to you too, {player}!
+Hai {player}, selamat datang!	Hi {player}, welcome!
+Salam, {player}!	Greetings, {player}!
+Sama-sama!	You're welcome!
+Siap, kapan saja!	Ready, anytime!
+Kita kan satu aliansi.	We're one alliance, after all.
+Ayo, saya baru saja serang {boss}!	Come on, I just attacked {boss}!
+{boss} tinggal {hp}%, sedikit lagi!	{boss} has {hp}% left, almost there!
+Saya fokus ke benteng berikutnya!	I'm focusing on the next fort!
+Skor kita {ours} lawan {theirs}, ayo!	Our score is {ours} vs {theirs}, let's go!
+Coba latih penasihat dan rekrut prajurit dulu.	Try training advisors and recruiting troops first.
+Lihat menu Panduan di Kota, lengkap di sana.	Check the Guide menu in the City, it's all there.
+Kerjakan misi harian, emasnya lumayan.	Do the daily missions, the gold is decent.
+Siap!	Ready!
+Setuju!	Agreed!
+Mantap, {player}!	Awesome, {player}!
+Hahaha, betul juga.	Hahaha, true enough.
+Oke, lanjutkan!	Okay, carry on!
+Terima kasih atas sumbangannya, {player}!	Thanks for the donation, {player}!
+Mantap sumbangannya!	Great donation!
+Serangan yang hebat!	Great attack!
+Bagus, {boss} makin lemah!	Nice, {boss} is getting weaker!
+Benteng direbut! Luar biasa!	Fort captured! Amazing!
+Hidup {alliance}!	Long live {alliance}!
+Perunggu	Bronze
+Perak	Silver
+Emas	Gold
+Berlian	Diamond
+Pasukan Bayaran	Mercenary Troops
+Tiket Rekrut	Recruit Ticket
+Teh Semangat	Spirit Tea
+Selamat datang, Tuan! Saya Sekar Pandita, penasihat Anda. Mari saya tunjukkan cara memimpin kota ini.	Welcome, my Lord! I am Sekar Pandita, your advisor. Let me show you how to lead this city.
+Ini sumber daya Anda: Perak, Pangan, Prajurit, dan Emas. Semuanya dibutuhkan untuk membangun kekuatan.	These are your resources: Silver, Food, Soldiers, and Gold. You need all of them to build your power.
+Tarik pajak dari rakyat untuk mendapat perak. Ketuk \"Kerjakan\" pada Tarik Pajak.	Collect taxes from the people to earn silver. Tap \"Work\" on Collect Taxes.
+Bagus! Sekarang rekrut prajurit untuk pasukan Anda.	Well done! Now recruit soldiers for your army.
+Urusan kota terisi lagi seiring waktu, bahkan saat game ditutup. Sekarang buka menu Penasihat.	City affairs refill over time, even while the game is closed. Now open the Advisors menu.
+Penasihat adalah kekuatan Anda. Latih penasihat dengan perak untuk menaikkan atributnya.	Advisors are your strength. Train advisors with silver to raise their attributes.
+Kekuatan penasihat menentukan hasil pertempuran. Ayo ke medan perang! Buka menu Kampanye.	Your advisors' Strength decides battles. To the battlefield! Open the Campaign menu.
+Serang musuh untuk mendapat perak, prestise, dan emas. Ketuk \"SERANG!\".	Attack enemies to earn silver, prestige, and gold. Tap \"ATTACK!\".
+Emas bisa dipakai merekrut penasihat baru. Buka menu Rekrut.	Gold can be used to recruit new advisors. Open the Recruit menu.
+Anda punya satu rekrut gratis setiap hari. Cobalah sekarang!	You get one free recruit every day. Try it now!
+Di Istana Anda bisa mengunjungi selir dan membesarkan anak. Buka menu Istana.	In the Palace you can visit consorts and raise children. Open the Palace menu.
+Kunjungi selir untuk menambah keakraban. Siapa tahu seorang anak akan lahir!	Visit consorts to increase intimacy. Perhaps a child will be born!
+Selesaikan misi harian dan ambil hadiah login setiap hari untuk mendapat Emas. Tombolnya ada di sini.	Complete daily missions and claim the login reward every day to earn Gold. The buttons are here.
+Hebat, Tuan! Anda siap memimpin. Terimalah hadiah dari rakyat: 100 emas dan 2000 perak.	Splendid, my Lord! You are ready to lead. Accept this gift from the people: 100 gold and 2000 silver.
+Aliansi Terbuka!	Alliance Unlocked!
+Bergabunglah dengan aliansi untuk bonus hasil urusan kota, sumbangan harian, toko aliansi, dan bos mingguan Buto Ijo yang dilawan bersama.	Join an alliance for city affair yield bonuses, daily donations, the alliance shop, and the weekly Buto Ijo boss fought together.
+Arena Terbuka!	Arena Unlocked!
+Tantang para tuan lain di Arena! Naikkan poin untuk mencapai liga lebih tinggi dan raih hadiah musim setiap minggu.	Challenge other lords in the Arena! Earn points to reach higher leagues and claim season rewards every week.
+Kota	City
+Kerjakan urusan kota untuk perak, pangan, dan prajurit. Prajurit baru makan pangan, jadi kelola sawah juga. Urusan terisi 1 tiap menit. Kumpulkan prestise untuk naik jabatan: batas level dan hasil meningkat.	Do city affairs for silver, food, and soldiers. New soldiers eat food, so manage the farms too. Affairs refill 1 per minute. Gather prestige to be promoted: level caps and yields increase.
+Penasihat	Advisors
+Latih penasihat dengan perak. Kekuatan menentukan kampanye dan arena, Kecerdasan hasil pajak, Politik hasil sawah, Karisma jumlah prajurit.	Train advisors with silver. Strength drives campaign and arena, Intelligence tax yield, Politics farm yield, Charisma troop numbers.
+Rekrut	Recruit
+Rekrut penasihat dengan emas: Legenda 4%, Epik 21%. x10 dijamin Epik, Legenda dijamin dalam 50 tarikan. Duplikat menambah bintang.	Recruit advisors with gold: Legend 4%, Epic 21%. x10 guarantees an Epic, a Legend is guaranteed within 50 pulls. Duplicates add stars.
+Kampanye	Campaign
+Kalahkan musuh tahap demi tahap. Korban bergantung pada kekuatan Anda dibanding musuh. Tiap tahap ke-5 memberi bonus emas.	Defeat enemies stage by stage. Losses depend on your Strength versus the enemy's. Every 5th stage gives bonus gold.
+Istana	Palace
+Kunjungi selir untuk keakraban (+Karisma) dan peluang anak. Didik anak dengan pangan, lalu nikahkan untuk bonus atribut permanen.	Visit consorts for intimacy (+Charisma) and a chance of children. Educate children with food, then marry them off for permanent attribute bonuses.
+Aliansi	Alliance
+Terbuka di Tahap 5. Sumbang tiap hari, lawan bos mingguan, dan belanja di toko aliansi dengan Jasa.	Unlocks at Stage 5. Donate daily, fight the weekly boss, and shop at the alliance shop with Merit.
+Arena	Arena
+Terbuka di Tahap 8. Tantang lawan dengan tiket harian, naik liga, dan tukar koin arena di toko.	Unlocks at Stage 8. Challenge opponents with daily tickets, climb leagues, and exchange arena coins in the shop.
+Harian & Mingguan	Daily & Weekly
+Ambil hadiah login, selesaikan misi harian, dan kumpulkan poin event mingguan. Semuanya sumber emas utama.	Claim the login reward, complete daily missions, and collect weekly event points. They are the main sources of gold.
+Paket Pemula	Starter Pack
+Sekali beli: 500 emas, 50.000 perak, 20.000 prajurit, dan penasihat Epik Wening Kirana.	One-time purchase: 500 gold, 50,000 silver, 20,000 soldiers, and the Epic advisor Wening Kirana.
+Kartu Bulanan	Monthly Card
+Langsung 300 emas, lalu ambil 100 emas setiap hari selama 30 hari (total 3.300 emas).	300 gold instantly, then claim 100 gold every day for 30 days (3,300 gold total).
+60 Emas	60 Gold
+330 Emas	330 Gold
+680 Emas	680 Gold
+1.380 Emas	1,380 Gold
+3.280 Emas	3,280 Gold
+Hasil urusan kota +%d%%	City affair yields +%d%%
+Kapasitas urusan & energi kunjungan +%d	Affair capacity & visit energy +%d
+Tiket arena harian +%d	Daily arena tickets +%d
+Sumbangan aliansi harian +%d	Daily alliance donations +%d
+Serangan bos aliansi harian +%d	Daily alliance boss attacks +%d
+Serangan perang aliansi harian +%d	Daily alliance war attacks +%d
+Prestise	Prestige
+Top 1%	Top 1%
+Top 5%	Top 5%
+Top 20%	Top 20%
+Top 50%	Top 50%
+Peserta	Participant
+Penasihat pilihan naik 1 level tanpa biaya (tetap mengikuti batas jabatan).	The chosen advisor gains 1 level for free (still limited by your rank).
+Penasihat pilihan +1 bintang (+20% atribut).	The chosen advisor gains +1 star (+20% attributes).
+Pil Keakraban	Intimacy Pill
+Keakraban selir pilihan +10.	The chosen consort's intimacy +10.
+Rekrut 1 penasihat tanpa emas (pakai di halaman Rekrut).	Recruit 1 advisor without gold (use it on the Recruit page).
+Mengisi penuh semua urusan kota dan energi kunjungan.	Fully refills all city affairs and visit energy.
+Berisi 10.000 perak.	Contains 10,000 silver.
+Karung Pangan	Food Sack
+Berisi 10.000 pangan.	Contains 10,000 food.
+Surat Wajib Militer	Conscription Letter
+Berisi 5.000 prajurit.	Contains 5,000 soldiers.
+Kepala Desa yang Baru	The New Village Head
+Tuan, desa ini sudah lama tanpa pemimpin. Begal menjarah lumbung, rakyat ketakutan.	My Lord, this village has long been without a leader. Bandits loot the granary and the people live in fear.
+Beri saya prajurit, Tuan. Saya akan mengusir para begal dari perbatasan desa!	Give me soldiers, my Lord. I will drive the bandits from the village border!
+Mulai hari ini, desa ini di bawah perlindunganku. Kita bangun kembali bersama.	From this day on, this village is under my protection. We will rebuild it together.
+Usir begal: menangkan Tahap 1	Drive out the bandits: win Stage 1
+Latih seorang penasihat ke level 3	Train an advisor to level 3
+Capai kekuatan 80	Reach 80 power
+Tangan Besi	Iron Hand
+Kabar Tuan sampai ke kota kecamatan. Para pejabat menunggu bukti kepemimpinan Tuan.	News of you has reached the district town. The officials await proof of your leadership.
+Kumpulkan penasihat yang cakap dan buktikan diri di medan perang. Jabatan Camat menanti.	Gather capable advisors and prove yourself on the battlefield. The District Chief post awaits.
+Taklukkan Tahap 5	Conquer Stage 5
+Miliki 4 penasihat	Have 4 advisors
+Kumpulkan 300 prestise	Gather 300 prestige
+Naik jabatan menjadi Camat	Be promoted to District Chief
+Keluarga Bangsawan	A Noble Family
+Tuan selalu sibuk dengan urusan negeri. Istana terasa sepi tanpa tawa anak-anak.	You are always busy with affairs of state. The palace feels empty without children's laughter.
+Para bangsawan menghormati tuan yang punya keluarga dan sekutu. Aliansi akan memperkuat kita.	Nobles respect a lord with a family and allies. An alliance will make us stronger.
+Dikaruniai seorang anak	Be blessed with a child
+Capai total keakraban 20	Reach 20 total intimacy
+Bergabung dengan aliansi	Join an alliance
+Taklukkan Tahap 8	Conquer Stage 8
+Panggung Bupati	The Regent's Stage
+Kabupaten ini butuh pemimpin yang disegani di arena dan didukung pejabat yang setia.	This regency needs a leader respected in the arena and backed by loyal officials.
+Para tuan dari seluruh negeri berlaga di arena. Tunjukkan kekuatan kita, Tuan!	Lords from across the land compete in the arena. Show them our strength, my Lord!
+Naik jabatan menjadi Bupati	Be promoted to Regent
+Capai kekuatan 1.000	Reach 1,000 power
+Menangi 3 pertarungan arena	Win 3 arena battles
+Angkat seorang anak menjadi pejabat	Appoint a child as an official
+Badai di Perbatasan	Storm on the Border
+Hahaha! Tanah ini akan menjadi milik Panglima Lalim! Siapa yang berani menghalangiku?	Hahaha! This land will belong to the Tyrant Warlord! Who dares to stand in my way?
+Saya, Tuan. Bersama pasukan dan para penasihat terbaik, kita hancurkan pemberontakan ini.	I do, my Lord. With our army and the finest advisors, we will crush this rebellion.
+Hancurkan pemberontakan: Tahap 20	Crush the rebellion: Stage 20
+Naik jabatan menjadi Gubernur	Be promoted to Governor
+Kumpulkan total 5 bintang penasihat	Gather 5 advisor stars in total
+Menuju Istana Raja	Road to the Royal Palace
+Negeri ini menanti pemimpin yang bijak. Jalan menuju istana raja terbuka bagi Tuan.	The land awaits a wise leader. The road to the royal palace is open to you.
+Buktikan bahwa Tuan layak menjadi tangan kanan raja: Perdana Menteri negeri ini.	Prove you are worthy of being the king's right hand: Prime Minister of this land.
+Taklukkan Tahap 40	Conquer Stage 40
+Capai kekuatan 10.000	Reach 10,000 power
+Menjadi Perdana Menteri	Become Prime Minister
+Anda	You
+Data di perangkat Anda	Data on your device
+Progres game (save.json), pengaturan, statistik bermain, dan laporan crash disimpan hanya di penyimpanan aplikasi pada perangkat ini. Game tidak memiliki akun atau server dan tidak mengirim data ini ke mana pun.	Game progress (save.json), settings, play statistics, and crash reports are stored only in the app's storage on this device. The game has no accounts or servers and does not send this data anywhere.
+Pemain lain	Other players
+Anggota aliansi, lawan arena, chat, dan papan peringkat adalah simulasi di perangkat Anda. Pesan chat yang Anda ketik tidak dikirim ke siapa pun.	Alliance members, arena opponents, chat, and leaderboards are simulated on your device. Chat messages you type are not sent to anyone.
+Pembelian dalam aplikasi	In-app purchases
+Pembayaran diproses oleh Google Play. Game hanya menerima konfirmasi pembelian (ID produk dan token), tidak pernah data kartu atau rekening Anda.	Payments are processed by Google Play. The game only receives purchase confirmations (product ID and token), never your card or bank details.
+Notifikasi	Notifications
+Pengingat dijadwalkan secara lokal oleh perangkat. Matikan kapan saja di Pengaturan atau pengaturan Android.	Reminders are scheduled locally by your device. Turn them off anytime in Settings or in Android settings.
+Laporan masalah	Problem reports
+Tombol Salin Laporan hanya menyalin teks ke clipboard. Anda yang memutuskan apakah akan mengirimkannya ke pengembang.	The Copy Report button only copies text to the clipboard. You decide whether to send it to the developer.
+Menghapus data	Deleting data
+Hapus Statistik menghapus statistik bermain. Mulai Ulang menghapus progres. Menghapus aplikasi menghapus semua data game dari perangkat.	Clear Statistics deletes play statistics. Restart deletes your progress. Uninstalling the app deletes all game data from the device.
+Tarik Pajak	Collect Taxes
+Kelola Sawah	Manage Farms
+Rekrut Prajurit	Recruit Troops
+Prestise belum cukup untuk naik jabatan.	Not enough prestige to be promoted.
+Selamat! Anda kini menjabat sebagai %s. +%d emas.	Congratulations! You now serve as %s. +%d gold.
+Penasihat belum direkrut.	Advisor not recruited yet.
+Level maksimal untuk jabatan ini. Naikkan jabatan!	Maximum level for this rank. Get promoted!
+Perak tidak cukup (butuh %d).	Not enough silver (need %d).
+%s naik ke level %d.	%s reached level %d.
+Urusan tidak dikenal.	Unknown affair.
+Pangan habis. Kelola sawah dulu untuk memberi makan prajurit baru.	Out of food. Manage the farms first to feed new soldiers.
+Belum ada urusan baru. Tunggu sebentar.	No new affairs yet. Please wait a moment.
++%d %s, -%d Pangan	+%d %s, -%d Food
+Pangan	Food
+Prajurit	Soldiers
+Kalah di %s! %d prajurit gugur. Butuh sekitar %d prajurit.	Defeated at %s! %d soldiers fell. You need about %d soldiers.
+Menang di %s! -%d prajurit, +%d perak, +%d prestise, +%d emas.	Victory at %s! -%d soldiers, +%d silver, +%d prestige, +%d gold.
+Rampasan: %s.	Loot: %s.
+Tertangkap: %s!	Captured: %s!
+Jumlah rekrut tidak valid.	Invalid recruit amount.
+Tidak punya Tiket Rekrut.	You have no Recruit Ticket.
+Rekrut gratis belum tersedia.	Free recruit is not available yet.
+Emas tidak cukup (butuh %d).	Not enough gold (need %d).
+Rekrut selesai.	Recruitment complete.
+Misi tidak ditemukan.	Mission not found.
+Hadiah misi sudah diambil.	Mission reward already claimed.
+Misi belum selesai.	Mission not completed yet.
+Hadiah misi: %s, +%d poin aktivitas, +%d poin event.	Mission reward: %s, +%d activity points, +%d event points.
+Peti tidak ditemukan.	Chest not found.
+Peti sudah dibuka.	Chest already opened.
+Poin aktivitas belum cukup.	Not enough activity points.
+Peti dibuka: %s.	Chest opened: %s.
+Hadiah event tidak ditemukan.	Event reward not found.
+Hadiah event sudah diambil.	Event reward already claimed.
+Poin event belum cukup.	Not enough event points.
+Hadiah %s: %s.	%s reward: %s.
+Aliansi tidak ditemukan.	Alliance not found.
+Menangkan Tahap %d untuk membuka Aliansi.	Win Stage %d to unlock Alliances.
+Anda sudah tergabung dalam aliansi.	You are already in an alliance.
+Tunggu jeda setelah keluar aliansi sebelum bergabung lagi.	Wait for the cooldown after leaving an alliance before joining again.
+Anda bergabung dengan %s. Selamat datang!	You joined %s. Welcome!
+%s: \"Selamat datang di %s, Tuan!\"	%s: \"Welcome to %s, my Lord!\"
+Anda bergabung dengan %s.	You joined %s.
+Anda bergabung dengan %s!	You joined %s!
+Anda belum tergabung dalam aliansi.	You are not in an alliance yet.
+Anda keluar dari %s.	You left %s.
+Ketua	Leader
+Wakil	Deputy
+Anggota	Member
+Para anggota menyumbang %d exp sejak kunjungan terakhir Anda.	Members donated %d exp since your last visit.
+Aliansi naik ke level %d!	The alliance reached level %d!
+Jenis sumbangan tidak dikenal.	Unknown donation type.
+Batas sumbangan hari ini sudah habis.	Today's donation limit has been reached.
+%s tidak cukup.	Not enough %s.
+Anda: %s (+%d exp).	You: %s (+%d exp).
+%s: +%d exp aliansi, +%d jasa.	%s: +%d alliance exp, +%d merit.
+Barang tidak ditemukan.	Item not found.
+Butuh aliansi level %d.	Requires alliance level %d.
+Batas pembelian hari ini sudah habis.	Today's purchase limit has been reached.
+Jasa tidak cukup (butuh %d).	Not enough merit (need %d).
+Membeli %s: %s.	Bought %s: %s.
+%s Lv.%d	%s Lv.%d
+%s sudah dikalahkan minggu ini.	%s has already been defeated this week.
+Serangan hari ini sudah habis. Kembali besok!	No attacks left today. Come back tomorrow!
+Anda memberi %d kerusakan ke %s! +%d jasa.	You dealt %d damage to %s! +%d merit.
+Anda menyerang %s: %d kerusakan.	You attacked %s: %d damage.
+%s tumbang!	%s has fallen!
+%s berhasil dikalahkan!	%s has been defeated!
+%s belum dikalahkan.	%s has not been defeated yet.
+Hadiah bos sudah diambil.	Boss reward already claimed.
+Anda harus ikut menyerang untuk mendapat hadiah.	You must take part in the attack to get the reward.
+Hadiah kemenangan: +%d emas, +%d jasa.	Victory reward: +%d gold, +%d merit.
+Bergabunglah dengan aliansi untuk chat.	Join an alliance to chat.
+Pesan kosong.	Empty message.
+Pesan terlalu panjang (maks. %d huruf).	Message too long (max. %d characters).
+Tunggu sebentar sebelum mengirim lagi.	Wait a moment before sending again.
+Tuan	my Lord
+Perang melawan %s dimulai!	War against %s has begun!
+Pasukan kita merebut %s!	Our troops captured %s!
+Musuh merebut %s kita!	The enemy captured our %s!
+Bergabunglah dengan aliansi untuk ikut perang.	Join an alliance to take part in the war.
+Benteng tidak ditemukan.	Fort not found.
+%s sudah direbut.	%s has already been captured.
+Rebut %d benteng lain dulu untuk menyerang Keraton Inti.	Capture %d other forts first to attack the Inner Palace.
+Serangan perang hari ini sudah habis.	No war attacks left today.
+Anda menyerang %s: %d kerusakan, +%d jasa perang.	You attacked %s: %d damage, +%d war merit.
+%s berhasil direbut! +%d jasa perang.	%s captured! +%d war merit.
+Anda merebut %s!	You captured %s!
+Anda menyerang %s (%d kerusakan).	You attacked %s (%d damage).
+Tidak ada hadiah perang.	No war reward.
++%d emas	+%d gold
++%d jasa	+%d merit
+Hadiah perang (%s): %s.	War reward (%s): %s.
+Selamat datang di Arena! Kalahkan lawan untuk naik liga.	Welcome to the Arena! Defeat opponents to climb the leagues.
+Musim baru dimulai! Liga musim lalu: %s.	A new season has begun! Last season's league: %s.
+Batas pembelian tiket hari ini sudah habis.	Today's ticket purchase limit has been reached.
+Tiket arena +1.	Arena ticket +1.
+Batas menyegarkan lawan hari ini sudah habis.	Today's opponent refresh limit has been reached.
+Daftar lawan diperbarui.	Opponent list refreshed.
+Menangkan Tahap %d untuk membuka Arena.	Win Stage %d to unlock the Arena.
+Lawan tidak ditemukan.	Opponent not found.
+Tiket arena habis. Beli tiket atau kembali besok.	Out of arena tickets. Buy a ticket or come back tomorrow.
+Menang	Victory
+Kalah	Defeat
+Tidak ada hadiah musim.	No season reward.
+Hadiah musim liga %s: %s.	%s league season reward: %s.
+Koin arena tidak cukup (butuh %d).	Not enough arena coins (need %d).
+Produk tidak dikenal: %s	Unknown product: %s
+Transaksi ini sudah diproses.	This transaction has already been processed.
+bonus pembelian pertama	first purchase bonus
+kartu aktif %d hari	card active for %d days
+%s hanya bisa dibeli sekali.	%s can only be purchased once.
+%s bergabung	%s joined
+%s +1 bintang	%s +1 star
++%d poin VIP	+%d VIP points
+Pembelian %s berhasil: %s.	Purchase of %s succeeded: %s.
+Kartu Bulanan tidak aktif.	Monthly Card is not active.
+Emas Kartu Bulanan hari ini sudah diambil.	Today's Monthly Card gold has already been claimed.
+Kartu Bulanan: +%d emas. Sisa %d hari.	Monthly Card: +%d gold. %d days left.
+naik ke VIP %d (hadiah %s)	reached VIP %d (rewards %s)
+naik ke VIP %d	reached VIP %d
+Capai VIP 1 untuk hadiah harian VIP.	Reach VIP 1 for the VIP daily reward.
+Hadiah harian VIP sudah diambil hari ini.	VIP daily reward already claimed today.
+Hadiah harian VIP %d: %s.	VIP %d daily reward: %s.
+Paket VIP tidak ditemukan.	VIP pack not found.
+Capai VIP %d untuk membeli paket ini.	Reach VIP %d to buy this pack.
+Paket VIP %d sudah dibeli.	VIP %d pack already purchased.
+Paket VIP %d: %s.	VIP %d pack: %s.
+Tidak ada hadiah peringkat.	No ranking reward.
+Hadiah peringkat mingguan (%s, #%d): +%d emas.	Weekly ranking reward (%s, #%d): +%d gold.
+Misi utama selesai: %s.	Main quest complete: %s.
+Semua bab sudah tamat.	All chapters are complete.
+Selesaikan semua misi bab ini dulu.	Complete all quests in this chapter first.
+Bab \"%s\" tamat! %s.	Chapter \"%s\" complete! %s.
+Selamat, kisah Anda sebagai Perdana Menteri telah tamat!	Congratulations, your story as Prime Minister is complete!
+Anak tidak ditemukan.	Child not found.
+%s belum dewasa.	%s is not an adult yet.
+%s sudah ikut ujian hari ini. Coba lagi besok.	%s already took the exam today. Try again tomorrow.
+Kursi pejabat sudah penuh (%d).	All official posts are filled (%d).
+%s belum lulus ujian. Coba lagi besok, atau nikahkan.	%s failed the exam. Try again tomorrow, or marry them off.
+%s lulus ujian dan menjadi %s! Hasil urusan kota +%d%%.	%s passed the exam and became %s! City affair yields +%d%%.
+Jenis perjamuan tidak dikenal.	Unknown banquet type.
+%s sudah diadakan hari ini.	%s has already been held today.
+%d tamu hadir	%d guests attended
++%d prestise	+%d prestige
++%d exp aliansi	+%d alliance exp
+%s meriah! %s.	%s was a lively affair! %s.
+Undangan tidak ditemukan.	Invitation not found.
+Anda sudah menghadiri perjamuan ini.	You already attended this banquet.
+Perak untuk hadiah tidak cukup (butuh %d).	Not enough silver for a gift (need %d).
+Anda menghadiri perjamuan %s: -%d perak, +%d prestise.	You attended %s's banquet: -%d silver, +%d prestige.
+Tahanan tidak ditemukan.	Prisoner not found.
+Cara interogasi tidak dikenal.	Unknown interrogation method.
+Batas interogasi hari ini sudah habis.	Today's interrogation limit has been reached.
+Pangan tidak cukup (butuh %d).	Not enough food (need %d).
+%s: %s -%d daya tahan, +%d perak.	%s: %s -%d endurance, +%d silver.
++%d perak	+%d silver
+%s mengaku! %s.	%s confessed! %s.
+%s dibebaskan. Rakyat memuji kemurahan hati Anda: +%d prestise.	%s was released. The people praise your mercy: +%d prestige.
+Item tidak ada di tas.	Item is not in the bag.
+Pilih penasihat.	Choose an advisor.
+Level maksimal untuk jabatan ini.	Maximum level for this rank.
+Bintang %s sudah penuh.	%s already has maximum stars.
+Pilih selir.	Choose a consort.
+Keakraban dengan %s +10.	Intimacy with %s +10.
+Semua urusan dan energi kunjungan terisi penuh.	All affairs and visit energy fully refilled.
+Pakai Tiket Rekrut di halaman Rekrut.	Use Recruit Tickets on the Recruit page.
+Item ini tidak bisa dipakai.	This item cannot be used.
+Dibuka: %s.	Opened: %s.
+Tutorial sudah selesai.	Tutorial already completed.
+Tutorial selesai! %s.	Tutorial complete! %s.
+Tutorial dilewati. Buka Panduan di menu Kota kapan saja.	Tutorial skipped. Open the Guide in the City menu anytime.
+Hadiah login hari ini sudah diambil.	Today's login reward has already been claimed.
+Hadiah login Hari %d: %s, +%d poin VIP%s.	Login reward Day %d: %s, +%d VIP points%s.
+Belum dikenal.	Not met yet.
+Anda lelah. Tunggu energi kunjungan terisi.	You are tired. Wait for visit energy to refill.
+Keakraban dengan %s +%d.	Intimacy with %s +%d.
+Seorang anak lahir: %s (bakat %d/5)!	A child was born: %s (talent %d/5)!
+%s sudah dewasa.	%s is already an adult.
+%s masih beristirahat. Didik lagi dalam %d menit.	%s is still resting. Educate again in %d minutes.
+%s tumbuh ke level %d.	%s grew to level %d.
+%s menikah! %s mendapat +%d %s.	%s got married! %s gains +%d %s.
+Urusan kota penuh	City affairs are full
+Pajak, sawah, dan prajurit siap dikerjakan, Tuan.	Taxes, farms, and troops are ready, my Lord.
+Energi kunjungan penuh	Visit energy is full
+Para selir menanti kunjungan Tuan di istana.	Your consorts await your visit at the palace.
+Rekrut gratis siap	Free recruit ready
+Satu rekrut penasihat gratis menunggu di Balai Rekrut.	A free advisor recruit awaits at the Recruitment Hall.
+Hadiah login menunggu	Login reward waiting
+Ambil hadiah harian dan jaga rangkaian login Tuan.	Claim your daily reward and keep your login streak, my Lord.
+Kerajaan merindukan Tuan	The kingdom misses you
+Rakyat menunggu perintah. Urusan dan hadiah sudah menumpuk.	The people await your orders. Affairs and rewards are piling up.
+Nama minimal %d huruf (huruf, angka, spasi).	Name must be at least %d characters (letters, numbers, spaces).
+Nama tidak berubah.	Name unchanged.
+Mulai sekarang Anda dikenal sebagai %s.	From now on you are known as %s.
+Energi kunjungan	Visit energy
+Rekrut gratis sudah siap.	Free recruit is ready.
+Hari baru: misi harian dan batas harian telah direset.	New day: daily missions and daily limits have been reset.
+Hadiah login hari ini menunggu.	Today's login reward is waiting.
+Event mingguan baru dimulai: %s.	A new weekly event has begun: %s.
+%d pesan baru di chat aliansi.	%d new messages in alliance chat.
+Perang guild melawan %s berakhir: %s! Ambil hadiahnya.	Guild war against %s is over: %s! Claim your reward.
+Musim arena selesai. Hadiah liga siap diklaim.	The arena season is over. League rewards are ready to claim.
+Peringkat global minggu lalu sudah keluar. Ambil hadiahnya.	Last week's global rankings are out. Claim your reward.
+Kerajaan aman. Semua urusan menunggu perintah Tuan.	The kingdom is safe. All affairs await your orders.
+Anak	Children
+Misi selesai!	Mission complete!
+Peringkat	Rankings
+Login	Login
+Misi	Missions
+Kekuatan %s	Power %s	power
+VIP %d	VIP %d
+Berakhir dalam	Ends in
+Hadiah berikutnya dalam %02d:%02d:%02d	Next reward in %02d:%02d:%02d
+Reset dalam %02d:%02d:%02d	Resets in %02d:%02d:%02d
+Rekrut Gratis	Free Recruit
+Gratis lagi %02d:%02d:%02d	Free again in %02d:%02d:%02d
+Istirahat %02d:%02d	Resting %02d:%02d
+Didik  %s	Educate  %s
+·  +1 dalam %ds	·  +1 in %ds
+%d hari %s	%dd %s
+Hasil +%d %s · dari %s	Yield +%d %s · from %s
+Makan %d pangan	Eats %d food
+Urusan	Affairs
+Kerjakan	Work
+Jabatan: %s	Rank: %s
+Anda telah mencapai jabatan tertinggi!	You have reached the highest rank!
+Berikutnya %s · prestise %d/%d	Next: %s · prestige %d/%d
+Naik Jabatan	Get Promoted
+Pengaturan	Settings
+Panduan	Guide
+Hapus semua progres dan mulai dari awal?	Delete all progress and start over?
+Hapus	Delete
+Batal	Cancel
+Game baru dimulai.	New game started.
+Level %d / %d	Level %d / %d
+Latih  %s	Train  %s
+Bergabung setelah Tahap %d, atau lewat Rekrut	Joins after Stage %d, or via Recruit
+Hanya bisa didapat lewat Rekrut	Only obtainable via Recruit
+Prajurit musuh: %s	Enemy soldiers: %s
+Kekuatan musuh %d  ·  Anda %d	Enemy strength %d  ·  You %d
+Perkiraan gugur: %s dari %s prajurit	Expected losses: %s of %s soldiers
+Hadiah: %d perak	Reward: %d silver
+Hadiah: %d prestise	Reward: %d prestige
+Hadiah: %d emas%s	Reward: %d gold%s
+(tahap besar!)	(boss stage!)
+Tips: latih penasihat berkekuatan tinggi agar korban lebih sedikit. Rekrut prajurit di menu Kota.	Tip: train high-Strength advisors to reduce losses. Recruit troops in the City menu.
+Tutup	Close
+Misi Harian	Daily Missions
+Poin Aktivitas: %d / %d	Activity Points: %d / %d
+%d poin	%d pts
+Dibuka	Opened
+Buka	Open
+%s / %s   ·   %s, +%d poin	%s / %s   ·   %s, +%d pts
+Diambil	Claimed
+Klaim	Claim
+Pergi	Go
+%d hadiah siap diklaim!	%d rewards ready to claim!
+Poin event: %s	Event points: %s
+Lihat	View
+Bonus minggu ini:	This week's bonus:
+•  %s: +%d poin	•  %s: +%d pts
+•  Klaim misi harian: +%d poin	•  Claim daily missions: +%d pts
+·  %s lagi ke hadiah berikutnya	·  %s more to the next reward
+Arena Terkunci	Arena Locked
+Menangkan Tahap %d di Kampanye untuk membuka Arena.	Win Stage %d in the Campaign to unlock the Arena.
+Liga	League
+Poin arena %d · terbaik %d	Arena points %d · best %d
+%d poin lagi ke liga %s	%d more points to the %s league
+Menang %d · Kalah %d	Won %d · Lost %d
+Koin arena: %s	Arena coins: %s
+Hadiah akhir musim liga %s: %s	%s league end-of-season reward: %s
+Klaim hadiah musim lalu (%s)	Claim last season's reward (%s)
+Lawan	Opponents
+Toko	Shop
+Catatan	Log
+Catatan Pertarungan	Battle Log
++1  %d	+1  %d
+Segarkan (%d)	Refresh (%d)
+%s · %d poin	%s · %d pts
+Kekuatan %s (Anda %s)	Power %s (You %s)
+Peluang menang %d%% · menang +%d, kalah -%d	Win chance %d%% · win +%d, lose -%d
+Tantang	Challenge
+Peringkat Anda: #%d dari %d	Your rank: #%d of %d
+%s · sisa %d/%d hari ini	%s · %d/%d left today
+Bersiap!	Get ready!
+Lanjut	Next
+Ronde %d	Round %d
+Selesai	Done
+%+d poin arena · +%d koin arena%s	%+d arena points · +%d arena coins%s
+· +%d perak	· +%d silver
+Aliansi Terkunci	Alliance Locked
+Menangkan Tahap %d di Kampanye untuk membuka Aliansi.	Win Stage %d in the Campaign to unlock Alliances.
+Markas	Headquarters
+Bos	Boss
+Perang	War
+Chat (%d)	Chat (%d)
+Chat	Chat
+Level %d · exp %s / %s	Level %d · exp %s / %s
+Level %d (maksimal)	Level %d (max)
+Bonus hasil urusan kota +%d%%	City affair yield bonus +%d%%
+Jasa: %s	Merit: %s
+Pilih aliansi untuk bergabung. Anggota aliansi saling membantu: menyumbang, melawan bos mingguan, dan berbelanja di toko aliansi.	Choose an alliance to join. Alliance members help each other: donating, fighting the weekly boss, and shopping at the alliance shop.
+Level %d · %d anggota	Level %d · %d members
+Gabung	Join
+Bisa bergabung dalam %s	Can join in %s
+Sumbangan Harian	Daily Donations
+Sisa hari ini: %d / %d	Left today: %d / %d
+Biaya %s %s · +%d exp, +%d jasa	Cost %s %s · +%d exp, +%d merit
+Sumbang	Donate
+Kabar Aliansi	Alliance News
+Keluar dari Aliansi	Leave Alliance
+Keluar dari aliansi? Jasa dan progres aliansi akan hilang, dan Anda harus menunggu 24 jam untuk bergabung lagi.	Leave the alliance? Merit and alliance progress will be lost, and you must wait 24 hours to join again.
+Keluar	Leave
+HP %s / %s	HP %s / %s
+%s telah dikalahkan minggu ini! Bos baru muncul hari Senin.	%s has been defeated this week! A new boss appears on Monday.
+Klaim Hadiah (+%d emas, +%d jasa)	Claim Reward (+%d gold, +%d merit)
+Hadiah sudah diambil.	Reward already claimed.
+Anda tidak ikut menyerang, jadi tidak mendapat hadiah.	You did not take part in the attack, so you get no reward.
+Serangan tersisa hari ini: %d / %d	Attacks left today: %d / %d
+Kerusakan Anda: %s · anggota lain: %s	Your damage: %s · other members: %s
+Tiap serangan +%d jasa. Bila bos kalah, semua yang ikut menyerang mendapat %d emas dan %d jasa.	Each attack +%d merit. If the boss is defeated, everyone who attacked gets %d gold and %d merit.
+melawan %s	against %s
+Skor %d - %d · jasa perang Anda %d	Score %d - %d · your war merit %d
+Serangan tersisa %d / %d · jasa perang Anda %d	Attacks left %d / %d · your war merit %d
+Terkunci	Locked
+Direbut	Captured
+Serang	Attack
+Jatuh	Fallen
+Tulis pesan...	Write a message...
+Kirim	Send
+— %s · %s —	— %s · %s —
+%s · butuh aliansi level %d	%s · requires alliance level %d
+%d anggota · diurutkan berdasarkan kekuatan	%d members · sorted by power
+Kekuatan %s · Kerusakan bos %s	Power %s · Boss damage %s
+Kisah Tamat	The End
+Anda telah menjadi Perdana Menteri. Terima kasih telah bermain!	You have become Prime Minister. Thank you for playing!
+Bab %d: %s	Chapter %d: %s
+Semua misi selesai! Ambil hadiah bab.	All quests complete! Claim the chapter reward.
+Klaim (%d)	Claim (%d)
+Misi Utama	Main Quest
+Kisah dari Kepala Desa menuju Perdana Menteri	From Village Head to Prime Minister
+Semua bab telah tamat. Anda adalah Perdana Menteri negeri ini!	All chapters are complete. You are the Prime Minister of this land!
+Bab %d dari %d: %s	Chapter %d of %d: %s
+Cerita	Story
+Tamatkan Bab	Finish Chapter
+Bab %d\n%s	Chapter %d\n%s
+Mulai Bab	Begin Chapter
+Tas (%d)	Bag (%d)
+Tas	Bag
+Item dari misi, event, toko, dan kampanye	Items from missions, events, shops, and the campaign
+Pakai	Use
+Tas kosong. Item didapat dari misi harian, login, event, toko, dan tahap besar kampanye.	Your bag is empty. Items come from daily missions, logins, events, shops, and campaign boss stages.
+Kembali	Back
+%s: pilih %s	%s: choose %s
+Level %d · bintang %d	Level %d · %d stars
+Keakraban %d	Intimacy %d
+Pilih	Choose
+Peringkat Global	Global Rankings
+%s pemain · diperbarui tiap hari	%s players · updated daily
+Hadiah peringkat minggu lalu: %s (#%s)	Last week's ranking reward: %s (#%s)
+Klaim +%d Emas	Claim +%d Gold
+Mainkan fitur ini untuk masuk peringkat %s.	Play this feature to enter the %s rankings.
+%s %s · Top %s%%	%s %s · Top %s%%
+Hadiah akhir minggu bila bertahan: %s, +%d emas (dihitung dari Kekuatan).	End-of-week reward if you hold on: %s, +%d gold (based on Power).
+Aliansi Anda di peringkat #%d dari %d	Your alliance is ranked #%d of %d
+%s (%d anggota)	%s (%d members)
+Keuntungan khusus para Tuan	Special perks for Lords
+%d / %d poin ke VIP %d	%d / %d points to VIP %d
+Level VIP tertinggi!	Highest VIP level!
+1 poin VIP untuk setiap %s pembelian · +%d poin tiap klaim login harian	1 VIP point for every %s spent · +%d points per daily login claim
+Hadiah harian mulai VIP 1	Daily rewards start at VIP 1
+Hadiah Harian	Daily Reward
+Sudah diambil hari ini	Already claimed today
+Keuntungan VIP %d	VIP %d perks
+Aktif	Active
+Butuh %d poin VIP	Requires %d VIP points
+•  Hadiah harian:	•  Daily reward:
+•  Hadiah naik level:	•  Level-up reward:
+penasihat %s %s	%s advisor %s
+Dibeli	Purchased
+Toko Emas	Gold Shop
+Pembayaran lewat Google Play	Payment via Google Play
+MODE UJI · pembayaran disimulasikan	TEST MODE · payments are simulated
+Toko belum tersedia	Shop not available yet
+Mode Uji: tidak ada uang sungguhan yang ditagih. Di versi rilis, pembayaran diproses oleh Google Play.	Test Mode: no real money is charged. In the release version, payments are processed by Google Play.
+Toko belum tersedia. Pastikan terhubung ke internet dan Google Play.	Shop not available yet. Make sure you are connected to the internet and Google Play.
+%d + bonus %d emas	%d + %d bonus gold
+x2 untuk pembelian pertama! (+%d emas)	x2 on first purchase! (+%d gold)
+Aktif · sisa %d hari	Active · %d days left
+Ambil %d Emas Hari Ini	Claim %d Gold Today
+Pulihkan Pembelian	Restore Purchases
+Total pembelian: %s	Total purchases: %s
+Mode Uji	Test Mode
+Beli %s seharga %s?\n(Mode uji: tidak ada uang sungguhan yang ditagih.)	Buy %s for %s?\n(Test mode: no real money is charged.)
+Beli	Buy
+Fitur baru	New feature
+Lihat Sekarang	See Now
+Ringkasan semua fitur	Overview of all features
+Profil, suara, dan perangkat	Profile, sound, and device
+Belum diatur	Not set
+Simpan	Save
+Tampil di header, daftar anggota aliansi, arena, dan peringkat.	Shown in the header, alliance member list, arena, and rankings.
+Musik latar	Background music
+Efek suara	Sound effects
+Otomatis	Automatic
+Hemat baterai	Battery saver
+Batasi 30 FPS dan gambar ulang layar hanya saat ada perubahan.	Limit to 30 FPS and redraw the screen only when something changes.
+Pengingat saat urusan kota penuh, rekrut gratis siap, dan hadiah login.	Reminders when city affairs are full, the free recruit is ready, and the login reward is waiting.
+(Hanya di Android dengan plugin TlgNotify.)	(Android only, with the TlgNotify plugin.)
+Simpan Sekarang	Save Now
+Tersimpan	Saved
+Mulai Ulang	Restart
+Progres tersimpan otomatis tiap 15 detik dan saat game ditutup. Versi %s.	Progress is saved automatically every 15 seconds and when the game closes. Version %s.
+Statistik bermain	Play statistics
+Jumlah sesi, lama bermain, dan aksi. Hanya disimpan di perangkat ini, tidak dikirim ke mana pun.	Session count, play time, and actions. Stored only on this device, never sent anywhere.
+%d sesi · %d jam %d menit · %d hari aktif · %s aksi	%d sessions · %d h %d min · %d active days · %s actions
+Tidak ada crash tercatat.	No crashes recorded.
+Game terakhir berhenti tiba-tiba pada %s.	The game last stopped unexpectedly at %s.
+Salin Laporan	Copy Report
+Laporan disalin. Tempelkan di email ke pengembang.	Report copied. Paste it into an email to the developer.
+Kebijakan Privasi	Privacy Policy
+Hapus Statistik	Clear Statistics
+Statistik bermain dihapus.	Play statistics cleared.
+Ringkasan data yang disimpan game ini	Summary of the data this game stores
+Mati	Off
+Nyala	On
+Selamat Datang Kembali	Welcome Back
+Tuan pergi selama	You were away for
+Lanjutkan	Continue
+%d hari %d jam	%d days %d hours
+%d jam %d menit	%d hours %d minutes
+%d menit	%d minutes
+Hadiah Login Harian	Daily Login Reward
+Berturut-turut %d hari · Total %d hari	%d days in a row · %d days total
+Rangkaian login terputus, kalender dimulai lagi dari Hari 1.	Your login streak was broken, the calendar restarts from Day 1.
+Login setiap hari tanpa terputus. Hari 7 berisi hadiah besar!	Log in every day without a break. Day 7 holds a big reward!
+Klaim Hari %d	Claim Day %d
+Hari %d	Day %d
+Emas: %s	Gold: %s
+Legenda %d%% · Epik %d%% · Langka %d%%	Legend %d%% · Epic %d%% · Rare %d%%
+Legenda dijamin dalam %d tarikan	Legend guaranteed within %d pulls
+x1  ·  %d	x1  ·  %d
+x10  ·  %d	x10  ·  %d
+x10 dijamin minimal satu Epik. Duplikat menambah bintang (+%d%% atribut),	x10 guarantees at least one Epic. Duplicates add stars (+%d%% attributes),
+atau perak bila bintang sudah penuh.	or silver once stars are maxed.
+Pakai Tiket Rekrut (%d)	Use Recruit Ticket (%d)
+Emas didapat dari kampanye (bonus tiap 5 tahap) dan naik jabatan.	Gold comes from the campaign (bonus every 5 stages) and promotions.
+Beli Emas di Toko	Buy Gold in the Shop
+Daftar Penasihat	Advisor List
+Hasil Rekrut	Recruit Results
+Bintang %d	%d Stars
++%s perak	+%s silver
+Selir	Consorts
+Anak (%d)	Children (%d)
+Penjara (%d)	Prison (%d)
+Perjamuan	Banquet
+Energi Kunjungan	Visit Energy
+Energi	Energy
+Keakraban %d  ·  +%d Karisma	Intimacy %d  ·  +%d Charisma
+Kunjungi	Visit
+Anak  (%d/%d kursi)	Children  (%d/%d seats)
+Belum ada anak. Kunjungi selir untuk kesempatan mendapat keturunan.	No children yet. Visit consorts for a chance of offspring.
+Ibu: %s	Mother: %s
+Nikahkan	Marry Off
+Ujian %s	Exam %s
+Peluang lulus ujian %d%%	Exam pass chance %d%%
+Sudah ujian hari ini, coba lagi besok	Already took the exam today, try again tomorrow
+Anak yang telah menikah: %d	Children married off: %d
+Pejabat (%d/%d) · hasil urusan kota +%d%%	Officials (%d/%d) · city affair yields +%d%%
+Anak dewasa yang lulus Ujian Negara menjadi pejabat dan memberi bonus permanen.	Adult children who pass the State Exam become officials and grant permanent bonuses.
+Bakat %d/5 · hasil urusan kota +%d%%	Talent %d/5 · city affair yields +%d%%
+Penjara (%d/%d)	Prison (%d/%d)
+Interogasi tersisa hari ini: %d / %d · biaya %d pangan	Interrogations left today: %d / %d · cost %d food
+Tahanan ditangkap dari kemenangan kampanye. Patahkan daya tahannya sampai mengaku.	Prisoners are captured from campaign victories. Break their endurance until they confess.
+Penjara kosong. Menangkan kampanye untuk menangkap tahanan.	The prison is empty. Win campaign stages to capture prisoners.
+Daya tahan %s / %s · bila mengaku: +%s perak, +%d prestise	Endurance %s / %s · on confession: +%s silver, +%d prestige
+%s ~%s	%s ~%s
+Bebaskan (+%d prestise)	Release (+%d prestige)
+· +%d exp aliansi	· +%d alliance exp
+Biaya %s · %d+ tamu, %d+ prestise, %d hadiah%s	Cost %s · %d+ guests, %d+ prestige, %d gifts%s
+Adakan	Hold
+Sudah diadakan hari ini	Already held today
+Undangan Hari Ini	Today's Invitations
+Bawa hadiah %s perak · +%d prestise	Bring a gift of %s silver · +%d prestige
+Hadir	Attend
+Sudah hadir	Attended
+Lewati tutorial	Skip tutorial
+Lewati tutorial? Hadiah tutorial (100 emas dan 2000 perak) tidak akan diberikan.	Skip the tutorial? The tutorial reward (100 gold and 2000 silver) will not be given.
+Lewati	Skip
+Lanjutkan tutorial	Continue tutorial
+Pembelian gagal: %s	Purchase failed: %s
+Belum terhubung ke Google Play. Coba lagi sebentar.	Not connected to Google Play yet. Try again shortly.
+Toko belum tersedia di versi ini.	The shop is not available in this version.
+Tidak ada pembelian yang perlu dipulihkan.	No purchases to restore.
+(log tidak tersedia)	(log not available)
+Laporan masalah Top Lord Like	Top Lord Like problem report
+Versi: %s · %s %s	Version: %s · %s %s
+Perangkat: %s	Device: %s
+Sesi: %d · Main: %d menit	Sessions: %d · Played: %d minutes
+Crash terakhir: sesi mulai %s (versi %s), total %d crash tercatat	Last crash: session started %s (version %s), %d crashes recorded in total
+Anda menang melawan %s (%+d poin).	You won against %s (%+d points).
+Anda kalah melawan %s (%+d poin).	You lost against %s (%+d points).
+Menang melawan %s! %+d poin arena, +%d koin arena, +%d perak.	Victory against %s! %+d arena points, +%d arena coins, +%d silver.
+Kalah melawan %s! %+d poin arena, +%d koin arena.	Defeat against %s! %+d arena points, +%d arena coins.
+%s menyerang Anda dan kalah (%+d poin).	%s attacked you and lost (%+d points).
+%s menyerang Anda dan menang (%+d poin).	%s attacked you and won (%+d points).
+Cara mendapat poin:	How to earn points:
+%s poin	%s pts
+Tiket %d	Tickets %d
+Ikatan Penasihat	Advisor Bonds
+Benteng %s	%s Forts
+Direbut!	Captured!
+Kabar Perang	War News
+Rebut %d benteng untuk membuka Keraton Inti. Menang: %d emas + %d jasa; kalah: %d emas + %d jasa; ditambah bonus emas dari jasa perang.	Capture %d forts to unlock the Inner Palace. Win: %d gold + %d merit; lose: %d gold + %d merit; plus bonus gold from war merit.
+Hadiah tamat bab:	Chapter completion reward:
+Belum berperingkat	Unranked
+Peringkat Anda: #%s	Your rank: #%s
+Bergabunglah dengan aliansi untuk ikut peringkat aliansi.	Join an alliance to enter the alliance rankings.
+Paket Hadiah VIP %d	VIP %d Gift Pack
+· sekali beli	· one-time purchase
+Nama Tuan	Lord's Name
+Suara	Sound
+Bahasa / Language	Language / Bahasa
+Perangkat	Device
+Data	Data
+Privasi & Laporan Masalah	Privacy & Problem Reports
+Perjamuan %s	%s's Banquet
+Bergabung: %s	Joined: %s
+Urusan terisi kembali: %s.	Affairs refilled: %s.
+%s +%d (penuh)	%s +%d (full)
+Total bonus: %s	Total bonus: %s
+Tahap %d	Stage %d
+x10 dijamin minimal satu Epik. Duplikat menambah bintang (+%d%% atribut), atau perak bila bintang sudah penuh.	x10 guarantees at least one Epic. Duplicates add stars (+%d%% attributes), or silver once stars are maxed.
++%d %s	+%d %s
+perak	silver
+pangan	food
+emas	gold
+prajurit	soldiers
+jasa	merit
+prestise	prestige
+EPIK	EPIC
+LANGKA	RARE
+LEGENDA	LEGEND
+KEK	STR
+KEC	INT
+KAR	CHA
+SERANG!	ATTACK!
+EVENT MINGGUAN	WEEKLY EVENT
+%s  x%d	%s  x%d
+%s (%s)	%s (%s)
+%s (%d/%d)	%s (%d/%d)
+%s (%d/%d): %s	%s (%d/%d): %s
+%s: %s	%s: %s
+Liga %s	%s League
+Berakhir dalam %s	Ends in %s
+Bonus minggu ini: %s	This week's bonus: %s
+%s lagi ke hadiah berikutnya	%s more to the next reward
+Hadiah tamat bab: %s	Chapter completion reward: %s
+•  Hadiah harian: %s	•  Daily reward: %s
+•  Hadiah naik level: %s	•  Level-up reward: %s
+Tuan pergi selama %s	You were away for %s
++1 dalam %ds	+1 in %ds
+Urusan %d/%d	Affairs %d/%d
+Energi %d/%d	Energy %d/%d
+%s kini bintang %d.	%s is now %d-star.
+menang	won
+kalah	lost
+sekali beli	one-time purchase
+Hadiah harian: %s	Daily reward: %s
+Hadiah naik level: %s	Level-up reward: %s

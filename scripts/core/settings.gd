@@ -11,6 +11,7 @@ var music_volume := DEFAULT_VOLUME  ## 0–100; 0 = mati
 var sfx_volume := DEFAULT_VOLUME  ## 0–100; 0 = mati
 var battery_saver := false  ## 30 FPS + mode prosesor rendah
 var notifications := true  ## pengingat lokal Android (charge penuh, rekrut gratis)
+var language := "auto"  ## "auto" (ikuti bahasa perangkat), "id", atau "en"
 var analytics := true  ## statistik bermain lokal (tidak dikirim ke mana pun)
 
 
@@ -25,6 +26,7 @@ func _ready() -> void:
 		battery_saver = bool(cfg.get_value("device", "battery_saver", false))
 		notifications = bool(cfg.get_value("device", "notifications", true))
 		analytics = bool(cfg.get_value("privacy", "analytics", true))
+		language = str(cfg.get_value("device", "language", "auto"))
 	_apply_power()
 
 
@@ -43,6 +45,7 @@ func save() -> void:
 	cfg.set_value("device", "battery_saver", battery_saver)
 	cfg.set_value("device", "notifications", notifications)
 	cfg.set_value("privacy", "analytics", analytics)
+	cfg.set_value("device", "language", language)
 	cfg.save(PATH)
 
 

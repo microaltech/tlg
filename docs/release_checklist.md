@@ -23,6 +23,9 @@
        `version/name` di **kedua** preset `export_presets.cfg`, serta
        `application/config/version` di `project.godot`.
 2. [ ] Jalankan tes: `godot --headless --path . --script res://tests/run_tests.gd`.
+   Bila ada teks baru, jalankan juga `tools/i18n_extract.gd` dan
+   `tools/i18n_check.tscn` (lihat bagian "Bahasa" di README) sampai keduanya
+   melaporkan 0 teks tersisa.
 3. [ ] Bila angka ekonomi berubah, jalankan
        `godot --headless --path . --script res://tools/sim_economy.gd -- 30 4 1`
        lalu bandingkan dengan `docs/balance.md`.

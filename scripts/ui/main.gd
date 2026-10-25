@@ -167,6 +167,13 @@ func _ready() -> void:
 	get_tree().create_timer(0.6).timeout.connect(_maybe_prompt_login)
 
 
+func _notification(what: int) -> void:
+	# Label/tombol menerjemahkan ulang dirinya sendiri; bangun ulang halaman agar
+	# teks yang dirangkai kode (dan ukuran tata letak) ikut diperbarui.
+	if what == NOTIFICATION_TRANSLATION_CHANGED and is_node_ready():
+		_queue_rebuild()
+
+
 func _on_node_added(node: Node) -> void:
 	if not (node is Control) or not is_ancestor_of(node):
 		return
@@ -206,6 +213,7 @@ func _build_header() -> Control:
 	power_row.add_child(_tex(Art.icon("power"), 34))
 	_power_label = _label(power_row, "")
 	_power_label.add_theme_font_override("font", UI.font_bold)
+	_power_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # diterjemahkan dengan konteks "power"
 	var prestige := _chip("prestige")
 	prestige.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	top.add_child(prestige)
@@ -582,7 +590,7 @@ func _tick() -> void:
 	var now: float = Game.now()
 	model.sync(now)
 	_rank_label.text = model.rank_info()["name"] + (" " + model.lord_name if model.lord_name != "" else "")
-	_power_label.text = "Kekuatan %s" % _num(model.power())
+	_power_label.text = tr("Kekuatan %s", "power") % _num(model.power())
 	_res_labels["silver"].text = _num(model.silver)
 	_res_labels["grain"].text = _num(model.grain)
 	_res_labels["soldiers"].text = _num(model.soldiers)
@@ -1519,7 +1527,8 @@ func _show_arena_battle(r: Dictionary) -> void:
 		n.custom_minimum_size.x = 250
 		var hp := _bar(col, 100, 100, Color("4caf50"))
 		hp.custom_minimum_size = Vector2(250, 22)
-		var p := _label(col, "Kekuatan %s" % _num(who[2]), "SmallLabel")
+		var p := _label(col, tr("Kekuatan %s", "power") % _num(who[2]), "SmallLabel")
+		p.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		p.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		sides.append({"pic": pic, "hp": hp})
 
@@ -1790,7 +1799,7 @@ func _build_bonds(box: VBoxContainer) -> void:
 		if v > 0.0:
 			totals.append(Data.SKILL_EFFECT_NAMES[effect] % roundi(v * 100))
 	if not totals.is_empty():
-		var t := _label(card, "Total bonus: " + "; ".join(totals), "SmallLabel")
+		var t := _label(card, "Total bonus: %s" % "; ".join(totals), "SmallLabel")
 		t.add_theme_color_override("font_color", Color("6c3483"))
 
 
@@ -1897,9 +1906,9 @@ func _build_alliance_war(box: VBoxContainer, now: float) -> void:
 	_label(log, "Kabar Perang", "CardLabel").add_theme_font_override("font", UI.font_bold)
 	for line in model.war["log"].slice(0, 8):
 		_label(log, "•  " + line, "SmallLabel").add_theme_color_override("font_color", UI.INK)
-	_label(box, "Rebut %d benteng untuk membuka Keraton Inti. Menang: %d emas + %d jasa; kalah: %d emas + %d jasa; "
-		% [Data.WAR_CORE_UNLOCK, Data.WAR_REWARD_WIN["gold"], Data.WAR_REWARD_WIN["jasa"], Data.WAR_REWARD_LOSE["gold"],
-		Data.WAR_REWARD_LOSE["jasa"]] + "ditambah bonus emas dari jasa perang.", "SmallLabel")
+	_label(box, ("Rebut %d benteng untuk membuka Keraton Inti. Menang: %d emas + %d jasa; kalah: %d emas + %d jasa; "
+		+ "ditambah bonus emas dari jasa perang.") % [Data.WAR_CORE_UNLOCK, Data.WAR_REWARD_WIN["gold"],
+		Data.WAR_REWARD_WIN["jasa"], Data.WAR_REWARD_LOSE["gold"], Data.WAR_REWARD_LOSE["jasa"]], "SmallLabel")
 
 
 ## Efek kena serang pada ikon: kilat, guncang, dan angka kerusakan.
@@ -2858,6 +2867,30 @@ func _show_settings() -> void:
 	_volume_slider(sound, "Musik latar", "music_volume")
 	_volume_slider(sound, "Efek suara", "sfx_volume")
 
+	var lang_box := _inner_box(box)
+	_label(lang_box, "Bahasa / Language", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	var lang_row := HBoxContainer.new()
+	lang_row.add_theme_constant_override("separation", 8)
+	lang_box.add_child(lang_row)
+	for code in ["auto", "id", "en"]:
+		var b := Button.new()
+		b.text = "Otomatis" if code == "auto" else I18n.LANGUAGES[code]
+		# Nama bahasa selalu ditulis dalam bahasanya sendiri.
+		b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_ALWAYS if code == "auto" \
+			else Node.AUTO_TRANSLATE_MODE_DISABLED
+		b.theme_type_variation = "GoldButton" if Settings.language == code else ""
+		b.custom_minimum_size.y = 64
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.add_theme_font_size_override("font_size", 22)
+		b.pressed.connect(func():
+			Audio.play("click")
+			if Settings.language == code:
+				return
+			Settings.set_value("language", code)
+			close.call()
+			_show_settings.call_deferred())
+		lang_row.add_child(b)
+
 	var device := _inner_box(box)
 	_label(device, "Perangkat", "CardLabel").add_theme_font_override("font", UI.font_bold)
 	_setting_toggle(device, "Hemat baterai", "battery_saver",
@@ -3238,8 +3271,8 @@ func _build_gacha(page: Dictionary) -> void:
 		model.gold >= Data.GACHA_COST_10, "gold", "GoldButton", false, "gacha_roll")
 	ten.add_theme_font_size_override("font_size", 26)
 	ten.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_label(pcol, "x10 dijamin minimal satu Epik. Duplikat menambah bintang (+%d%% atribut), "
-		% int(Data.STAR_BONUS * 100) + "atau perak bila bintang sudah penuh.", "CardLabel")
+	_label(pcol, ("x10 dijamin minimal satu Epik. Duplikat menambah bintang (+%d%% atribut), "
+		+ "atau perak bila bintang sudah penuh.") % int(Data.STAR_BONUS * 100), "CardLabel")
 	if model.item_count("recruit_ticket") > 0:
 		_button(pcol, "Pakai Tiket Rekrut (%d)" % model.item_count("recruit_ticket"), func():
 			var r: Dictionary = model.recruit(1, Game.now(), false, true)

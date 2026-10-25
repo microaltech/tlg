@@ -14,6 +14,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 Settings="*res://scripts/core/settings.gd"
+I18n="*res://scripts/core/i18n.gd"
 Game="*res://scripts/core/game.gd"
 Telemetry="*res://scripts/core/telemetry.gd"
 Audio="*res://scripts/core/audio.gd"

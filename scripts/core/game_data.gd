@@ -86,7 +86,7 @@ const SKILL_CAP := 0.6
 const SKILL_EFFECT_NAMES := {
 	"yield_silver": "Hasil Tarik Pajak +%d%%", "yield_grain": "Hasil Kelola Sawah +%d%%",
 	"yield_soldiers": "Hasil Rekrut Prajurit +%d%%", "yield_all": "Semua hasil urusan kota +%d%%",
-	"battle": "Korban kampanye -%d%%", "combat": "Kekuatan tempur (arena, bos, perang) +%d%%",
+	"battle": "Korban kampanye -%d%%", "combat": "Kekuatan tempur (arena/bos/perang) +%d%%",
 	"visit": "Peluang anak lahir +%d%%", "train_cost": "Biaya latih penasihat -%d%%",
 	"prestige": "Prestise dari kampanye +%d%%",
 }
@@ -314,7 +314,8 @@ const CHAT_SLOT_SECONDS := 1800
 const CHAT_SLOT_CHANCE := 0.7
 const CHAT_CATCHUP_SLOTS := 12
 const CHAT_QUICK := ["Halo semua!", "Ayo serang bos!", "Terima kasih!", "Siap, gas perang!"]
-const CHAT_BANNED := ["anjing", "bangsat", "babi", "kontol", "memek", "goblok", "tolol", "bajingan", "kampret", "asu"]
+const CHAT_BANNED := ["anjing", "bangsat", "babi", "kontol", "memek", "goblok", "tolol", "bajingan", "kampret", "asu",
+	"fuck", "shit", "bitch", "bastard", "asshole"]
 const CHAT_AMBIENT := {
 	"greet": ["Selamat pagi semuanya!", "Halo, para Tuan!", "Ada yang sedang main?", "Semangat hari ini, kawan!"],
 	"boss": ["{boss} tinggal {hp}% lagi, ayo serang!", "Sudah serang {boss} hari ini?", "Jangan lupa serangan bos ya!"],
@@ -328,12 +329,14 @@ const CHAT_AMBIENT := {
 		"Panen tahun ini melimpah!", "Istirahat dulu, nanti lanjut lagi."],
 }
 ## Balasan untuk pesan pemain: kata kunci (huruf kecil) -> kategori.
+## Kata kunci (Indonesia & Inggris, dicocokkan sebagai potongan teks) -> kategori balasan NPC.
 const CHAT_KEYWORDS := {
-	"greet": ["halo", "hai", "pagi", "siang", "sore", "malam", "hello", "salam"],
-	"thanks": ["terima kasih", "makasih", "thanks", "trims"],
+	"greet": ["halo", "hai", "pagi", "siang", "sore", "malam", "hello", "salam", "hey", "morning", "evening",
+		"greetings"],
+	"thanks": ["terima kasih", "makasih", "thanks", "trims", "thank you", "thx"],
 	"boss": ["bos", "boss", "buto"],
-	"war": ["perang", "benteng", "keraton", "gas"],
-	"help": ["bantu", "tolong", "gimana", "bagaimana", "cara"],
+	"war": ["perang", "benteng", "keraton", "gas", "fort", "attack"],
+	"help": ["bantu", "tolong", "gimana", "bagaimana", "cara", "help", "how do", "how to"],
 }
 const CHAT_REPLIES := {
 	"greet": ["Halo juga, {player}!", "Hai {player}, selamat datang!", "Salam, {player}!"],

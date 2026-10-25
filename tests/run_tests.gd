@@ -26,7 +26,7 @@ func _init() -> void:
 		"test_war_save_leave", "test_chat_send_reply", "test_chat_ambient_unread", "test_chat_save_leave",
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
-		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass", "test_offers",
+		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass", "test_offers", "test_achievements",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1637,3 +1637,26 @@ func test_offers() -> void:
 	m.soldiers = 1 << 40
 	m.fight_stage()
 	check(m.loss_streak == 0, "menang mereset kekalahan beruntun")
+
+
+func test_achievements() -> void:
+	var m := fresh()
+	var conq: Dictionary = Data.ACHIEVEMENTS[0]
+	check(m.achievement_tier(conq) == 0 and not m.claim_achievement("conqueror")["ok"], "pencapaian awal kosong")
+	var reached := []
+	m.achievement_reached.connect(func(id, tier): reached.append("%s:%d" % [id, tier]))
+	m.stage = 30
+	m.check_achievements()
+	check("conqueror:1" in reached and "conqueror:2" in reached and not "conqueror:3" in reached, "sinyal per tingkat")
+	m.check_achievements()
+	check(reached.count("conqueror:1") == 1, "sinyal tidak berulang")
+	var gold := m.gold
+	check(m.claim_achievement("conqueror")["ok"] and m.gold == gold + Data.ACHIEVEMENT_GOLD[0], "klaim tingkat 1")
+	check(m.claim_achievement("conqueror")["ok"] and not m.claim_achievement("conqueror")["ok"], "klaim tingkat 2 lalu habis")
+	for i in 12:
+		m.do_affair("silver", 1000.0 + i * 3600.0)
+	check(m.counters["affair"] == 12, "penghitung urusan")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(var_to_str(m2.achievements) == var_to_str(m.achievements) and m2.counters["affair"] == 12, "simpan/muat pencapaian")
+	check(Data.ACHIEVEMENTS.all(func(a): return m.achievement_value(a) >= 0), "semua metrik pencapaian dikenal")

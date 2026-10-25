@@ -10,6 +10,8 @@ signal mission_completed(text: String)
 signal tracked(event: String)
 ## Paket terbatas waktu baru muncul (UI menampilkannya sekali).
 signal offer_created(offer: Dictionary)
+## Tingkat pencapaian baru tercapai (untuk Google Play Games & notifikasi UI).
+signal achievement_reached(id: String, tier: int)
 
 const Data := preload("res://scripts/core/game_data.gd")
 
@@ -101,6 +103,10 @@ var season_pass := {}
 ## Paket terbatas aktif: [{"id": id produk, "expires": waktu, "reward": {...}}]
 var offers: Array = []
 var loss_streak := 0
+## Penghitung aksi seumur akun (event _track -> jumlah) untuk pencapaian.
+var counters := {}
+## Pencapaian: id -> jumlah tingkat yang hadiahnya sudah diklaim.
+var achievements := {}
 var _equip_uid := 0
 var rng := RandomNumberGenerator.new()
 
@@ -115,6 +121,8 @@ func new_game(now: float) -> void:
 	season_pass = {}
 	offers = []
 	loss_streak = 0
+	counters = {}
+	achievements = {}
 	silver = 500
 	grain = 500
 	soldiers = 2500
@@ -643,6 +651,7 @@ func ensure_daily(now: float) -> bool:
 
 func _track(event: String, amount := 1) -> void:
 	tracked.emit(event)
+	counters[event] = int(counters.get(event, 0)) + amount
 	if Data.PASS_XP.has(event):
 		add_pass_xp(int(Data.PASS_XP[event]) * amount)
 	for m in daily.get("missions", []):
@@ -2913,6 +2922,65 @@ func tower_fight(now: float) -> Dictionary:
 	return r
 
 
+# --- Pencapaian --------------------------------------------------------------
+
+func achievement_value(def: Dictionary) -> int:
+	var metric: String = def["metric"]
+	if metric.begins_with("count:"):
+		return int(counters.get(metric.substr(6), 0))
+	return story_metric(metric)
+
+
+## Jumlah tingkat yang sudah tercapai.
+func achievement_tier(def: Dictionary) -> int:
+	var value := achievement_value(def)
+	var n := 0
+	for target in def["targets"]:
+		if value >= int(target):
+			n += 1
+	return n
+
+
+func achievement_claimable(def: Dictionary) -> bool:
+	return achievement_tier(def) > int(achievements.get(def["id"], 0))
+
+
+func achievements_claimable_count() -> int:
+	return Data.ACHIEVEMENTS.filter(func(a): return achievement_claimable(a)).size()
+
+
+func claim_achievement(id: String) -> Dictionary:
+	var def := {}
+	for a in Data.ACHIEVEMENTS:
+		if a["id"] == id:
+			def = a
+	if def.is_empty():
+		return _fail("Pencapaian tidak ditemukan.")
+	if not achievement_claimable(def):
+		return _fail("Belum ada tingkat baru untuk diklaim.")
+	var tier := int(achievements.get(id, 0))
+	achievements[id] = tier + 1
+	var reward: int = Data.ACHIEVEMENT_GOLD[mini(tier, Data.ACHIEVEMENT_GOLD.size() - 1)]
+	gold += reward
+	changed.emit()
+	return _ok("Pencapaian %s tingkat %d: +%d emas." % [def["name"], tier + 1, reward])
+
+
+## Periksa tingkat baru yang tercapai (dipanggil UI tiap detik, hanya memancarkan
+## sinyal sekali per tingkat; status "sudah dilaporkan" tidak perlu disimpan karena
+## Google Play Games mengabaikan pembukaan ulang).
+var _reported := {}
+
+
+func check_achievements() -> void:
+	for a in Data.ACHIEVEMENTS:
+		var tier := achievement_tier(a)
+		if tier > int(_reported.get(a["id"], 0)):
+			for t in range(int(_reported.get(a["id"], 0)) + 1, tier + 1):
+				achievement_reached.emit(a["id"], t)
+			_reported[a["id"]] = tier
+
+
 # --- Paket terbatas waktu ------------------------------------------------------
 
 func _create_offer(id: String, reward: Dictionary, now: float) -> void:
@@ -3182,6 +3250,8 @@ func to_dict() -> Dictionary:
 		"ads": ads,
 		"pass": season_pass,
 		"offers": offers,
+		"counters": counters,
+		"achievements": achievements,
 		"loss_streak": loss_streak,
 		"equip_uid": _equip_uid,
 	}
@@ -3331,6 +3401,12 @@ func from_dict(d: Dictionary, now: float) -> void:
 		if Data.OFFER_SECONDS.has(str(o.get("id", ""))):
 			offers.append({"id": str(o["id"]), "expires": float(o.get("expires", 0.0)), "reward": reward})
 	loss_streak = int(d.get("loss_streak", 0))
+	counters = {}
+	for k in d.get("counters", {}):
+		counters[str(k)] = int(d["counters"][k])
+	achievements = {}
+	for k in d.get("achievements", {}):
+		achievements[str(k)] = int(d["achievements"][k])
 	season_pass = {}
 	var src_pass: Dictionary = d.get("pass", {})
 	if not src_pass.is_empty():

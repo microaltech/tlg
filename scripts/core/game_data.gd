@@ -558,6 +558,36 @@ const IAP_PRODUCTS := [
 		"desc": "Buka jalur hadiah premium Tiket Musim ini: emas, Batu Bintang, Tiket Rekrut, dan pusaka Legenda."},
 ]
 
+## Pencapaian bertingkat. metric: nama di GameModel.story_metric, atau "count:<event>"
+## untuk penghitung aksi (GameModel.counters). Hadiah emas per tingkat (indeks 0..).
+const ACHIEVEMENTS := [
+	{"id": "conqueror", "name": "Penakluk", "icon": "tab_campaign", "metric": "stage", "text": "Menangkan tahap %s",
+		"targets": [10, 25, 50, 75, 100]},
+	{"id": "mighty", "name": "Kekuatan Besar", "icon": "power", "metric": "power", "text": "Capai kekuatan %s",
+		"targets": [1000, 10000, 50000, 200000]},
+	{"id": "collector", "name": "Kolektor Penasihat", "icon": "tab_counselor", "metric": "counselors",
+		"text": "Miliki %s penasihat", "targets": [5, 10, 15, 19]},
+	{"id": "stars", "name": "Bintang Terang", "icon": "star", "metric": "stars_total", "text": "Kumpulkan %s bintang penasihat",
+		"targets": [5, 20, 50]},
+	{"id": "family", "name": "Keluarga Besar", "icon": "heart", "metric": "children_total", "text": "Dikaruniai %s anak",
+		"targets": [1, 10, 30, 60]},
+	{"id": "climber", "name": "Pendaki Menara", "icon": "tower", "metric": "tower", "text": "Capai lantai %s Menara Ujian",
+		"targets": [5, 15, 30]},
+	{"id": "champion", "name": "Juara Arena", "icon": "tab_arena", "metric": "arena_wins", "text": "Menangi %s pertarungan arena",
+		"targets": [10, 50, 200]},
+	{"id": "recruiter", "name": "Perekrut", "icon": "tab_gacha", "metric": "count:recruit", "text": "Rekrut %s penasihat",
+		"targets": [10, 100, 500]},
+	{"id": "worker", "name": "Pekerja Keras", "icon": "tab_city", "metric": "count:affair", "text": "Kerjakan %s urusan kota",
+		"targets": [100, 1000, 5000]},
+	{"id": "keeper", "name": "Penjaga Pusaka", "icon": "eq_weapon", "metric": "equipment", "text": "Miliki %s pusaka",
+		"targets": [1, 5, 15]},
+	{"id": "generous", "name": "Dermawan", "icon": "tab_alliance", "metric": "count:donate", "text": "Sumbang ke aliansi %s kali",
+		"targets": [10, 50, 200]},
+	{"id": "hunter", "name": "Pemburu Bos", "icon": "jasa", "metric": "count:boss", "text": "Serang bos aliansi %s kali",
+		"targets": [10, 50, 200]},
+]
+const ACHIEVEMENT_GOLD := [30, 60, 100, 150, 250]
+
 ## Paket terbatas waktu: berapa lama berlaku (detik) dan pemicu kekalahan beruntun.
 const OFFER_SECONDS := {"offer_promote": 6 * 3600, "offer_rescue": 3 * 3600}
 const OFFER_LOSS_STREAK := 3

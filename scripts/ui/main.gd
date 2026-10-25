@@ -90,6 +90,8 @@ var _equip_overlay: Control
 var _equip_box: VBoxContainer
 var _equip_pick := -1  ## uid pusaka yang sedang menunggu pilihan penasihat.
 var _ad_overlay: Control
+var _ach_overlay: Control
+var _ach_box: VBoxContainer
 var _offer_overlay: Control
 var _offer_box: VBoxContainer
 var _pass_overlay: Control
@@ -164,6 +166,12 @@ func _ready() -> void:
 	Store.prices_updated.connect(_queue_rebuild)
 	Ads.ad_started.connect(_on_ad_started)
 	model.offer_created.connect(func(_o): _show_offers.call_deferred())
+	model.achievement_reached.connect(func(id, tier):
+		for a in Data.ACHIEVEMENTS:
+			if a["id"] == id and _startup_prompted:
+				Audio.play("reveal_sr")
+				_show({"ok": true, "msg": tr("Pencapaian baru: %s tingkat %d!") % [tr(a["name"]), tier]})
+		_queue_rebuild())
 	Ads.ad_finished.connect(func(r):
 		if is_instance_valid(_ad_overlay):
 			_ad_overlay.queue_free()
@@ -610,6 +618,8 @@ func _rebuild() -> void:
 		_fill_pass()
 	if is_instance_valid(_offer_overlay):
 		_fill_offers()
+	if is_instance_valid(_ach_overlay):
+		_fill_achievements()
 	if is_instance_valid(_story_overlay):
 		_fill_story()
 	_tick()
@@ -622,6 +632,7 @@ func _rebuild() -> void:
 func _tick() -> void:
 	var now: float = Game.now()
 	model.sync(now)
+	model.check_achievements()
 	var honor: Dictionary = model.honor_title()
 	_rank_label.text = tr(honor["name"] if not honor.is_empty() else model.rank_info()["name"]) \
 		+ (" " + model.lord_name if model.lord_name != "" else "")
@@ -741,6 +752,7 @@ func _build_city(box: VBoxContainer) -> void:
 	box.add_child(_event_banner())
 	_build_offer_cards(box)
 	_build_pass_card(box)
+	_build_achievement_card(box)
 	_build_quick_row(box)
 	_build_story_tracker(box)
 	for kind in model.AFFAIRS:
@@ -2461,6 +2473,82 @@ func _fill_bag_targets() -> void:
 				_bag_pick = ""
 			return r, true, "", "GreenButton", false, "upgrade")
 		b.custom_minimum_size = Vector2(120, 56)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+
+# --- Pencapaian --------------------------------------------------------------
+
+func _build_achievement_card(box: VBoxContainer) -> void:
+	var done := 0
+	var total := 0
+	for a in Data.ACHIEVEMENTS:
+		done += model.achievement_tier(a)
+		total += a["targets"].size()
+	var card := _card(box)
+	card.add_child(_tex(Art.icon("trophy"), 72))
+	var col := _col(card)
+	_label(col, "Pencapaian · %d / %d" % [done, total], "CardTitle").add_theme_font_size_override("font_size", 24)
+	_bar(col, done, total, Color("e0a030"))
+	var n: int = model.achievements_claimable_count()
+	var b := _button(card, "Klaim (%d)" % n if n > 0 else "Lihat", func():
+		_show_achievements()
+		return null, true, "", "GoldButton" if n > 0 else "")
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.custom_minimum_size.x = 150
+
+
+func _show_achievements() -> void:
+	if is_instance_valid(_ach_overlay):
+		return
+	var p := _open_panel("Pencapaian", "trophy", _close_achievements)
+	_ach_overlay = p["overlay"]
+	_ach_box = p["content"]
+	p["subtitle"].text = "Hadiah emas untuk setiap tingkat"
+	_fill_achievements()
+
+
+func _close_achievements() -> void:
+	if is_instance_valid(_ach_overlay):
+		Audio.play("click")
+		_ach_overlay.queue_free()
+	_ach_overlay = null
+
+
+func _fill_achievements() -> void:
+	_clear(_ach_box)
+	if PlayGames.available():
+		_button(_ach_box, "Lihat di Google Play Games", func():
+			PlayGames.show_achievements()
+			return null, true, "trophy", "GreenButton")
+	var list: Array = Data.ACHIEVEMENTS.duplicate()
+	list.sort_custom(func(a, b): return int(model.achievement_claimable(a)) > int(model.achievement_claimable(b)))
+	for a in list:
+		var tier: int = model.achievement_tier(a)
+		var claimed: int = int(model.achievements.get(a["id"], 0))
+		var targets: Array = a["targets"]
+		var value: int = model.achievement_value(a)
+		var box := _inner_box(_ach_box)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		box.add_child(row)
+		row.add_child(_tex(Art.icon(a["icon"]), 64))
+		var col := _col(row)
+		var stars := ""
+		for i in targets.size():
+			stars += "★" if i < tier else "☆"
+		_label(col, "%s  %s" % [a["name"], stars], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		if tier < targets.size():
+			var target: int = targets[tier]
+			_label(col, a["text"] % _num(target), "SmallLabel").add_theme_color_override("font_color", UI.INK)
+			_bar(col, mini(value, target), target, Color("6fa8dc"))
+		else:
+			_label(col, "Semua tingkat selesai!", "SmallLabel").add_theme_color_override("font_color", UI.GREEN)
+		var id: String = a["id"]
+		var can: bool = tier > claimed
+		var reward: int = Data.ACHIEVEMENT_GOLD[mini(claimed, Data.ACHIEVEMENT_GOLD.size() - 1)]
+		var b := _button(row, "+%d" % reward if can else ("Selesai" if claimed >= targets.size() else "Klaim"),
+			func(): return model.claim_achievement(id), can, "gold" if can else "", "GoldButton" if can else "", true, "coin")
+		b.custom_minimum_size = Vector2(130, 60)
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 

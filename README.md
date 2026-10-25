@@ -316,6 +316,11 @@ Uji di HP sungguhan sebelum rilis.
 - Dokumen: `docs/privacy_policy.md`, `docs/play_data_safety.md`,
   `docs/release_checklist.md`.
 
+Untuk fitur online sungguhan (aliansi, chat, arena, perang, dan peringkat antar
+pemain), lihat rancangan di `docs/server_design.md`: Nakama, akun dan migrasi
+save, peta fitur dari simulasi ke server, model data, anti-curang, biaya, dan
+fase pengerjaan.
+
 ## Pembelian dalam aplikasi
 
 `scripts/core/store.gd` punya tiga mode:
@@ -349,7 +354,11 @@ Catatan penting:
 
 ## Langkah berikutnya
 
-- Aset visual: potret penasihat/selir, latar kota, ikon sumber daya, animasi.
-- Item & inventaris, toko event, papan peringkat online, banner rekrut berganti (rate-up).
-- Backend + akun: aliansi, chat, perang aliansi & arena online sungguhan (pemain nyata, matchmaking), leaderboard dengan skor pemain sungguhan.
-- IAP (Google Play Billing) & iklan berhadiah (AdMob) lewat plugin Godot.
+- Uji di HP sungguhan: plugin notifikasi `TlgNotify`, plugin Google Play Billing,
+  dan build AAB (tidak bisa diuji di lingkungan pengembangan ini).
+- Backend online sesuai `docs/server_design.md`, mulai dari fase 0 (akun dan
+  validasi IAP), lalu fase 1 (aliansi, chat, peringkat sungguhan).
+- Terjemahan bahasa Inggris (teks saat ini masih ditulis langsung di
+  `game_data.gd`/`main.gd`; perlu dipindah ke file terjemahan Godot).
+- Konten lanjutan: penasihat dan selir baru, banner rekrut *rate-up*, toko event,
+  iklan berhadiah (AdMob), serta bab cerita setelah Perdana Menteri.

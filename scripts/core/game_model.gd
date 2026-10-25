@@ -23,7 +23,7 @@ const CHARGE_KEYS := ["silver", "grain", "soldiers", "visit"]
 
 var silver := 500
 var grain := 500
-var soldiers := 1000
+var soldiers := 2500
 var prestige := 0
 var rank := 0
 var stage := 0
@@ -94,7 +94,7 @@ func new_game(now: float) -> void:
 	lord_name = ""
 	silver = 500
 	grain = 500
-	soldiers = 1000
+	soldiers = 2500
 	prestige = 0
 	rank = 0
 	stage = 0
@@ -248,7 +248,8 @@ func power() -> int:
 
 
 func upgrade_cost(id: String) -> int:
-	return int(50 * pow(int(counselors[id]["level"]), 1.6) * (1.0 - skill_bonus("train_cost")))
+	return int(Data.UPGRADE_COST_BASE * pow(int(counselors[id]["level"]), Data.UPGRADE_COST_EXP)
+		* (1.0 - skill_bonus("train_cost")))
 
 
 # --- Skill & ikatan ----------------------------------------------------------
@@ -309,9 +310,17 @@ func affair_yield(kind: String) -> int:
 func do_affair(kind: String, now: float) -> Dictionary:
 	if not AFFAIRS.has(kind):
 		return _fail("Urusan tidak dikenal.")
+	var amount := affair_yield(kind)
+	var grain_used := 0
+	if kind == "soldiers":
+		# Prajurit baru butuh pangan; rekrut sebanyak yang bisa diberi makan.
+		amount = mini(amount, int(grain / Data.SOLDIER_GRAIN))
+		if amount <= 0:
+			return _fail("Pangan habis. Kelola sawah dulu untuk memberi makan prajurit baru.")
+		grain_used = int(ceil(amount * Data.SOLDIER_GRAIN))
 	if not _spend_charge(kind, now):
 		return _fail("Belum ada urusan baru. Tunggu sebentar.")
-	var amount := affair_yield(kind)
+	grain -= grain_used
 	match kind:
 		"silver":
 			silver += amount
@@ -324,6 +333,8 @@ func do_affair(kind: String, now: float) -> Dictionary:
 	if kind == "silver":
 		_track("earn_silver", amount)
 	changed.emit()
+	if grain_used > 0:
+		return _ok("+%d %s, -%d Pangan" % [amount, resource_name(kind), grain_used])
 	return _ok("+%d %s" % [amount, resource_name(kind)])
 
 
@@ -340,7 +351,7 @@ func current_stage_info() -> Dictionary:
 ## Perkiraan prajurit yang gugur bila menyerang tahap saat ini.
 func expected_losses() -> int:
 	var info := current_stage_info()
-	var ratio := clampf(float(info["enemy_str"]) / maxi(1, total_attr("str")), 0.25, 4.0)
+	var ratio := clampf(float(info["enemy_str"]) / maxi(1, total_attr("str")), Data.LOSS_RATIO_MIN, 4.0)
 	return int(ceil(int(info["enemy_soldiers"]) * ratio * (1.0 + event_bonus("losses")) * (1.0 - skill_bonus("battle"))))
 
 
@@ -2478,19 +2489,30 @@ func _roll_talent() -> int:
 
 
 func train_cost(index: int) -> int:
-	return 60 * (int(children[index]["level"]) + 1)
+	return Data.CHILD_TRAIN_GRAIN * (int(children[index]["level"]) + 1)
 
 
-func train_child(index: int) -> Dictionary:
+## Detik sampai anak `index` bisa dididik lagi; 0 = siap.
+func train_wait(index: int, now: float) -> int:
+	return maxi(0, int(ceil(float(children[index].get("train_t", -1.0e12)) + Data.CHILD_TRAIN_SECONDS - now)))
+
+
+func train_child(index: int, now := -1.0) -> Dictionary:
+	if now < 0.0:
+		now = _last_now
 	if index < 0 or index >= children.size():
 		return _fail("Anak tidak ditemukan.")
 	var child: Dictionary = children[index]
 	if child["level"] >= Data.CHILD_MAX_LEVEL:
 		return _fail("%s sudah dewasa." % child["name"])
+	if train_wait(index, now) > 0:
+		return _fail("%s masih beristirahat. Didik lagi dalam %d menit." % [
+			child["name"], ceili(train_wait(index, now) / 60.0)])
 	var cost := train_cost(index)
 	if grain < cost:
 		return _fail("Pangan tidak cukup (butuh %d)." % cost)
 	grain -= cost
+	child["train_t"] = now
 	child["level"] = int(child["level"]) + 1
 	_track("train")
 	changed.emit()
@@ -2739,6 +2761,8 @@ func from_dict(d: Dictionary, now: float) -> void:
 		})
 		if c.has("exam_day"):
 			children[-1]["exam_day"] = int(c["exam_day"])
+		if c.has("train_t"):
+			children[-1]["train_t"] = float(c["train_t"])
 	charges = {}
 	for key in CHARGE_KEYS:
 		var c: Dictionary = d.get("charges", {}).get(key, {})

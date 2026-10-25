@@ -91,6 +91,8 @@ var _story_box: VBoxContainer  ## Level VIP yang sedang dilihat di panel (-1 = l
 var _mission_box: VBoxContainer
 var _mission_reset_label: Label
 var _gacha_banner_done := false
+## Tombol Didik anak yang sedang menunggu jeda; diperbarui tiap detik.
+var _train_waits: Array = []
 
 
 ## Jarak geser (piksel) sebelum sentuhan dianggap menggulir, bukan mengetuk.
@@ -643,6 +645,13 @@ func _tick() -> void:
 		_free_button.disabled = free_eta > 0
 		_free_button.text = "Rekrut Gratis" if free_eta == 0 else "Gratis lagi %02d:%02d:%02d" % [
 			free_eta / 3600, free_eta / 60 % 60, free_eta % 60]
+	for tw in _train_waits:
+		if not is_instance_valid(tw["button"]) or tw["index"] >= model.children.size():
+			continue
+		var wait: int = model.train_wait(tw["index"], now)
+		tw["button"].disabled = wait > 0 or model.grain < tw["cost"]
+		tw["button"].text = "Istirahat %02d:%02d" % [wait / 60, wait % 60] if wait > 0 \
+			else "Didik  %s" % _num(tw["cost"])
 	for key in _charge_widgets:
 		var w: Dictionary = _charge_widgets[key]
 		if not is_instance_valid(w["label"]):
@@ -683,8 +692,11 @@ func _build_city(box: VBoxContainer) -> void:
 		card.add_child(_tex(Art.icon(kind), 92))
 		var col := _col(card)
 		_label(col, a["label"], "CardTitle")
-		_label(col, "Hasil +%d %s · dari %s" % [
-			model.affair_yield(kind), model.resource_name(kind), Data.ATTR_NAMES[a["attr"]]], "CardLabel")
+		var info := "Hasil +%d %s · dari %s" % [
+			model.affair_yield(kind), model.resource_name(kind), Data.ATTR_NAMES[a["attr"]]]
+		if kind == "soldiers":
+			info += "\nMakan %d pangan" % ceili(model.affair_yield(kind) * Data.SOLDIER_GRAIN)
+		_label(col, info, "CardLabel")
 		_event_tag(col, "yield_" + kind)
 		_charge_widget(col, kind, "Urusan")
 		var b := _button(card, "Kerjakan", func(): return model.do_affair(kind, Game.now()),
@@ -3393,6 +3405,7 @@ func _build_consorts(box: VBoxContainer) -> void:
 
 
 func _build_children(box: VBoxContainer, now: float) -> void:
+	_train_waits.clear()
 	var head := _label(box, "Anak  (%d/%d kursi)" % [model.children.size(), model.child_seats()], "TitleLabel")
 	head.add_theme_font_size_override("font_size", 30)
 	if model.children.is_empty():
@@ -3418,8 +3431,12 @@ func _build_children(box: VBoxContainer, now: float) -> void:
 		_bar(col, child["level"], Data.CHILD_MAX_LEVEL, Color("8bc34a"))
 		if child["level"] < Data.CHILD_MAX_LEVEL:
 			var cost: int = model.train_cost(i)
-			_button(col, "Didik  %s" % _num(cost), func(): return model.train_child(i), model.grain >= cost, "grain",
-				"", false, "upgrade")
+			var wait: int = model.train_wait(i, now)
+			var train := _button(col, "Didik  %s" % _num(cost), func(): return model.train_child(i, Game.now()),
+				model.grain >= cost and wait == 0, "grain", "", false, "upgrade")
+			if wait > 0:
+				train.text = "Istirahat %02d:%02d" % [wait / 60, wait % 60]
+				_train_waits.append({"button": train, "index": i, "cost": cost})
 		else:
 			var row := HBoxContainer.new()
 			row.add_theme_constant_override("separation", 8)

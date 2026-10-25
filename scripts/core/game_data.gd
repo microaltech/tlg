@@ -13,11 +13,11 @@ const ATTR_NAMES := {
 ## Jabatan sang Tuan. prestige = syarat naik ke jabatan ini.
 const RANKS := [
 	{"name": "Kepala Desa", "prestige": 0, "max_charges": 3, "mult": 1.0, "level_cap": 20, "child_seats": 2},
-	{"name": "Camat", "prestige": 150, "max_charges": 4, "mult": 1.25, "level_cap": 40, "child_seats": 3},
-	{"name": "Bupati", "prestige": 600, "max_charges": 5, "mult": 1.5, "level_cap": 60, "child_seats": 4},
-	{"name": "Gubernur", "prestige": 1800, "max_charges": 6, "mult": 2.0, "level_cap": 80, "child_seats": 5},
-	{"name": "Menteri", "prestige": 5000, "max_charges": 7, "mult": 2.5, "level_cap": 100, "child_seats": 6},
-	{"name": "Perdana Menteri", "prestige": 12000, "max_charges": 8, "mult": 3.0, "level_cap": 150, "child_seats": 8},
+	{"name": "Camat", "prestige": 300, "max_charges": 4, "mult": 1.25, "level_cap": 40, "child_seats": 3},
+	{"name": "Bupati", "prestige": 1500, "max_charges": 5, "mult": 1.5, "level_cap": 60, "child_seats": 4},
+	{"name": "Gubernur", "prestige": 6000, "max_charges": 6, "mult": 2.0, "level_cap": 80, "child_seats": 5},
+	{"name": "Menteri", "prestige": 12000, "max_charges": 7, "mult": 2.5, "level_cap": 100, "child_seats": 6},
+	{"name": "Perdana Menteri", "prestige": 25000, "max_charges": 8, "mult": 3.0, "level_cap": 150, "child_seats": 8},
 ]
 
 ## Kelangkaan penasihat untuk gacha. rate = peluang per tarikan.
@@ -112,6 +112,12 @@ const ENEMIES := [
 ]
 
 const CHILD_MAX_LEVEL := 10
+## Pangan per level saat mendidik anak: biaya ke level n = CHILD_TRAIN_GRAIN * n.
+const CHILD_TRAIN_GRAIN := 200
+## Jeda (detik) sebelum anak yang sama bisa dididik lagi.
+const CHILD_TRAIN_SECONDS := 1800
+## Pangan yang dimakan tiap prajurit baru (urusan Rekrut Prajurit).
+const SOLDIER_GRAIN := 0.75
 
 ## Ujian anak: anak dewasa bisa menjadi pejabat (bonus permanen hasil urusan kota).
 const EXAM_COST_PER_TALENT := 1000  ## Perak.
@@ -165,28 +171,28 @@ static func prisoner_stats(stage_index: int) -> Dictionary:
 const DAILY_COUNT := 5
 const DAILY_POINTS := 20  ## Poin aktivitas per misi yang diklaim.
 const DAILY_MISSIONS := [
-	{"id": "affair10", "text": "Kerjakan urusan kota 10 kali", "event": "affair", "target": 10, "gold": 20, "silver": 500},
-	{"id": "tax5", "text": "Tarik pajak 5 kali", "event": "affair_silver", "target": 5, "gold": 20, "grain": 500},
-	{"id": "farm5", "text": "Kelola sawah 5 kali", "event": "affair_grain", "target": 5, "gold": 20, "silver": 500},
-	{"id": "troops5", "text": "Rekrut prajurit 5 kali", "event": "affair_soldiers", "target": 5, "gold": 20, "grain": 500},
-	{"id": "upgrade5", "text": "Latih penasihat 5 kali", "event": "upgrade", "target": 5, "gold": 30, "silver": 800},
-	{"id": "win3", "text": "Menangkan 3 tahap kampanye", "event": "win", "target": 3, "gold": 40, "soldiers": 1000},
-	{"id": "visit3", "text": "Kunjungi selir 3 kali", "event": "visit", "target": 3, "gold": 25, "grain": 600},
-	{"id": "train3", "text": "Didik anak 3 kali", "event": "train", "target": 3, "gold": 25, "silver": 600, "requires": "children"},
-	{"id": "gacha1", "text": "Rekrut penasihat 1 kali", "event": "recruit", "target": 1, "gold": 30, "silver": 500},
-	{"id": "silver3k", "text": "Kumpulkan 3000 perak dari pajak", "event": "earn_silver", "target": 3000, "gold": 30, "grain": 800},
-	{"id": "donate1", "text": "Sumbang ke aliansi 1 kali", "event": "donate", "target": 1, "gold": 25, "silver": 500, "requires": "alliance"},
-	{"id": "boss2", "text": "Serang bos aliansi 2 kali", "event": "boss", "target": 2, "gold": 30, "soldiers": 800, "requires": "alliance"},
-	{"id": "war2", "text": "Serang benteng dalam perang aliansi 2 kali", "event": "war", "target": 2, "gold": 30, "silver": 800, "requires": "alliance"},
-	{"id": "jail3", "text": "Interogasi tahanan 3 kali", "event": "interrogate", "target": 3, "gold": 25, "silver": 600, "requires": "prisoners"},
-	{"id": "feast1", "text": "Adakan perjamuan 1 kali", "event": "banquet", "target": 1, "gold": 25, "grain": 800},
-	{"id": "arena3", "text": "Bertarung di arena 3 kali", "event": "arena", "target": 3, "gold": 30, "silver": 800, "requires": "arena"},
+	{"id": "affair10", "text": "Kerjakan urusan kota 10 kali", "event": "affair", "target": 10, "gold": 10, "silver": 500},
+	{"id": "tax5", "text": "Tarik pajak 5 kali", "event": "affair_silver", "target": 5, "gold": 10, "grain": 500},
+	{"id": "farm5", "text": "Kelola sawah 5 kali", "event": "affair_grain", "target": 5, "gold": 10, "silver": 500},
+	{"id": "troops5", "text": "Rekrut prajurit 5 kali", "event": "affair_soldiers", "target": 5, "gold": 10, "grain": 500},
+	{"id": "upgrade5", "text": "Latih penasihat 5 kali", "event": "upgrade", "target": 5, "gold": 20, "silver": 800},
+	{"id": "win3", "text": "Menangkan 3 tahap kampanye", "event": "win", "target": 3, "gold": 25, "soldiers": 1000},
+	{"id": "visit3", "text": "Kunjungi selir 3 kali", "event": "visit", "target": 3, "gold": 15, "grain": 600},
+	{"id": "train3", "text": "Didik anak 3 kali", "event": "train", "target": 3, "gold": 15, "silver": 600, "requires": "children"},
+	{"id": "gacha1", "text": "Rekrut penasihat 1 kali", "event": "recruit", "target": 1, "gold": 20, "silver": 500},
+	{"id": "silver3k", "text": "Kumpulkan 3000 perak dari pajak", "event": "earn_silver", "target": 3000, "gold": 20, "grain": 800},
+	{"id": "donate1", "text": "Sumbang ke aliansi 1 kali", "event": "donate", "target": 1, "gold": 15, "silver": 500, "requires": "alliance"},
+	{"id": "boss2", "text": "Serang bos aliansi 2 kali", "event": "boss", "target": 2, "gold": 20, "soldiers": 800, "requires": "alliance"},
+	{"id": "war2", "text": "Serang benteng dalam perang aliansi 2 kali", "event": "war", "target": 2, "gold": 20, "silver": 800, "requires": "alliance"},
+	{"id": "jail3", "text": "Interogasi tahanan 3 kali", "event": "interrogate", "target": 3, "gold": 15, "silver": 600, "requires": "prisoners"},
+	{"id": "feast1", "text": "Adakan perjamuan 1 kali", "event": "banquet", "target": 1, "gold": 15, "grain": 800},
+	{"id": "arena3", "text": "Bertarung di arena 3 kali", "event": "arena", "target": 3, "gold": 20, "silver": 800, "requires": "arena"},
 ]
 ## Peti aktivitas: terbuka saat poin harian mencapai batas.
 const DAILY_CHESTS := [
-	{"points": 40, "gold": 30, "silver": 1000},
-	{"points": 80, "gold": 50, "grain": 1500},
-	{"points": 100, "gold": 100, "soldiers": 2000, "items": {"scroll_train": 1}},
+	{"points": 40, "gold": 20, "silver": 1000},
+	{"points": 80, "gold": 30, "grain": 1500},
+	{"points": 100, "gold": 60, "soldiers": 2000, "items": {"scroll_train": 1}},
 ]
 ## Hadiah login harian (7 hari berturut-turut). Terlewat sehari = kembali ke Hari 1.
 const LOGIN_REWARDS := [
@@ -263,7 +269,7 @@ const ALLIANCE_DONATIONS := [
 ]
 ## Toko aliansi: harga dalam Jasa, limit pembelian per hari, level aliansi minimal.
 const ALLIANCE_SHOP := [
-	{"id": "gold30", "name": "Kantong Emas", "icon": "gold", "reward": {"gold": 30}, "cost": 100, "limit": 2, "level": 1},
+	{"id": "gold30", "name": "Kantong Emas", "icon": "gold", "reward": {"gold": 30}, "cost": 100, "limit": 1, "level": 1},
 	{"id": "silver10k", "name": "Peti Perak", "icon": "silver", "reward": {"silver": 10000}, "cost": 80, "limit": 3, "level": 1},
 	{"id": "grain10k", "name": "Lumbung Pangan", "icon": "grain", "reward": {"grain": 10000}, "cost": 80, "limit": 3, "level": 2},
 	{"id": "soldiers5k", "name": "Pasukan Bantuan", "icon": "soldiers", "reward": {"soldiers": 5000}, "cost": 120, "limit": 2, "level": 3},
@@ -366,7 +372,7 @@ const ARENA_LEAGUES := [
 	{"name": "Legenda", "min": 2200, "color": "c0392b", "stars": 5, "reward": {"gold": 600, "soldiers": 20000}},
 ]
 const ARENA_SHOP := [
-	{"id": "a_gold", "name": "Kantong Emas", "icon": "gold", "reward": {"gold": 40}, "cost": 100, "limit": 2},
+	{"id": "a_gold", "name": "Kantong Emas", "icon": "gold", "reward": {"gold": 40}, "cost": 100, "limit": 1},
 	{"id": "a_silver", "name": "Peti Perak", "icon": "silver", "reward": {"silver": 15000}, "cost": 60, "limit": 3},
 	{"id": "a_grain", "name": "Lumbung Pangan", "icon": "grain", "reward": {"grain": 15000}, "cost": 60, "limit": 3},
 	{"id": "a_soldiers", "name": "Pasukan Bayaran", "icon": "soldiers", "reward": {"soldiers": 8000}, "cost": 80, "limit": 3},
@@ -420,7 +426,7 @@ const FEATURE_INTROS := [
 ## Isi menu Panduan.
 const HELP_TOPICS := [
 	{"icon": "tab_city", "title": "Kota", "text": "Kerjakan urusan kota untuk perak, pangan, dan prajurit. "
-		+ "Urusan terisi 1 tiap menit. Kumpulkan prestise untuk naik jabatan: batas level dan hasil meningkat."},
+		+ "Prajurit baru makan pangan, jadi kelola sawah juga. Urusan terisi 1 tiap menit. Kumpulkan prestise untuk naik jabatan: batas level dan hasil meningkat."},
 	{"icon": "tab_counselor", "title": "Penasihat", "text": "Latih penasihat dengan perak. Kekuatan menentukan "
 		+ "kampanye dan arena, Kecerdasan hasil pajak, Politik hasil sawah, Karisma jumlah prajurit."},
 	{"icon": "tab_gacha", "title": "Rekrut", "text": "Rekrut penasihat dengan emas: Legenda 4%, Epik 21%. "
@@ -564,7 +570,7 @@ const STORY_CHAPTERS := [
 		"quests": [
 			{"type": "stage", "target": 5, "text": "Taklukkan Tahap 5", "reward": {"gold": 50}},
 			{"type": "counselors", "target": 4, "text": "Miliki 4 penasihat", "reward": {"silver": 5000}},
-			{"type": "prestige", "target": 150, "text": "Kumpulkan 150 prestise", "reward": {"items": {"energy_tea": 1}}},
+			{"type": "prestige", "target": 300, "text": "Kumpulkan 300 prestise", "reward": {"items": {"energy_tea": 1}}},
 			{"type": "rank", "target": 1, "text": "Naik jabatan menjadi Camat", "reward": {"gold": 80}},
 		], "reward": {"gold": 150, "items": {"star_stone": 1}}},
 	{"title": "Keluarga Bangsawan", "story": [
@@ -680,14 +686,27 @@ static func beauty_def(id: String) -> Dictionary:
 
 
 ## Tahap kampanye dibuat prosedural supaya tidak ada batas akhir.
+## Biaya latih penasihat: UPGRADE_COST_BASE * level^UPGRADE_COST_EXP perak.
+const UPGRADE_COST_BASE := 50
+const UPGRADE_COST_EXP := 2.0
+
+## Kurva kampanye: jumlah & kekuatan musuh tumbuh eksponensial per tahap.
+const STAGE_SOLDIERS_BASE := 600
+const STAGE_SOLDIERS_GROWTH := 1.16
+const STAGE_STR_BASE := 12
+const STAGE_STR_GROWTH := 1.13
+## Rasio korban minimum walau kekuatan Anda jauh di atas musuh.
+const LOSS_RATIO_MIN := 0.5
+
+
 static func stage_info(index: int) -> Dictionary:
 	var enemy: Dictionary = ENEMIES[index % ENEMIES.size()]
 	return {
 		"name": "Tahap %d" % (index + 1),
 		"enemy_id": enemy["id"],
 		"enemy_name": enemy["name"],
-		"enemy_soldiers": int(300 * pow(1.16, index)),
-		"enemy_str": int(12 * pow(1.13, index)),
+		"enemy_soldiers": int(STAGE_SOLDIERS_BASE * pow(STAGE_SOLDIERS_GROWTH, index)),
+		"enemy_str": int(STAGE_STR_BASE * pow(STAGE_STR_GROWTH, index)),
 		"reward_silver": 120 + 45 * index,
 		"reward_prestige": 10 + 4 * index,
 		# Tiap tahap ke-5 adalah tahap besar dengan bonus emas.

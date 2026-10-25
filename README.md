@@ -35,7 +35,7 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
 ## Fitur prototipe
 
 - **Kota** — Tarik Pajak (perak, dari Kecerdasan), Kelola Sawah (pangan, dari
-  Politik), Rekrut Prajurit (dari Karisma). Tiap urusan memakai *charge* yang
+  Politik), Rekrut Prajurit (dari Karisma; tiap prajurit baru makan 0,75 pangan). Tiap urusan memakai *charge* yang
   terisi 1 per 60 detik, tetap terisi saat game ditutup (offline progress).
 - **Pengaturan** — tombol Pengaturan di menu Kota: nama Tuan (tampil di header,
   aliansi, arena, peringkat), slider volume musik & efek suara, mode hemat
@@ -113,7 +113,7 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   kembali ke Hari 1. Muncul otomatis saat game dibuka bila belum diklaim, dan
   bisa dibuka lewat tombol Login di header.
 - **Istana** — kunjungi selir untuk menaikkan keakraban (menambah Karisma) dan
-  peluang mendapat anak. Didik anak dengan pangan, lalu nikahkan untuk bonus
+  peluang mendapat anak. Didik anak dengan pangan (jeda 30 menit per anak), lalu nikahkan untuk bonus
   atribut permanen ke penasihat.
 - **Istana: Anak, Penjara, Perjamuan** — anak dewasa bisa ikut Ujian Negara dan
   menjadi pejabat (Juru Tulis s.d. Menteri Muda, bonus permanen hasil urusan kota);
@@ -177,6 +177,7 @@ assets/audio               Musik & efek suara (OGG)
 assets/fonts               Font Cinzel & Nunito (lisensi SIL OFL)
 tools/gen_art.py           Generator semua gambar SVG
 tools/gen_audio.py         Generator musik & efek suara (numpy + ffmpeg)
+tools/sim_economy.gd       Bot simulasi ekonomi N hari (lihat docs/balance.md)
 tools/build_android.sh     Build APK
 tests/run_tests.gd         Tes logika headless
 ```

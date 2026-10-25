@@ -26,7 +26,7 @@ func _init() -> void:
 		"test_war_save_leave", "test_chat_send_reply", "test_chat_ambient_unread", "test_chat_save_leave",
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
-		"test_story", "test_away_report", "test_lord_name", "test_notification_plan",
+		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -104,9 +104,9 @@ func test_campaign_loss() -> void:
 func test_promote() -> void:
 	var m := fresh()
 	check(not m.promote()["ok"], "belum bisa naik")
-	m.prestige = 150
+	m.prestige = Data.RANKS[1]["prestige"]
 	check(m.promote()["ok"] and m.rank == 1, "naik ke Camat")
-	check(m.max_charges() == 4, "batas charge naik")
+	check(m.max_charges() == Data.RANKS[1]["max_charges"], "batas charge naik")
 	m.rank = Data.RANKS.size() - 1
 	m.prestige = 1 << 40
 	check(not m.can_promote(), "jabatan tertinggi")
@@ -123,8 +123,11 @@ func test_palace_children() -> void:
 	check(m.beauties["melati"]["intimacy"] > 0, "keakraban naik")
 	check(m.children[0]["gender"] in ["m", "f"], "anak punya jenis kelamin")
 	m.grain = 1000000
+	check(m.train_child(0, t)["ok"] and not m.train_child(0, t + 60.0)["ok"], "anak perlu istirahat setelah dididik")
+	check(m.train_wait(0, t + 60.0) == Data.CHILD_TRAIN_SECONDS - 60, "sisa waktu istirahat")
 	for i in Data.CHILD_MAX_LEVEL:
-		m.train_child(0)
+		t += Data.CHILD_TRAIN_SECONDS
+		m.train_child(0, t)
 	check(m.children[0]["level"] == Data.CHILD_MAX_LEVEL, "anak dewasa")
 	var power_before := m.power()
 	check(m.marry_child(0)["ok"], "menikahkan anak")
@@ -217,7 +220,7 @@ func test_gold_sources() -> void:
 	for i in 5:
 		m.fight_stage()
 	check(m.gold > g + 50, "emas dari kampanye termasuk bonus tahap ke-5")
-	m.prestige = 150
+	m.prestige = Data.RANKS[1]["prestige"]
 	g = m.gold
 	m.promote()
 	check(m.gold == g + Data.PROMOTE_GOLD, "emas dari naik jabatan")
@@ -275,7 +278,8 @@ func test_daily_progress_claim() -> void:
 	var gold := m.gold
 	var grain := m.grain
 	check(m.claim_mission(_mission_index(m, "tax5"))["ok"], "klaim misi")
-	check(m.gold == gold + 20 and m.grain == grain + 500, "hadiah misi diterima")
+	var tax: Dictionary = Data.mission_def("tax5")
+	check(m.gold == gold + int(tax["gold"]) and m.grain == grain + int(tax["grain"]), "hadiah misi diterima")
 	check(m.daily["points"] == Data.DAILY_POINTS, "poin aktivitas bertambah")
 	check(not m.claim_mission(_mission_index(m, "tax5"))["ok"], "tidak bisa klaim dua kali")
 	m.soldiers = 10000000
@@ -294,7 +298,7 @@ func test_daily_chests_reset() -> void:
 	m.daily["points"] = 80
 	check(m.can_claim_chest(0) and m.can_claim_chest(1) and not m.can_claim_chest(2), "peti terbuka sesuai poin")
 	var gold := m.gold
-	check(m.claim_chest(0)["ok"] and m.gold == gold + 30, "hadiah peti")
+	check(m.claim_chest(0)["ok"] and m.gold == gold + int(Data.DAILY_CHESTS[0]["gold"]), "hadiah peti")
 	check(not m.claim_chest(0)["ok"], "peti hanya sekali")
 	m.daily["missions"][0]["progress"] = 999
 	m.sync(1000.0 + 86400.0)
@@ -503,9 +507,10 @@ func test_alliance_shop() -> void:
 	m.alliance["jasa"] = 1000
 	var gold := m.gold
 	check(m.shop_buy("gold30", 1000.0)["ok"] and m.gold == gold + 30 and m.alliance["jasa"] == 900, "beli di toko")
-	m.shop_buy("gold30", 1000.0)
+	while m.shop_left("gold30", 1000.0) > 0:
+		m.shop_buy("gold30", 1000.0)
 	check(not m.shop_buy("gold30", 1000.0)["ok"], "batas pembelian harian")
-	check(m.shop_left("gold30", 1000.0 + 86400) == 2, "batas pembelian reset besok")
+	check(m.shop_left("gold30", 1000.0 + 86400) == Data.ALLIANCE_SHOP[0]["limit"], "batas pembelian reset besok")
 	check(not m.shop_buy("gold100", 1000.0)["ok"], "barang terkunci level aliansi")
 
 
@@ -1326,3 +1331,19 @@ func test_notification_plan() -> void:
 	var login: Array = plan.filter(func(n): return n["id"] == 4)
 	check(login[0]["delay"] == m.seconds_until_reset(t) + 9 * 3600, "login esok jam 9")
 	check(plan.all(func(n): return n["delay"] > 0 and n["title"] != "" and n["text"] != ""), "isi notifikasi lengkap")
+
+
+func test_soldiers_eat_grain() -> void:
+	var m := fresh()
+	var t := 1000.0
+	var y := m.affair_yield("soldiers")
+	m.grain = 100000
+	var s0 := m.soldiers
+	check(m.do_affair("soldiers", t)["ok"] and m.soldiers == s0 + y, "rekrut prajurit penuh")
+	check(m.grain == 100000 - ceili(y * Data.SOLDIER_GRAIN), "prajurit baru makan pangan")
+	m.grain = 30
+	s0 = m.soldiers
+	check(m.do_affair("soldiers", t)["ok"] and m.soldiers == s0 + int(30 / Data.SOLDIER_GRAIN), "rekrut sebanyak pangan yang ada")
+	m.grain = 0
+	var charges := m.charge_value("soldiers", t)
+	check(not m.do_affair("soldiers", t)["ok"] and m.charge_value("soldiers", t) == charges, "tanpa pangan tidak memakai urusan")

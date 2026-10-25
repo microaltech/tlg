@@ -26,7 +26,7 @@ func _init() -> void:
 		"test_war_save_leave", "test_chat_send_reply", "test_chat_ambient_unread", "test_chat_save_leave",
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
-		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass", "test_offers", "test_achievements",
+		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass", "test_offers", "test_achievements", "test_save_code",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1660,3 +1660,23 @@ func test_achievements() -> void:
 	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
 	check(var_to_str(m2.achievements) == var_to_str(m.achievements) and m2.counters["affair"] == 12, "simpan/muat pencapaian")
 	check(Data.ACHIEVEMENTS.all(func(a): return m.achievement_value(a) >= 0), "semua metrik pencapaian dikenal")
+
+
+func test_save_code() -> void:
+	var m := fresh()
+	m.soldiers = 1 << 30
+	for i in 12:
+		m.fight_stage()
+	m.set_lord_name("Wira")
+	m.add_equipment("keris_nagasasra")
+	var code := Model.encode_save(m.to_dict())
+	check(code.begins_with(Model.SAVE_CODE_PREFIX) and code.length() < JSON.stringify(m.to_dict()).length(),
+		"kode cadangan lebih pendek dari JSON (%d karakter)" % code.length())
+	var data := Model.decode_save("  " + code + "\n")
+	check(not data.is_empty(), "kode cadangan dibaca ulang")
+	var m2 := Model.new()
+	m2.from_dict(data, 1000.0)
+	check(var_to_str(m2.to_dict()) == var_to_str(m.to_dict()), "pulihkan dari kode identik")
+	check(Model.decode_save("bukan kode").is_empty(), "teks acak ditolak")
+	check(Model.decode_save(Model.SAVE_CODE_PREFIX + "AAAA").is_empty(), "kode rusak ditolak")
+	check(Model.decode_save(Model.encode_save({"a": 1})).is_empty(), "data bukan save ditolak")

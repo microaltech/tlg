@@ -16,8 +16,8 @@ const RANKS := [
 	{"name": "Camat", "prestige": 300, "max_charges": 4, "mult": 1.25, "level_cap": 40, "child_seats": 3},
 	{"name": "Bupati", "prestige": 1500, "max_charges": 5, "mult": 1.5, "level_cap": 60, "child_seats": 4},
 	{"name": "Gubernur", "prestige": 6000, "max_charges": 6, "mult": 2.0, "level_cap": 80, "child_seats": 5},
-	{"name": "Menteri", "prestige": 12000, "max_charges": 7, "mult": 2.5, "level_cap": 100, "child_seats": 6},
-	{"name": "Perdana Menteri", "prestige": 25000, "max_charges": 8, "mult": 3.0, "level_cap": 150, "child_seats": 8},
+	{"name": "Menteri", "prestige": 16000, "max_charges": 7, "mult": 2.5, "level_cap": 100, "child_seats": 6},
+	{"name": "Perdana Menteri", "prestige": 35000, "max_charges": 8, "mult": 3.0, "level_cap": 150, "child_seats": 8},
 ]
 
 ## Kelangkaan penasihat untuk gacha. rate = peluang per tarikan.

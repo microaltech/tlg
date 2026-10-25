@@ -167,6 +167,13 @@ func _ready() -> void:
 		_show({"ok": false, "msg": msg}))
 	Store.prices_updated.connect(_queue_rebuild)
 	Ads.ad_started.connect(_on_ad_started)
+	PlayGames.cloud_result.connect(func(ok, msg): _show({"ok": ok, "msg": msg}))
+	PlayGames.cloud_loaded.connect(func(data):
+		if model.decode_save(data).is_empty():
+			_show({"ok": false, "msg": "Tidak ada save valid di Google Play."})
+			return
+		_confirm("Ganti progres sekarang dengan save dari Google Play?", "Pulihkan",
+			func(): _show(Game.import_code(data))))
 	model.achievement_reached.connect(func(id, tier):
 		for a in Data.ACHIEVEMENTS:
 			if a["id"] == id and _startup_prompted:
@@ -3612,6 +3619,8 @@ func _show_settings() -> void:
 		ProjectSettings.get_setting("application/config/version", "0.1.0"), "SmallLabel") \
 		.add_theme_color_override("font_color", UI.INK)
 
+	_build_backup_section(box, close)
+
 	var privacy := _inner_box(box)
 	_label(privacy, "Privasi & Laporan Masalah", "CardLabel").add_theme_font_override("font", UI.font_bold)
 	_setting_toggle(privacy, "Statistik bermain", "analytics",
@@ -3643,6 +3652,66 @@ func _show_settings() -> void:
 		close.call()
 		_show_settings.call_deferred()
 		return {"ok": true, "msg": "Statistik bermain dihapus."})
+
+
+## Cadangan save: kode yang bisa disalin/ditempel, dan Google Play Games bila tersedia.
+func _build_backup_section(box: VBoxContainer, close: Callable) -> void:
+	var backup := _inner_box(box)
+	_label(backup, "Cadangan Save", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	_label(backup, "Pindah HP? Salin kode cadangan lalu simpan di tempat aman (mis. catatan atau email). "
+		+ "Tempelkan kode di HP baru untuk memulihkan progres.", "SmallLabel") \
+		.add_theme_color_override("font_color", UI.INK)
+	_button(backup, "Salin Kode Cadangan", func():
+		Game.save_game()
+		DisplayServer.clipboard_set(Game.export_code())
+		return {"ok": true, "msg": "Kode cadangan disalin ke clipboard."}, true, "", "GreenButton")
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	backup.add_child(row)
+	var input := LineEdit.new()
+	input.placeholder_text = "Tempel kode cadangan di sini"
+	input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	input.custom_minimum_size.y = 64
+	input.add_theme_stylebox_override("normal", UI.box(Color("fffaf0"), UI.GOLD_DARK, 2, 12))
+	input.add_theme_stylebox_override("focus", UI.box(Color("fffaf0"), UI.GOLD, 3, 12))
+	input.add_theme_color_override("font_color", UI.INK)
+	input.add_theme_color_override("font_placeholder_color", Color("9a8670"))
+	row.add_child(input)
+	_button(row, "Pulihkan", func():
+		if Game.model.decode_save(input.text).is_empty():
+			return {"ok": false, "msg": "Kode cadangan tidak valid."}
+		var code: String = input.text
+		_confirm("Ganti progres sekarang dengan progres dari kode cadangan? Progres saat ini akan hilang.", "Pulihkan",
+			func():
+				close.call()
+				_show(Game.import_code(code)))
+		return null, true, "", "GoldButton").custom_minimum_size.x = 150
+	if PlayGames.available():
+		var cloud := HBoxContainer.new()
+		cloud.add_theme_constant_override("separation", 8)
+		backup.add_child(cloud)
+		_button(cloud, "Simpan ke Google Play", func():
+			Game.save_game()
+			PlayGames.save_cloud(Game.export_code())
+			return null, true, "", "GreenButton").size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_button(cloud, "Muat dari Google Play", func():
+			PlayGames.load_cloud()
+			return null).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+
+## Dialog konfirmasi sederhana (ok_text pada tombol setuju).
+func _confirm(text: String, ok_text: String, on_ok: Callable) -> void:
+	var dlg := ConfirmationDialog.new()
+	dlg.add_to_group("modal")
+	dlg.dialog_text = text
+	dlg.ok_button_text = ok_text
+	dlg.cancel_button_text = "Batal"
+	dlg.confirmed.connect(on_ok)
+	dlg.visibility_changed.connect(func():
+		if not dlg.visible:
+			dlg.queue_free())
+	add_child(dlg)
+	dlg.popup_centered()
 
 
 func _show_privacy() -> void:

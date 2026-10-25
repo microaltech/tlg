@@ -42,6 +42,27 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   baterai (30 FPS + gambar ulang hanya saat ada perubahan), nyala/mati
   notifikasi, simpan manual, dan mulai ulang. Preferensi perangkat disimpan di
   `user://settings.cfg`, terpisah dari progres game.
+- **Kerjakan Semua** — sejak Camat, satu tombol menghabiskan urusan kota, energi
+  kunjungan, dan mendidik anak yang siap.
+- **Banner rate-up** — tiap minggu satu Legenda unggulan; 50% Legenda adalah
+  unggulan, dan bila meleset Legenda berikutnya pasti unggulan.
+- **Pusaka** — senjata, kitab, dan perhiasan (3 kelangkaan) dari tahap besar,
+  perang, dan menara; pasang ke penasihat, tingkatkan sampai +9, atau lebur.
+- **Menara Ujian** — lantai bertingkat (dari Tahap 15) dengan kekuatan tempur,
+  5 percobaan per hari, reset mingguan, hadiah pusaka tiap lantai ke-5, dan
+  papan peringkat "Menara".
+- **Tiket Musim** — battle pass 30 hari, 30 tingkat, jalur gratis dan premium
+  (IAP `season_pass`).
+- **Paket terbatas waktu** — muncul setelah naik jabatan atau 3 kekalahan
+  beruntun (IAP `offer_promote`, `offer_rescue`).
+- **Pencapaian** — 12 pencapaian bertingkat dengan hadiah emas; dilaporkan ke
+  Google Play Games bila plugin terpasang.
+- **Iklan berhadiah** — tiket rekrut, isi penuh urusan, dan emas dengan batas
+  harian (autoload `Ads`, AdMob; mode uji di build debug).
+- **Cerita lanjutan & gelar kehormatan** — bab 7–8 setelah Perdana Menteri,
+  gelar Patih (+5%) dan Mahapatih (+10% semua hasil urusan).
+- **Cadangan save** — kode cadangan yang bisa disalin/ditempel di Pengaturan,
+  dan simpan/muat lewat Google Play Games.
 - **Dua bahasa** — Indonesia dan English, pilih di Pengaturan (default mengikuti
   bahasa perangkat). Lihat bagian "Bahasa".
 - **Selamat datang kembali** — setelah pergi minimal 5 menit (game ditutup atau
@@ -168,6 +189,8 @@ scripts/core/game_model.gd Semua logika game, tanpa UI (mudah diuji)
 scripts/core/game.gd       Autoload "Game": simpan/muat & autosave
 scripts/core/settings.gd   Autoload "Settings": volume, hemat baterai, notifikasi
 scripts/core/notifier.gd   Autoload "Notifier": notifikasi lokal Android (via plugin)
+scripts/core/ads.gd        Autoload "Ads": iklan video berhadiah (AdMob / mode uji)
+scripts/core/play_games.gd Autoload "PlayGames": pencapaian & save cloud Google Play Games
 scripts/core/telemetry.gd  Autoload "Telemetry": statistik lokal & deteksi crash
 scripts/core/i18n.gd       Autoload "I18n": pilihan bahasa (Otomatis/Indonesia/English)
 scripts/core/pattern_translation.gd  Penerjemah kamus + templat (lihat "Bahasa")

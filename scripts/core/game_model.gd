@@ -3206,6 +3206,35 @@ func away_report(snap: Dictionary, now: float) -> Dictionary:
 	return {"seconds": int(away), "lines": lines}
 
 
+# --- Kode cadangan ----------------------------------------------------------
+
+const SAVE_CODE_PREFIX := "TLG1:"
+
+
+## Ubah data save (hasil to_dict) menjadi teks pendek yang bisa disalin:
+## JSON -> gzip -> base64, dengan awalan versi.
+static func encode_save(data: Dictionary) -> String:
+	var raw := JSON.stringify(data).to_utf8_buffer()
+	return SAVE_CODE_PREFIX + Marshalls.raw_to_base64(raw.compress(FileAccess.COMPRESSION_GZIP))
+
+
+## Kebalikan encode_save. Kosong bila kode tidak valid atau bukan save game ini.
+static func decode_save(code: String) -> Dictionary:
+	code = code.strip_edges().replace("\n", "").replace(" ", "")
+	if not code.begins_with(SAVE_CODE_PREFIX):
+		return {}
+	var packed := Marshalls.base64_to_raw(code.substr(SAVE_CODE_PREFIX.length()))
+	if packed.is_empty():
+		return {}
+	var raw := packed.decompress_dynamic(32 * 1024 * 1024, FileAccess.COMPRESSION_GZIP)
+	if raw.is_empty():
+		return {}
+	var data = JSON.parse_string(raw.get_string_from_utf8())
+	if not (data is Dictionary) or not data.has("version") or not data.has("counselors"):
+		return {}
+	return data
+
+
 # --- Simpan / muat --------------------------------------------------------
 
 func to_dict() -> Dictionary:

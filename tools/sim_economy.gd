@@ -20,6 +20,7 @@ const SESSION_HOURS := {
 
 var m: Model
 var stats := {}
+var watch_ads := true
 
 
 func _init() -> void:
@@ -27,6 +28,7 @@ func _init() -> void:
 	var days := int(args[0]) if args.size() > 0 else 30
 	var sessions := int(args[1]) if args.size() > 1 else 4
 	var seed_value := int(args[2]) if args.size() > 2 else 1
+	watch_ads = not (args.size() > 3 and args[3] == "noads")
 	run(days, sessions, seed_value)
 	quit()
 
@@ -202,6 +204,25 @@ func session(now: float) -> void:
 		m.claim_quest(idx)
 	m.claim_chapter()
 	gold_add(g, "misi/event/cerita")
+
+	# Fitur tambahan: menara, Tiket Musim (jalur gratis), pencapaian, dan iklan
+	# berhadiah (pemain gratis yang mau menonton iklan).
+	g = m.gold
+	if m.tower_unlocked():
+		while m.tower_attempts_left(now) > 0:
+			m.tower_fight(now)
+	m.claim_pass_all(now)
+	m.check_achievements()
+	for a in Data.ACHIEVEMENTS:
+		while m.claim_achievement(a["id"])["ok"]:
+			pass
+	gold_add(g, "menara/pass/pencapaian")
+	g = m.gold
+	if watch_ads:
+		for kind in Data.AD_REWARDS:
+			while m.ad_left(kind, now) > 0:
+				m.grant_ad_reward(kind, now)
+	gold_add(g, "iklan")
 
 	# Rekrut x10 dengan emas yang terkumpul (pemain gratis menabung untuk x10).
 	while m.gold >= Data.GACHA_COST_10:

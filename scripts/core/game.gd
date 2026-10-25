@@ -77,6 +77,21 @@ func load_game() -> void:
 		model.new_game(now())
 
 
+## Kode cadangan dari progres saat ini (untuk disalin pemain).
+func export_code() -> String:
+	return model.encode_save(model.to_dict())
+
+
+## Pulihkan progres dari kode cadangan. Mengembalikan hasil {ok, msg}.
+func import_code(code: String) -> Dictionary:
+	var data: Dictionary = model.decode_save(code)
+	if data.is_empty():
+		return {"ok": false, "msg": "Kode cadangan tidak valid."}
+	model.from_dict(data, now())
+	save_game()
+	return {"ok": true, "msg": "Progres berhasil dipulihkan."}
+
+
 func reset_game() -> void:
 	model.new_game(now())
 	save_game()

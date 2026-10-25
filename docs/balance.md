@@ -66,3 +66,31 @@ Dengan 4 sesi/hari selama 30 hari:
   tahap 60–70. Konten akhir (tahap > 70, Perdana Menteri) ditujukan untuk
   pemain yang bermain lebih dari satu bulan.
 - Jalankan ulang bot setiap kali mengubah angka di `game_data.gd`.
+
+## Penyeimbangan ulang setelah fitur tambahan
+
+Fitur tambahan berikutnya menambah sumber emas dan kekuatan: 6 penasihat baru
+(19 total), pusaka, Menara Ujian, Tiket Musim (jalur gratis), pencapaian, dan
+iklan berhadiah. Bot kini ikut memakai menara, Tiket Musim, pencapaian, dan
+iklan. Tambahkan argumen `noads` untuk mensimulasikan pemain yang tidak menonton
+iklan.
+
+| Ukuran (4 sesi/hari, 30 hari) | Sebelum fitur tambahan | Sesudah, ambang lama | Sesudah, ambang baru |
+|---|---|---|---|
+| Tahap di hari ke-30 | 66 | 72 | 71 |
+| Menteri tercapai | hari ke-22 | hari ke-13 | hari ke-21 |
+| Emas didapat | 19,9 ribu | 26,5 ribu | 26,5 ribu (24,6 ribu tanpa iklan) |
+
+Percepatan terutama datang dari bertambahnya penasihat, bukan dari pusaka (bot
+tidak memasang pusaka). Karena itu yang disesuaikan adalah ambang prestise
+jabatan atas, bukan fitur barunya:
+
+| Jabatan | Lama | Baru |
+|---|---|---|
+| Menteri | 12.000 | 16.000 |
+| Perdana Menteri | 25.000 | 35.000 |
+
+Sumber emas tambahan sekitar +30%: menara, Tiket Musim, dan pencapaian sekitar
+4,1 ribu dalam 30 hari (sebagian sekali-jalan), ditambah iklan 1,8 ribu. Semua
+19 penasihat terkumpul dalam 30 hari. Bila koleksi dirasa terlalu cepat,
+turunkan `ACHIEVEMENT_GOLD` atau emas di `AD_REWARDS`.

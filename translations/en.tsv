@@ -1045,3 +1045,16 @@ Kapasitas urusan %d → %d	Affair capacity %d → %d
 Pengali hasil urusan x%s → x%s	Affair yield multiplier x%s → x%s
 Kursi anak %d → %d	Child seats %d → %d
 Ketuk untuk melanjutkan	Tap to continue
+Tidak ada save valid di Google Play.	No valid save found on Google Play.
+Ganti progres sekarang dengan save dari Google Play?	Replace your current progress with the save from Google Play?
+Pulihkan	Restore
+Cadangan Save	Save Backup
+Pindah HP? Salin kode cadangan lalu simpan di tempat aman (mis. catatan atau email). Tempelkan kode di HP baru untuk memulihkan progres.	Switching phones? Copy the backup code and keep it somewhere safe (e.g. notes or email). Paste the code on your new phone to restore your progress.
+Salin Kode Cadangan	Copy Backup Code
+Kode cadangan disalin ke clipboard.	Backup code copied to the clipboard.
+Tempel kode cadangan di sini	Paste backup code here
+Kode cadangan tidak valid.	Invalid backup code.
+Ganti progres sekarang dengan progres dari kode cadangan? Progres saat ini akan hilang.	Replace your current progress with the progress from the backup code? Your current progress will be lost.
+Simpan ke Google Play	Save to Google Play
+Muat dari Google Play	Load from Google Play
+Progres berhasil dipulihkan.	Progress restored successfully.

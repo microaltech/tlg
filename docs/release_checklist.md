@@ -16,6 +16,14 @@
       "Pembelian dalam aplikasi" di README).
 - [ ] (Opsional) Build plugin notifikasi `plugins/tlg_notify_android`, lalu uji
       di HP Android 13+.
+- [ ] Buat juga produk IAP `season_pass`, `offer_promote`, dan `offer_rescue`
+      (semuanya consumable).
+- [ ] Iklan: pasang plugin AdMob, ganti `REWARDED_UNIT_ID` di
+      `scripts/core/ads.gd`, tambahkan App ID AdMob ke manifest, lalu perbarui
+      Data Safety (lihat `docs/play_data_safety.md`).
+- [ ] Google Play Games: aktifkan Play Games Services, buat 43 pencapaian (satu
+      per tingkat), isi `ACHIEVEMENT_IDS` di `scripts/core/play_games.gd`, dan
+      aktifkan Saved Games untuk cadangan cloud.
 
 ## Setiap rilis
 

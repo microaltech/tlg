@@ -26,7 +26,7 @@ func _init() -> void:
 		"test_war_save_leave", "test_chat_send_reply", "test_chat_ambient_unread", "test_chat_save_leave",
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
-		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup",
+		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1384,6 +1384,9 @@ func test_pattern_translation() -> void:
 	var en = load("res://scripts/core/pattern_translation.gd").new()
 	var n: int = en.load_tsv("res://translations/en.tsv")
 	check(n > 700, "kamus bahasa Inggris termuat (%d entri)" % n)
+	# Teks sumber berbahasa Indonesia: locale cadangan harus "id", bukan bawaan Godot "en",
+	# agar pemain berbahasa Indonesia tidak jatuh ke kamus bahasa Inggris.
+	check(ProjectSettings.get_setting("internationalization/locale/fallback") == "id", "locale cadangan adalah id")
 	check(en._get_message(&"Kekuatan 12", &"") == &"Strength 12", "Kekuatan sebagai atribut")
 	check(en._get_message(&"Kekuatan %s", &"power") == &"Power %s", "Kekuatan dengan konteks power")
 	check(en.translate_text("Hadiah login Hari 6: +5000 perak, +3000 pangan, +2 Pil Keakraban, +1 poin VIP.")
@@ -1456,3 +1459,43 @@ func test_rateup() -> void:
 	var m2 := Model.new()
 	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
 	check(m2.rateup_guarantee, "simpan/muat jaminan rate-up")
+
+
+func test_equipment() -> void:
+	var m := fresh()
+	var str_before := m.attr("arya", "str")
+	var eq := m.add_equipment("keris_besi")
+	check(not eq.is_empty() and eq["level"] == 1 and eq["owner"] == "", "pusaka masuk gudang")
+	check(m.equip(eq["uid"], "arya")["ok"] and m.attr("arya", "str") == str_before + 30, "pusaka menambah atribut")
+	var eq2 := m.add_equipment("tombak_klinting")
+	m.equip(eq2["uid"], "arya")
+	check(m.equip_find(eq["uid"])["owner"] == "" and m.attr("arya", "str") == str_before + 80, "satu senjata per penasihat")
+	m.silver = 10000000
+	var power := m.power()
+	check(m.upgrade_equipment(eq2["uid"])["ok"] and m.equip_find(eq2["uid"])["level"] == 2, "tingkatkan pusaka")
+	check(m.equip_stats(m.equip_find(eq2["uid"]))["str"] == 96 and m.power() > power, "bonus naik per level")
+	for i in 20:
+		m.upgrade_equipment(eq2["uid"])
+	check(m.equip_find(eq2["uid"])["level"] == Data.EQUIP_MAX_LEVEL, "batas level pusaka")
+	var silver := m.silver
+	var value := m.equip_salvage_value(m.equip_find(eq2["uid"]))
+	check(m.salvage_equipment(eq2["uid"])["ok"] and m.silver == silver + value and m.attr("arya", "str") == str_before,
+		"lebur pusaka mengembalikan perak dan melepas bonus")
+	check(m.unequip(eq["uid"])["ok"] == false, "pusaka yang tidak dipakai tidak bisa dilepas")
+	m.equip(eq["uid"], "sekar")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(var_to_str(m2.equipment) == var_to_str(m.equipment) and m2.attr("sekar", "str") == m.attr("sekar", "str"),
+		"simpan/muat pusaka")
+	var e3 := m2.add_equipment("cincin_perak")
+	check(int(e3["uid"]) > int(eq["uid"]), "uid pusaka unik setelah muat")
+	# rampasan tahap besar
+	var drops := {}
+	for i in 400:
+		drops[Data.equip_roll(60, float(i) / 400.0, 0.5)] = true
+	check(drops.size() >= 3, "ada tiga kelangkaan pusaka")
+	var m3 := fresh(5)
+	m3.soldiers = 1 << 40
+	for i in 50:
+		m3.fight_stage()
+	check(m3.equipment.size() > 0, "pusaka jatuh dari tahap besar kampanye (%d)" % m3.equipment.size())

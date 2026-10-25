@@ -39,6 +39,10 @@ window/size/window_height_override=800
 window/stretch/mode="canvas_items"
 window/handheld/orientation=1
 
+[internationalization]
+
+locale/fallback="id"
+
 [rendering]
 
 textures/canvas_textures/default_texture_filter=3

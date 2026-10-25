@@ -2882,6 +2882,53 @@ func _show_settings() -> void:
 		ProjectSettings.get_setting("application/config/version", "0.1.0"), "SmallLabel") \
 		.add_theme_color_override("font_color", UI.INK)
 
+	var privacy := _inner_box(box)
+	_label(privacy, "Privasi & Laporan Masalah", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	_setting_toggle(privacy, "Statistik bermain", "analytics",
+		"Jumlah sesi, lama bermain, dan aksi. Hanya disimpan di perangkat ini, tidak dikirim ke mana pun.")
+	var st: Dictionary = Telemetry.stats
+	var events := 0
+	for k in st.get("events", {}):
+		events += int(st["events"][k])
+	var play := int(st.get("play_seconds", 0))
+	_label(privacy, "%d sesi · %d jam %d menit · %d hari aktif · %s aksi" % [int(st.get("sessions", 0)),
+		play / 3600, play / 60 % 60, int(st.get("active_days", 0)), _num(events)], "SmallLabel") \
+		.add_theme_color_override("font_color", UI.INK)
+	var crash: Dictionary = Telemetry.last_crash()
+	var crash_text := "Tidak ada crash tercatat." if crash.is_empty() else \
+		"Game terakhir berhenti tiba-tiba pada %s." % Time.get_datetime_string_from_unix_time(int(crash["t"]), true)
+	_label(privacy, crash_text, "SmallLabel").add_theme_color_override("font_color", UI.INK)
+	var privacy_row := HBoxContainer.new()
+	privacy_row.add_theme_constant_override("separation", 10)
+	privacy.add_child(privacy_row)
+	_button(privacy_row, "Salin Laporan", func():
+		DisplayServer.clipboard_set(Telemetry.problem_report())
+		return {"ok": true, "msg": "Laporan disalin. Tempelkan di email ke pengembang."}).size_flags_horizontal = \
+		Control.SIZE_EXPAND_FILL
+	_button(privacy_row, "Kebijakan Privasi", func():
+		_show_privacy()
+		return null).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_button(privacy, "Hapus Statistik", func():
+		Telemetry.clear_stats()
+		close.call()
+		_show_settings.call_deferred()
+		return {"ok": true, "msg": "Statistik bermain dihapus."})
+
+
+func _show_privacy() -> void:
+	var holder := {}
+	var close := func():
+		Audio.play("click")
+		if is_instance_valid(holder.get("overlay")):
+			holder["overlay"].queue_free()
+	var p := _open_panel("Kebijakan Privasi", "lock", close, 0.08, 0.92)
+	holder["overlay"] = p["overlay"]
+	p["subtitle"].text = "Ringkasan data yang disimpan game ini"
+	for section in Data.PRIVACY_SECTIONS:
+		var sec := _inner_box(p["content"])
+		_label(sec, section["title"], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		_label(sec, section["text"], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+
 
 func _volume_slider(parent: Node, title: String, key: String) -> void:
 	var head := HBoxContainer.new()

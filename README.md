@@ -166,6 +166,7 @@ scripts/core/game_model.gd Semua logika game, tanpa UI (mudah diuji)
 scripts/core/game.gd       Autoload "Game": simpan/muat & autosave
 scripts/core/settings.gd   Autoload "Settings": volume, hemat baterai, notifikasi
 scripts/core/notifier.gd   Autoload "Notifier": notifikasi lokal Android (via plugin)
+scripts/core/telemetry.gd  Autoload "Telemetry": statistik lokal & deteksi crash
 scripts/core/audio.gd      Autoload "Audio": musik latar & efek suara
 scripts/core/store.gd      Autoload "Store": Google Play Billing / Mode Uji
 scripts/ui/main.gd         UI dibangun lewat kode (header, 4 halaman, navigasi bawah)
@@ -178,6 +179,9 @@ assets/fonts               Font Cinzel & Nunito (lisensi SIL OFL)
 tools/gen_art.py           Generator semua gambar SVG
 tools/gen_audio.py         Generator musik & efek suara (numpy + ffmpeg)
 tools/sim_economy.gd       Bot simulasi ekonomi N hari (lihat docs/balance.md)
+tools/gen_launcher_icons.gd Ikon peluncur Android & Play Store dari icon.svg
+tools/make_keystore.sh     Membuat keystore rilis
+docs/                      Penyeimbangan, kebijakan privasi, Data Safety, checklist rilis
 tools/build_android.sh     Build APK
 tests/run_tests.gd         Tes logika headless
 ```
@@ -293,6 +297,24 @@ Tanpa AAR, ekspor tetap berjalan seperti sebelumnya (tanpa notifikasi) dan semua
 pemanggilan `Notifier` aman. **Catatan:** kode plugin belum dikompilasi atau diuji
 di perangkat karena lingkungan pengembangan ini tidak bisa mengakses Maven Google.
 Uji di HP sungguhan sebelum rilis.
+
+## Rilis ke Google Play
+
+- `tools/make_keystore.sh` membuat keystore rilis dan menampilkan environment
+  variable yang perlu di-set.
+- Preset **Android AAB (Play Store)** menghasilkan `.aab` lewat Gradle build:
+  `tools/build_android.sh aab`. Preset ini butuh Android Build Template, yang
+  tidak bisa diuji di lingkungan pengembangan ini karena Maven Google diblokir.
+  APK rilis biasa sudah diuji, dan tanda tangannya terverifikasi dengan
+  keystore buatan skrip.
+- Ikon peluncur (termasuk ikon adaptif) dibuat dari `icon.svg` oleh
+  `tools/gen_launcher_icons.gd`.
+- **Statistik & crash lokal**: `Telemetry` mencatat sesi, lama bermain, dan aksi
+  di perangkat. Bila game berhenti tiba-tiba, ekor log sesi itu disimpan, lalu
+  pemain bisa menyalin laporannya dari **Pengaturan → Salin Laporan**. Tidak ada
+  data yang dikirim ke internet.
+- Dokumen: `docs/privacy_policy.md`, `docs/play_data_safety.md`,
+  `docs/release_checklist.md`.
 
 ## Pembelian dalam aplikasi
 

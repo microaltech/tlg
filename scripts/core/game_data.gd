@@ -712,3 +712,21 @@ static func stage_info(index: int) -> Dictionary:
 		# Tiap tahap ke-5 adalah tahap besar dengan bonus emas.
 		"reward_gold": 15 + 3 * int(index / 5.0) + (50 if (index + 1) % 5 == 0 else 0),
 	}
+
+
+## Ringkasan kebijakan privasi di dalam game (versi lengkap: docs/privacy_policy.md).
+const PRIVACY_SECTIONS := [
+	{"title": "Data di perangkat Anda", "text": "Progres game (save.json), pengaturan, statistik bermain, dan "
+		+ "laporan crash disimpan hanya di penyimpanan aplikasi pada perangkat ini. Game tidak memiliki akun "
+		+ "atau server dan tidak mengirim data ini ke mana pun."},
+	{"title": "Pemain lain", "text": "Anggota aliansi, lawan arena, chat, dan papan peringkat adalah simulasi "
+		+ "di perangkat Anda. Pesan chat yang Anda ketik tidak dikirim ke siapa pun."},
+	{"title": "Pembelian dalam aplikasi", "text": "Pembayaran diproses oleh Google Play. Game hanya menerima "
+		+ "konfirmasi pembelian (ID produk dan token), tidak pernah data kartu atau rekening Anda."},
+	{"title": "Notifikasi", "text": "Pengingat dijadwalkan secara lokal oleh perangkat. Matikan kapan saja di "
+		+ "Pengaturan atau pengaturan Android."},
+	{"title": "Laporan masalah", "text": "Tombol Salin Laporan hanya menyalin teks ke clipboard. Anda yang "
+		+ "memutuskan apakah akan mengirimkannya ke pengembang."},
+	{"title": "Menghapus data", "text": "Hapus Statistik menghapus statistik bermain. Mulai Ulang menghapus "
+		+ "progres. Menghapus aplikasi menghapus semua data game dari perangkat."},
+]

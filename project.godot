@@ -15,6 +15,7 @@ config/icon="res://icon.svg"
 
 Settings="*res://scripts/core/settings.gd"
 Game="*res://scripts/core/game.gd"
+Telemetry="*res://scripts/core/telemetry.gd"
 Audio="*res://scripts/core/audio.gd"
 Store="*res://scripts/core/store.gd"
 Notifier="*res://scripts/core/notifier.gd"
@@ -22,6 +23,11 @@ Notifier="*res://scripts/core/notifier.gd"
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/tlg_notify/plugin.cfg")
+
+[debug]
+
+file_logging/enable_file_logging=true
+file_logging/max_log_files=1000
 
 [display]
 

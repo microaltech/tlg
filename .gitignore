@@ -4,3 +4,5 @@
 /build/
 /plugins/tlg_notify_android/build/
 /plugins/tlg_notify_android/.gradle/
+*.keystore
+*.jks

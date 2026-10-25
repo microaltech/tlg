@@ -37,6 +37,10 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
 - **Kota** — Tarik Pajak (perak, dari Kecerdasan), Kelola Sawah (pangan, dari
   Politik), Rekrut Prajurit (dari Karisma). Tiap urusan memakai *charge* yang
   terisi 1 per 60 detik, tetap terisi saat game ditutup (offline progress).
+- **Selamat datang kembali** — setelah pergi minimal 5 menit (game ditutup atau
+  diminimalkan), panel ringkasan menampilkan lama pergi dan apa yang terjadi:
+  urusan yang terisi, rekrut gratis siap, hari/event baru, pesan chat aliansi,
+  hasil perang guild, musim arena, dan hadiah peringkat. Hadiah login menyusul.
 - **Penasihat** — 13 penasihat dengan 4 atribut dan 3 kelangkaan (Langka, Epik,
   Legenda); latih dengan perak. Batas level ditentukan jabatan.
 - **Skill & ikatan penasihat** — tiap penasihat punya skill pasif (mis. hasil pajak,

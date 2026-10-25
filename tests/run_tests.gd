@@ -26,7 +26,7 @@ func _init() -> void:
 		"test_war_save_leave", "test_chat_send_reply", "test_chat_ambient_unread", "test_chat_save_leave",
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
-		"test_story",
+		"test_story", "test_away_report",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1266,3 +1266,24 @@ func test_story() -> void:
 	check(var_to_str(m2.story) == var_to_str(m.story), "simpan/muat misi utama")
 	m.story["chapter"] = Data.STORY_CHAPTERS.size()
 	check(m.story_done() and m.story_quests().is_empty() and not m.claim_chapter()["ok"], "cerita tamat")
+
+
+func test_away_report() -> void:
+	var m := fresh()
+	m.skip_tutorial()
+	var t := 1000.0
+	m.do_affair("silver", t)
+	m.do_affair("silver", t)
+	var snap := m.away_snapshot(t)
+	check(m.away_report(snap, t + 60.0).is_empty(), "tidak ada ringkasan bila pergi sebentar")
+	check(m.away_report({}, t + 9999.0).is_empty(), "tanpa snapshot tidak ada ringkasan")
+	var r := m.away_report(snap, t + 600.0)
+	check(r["seconds"] == 600, "lama pergi tercatat")
+	check(r["lines"].any(func(l): return "Tarik Pajak +2" in l["text"]), "urusan yang terisi dilaporkan")
+	var later := t + 3 * 86400.0
+	r = m.away_report(m.away_snapshot(t), later)
+	check(r["lines"].any(func(l): return "Hari baru" in l["text"]), "hari baru dilaporkan")
+	# snapshot ikut tersimpan lewat JSON (angka menjadi float)
+	var snap2 = JSON.parse_string(JSON.stringify(m.away_snapshot(later)))
+	r = m.away_report(snap2, later + 400.0)
+	check(not r.is_empty() and r["lines"].size() >= 1, "ringkasan dari snapshot JSON")

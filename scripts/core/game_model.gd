@@ -2516,6 +2516,70 @@ func marry_child(index: int) -> Dictionary:
 		child["name"], Data.counselor_def(target)["name"], bonus, Data.ATTR_NAMES[key]])
 
 
+# --- Ringkasan saat kembali ----------------------------------------------
+
+## Minimal lama pergi (detik) sebelum ringkasan "Selamat datang kembali" muncul.
+const AWAY_MIN_SECONDS := 300.0
+const AWAY_CHARGE_NAMES := {"silver": "Tarik Pajak", "grain": "Kelola Sawah",
+	"soldiers": "Rekrut Prajurit", "visit": "Energi kunjungan"}
+
+
+## Potret keadaan saat pemain pergi; dibandingkan dengan away_report() nanti.
+func away_snapshot(now: float) -> Dictionary:
+	var ch := {}
+	for key in CHARGE_KEYS:
+		ch[key] = charge_value(key, now)
+	return {
+		"t": now, "charges": ch, "free": free_pull_eta(now) == 0, "day": day_index(now),
+		"week": week_index(now), "unread": chat_unread(now),
+		"war_reward": not war_reward.is_empty(),
+		"season": not arena.is_empty() and not arena.get("season_reward", {}).is_empty(),
+		"lb_reward": not leaderboard.get("reward", {}).is_empty(),
+	}
+
+
+## Daftar hal yang terjadi selama pemain pergi: [{"icon", "text"}].
+## Kosong bila pergi kurang dari AWAY_MIN_SECONDS atau snapshot tidak valid.
+func away_report(snap: Dictionary, now: float) -> Dictionary:
+	if snap.is_empty():
+		return {}
+	var away := now - float(snap.get("t", now))
+	if away < AWAY_MIN_SECONDS:
+		return {}
+	var lines := []
+	var cap := max_charges()
+	var refilled := []
+	for key in CHARGE_KEYS:
+		var before := int(snap.get("charges", {}).get(key, cap))
+		var after := charge_value(key, now)
+		if after > before:
+			refilled.append("%s +%d%s" % [AWAY_CHARGE_NAMES[key], after - before, " (penuh)" if after >= cap else ""])
+	if not refilled.is_empty():
+		lines.append({"icon": "tab_city", "text": "Urusan terisi kembali: " + ", ".join(refilled) + "."})
+	if free_pull_eta(now) == 0 and not bool(snap.get("free", false)):
+		lines.append({"icon": "ticket_recruit", "text": "Rekrut gratis sudah siap."})
+	if day_index(now) != int(snap.get("day", day_index(now))):
+		lines.append({"icon": "mission", "text": "Hari baru: misi harian dan batas harian telah direset."})
+		if login_can_claim(now):
+			lines.append({"icon": "calendar", "text": "Hadiah login hari ini menunggu."})
+	if week_index(now) != int(snap.get("week", week_index(now))):
+		lines.append({"icon": event_def()["icon"], "text": "Event mingguan baru dimulai: %s." % event_def()["name"]})
+	var unread := chat_unread(now)
+	if unread > int(snap.get("unread", 0)):
+		lines.append({"icon": "tab_alliance", "text": "%d pesan baru di chat aliansi." % unread})
+	if not war_reward.is_empty() and not bool(snap.get("war_reward", false)):
+		lines.append({"icon": "fort", "text": "Perang guild melawan %s berakhir: %s! Ambil hadiahnya." % [
+			war_reward.get("enemy", "musuh"), "MENANG" if war_reward.get("win", false) else "kalah"]})
+	var season: bool = not arena.is_empty() and not arena.get("season_reward", {}).is_empty()
+	if season and not bool(snap.get("season", false)):
+		lines.append({"icon": "trophy", "text": "Musim arena selesai. Hadiah liga siap diklaim."})
+	if not leaderboard.get("reward", {}).is_empty() and not bool(snap.get("lb_reward", false)):
+		lines.append({"icon": "gold_crown", "text": "Peringkat global minggu lalu sudah keluar. Ambil hadiahnya."})
+	if lines.is_empty():
+		lines.append({"icon": "tab_city", "text": "Kerajaan aman. Semua urusan menunggu perintah Tuan."})
+	return {"seconds": int(away), "lines": lines}
+
+
 # --- Simpan / muat --------------------------------------------------------
 
 func to_dict() -> Dictionary:

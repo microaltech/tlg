@@ -44,6 +44,7 @@ var _login_box: VBoxContainer
 var _login_subtitle: Label
 var _login_next_label: Label
 var _login_prompted_day := -1
+var _startup_prompted := false  ## true setelah prompt awal (ringkasan/login) pertama kali dicoba.
 var _event_overlay: Control
 var _event_box: VBoxContainer
 var _event_subtitle: Label
@@ -157,7 +158,10 @@ func _ready() -> void:
 	add_child(timer)
 	_switch_page("city", false)
 	_rebuild()
-	# Tampilkan hadiah login otomatis setelah layar siap.
+	Game.returned.connect(func():
+		if get_tree().get_nodes_in_group("modal").is_empty():
+			_maybe_prompt_login())
+	# Tampilkan ringkasan kembali lalu hadiah login otomatis setelah layar siap.
 	get_tree().create_timer(0.6).timeout.connect(_maybe_prompt_login)
 
 
@@ -609,7 +613,10 @@ func _tick() -> void:
 	for l in _event_timer_labels:
 		if is_instance_valid(l):
 			l.text = "Berakhir dalam " + event_left
-	if not model.tutorial_active() and get_tree().get_nodes_in_group("modal").is_empty() \
+	if not Game.away.is_empty() and _startup_prompted \
+			and get_tree().get_nodes_in_group("modal").is_empty():
+		_maybe_prompt_login()
+	elif not model.tutorial_active() and get_tree().get_nodes_in_group("modal").is_empty() \
 			and not model.pending_intro().is_empty():
 		_show_intro(model.pending_intro())
 	elif not model.tutorial_active() and get_tree().get_nodes_in_group("modal").is_empty() \
@@ -2803,12 +2810,52 @@ func _show_help() -> void:
 		_label(col, topic["text"], "SmallLabel").add_theme_color_override("font_color", UI.INK)
 
 
+# --- Ringkasan saat kembali ------------------------------------------------
+
+func _show_away() -> void:
+	var report: Dictionary = Game.away
+	Game.away = {}
+	var holder := {}
+	var close := func():
+		Audio.play("click")
+		if is_instance_valid(holder.get("overlay")):
+			holder["overlay"].queue_free()
+		_maybe_prompt_login.call_deferred()
+	Audio.play("promote", 0.0)
+	var p := _open_panel("Selamat Datang Kembali", "tab_city", close, 0.16, 0.76)
+	holder["overlay"] = p["overlay"]
+	p["subtitle"].text = "Tuan pergi selama " + _away_text(int(report["seconds"]))
+	for line in report["lines"]:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		_inner_box(p["content"]).add_child(row)
+		row.add_child(_tex(Art.icon(line["icon"]), 56))
+		_label(_col(row), line["text"], "CardLabel")
+	_button(p["content"], "Lanjutkan", close, true, "", "GoldButton").custom_minimum_size.y = 80
+
+
+static func _away_text(seconds: int) -> String:
+	if seconds >= 86400:
+		return "%d hari %d jam" % [seconds / 86400, seconds / 3600 % 24]
+	if seconds >= 3600:
+		return "%d jam %d menit" % [seconds / 3600, seconds / 60 % 60]
+	return "%d menit" % (seconds / 60)
+
+
 # --- Hadiah login harian --------------------------------------------------
 
 ## Buka kalender login sekali per hari bila hadiahnya belum diklaim.
 func _maybe_prompt_login() -> void:
 	if model.tutorial_active():
+		Game.away = {}
 		return  # ditampilkan setelah tutorial selesai (tutorial_finished)
+	_startup_prompted = true
+	if not Game.away.is_empty():
+		# Hadiah login menyusul setelah ringkasan ditutup. Bila ada panel lain
+		# terbuka, _tick() mencoba lagi setelah panel itu ditutup.
+		if get_tree().get_nodes_in_group("modal").is_empty():
+			_show_away()
+		return
 	var now: float = Game.now()
 	if _login_prompted_day == model.day_index(now):
 		return

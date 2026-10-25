@@ -7,6 +7,12 @@ const AUTOSAVE_SECONDS := 15.0
 
 var model := Model.new()
 var _autosave := 0.0
+## Keadaan saat pemain terakhir pergi (lihat GameModel.away_snapshot).
+var _away_snap := {}
+## Ringkasan "Selamat datang kembali" yang belum ditampilkan UI; kosong = tidak ada.
+var away := {}
+
+signal returned
 
 
 func _ready() -> void:
@@ -31,7 +37,21 @@ func _notification(what: int) -> void:
 	# Simpan saat aplikasi ditutup, tombol Back Android, atau di-minimize.
 	if what in [NOTIFICATION_WM_CLOSE_REQUEST, NOTIFICATION_WM_GO_BACK_REQUEST,
 			NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_APPLICATION_FOCUS_OUT]:
+		_away_snap = model.away_snapshot(now())
 		save_game()
+	elif what in [NOTIFICATION_APPLICATION_RESUMED, NOTIFICATION_APPLICATION_FOCUS_IN]:
+		_check_return()
+
+
+func _check_return() -> void:
+	if _away_snap.is_empty():
+		return
+	model.sync(now())
+	var report: Dictionary = model.away_report(_away_snap, now())
+	_away_snap = {}
+	if not report.is_empty():
+		away = report
+		returned.emit()
 
 
 func save_game() -> void:
@@ -39,7 +59,9 @@ func save_game() -> void:
 	if f == null:
 		push_warning("Gagal menyimpan: %s" % FileAccess.get_open_error())
 		return
-	f.store_string(JSON.stringify(model.to_dict()))
+	var data: Dictionary = model.to_dict()
+	data["away"] = _away_snap if not _away_snap.is_empty() else model.away_snapshot(now())
+	f.store_string(JSON.stringify(data))
 
 
 func load_game() -> void:
@@ -49,6 +71,7 @@ func load_game() -> void:
 	var data = JSON.parse_string(FileAccess.get_file_as_string(SAVE_PATH))
 	if data is Dictionary:
 		model.from_dict(data, now())
+		away = model.away_report(data.get("away", {}), now())
 	else:
 		push_warning("Save rusak, memulai game baru.")
 		model.new_game(now())

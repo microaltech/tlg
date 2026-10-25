@@ -693,6 +693,29 @@ const STORY_CHAPTERS := [
 			{"type": "power", "target": 10000, "text": "Capai kekuatan 10.000", "reward": {"items": {"star_stone": 2}}},
 			{"type": "rank", "target": 5, "text": "Menjadi Perdana Menteri", "reward": {"gold": 300}},
 		], "reward": {"gold": 1000, "items": {"star_stone": 3, "recruit_ticket": 5}}},
+	{"title": "Patih Negeri", "story": [
+		{"speaker": "kedaton", "text": "Raja mempercayakan urusan seluruh negeri kepada Tuan. Gelar Patih menanti mereka yang teruji."},
+		{"speaker": "tantular", "text": "Ujilah diri Tuan di Menara Ujian, dan kumpulkan pusaka para leluhur."}],
+		"quests": [
+			{"type": "stage", "target": 50, "text": "Taklukkan Tahap 50", "reward": {"gold": 300}},
+			{"type": "tower", "target": 10, "text": "Capai lantai 10 Menara Ujian", "reward": {"items": {"star_stone": 2}}},
+			{"type": "equipment", "target": 3, "text": "Miliki 3 pusaka", "reward": {"silver": 100000}},
+		], "reward": {"gold": 1200, "items": {"recruit_ticket": 5}}},
+	{"title": "Sumpah Mahapatih", "story": [
+		{"speaker": "lord", "text": "Aku bersumpah tidak akan beristirahat sebelum seluruh Nusantara bersatu!"},
+		{"speaker": "gajah", "text": "Sumpah Tuan menggetarkan para raja. Mari kita wujudkan bersama, Mahapatih!"}],
+		"quests": [
+			{"type": "stage", "target": 65, "text": "Taklukkan Tahap 65", "reward": {"gold": 400}},
+			{"type": "tower", "target": 25, "text": "Capai lantai 25 Menara Ujian", "reward": {"items": {"star_stone": 3}}},
+			{"type": "power", "target": 100000, "text": "Capai kekuatan 100.000", "reward": {"gold": 500}},
+			{"type": "equip_level", "target": 6, "text": "Tingkatkan satu pusaka ke +5", "reward": {"silver": 300000}},
+		], "reward": {"gold": 2000, "items": {"star_stone": 5, "recruit_ticket": 10}}},
+]
+## Gelar kehormatan setelah menamatkan bab tertentu (jumlah bab tamat) dan bonus
+## semua hasil urusan kota. Gelar tertinggi menggantikan nama jabatan di header.
+const HONOR_TITLES := [
+	{"chapters": 7, "name": "Patih", "bonus": 0.05},
+	{"chapters": 8, "name": "Mahapatih", "bonus": 0.10},
 ]
 const STORY_SPEAKER_NAMES := {"lord": "Anda", "enemy_warlord": "Panglima Lalim"}
 

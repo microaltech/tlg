@@ -428,7 +428,6 @@ Misi utama selesai: %s.	Main quest complete: %s.
 Semua bab sudah tamat.	All chapters are complete.
 Selesaikan semua misi bab ini dulu.	Complete all quests in this chapter first.
 Bab \"%s\" tamat! %s.	Chapter \"%s\" complete! %s.
-Selamat, kisah Anda sebagai Perdana Menteri telah tamat!	Congratulations, your story as Prime Minister is complete!
 Anak tidak ditemukan.	Child not found.
 %s belum dewasa.	%s is not an adult yet.
 %s sudah ikut ujian hari ini. Coba lagi besok.	%s already took the exam today. Try again tomorrow.
@@ -630,13 +629,11 @@ Kirim	Send
 %d anggota · diurutkan berdasarkan kekuatan	%d members · sorted by power
 Kekuatan %s · Kerusakan bos %s	Power %s · Boss damage %s
 Kisah Tamat	The End
-Anda telah menjadi Perdana Menteri. Terima kasih telah bermain!	You have become Prime Minister. Thank you for playing!
 Bab %d: %s	Chapter %d: %s
 Semua misi selesai! Ambil hadiah bab.	All quests complete! Claim the chapter reward.
 Klaim (%d)	Claim (%d)
 Misi Utama	Main Quest
 Kisah dari Kepala Desa menuju Perdana Menteri	From Village Head to Prime Minister
-Semua bab telah tamat. Anda adalah Perdana Menteri negeri ini!	All chapters are complete. You are the Prime Minister of this land!
 Bab %d dari %d: %s	Chapter %d of %d: %s
 Cerita	Story
 Tamatkan Bab	Finish Chapter
@@ -944,3 +941,22 @@ Serang Lantai %d  (%d percobaan)	Attack Floor %d  (%d attempts)
 Lantai minggu ini %d · rekor %d · percobaan hari ini %d / %d	This week's floor %d · record %d · attempts today %d / %d
 Lantai berikutnya	Upcoming floors
 Lantai %d · kekuatan %s	Floor %d · power %s
+Patih Negeri	Patih of the Realm
+Raja mempercayakan urusan seluruh negeri kepada Tuan. Gelar Patih menanti mereka yang teruji.	The king entrusts the affairs of the whole realm to you. The title of Patih awaits those who are proven.
+Ujilah diri Tuan di Menara Ujian, dan kumpulkan pusaka para leluhur.	Test yourself in the Trial Tower, and gather the heirlooms of the ancestors.
+Taklukkan Tahap 50	Conquer Stage 50
+Capai lantai 10 Menara Ujian	Reach floor 10 of the Trial Tower
+Miliki 3 pusaka	Own 3 heirlooms
+Sumpah Mahapatih	The Mahapatih's Oath
+Aku bersumpah tidak akan beristirahat sebelum seluruh Nusantara bersatu!	I swear I will not rest until the whole archipelago is united!
+Sumpah Tuan menggetarkan para raja. Mari kita wujudkan bersama, Mahapatih!	Your oath shakes the kings. Let us fulfil it together, Mahapatih!
+Taklukkan Tahap 65	Conquer Stage 65
+Capai lantai 25 Menara Ujian	Reach floor 25 of the Trial Tower
+Capai kekuatan 100.000	Reach 100,000 power
+Tingkatkan satu pusaka ke +5	Upgrade an heirloom to +5
+Patih	Patih
+Mahapatih	Mahapatih
+Selamat, seluruh kisah telah tamat!	Congratulations, the whole story is complete!
+Gelar kehormatan: %s (semua hasil urusan +%d%%).	Honorary title: %s (all affair yields +%d%%).
+Anda telah menjadi Mahapatih Nusantara. Terima kasih telah bermain!	You have become Mahapatih of the Archipelago. Thank you for playing!
+Semua bab telah tamat. Anda adalah Mahapatih Nusantara!	All chapters are complete. You are the Mahapatih of the Archipelago!

@@ -315,7 +315,7 @@ func affair_yield(kind: String) -> int:
 	var a: Dictionary = AFFAIRS[kind]
 	return int((int(a["base"]) + total_attr(a["attr"]) * int(a["per_point"])) * float(rank_info()["mult"])
 		* (1.0 + event_bonus("yield_" + kind) + alliance_bonus() + vip_perk("yield"))
-		* (1.0 + skill_bonus("yield_" + kind) + skill_bonus("yield_all") + officials_bonus()))
+		* (1.0 + skill_bonus("yield_" + kind) + skill_bonus("yield_all") + officials_bonus() + honor_bonus()))
 
 
 func do_affair(kind: String, now: float) -> Dictionary:
@@ -2066,6 +2066,19 @@ func claim_lb_reward() -> Dictionary:
 
 # --- Cerita & misi utama -------------------------------------------------------
 
+## Gelar kehormatan tertinggi yang sudah diraih (kosong bila belum ada).
+func honor_title() -> Dictionary:
+	var out := {}
+	for h in Data.HONOR_TITLES:
+		if int(story.get("chapter", 0)) >= int(h["chapters"]):
+			out = h
+	return out
+
+
+func honor_bonus() -> float:
+	return float(honor_title().get("bonus", 0.0))
+
+
 func story_done() -> bool:
 	return int(story["chapter"]) >= Data.STORY_CHAPTERS.size()
 
@@ -2102,6 +2115,15 @@ func story_metric(type: String) -> int:
 			return 0 if arena.is_empty() else int(arena["wins"])
 		"officials":
 			return officials.size()
+		"tower":
+			return int(tower.get("best", 0))
+		"equipment":
+			return equipment.size()
+		"equip_level":
+			var best_eq := 0
+			for eq in equipment:
+				best_eq = maxi(best_eq, int(eq["level"]))
+			return best_eq
 		"stars_total":
 			var total := 0
 			for id in counselors:
@@ -2158,7 +2180,10 @@ func claim_chapter() -> Dictionary:
 	changed.emit()
 	var msg := "Bab \"%s\" tamat! %s." % [def["title"], text]
 	if story_done():
-		msg += " Selamat, kisah Anda sebagai Perdana Menteri telah tamat!"
+		msg += " Selamat, seluruh kisah telah tamat!"
+	var honor := honor_title()
+	if not honor.is_empty() and int(story["chapter"]) == int(honor["chapters"]):
+		msg += " Gelar kehormatan: %s (semua hasil urusan +%d%%)." % [honor["name"], roundi(float(honor["bonus"]) * 100)]
 	return _ok(msg)
 
 

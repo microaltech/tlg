@@ -26,7 +26,7 @@ func _init() -> void:
 		"test_war_save_leave", "test_chat_send_reply", "test_chat_ambient_unread", "test_chat_save_leave",
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
-		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower",
+		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1270,7 +1270,8 @@ func test_story() -> void:
 	for ch in Data.STORY_CHAPTERS:
 		for q in ch["quests"]:
 			check(m.story_metric(q["type"]) >= 0 and q["type"] in ["stage", "power", "rank", "counselors", "max_level",
-				"prestige", "children_total", "intimacy", "alliance", "arena_wins", "officials", "stars_total"],
+				"prestige", "children_total", "intimacy", "alliance", "arena_wins", "officials", "stars_total",
+				"tower", "equipment", "equip_level"],
 				"jenis misi dikenal: %s" % q["type"])
 	var m2 := Model.new()
 	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
@@ -1535,3 +1536,24 @@ func test_tower() -> void:
 	var m2 := Model.new()
 	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
 	check(var_to_str(m2.tower) == var_to_str(m.tower), "simpan/muat menara")
+
+
+func test_honor() -> void:
+	var m := fresh()
+	check(m.honor_title().is_empty() and m.honor_bonus() == 0.0, "belum ada gelar kehormatan")
+	var base := m.affair_yield("silver")
+	m.story["chapter"] = 7
+	check(m.honor_title()["name"] == "Patih" and m.affair_yield("silver") > base, "Patih menambah hasil urusan")
+	m.story["chapter"] = 8
+	check(m.honor_title()["name"] == "Mahapatih" and m.story_done(), "Mahapatih di akhir kisah")
+	m.story["chapter"] = 6
+	m.story["claimed"] = []
+	check(m.story_chapter_def()["title"] == "Patih Negeri", "bab 7 setelah Perdana Menteri")
+	m.stage = 50
+	m.tower = {"week": 0, "floor": 10, "best": 10, "day": 0, "attempts": 0}
+	for i in 3:
+		m.add_equipment("keris_besi")
+	for i in 3:
+		m.claim_quest(i)
+	var r := m.claim_chapter()
+	check(r["ok"] and "Patih" in r["msg"], "menamatkan bab 7 memberi gelar Patih")

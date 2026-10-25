@@ -598,7 +598,10 @@ func _rebuild() -> void:
 func _tick() -> void:
 	var now: float = Game.now()
 	model.sync(now)
-	_rank_label.text = model.rank_info()["name"] + (" " + model.lord_name if model.lord_name != "" else "")
+	var honor: Dictionary = model.honor_title()
+	_rank_label.text = tr(honor["name"] if not honor.is_empty() else model.rank_info()["name"]) \
+		+ (" " + model.lord_name if model.lord_name != "" else "")
+	_rank_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # nama Tuan tidak diterjemahkan
 	_power_label.text = tr("Kekuatan %s", "power") % _num(model.power())
 	_res_labels["silver"].text = _num(model.silver)
 	_res_labels["grain"].text = _num(model.grain)
@@ -2138,7 +2141,7 @@ func _build_story_tracker(box: VBoxContainer) -> void:
 	var col := _col(card)
 	if model.story_done():
 		_label(col, "Kisah Tamat", "CardTitle")
-		_label(col, "Anda telah menjadi Perdana Menteri. Terima kasih telah bermain!", "CardLabel")
+		_label(col, "Anda telah menjadi Mahapatih Nusantara. Terima kasih telah bermain!", "CardLabel")
 		return
 	var def: Dictionary = model.story_chapter_def()
 	_label(col, "Bab %d: %s" % [int(model.story["chapter"]) + 1, def["title"]], "CardTitle") \
@@ -2183,7 +2186,7 @@ func _show_story() -> void:
 func _fill_story() -> void:
 	_clear(_story_box)
 	if model.story_done():
-		_label(_story_box, "Semua bab telah tamat. Anda adalah Perdana Menteri negeri ini!", "CardTitle")
+		_label(_story_box, "Semua bab telah tamat. Anda adalah Mahapatih Nusantara!", "CardTitle")
 		return
 	var chapter: int = model.story["chapter"]
 	var def: Dictionary = model.story_chapter_def()

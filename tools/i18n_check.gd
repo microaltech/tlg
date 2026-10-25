@@ -121,6 +121,11 @@ func _prepare_save(m: Model) -> void:
 	m.prestige = 6000
 	m.join_alliance(Data.ALLIANCES[0]["id"], now)
 	m.ensure_arena(now)
+	for id in ["keris_besi", "kitab_negara", "mahkota_binokasih"]:
+		m.add_equipment(id)
+	m.equip(m.equipment[0]["uid"], "arya")
+	m.add_pass_xp(Data.PASS_XP_PER_TIER * 3)
+	m._create_offer("offer_rescue", {"soldiers": 1000, "grain": 5000}, now)
 	for id in Data.ITEMS:
 		m.add_item(id, 2)
 	var t := now
@@ -164,7 +169,8 @@ func _walk_ui() -> void:
 			main._rebuild()
 			await _snap(p["key"])
 	var panels := ["_show_missions", "_show_login", "_show_event", "_show_store", "_show_vip", "_show_bag",
-		"_show_story", "_show_settings", "_show_privacy", "_show_help"]
+		"_show_story", "_show_settings", "_show_privacy", "_show_help", "_show_equipment", "_show_tower",
+		"_show_pass", "_show_achievements", "_show_offers", "_show_promotion"]
 	for f in panels:
 		print_verbose("[cek] ", f)
 		main.call(f)

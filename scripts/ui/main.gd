@@ -105,6 +105,8 @@ var _mission_reset_label: Label
 var _gacha_banner_done := false
 ## Label hitung mundur paket terbatas: [{"label", "expires"}]; diperbarui tiap detik.
 var _offer_timers: Array = []
+## Paket terbatas yang sudah ditampilkan otomatis (kunci: id + waktu berakhir).
+var _offers_seen := {}
 ## Tombol Didik anak yang sedang menunggu jeda; diperbarui tiap detik.
 var _train_waits: Array = []
 
@@ -165,7 +167,6 @@ func _ready() -> void:
 		_show({"ok": false, "msg": msg}))
 	Store.prices_updated.connect(_queue_rebuild)
 	Ads.ad_started.connect(_on_ad_started)
-	model.offer_created.connect(func(_o): _show_offers.call_deferred())
 	model.achievement_reached.connect(func(id, tier):
 		for a in Data.ACHIEVEMENTS:
 			if a["id"] == id and _startup_prompted:
@@ -633,6 +634,15 @@ func _tick() -> void:
 	var now: float = Game.now()
 	model.sync(now)
 	model.check_achievements()
+	# Paket terbatas baru tampil sekali, setelah panel lain (mis. perayaan naik
+	# jabatan) ditutup.
+	if _startup_prompted and not model.tutorial_active() and get_tree().get_nodes_in_group("modal").is_empty():
+		for o in model.active_offers(now):
+			var key := "%s@%d" % [o["id"], int(o["expires"])]
+			if not _offers_seen.has(key):
+				_offers_seen[key] = true
+				_show_offers()
+				break
 	var honor: Dictionary = model.honor_title()
 	_rank_label.text = tr(honor["name"] if not honor.is_empty() else model.rank_info()["name"]) \
 		+ (" " + model.lord_name if model.lord_name != "" else "")
@@ -784,7 +794,11 @@ func _build_city(box: VBoxContainer) -> void:
 	else:
 		_label(col, "Berikutnya %s · prestise %d/%d" % [nxt["name"], model.prestige, nxt["prestige"]], "CardLabel")
 		_bar(col, model.prestige, nxt["prestige"])
-		var promote := _button(col, "Naik Jabatan", model.promote, model.can_promote(), "", "GoldButton",
+		var promote := _button(col, "Naik Jabatan", func():
+			var r: Dictionary = model.promote()
+			if r["ok"]:
+				_show_promotion.call_deferred()
+			return r, model.can_promote(), "", "GoldButton",
 			false, "promote")
 		promote.add_theme_font_size_override("font_size", 26)
 
@@ -962,21 +976,143 @@ func _attack():
 	var enemy := _vs_enemy
 	var lord_x := lord.position.x
 	var enemy_x := enemy.position.x
+	# Hasil dihitung dulu oleh model; animasi hanya menggambarkannya.
+	var mine_before: int = model.soldiers
+	var enemy_total: int = model.current_stage_info()["enemy_soldiers"]
+	var result: Dictionary = model.fight_stage()
+	var win: bool = result["ok"]
+	var mine_after: int = model.soldiers
+	var enemy_after: int = 0 if win else int(enemy_total * clampf(1.0 - float(mine_before) / maxf(1.0,
+		float(mine_before + (mine_before - mine_after) * 2)), 0.3, 0.8))
+	var panel := _battle_bars(mine_before, enemy_total)
 	var tw := create_tween()
-	tw.tween_property(lord, "position:x", lord_x + 120, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tw.tween_callback(func(): enemy.modulate = Color(3, 3, 3))
-	for i in 6:
-		tw.tween_property(enemy, "position:x", enemy_x + (14 if i % 2 == 0 else -14), 0.04)
-	tw.tween_callback(func(): enemy.modulate = Color.WHITE)
-	tw.tween_property(enemy, "position:x", enemy_x, 0.04)
-	tw.parallel().tween_property(lord, "position:x", lord_x, 0.25)
+	for clash in 3:
+		var k := float(clash + 1) / 3.0
+		tw.tween_property(lord, "position:x", lord_x + 120, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tw.tween_callback(func():
+			Audio.play("attack")
+			enemy.modulate = Color(3, 3, 3)
+			var mine_now := int(lerp(float(mine_before), float(mine_after), k))
+			var enemy_now := int(lerp(float(enemy_total), float(enemy_after), k))
+			_set_battle_bars(panel, mine_now, mine_before, enemy_now, enemy_total)
+			_float("-%s" % _num(int((mine_before - mine_after) / 3.0)), lord, Color("ff9a8a"))
+			_float("-%s" % _num(int((enemy_total - enemy_after) / 3.0)), enemy, Color("fff0b0")))
+		for i in 4:
+			tw.tween_property(enemy, "position:x", enemy_x + (12 if i % 2 == 0 else -12), 0.04)
+		tw.tween_callback(func(): enemy.modulate = Color.WHITE)
+		tw.tween_property(enemy, "position:x", enemy_x, 0.04)
+		tw.parallel().tween_property(lord, "position:x", lord_x, 0.18)
 	tw.tween_callback(func():
 		_battling = false
-		var result: Dictionary = model.fight_stage()
-		_big_result(result["ok"])
-		Audio.play("win" if result["ok"] else "lose", 0.0)
+		_big_result(win)
+		Audio.play("win" if win else "lose", 0.0)
 		_show(result))
+	tw.tween_interval(0.9)
+	tw.tween_property(panel, "modulate:a", 0.0, 0.3)
+	tw.tween_callback(panel.queue_free)
 	return null
+
+
+## Panel bilah pasukan di atas banner kampanye selama pertempuran.
+func _battle_bars(mine: int, enemy: int) -> Control:
+	var panel := PanelContainer.new()
+	panel.theme_type_variation = "Toast"
+	panel.position = Vector2(30, _vs_lord.get_global_rect().end.y + 6)
+	panel.custom_minimum_size = Vector2(size.x - 60, 0)
+	_fx.add_child(panel)
+	var v := VBoxContainer.new()
+	panel.add_child(v)
+	for side in [["Pasukan Anda", Color("6fbf73")], ["Pasukan musuh", Color("d9534f")]]:
+		var l := Label.new()
+		l.add_theme_font_size_override("font_size", 20)
+		l.add_theme_color_override("font_color", Color("fff3d6"))
+		v.add_child(l)
+		var bar := ProgressBar.new()
+		bar.show_percentage = false
+		bar.custom_minimum_size.y = 18
+		var fill := StyleBoxFlat.new()
+		fill.bg_color = side[1]
+		fill.set_corner_radius_all(6)
+		bar.add_theme_stylebox_override("fill", fill)
+		v.add_child(bar)
+		l.set_meta("title", side[0])
+	_set_battle_bars(panel, mine, mine, enemy, enemy)
+	return panel
+
+
+func _set_battle_bars(panel: Control, mine: int, mine_max: int, enemy: int, enemy_max: int) -> void:
+	var v := panel.get_child(0)
+	var values := [[mine, mine_max], [enemy, enemy_max]]
+	for i in 2:
+		var l: Label = v.get_child(i * 2)
+		var bar: ProgressBar = v.get_child(i * 2 + 1)
+		l.text = "%s: %s" % [tr(l.get_meta("title")), _num(values[i][0])]
+		bar.max_value = maxi(1, values[i][1])
+		create_tween().tween_property(bar, "value", float(values[i][0]), 0.2)
+
+
+## Layar perayaan naik jabatan: sinar berputar, nama jabatan, dan keuntungan baru.
+func _show_promotion() -> void:
+	var r: Dictionary = model.rank_info()
+	var prev: Dictionary = Data.RANKS[maxi(0, model.rank - 1)]
+	var overlay := Control.new()
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.add_to_group("modal")
+	add_child(overlay)
+	var shade := ColorRect.new()
+	shade.color = Color(0.05, 0.02, 0.0, 0.92)
+	shade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(shade)
+	var dim := Button.new()  # tombol transparen selebar layar: ketuk untuk menutup
+	dim.flat = true
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.pressed.connect(func():
+		Audio.play("click")
+		overlay.queue_free())
+	overlay.add_child(dim)
+	var rays := _tex(Art.icon("rays"), 620)
+	rays.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rays.position = Vector2(size.x / 2 - 310, size.y * 0.32 - 310)
+	rays.pivot_offset = Vector2(310, 310)
+	rays.modulate = Color(1, 0.85, 0.4, 0.8)
+	overlay.add_child(rays)
+	var spin := create_tween().set_loops()
+	spin.tween_property(rays, "rotation", TAU, 12.0).from(0.0)
+	overlay.tree_exiting.connect(spin.kill)
+	var crest := _tex(Art.icon("prestige"), 220)
+	crest.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	crest.position = Vector2(size.x / 2 - 110, size.y * 0.32 - 110)
+	overlay.add_child(crest)
+	var v := VBoxContainer.new()
+	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.position = Vector2(40, size.y * 0.5)
+	v.custom_minimum_size.x = size.x - 80
+	v.add_theme_constant_override("separation", 8)
+	overlay.add_child(v)
+	var head := _label(v, "NAIK JABATAN!", "TitleLabel")
+	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var title := _label(v, r["name"], "BigLabel")
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_color_override("font_color", UI.GOLD)
+	for line in ["Batas level penasihat %d → %d" % [prev["level_cap"], r["level_cap"]],
+			"Kapasitas urusan %d → %d" % [prev["max_charges"], r["max_charges"]],
+			"Pengali hasil urusan x%s → x%s" % [str(prev["mult"]), str(r["mult"])],
+			"Kursi anak %d → %d" % [prev["child_seats"], r["child_seats"]],
+			"+%d emas" % Data.PROMOTE_GOLD]:
+		var l := _label(v, line, "CardLabel")
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.add_theme_color_override("font_color", Color("fff3d6"))
+	var hint := _label(v, "Ketuk untuk melanjutkan", "SmallLabel")
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.add_theme_color_override("font_color", Color("c8b89a"))
+	Audio.play("promote", 0.0)
+	crest.pivot_offset = Vector2(110, 110)
+	crest.scale = Vector2(0.2, 0.2)
+	title.pivot_offset = Vector2(v.custom_minimum_size.x / 2, 40)
+	v.modulate.a = 0.0
+	var tw := create_tween()
+	tw.tween_property(crest, "scale", Vector2.ONE, 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(v, "modulate:a", 1.0, 0.35)
 
 
 func _big_result(win: bool) -> void:
@@ -1067,13 +1203,14 @@ func _open_panel(title: String, icon_name: String, on_close: Callable, top := 0.
 	overlay.add_to_group("modal")
 	add_child(overlay)
 	move_child(overlay, _toast.get_index())  # toast tetap di atas panel
-	var dim := Button.new()
+	# Tombol flat tidak menggambar stylebox, jadi latar gelap memakai ColorRect.
+	var shade := ColorRect.new()
+	shade.color = Color(0.04, 0.01, 0.03, 0.82)
+	shade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(shade)
+	var dim := Button.new()  # ketuk di luar panel untuk menutup
 	dim.flat = true
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	var dim_style := StyleBoxFlat.new()
-	dim_style.bg_color = Color(0.04, 0.01, 0.03, 0.82)
-	for st in ["normal", "hover", "pressed", "hover_pressed", "focus"]:
-		dim.add_theme_stylebox_override(st, dim_style)
 	dim.pressed.connect(on_close)
 	overlay.add_child(dim)
 
@@ -2536,7 +2673,7 @@ func _fill_achievements() -> void:
 		var stars := ""
 		for i in targets.size():
 			stars += "★" if i < tier else "☆"
-		_label(col, "%s  %s" % [a["name"], stars], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		_label(col, "%s  %s" % [tr(a["name"]), stars], "CardLabel").add_theme_font_override("font", UI.font_bold)
 		if tier < targets.size():
 			var target: int = targets[tier]
 			_label(col, a["text"] % _num(target), "SmallLabel").add_theme_color_override("font_color", UI.INK)

@@ -43,6 +43,17 @@ Pembelian diproses oleh Google Play sesuai
 menerima konfirmasi pembelian (ID produk, token pembelian, dan status). Game
 tidak pernah menerima data kartu, rekening, atau identitas pembayaran Anda.
 
+## Iklan berhadiah
+
+Iklan video hanya diputar bila Anda sendiri menekan tombol **Iklan** untuk
+mendapat hadiah (tiket rekrut, emas, atau isi ulang urusan), paling banyak
+beberapa kali per hari. Pada build yang menyertakan **Google AdMob**, SDK
+AdMob dapat mengumpulkan ID iklan perangkat, alamat IP, dan data interaksi
+iklan untuk menampilkan, mengukur, dan mencegah penipuan iklan, sesuai
+[kebijakan Google](https://policies.google.com/technologies/ads). Anda dapat
+mereset atau menghapus ID iklan di pengaturan Android (Google → Iklan).
+Build tanpa AdMob tidak menampilkan iklan sama sekali.
+
 ## Notifikasi
 
 Pengingat (urusan kota penuh, rekrut gratis, dan hadiah login) dijadwalkan secara

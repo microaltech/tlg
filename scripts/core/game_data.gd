@@ -480,6 +480,13 @@ const TUTORIAL_STEPS := [
 ]
 const TUTORIAL_REWARD := {"gold": 100, "silver": 2000}
 ## Pengenalan fitur yang muncul sekali saat fitur terbuka.
+## Iklan berhadiah: jenis -> hadiah dan batas tonton per hari.
+const AD_REWARDS := {
+	"recruit": {"name": "Tiket Rekrut", "icon": "ticket_recruit", "reward": {"items": {"recruit_ticket": 1}}, "limit": 2},
+	"refill": {"name": "Isi penuh urusan & energi", "icon": "item_tea", "reward": {}, "limit": 3},
+	"gold": {"name": "Emas gratis", "icon": "gold", "reward": {"gold": 20}, "limit": 3},
+}
+
 ## Menara Ujian: lantai bertingkat, dilawan dengan kekuatan tempur; reset tiap minggu.
 const TOWER_UNLOCK_STAGE := 15
 const TOWER_BASE := 80
@@ -832,6 +839,8 @@ const PRIVACY_SECTIONS := [
 		+ "di perangkat Anda. Pesan chat yang Anda ketik tidak dikirim ke siapa pun."},
 	{"title": "Pembelian dalam aplikasi", "text": "Pembayaran diproses oleh Google Play. Game hanya menerima "
 		+ "konfirmasi pembelian (ID produk dan token), tidak pernah data kartu atau rekening Anda."},
+	{"title": "Iklan berhadiah", "text": "Iklan hanya diputar bila Anda menekan tombol Iklan. Versi dengan "
+		+ "Google AdMob dapat memakai ID iklan perangkat untuk menampilkan dan mengukur iklan sesuai kebijakan Google."},
 	{"title": "Notifikasi", "text": "Pengingat dijadwalkan secara lokal oleh perangkat. Matikan kapan saja di "
 		+ "Pengaturan atau pengaturan Android."},
 	{"title": "Laporan masalah", "text": "Tombol Salin Laporan hanya menyalin teks ke clipboard. Anda yang "

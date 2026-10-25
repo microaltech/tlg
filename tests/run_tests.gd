@@ -26,7 +26,7 @@ func _init() -> void:
 		"test_war_save_leave", "test_chat_send_reply", "test_chat_ambient_unread", "test_chat_save_leave",
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
-		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor",
+		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1557,3 +1557,22 @@ func test_honor() -> void:
 		m.claim_quest(i)
 	var r := m.claim_chapter()
 	check(r["ok"] and "Patih" in r["msg"], "menamatkan bab 7 memberi gelar Patih")
+
+
+func test_ads() -> void:
+	var m := fresh()
+	var t := 1000.0
+	var tickets := m.item_count("recruit_ticket")
+	check(m.ad_left("recruit", t) == 2 and m.grant_ad_reward("recruit", t)["ok"], "hadiah iklan diberikan")
+	check(m.item_count("recruit_ticket") == tickets + 1, "iklan memberi tiket rekrut")
+	m.grant_ad_reward("recruit", t)
+	check(m.ad_left("recruit", t) == 0 and not m.grant_ad_reward("recruit", t)["ok"], "batas iklan harian")
+	check(m.ad_left("recruit", t + 86400.0) == 2, "batas iklan reset besok")
+	m.do_affair("silver", t)
+	check(m.grant_ad_reward("refill", t)["ok"] and m.charge_value("silver", t) == m.max_charges(), "iklan mengisi urusan")
+	var gold := m.gold
+	check(m.grant_ad_reward("gold", t)["ok"] and m.gold == gold + 20, "iklan memberi emas")
+	check(m.ad_left("tidak_ada", t) == 0, "jenis iklan tidak dikenal")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
+	check(m2.ad_left("gold", t) == m.ad_left("gold", t), "simpan/muat batas iklan")

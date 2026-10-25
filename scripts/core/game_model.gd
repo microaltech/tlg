@@ -92,6 +92,8 @@ var lord_name := ""
 var equipment: Array = []
 ## Menara Ujian: {"week", "floor" (lantai tertinggi minggu ini), "best", "day", "attempts"}
 var tower := {}
+## Iklan berhadiah yang sudah ditonton hari ini: {"day", "counts": {jenis: n}}
+var ads := {}
 var _equip_uid := 0
 var rng := RandomNumberGenerator.new()
 
@@ -102,6 +104,7 @@ func new_game(now: float) -> void:
 	equipment = []
 	_equip_uid = 0
 	tower = {}
+	ads = {"day": -1, "counts": {}}
 	silver = 500
 	grain = 500
 	soldiers = 2500
@@ -2875,6 +2878,34 @@ func tower_fight(now: float) -> Dictionary:
 	return r
 
 
+# --- Iklan berhadiah -----------------------------------------------------------
+
+func ad_left(kind: String, now: float) -> int:
+	var def: Dictionary = Data.AD_REWARDS.get(kind, {})
+	if def.is_empty():
+		return 0
+	if int(ads.get("day", -1)) != day_index(now):
+		ads = {"day": day_index(now), "counts": {}}
+	return maxi(0, int(def["limit"]) - int(ads["counts"].get(kind, 0)))
+
+
+## Berikan hadiah setelah iklan selesai ditonton (dipanggil oleh autoload Ads).
+func grant_ad_reward(kind: String, now: float) -> Dictionary:
+	if ad_left(kind, now) <= 0:
+		return _fail("Batas iklan hadiah hari ini sudah habis.")
+	ads["counts"][kind] = int(ads["counts"].get(kind, 0)) + 1
+	var text := ""
+	if kind == "refill":
+		for key in CHARGE_KEYS:
+			charges[key] = {"value": max_charges(), "t": now}
+		text = "semua urusan dan energi terisi penuh"
+	else:
+		text = _give_rewards(Data.AD_REWARDS[kind]["reward"])
+	_track("ad")
+	changed.emit()
+	return _ok("Terima kasih telah menonton! Hadiah: %s." % text)
+
+
 # --- Nama Tuan -------------------------------------------------------------
 
 const NAME_MIN := 2
@@ -3013,6 +3044,7 @@ func to_dict() -> Dictionary:
 		"lord_name": lord_name,
 		"equipment": equipment,
 		"tower": tower,
+		"ads": ads,
 		"equip_uid": _equip_uid,
 	}
 
@@ -3147,6 +3179,10 @@ func from_dict(d: Dictionary, now: float) -> void:
 			"level": clampi(int(e.get("level", 1)), 1, Data.EQUIP_MAX_LEVEL),
 			"owner": owner if counselors.has(owner) else ""})
 	_equip_uid = int(d.get("equip_uid", equipment.size()))
+	var src_ads: Dictionary = d.get("ads", {})
+	ads = {"day": int(src_ads.get("day", -1)), "counts": {}}
+	for k in src_ads.get("counts", {}):
+		ads["counts"][str(k)] = int(src_ads["counts"][k])
 	tower = {}
 	var src_tower: Dictionary = d.get("tower", {})
 	if not src_tower.is_empty():

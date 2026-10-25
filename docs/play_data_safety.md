@@ -19,6 +19,26 @@ Catatan:
 - **Notifikasi** dijadwalkan secara lokal (AlarmManager), bukan Firebase Cloud
   Messaging.
 
+## Bila build menyertakan AdMob (iklan berhadiah)
+
+Jawaban "Tidak mengumpulkan data" di atas **tidak berlaku lagi**. Ikuti panduan
+resmi Google untuk SDK AdMob, yang biasanya mencakup:
+
+| Jenis data | Dikumpulkan | Dibagikan | Tujuan |
+|---|---|---|---|
+| ID perangkat atau lainnya (ID iklan) | Ya | Ya (Google) | Iklan/pemasaran, analitik, pencegahan penipuan |
+| Perkiraan lokasi (dari IP) | Ya | Ya (Google) | Iklan, pencegahan penipuan |
+| Interaksi aplikasi (tayangan & ketukan iklan) | Ya | Ya (Google) | Iklan, analitik |
+| Diagnostik (log crash SDK) | Ya | Ya (Google) | Analitik |
+
+- Di bagian **Ads** pilih **"Ya, aplikasi berisi iklan"**.
+- Tambahkan izin `com.google.android.gms.permission.AD_ID` (biasanya ikut dari
+  plugin) dan isi deklarasi **Advertising ID** di Play Console.
+- Untuk pengguna di EEA/Inggris, tampilkan formulir persetujuan (UMP SDK)
+  sebelum memuat iklan.
+- Ganti `REWARDED_UNIT_ID` di `scripts/core/ads.gd` dengan ID unit dari konsol
+  AdMob. ID bawaan adalah ID uji resmi Google.
+
 ## Isian lain di App content
 
 | Bagian | Isian yang disarankan |

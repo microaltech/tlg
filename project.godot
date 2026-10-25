@@ -19,6 +19,7 @@ Game="*res://scripts/core/game.gd"
 Telemetry="*res://scripts/core/telemetry.gd"
 Audio="*res://scripts/core/audio.gd"
 Store="*res://scripts/core/store.gd"
+Ads="*res://scripts/core/ads.gd"
 Notifier="*res://scripts/core/notifier.gd"
 
 [editor_plugins]

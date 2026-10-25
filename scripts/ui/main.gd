@@ -89,6 +89,7 @@ var _bag_pick := ""  ## Item yang sedang menunggu pilihan target.
 var _equip_overlay: Control
 var _equip_box: VBoxContainer
 var _equip_pick := -1  ## uid pusaka yang sedang menunggu pilihan penasihat.
+var _ad_overlay: Control
 var _tower_overlay: Control
 var _tower_box: VBoxContainer
 var _story_overlay: Control
@@ -155,6 +156,13 @@ func _ready() -> void:
 		Audio.play("error")
 		_show({"ok": false, "msg": msg}))
 	Store.prices_updated.connect(_queue_rebuild)
+	Ads.ad_started.connect(_on_ad_started)
+	Ads.ad_finished.connect(func(r):
+		if is_instance_valid(_ad_overlay):
+			_ad_overlay.queue_free()
+		Audio.play("reveal_sr" if r["ok"] else "error")
+		_show(r)
+		_queue_rebuild())
 	model.mission_completed.connect(func(_text):
 		Audio.play("upgrade")
 		_float("Misi selesai!", _mission_hb["root"], Color("b8f0a8")))
@@ -2314,6 +2322,12 @@ func _build_quick_row(box: VBoxContainer) -> void:
 		return null, true, "eq_weapon", "GoldButton")
 	eq.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	eq.add_theme_font_size_override("font_size", 22)
+	if Ads.mode != Ads.Mode.UNAVAILABLE:
+		var need_refill := false
+		for key in model.CHARGE_KEYS:
+			need_refill = need_refill or model.charge_value(key, Game.now()) < model.max_charges()
+		if need_refill:
+			_ad_button(box, "refill")
 	if model.do_all_unlocked():
 		var all := _button(row, "Kerjakan Semua", func(): return model.do_all(Game.now()), true, "",
 			"GreenButton", false, "coin")
@@ -2419,6 +2433,38 @@ func _fill_bag_targets() -> void:
 			return r, true, "", "GreenButton", false, "upgrade")
 		b.custom_minimum_size = Vector2(120, 56)
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+
+# --- Iklan berhadiah -----------------------------------------------------------
+
+func _ad_button(parent: Node, kind: String) -> Button:
+	var def: Dictionary = Data.AD_REWARDS[kind]
+	var left: int = model.ad_left(kind, Game.now())
+	var b := _button(parent, "Iklan: %s (sisa %d)" % [def["name"], left], func():
+		Ads.show_rewarded(kind)
+		return null, left > 0 and not Ads.busy(), def["icon"], "GreenButton")
+	b.add_theme_font_size_override("font_size", 20)
+	return b
+
+
+func _on_ad_started(_kind: String) -> void:
+	if Ads.mode != Ads.Mode.TEST:
+		return  # iklan sungguhan tampil layar penuh dari plugin
+	_ad_overlay = Control.new()
+	_ad_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_ad_overlay.add_to_group("modal")
+	add_child(_ad_overlay)
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.88)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_ad_overlay.add_child(dim)
+	var l := Label.new()
+	l.text = "Memutar iklan (mode uji)..."
+	l.theme_type_variation = "TitleLabel"
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	l.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_ad_overlay.add_child(l)
 
 
 # --- Menara Ujian ------------------------------------------------------------
@@ -3520,6 +3566,9 @@ func _build_gacha(page: Dictionary) -> void:
 	_label(col, "Legenda dijamin dalam %d tarikan" % model.pity_left(), "CardLabel")
 	_bar(col, Data.GACHA_PITY - model.pity_left(), Data.GACHA_PITY, _rarity_color("ssr"))
 
+	if Ads.mode != Ads.Mode.UNAVAILABLE:
+		_ad_button(box, "recruit")
+		_ad_button(box, "gold")
 	var pulls := _card(box)
 	var pcol := _col(pulls)
 	_free_button = _button(pcol, "Rekrut Gratis", func(): return _recruit(1, true), true, "tab_gacha",

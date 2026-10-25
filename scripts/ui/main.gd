@@ -90,6 +90,8 @@ var _equip_overlay: Control
 var _equip_box: VBoxContainer
 var _equip_pick := -1  ## uid pusaka yang sedang menunggu pilihan penasihat.
 var _ad_overlay: Control
+var _offer_overlay: Control
+var _offer_box: VBoxContainer
 var _pass_overlay: Control
 var _pass_box: VBoxContainer
 var _tower_overlay: Control
@@ -99,6 +101,8 @@ var _story_box: VBoxContainer  ## Level VIP yang sedang dilihat di panel (-1 = l
 var _mission_box: VBoxContainer
 var _mission_reset_label: Label
 var _gacha_banner_done := false
+## Label hitung mundur paket terbatas: [{"label", "expires"}]; diperbarui tiap detik.
+var _offer_timers: Array = []
 ## Tombol Didik anak yang sedang menunggu jeda; diperbarui tiap detik.
 var _train_waits: Array = []
 
@@ -159,6 +163,7 @@ func _ready() -> void:
 		_show({"ok": false, "msg": msg}))
 	Store.prices_updated.connect(_queue_rebuild)
 	Ads.ad_started.connect(_on_ad_started)
+	model.offer_created.connect(func(_o): _show_offers.call_deferred())
 	Ads.ad_finished.connect(func(r):
 		if is_instance_valid(_ad_overlay):
 			_ad_overlay.queue_free()
@@ -228,6 +233,11 @@ func _build_header() -> Control:
 	power_row.add_child(_tex(Art.icon("power"), 34))
 	_power_label = _label(power_row, "")
 	_power_label.add_theme_font_override("font", UI.font_bold)
+	# Boleh dipangkas agar header tidak pernah lebih lebar dari layar.
+	_power_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_power_label.clip_text = true
+	_power_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_power_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_power_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # diterjemahkan dengan konteks "power"
 	var prestige := _chip("prestige")
 	prestige.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -598,6 +608,8 @@ func _rebuild() -> void:
 		_fill_tower()
 	if is_instance_valid(_pass_overlay):
 		_fill_pass()
+	if is_instance_valid(_offer_overlay):
+		_fill_offers()
 	if is_instance_valid(_story_overlay):
 		_fill_story()
 	_tick()
@@ -677,6 +689,10 @@ func _tick() -> void:
 		_free_button.disabled = free_eta > 0
 		_free_button.text = "Rekrut Gratis" if free_eta == 0 else "Gratis lagi %02d:%02d:%02d" % [
 			free_eta / 3600, free_eta / 60 % 60, free_eta % 60]
+	for ot in _offer_timers:
+		if is_instance_valid(ot["label"]):
+			ot["label"].text = "Berakhir dalam %s" % _duration(maxi(0, int(ot["expires"] - now)))
+	_offer_timers = _offer_timers.filter(func(ot): return is_instance_valid(ot["label"]))
 	for tw in _train_waits:
 		if not is_instance_valid(tw["button"]) or tw["index"] >= model.children.size():
 			continue
@@ -699,9 +715,16 @@ static func _duration(seconds: int) -> String:
 	return clock if seconds < 86400 else "%d hari %s" % [seconds / 86400, clock]
 
 
+## Angka ringkas agar chip header tidak melebar: 12.3Rb, 456Rb, 7.8Jt, 1.2Mlr.
 static func _num(n: int) -> String:
+	if n >= 1000000000:
+		return "%.1fMlr" % (n / 1000000000.0)
+	if n >= 100000000:
+		return "%dJt" % (n / 1000000)
 	if n >= 1000000:
 		return "%.1fJt" % (n / 1000000.0)
+	if n >= 100000:
+		return "%dRb" % (n / 1000)
 	if n >= 10000:
 		return "%.1fRb" % (n / 1000.0)
 	return str(n)
@@ -716,6 +739,7 @@ func _charge_widget(parent: Node, key: String, prefix: String) -> void:
 func _build_city(box: VBoxContainer) -> void:
 	_clear(box)
 	box.add_child(_event_banner())
+	_build_offer_cards(box)
 	_build_pass_card(box)
 	_build_quick_row(box)
 	_build_story_tracker(box)
@@ -2440,6 +2464,74 @@ func _fill_bag_targets() -> void:
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 
+# --- Paket terbatas waktu ------------------------------------------------------
+
+func _build_offer_cards(box: VBoxContainer) -> void:
+	var now: float = Game.now()
+	for o in model.active_offers(now):
+		var def: Dictionary = Data.iap_def(o["id"])
+		var card := _card(box)
+		card.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fde2c4"), UI.RED, 3, 14))
+		card.add_child(_tex(Art.icon(def["icon"]), 84))
+		var col := _col(card)
+		_label(col, "PENAWARAN TERBATAS", "SmallLabel").add_theme_color_override("font_color", UI.RED)
+		_label(col, def["name"], "CardTitle")
+		var left := _label(col, "", "SmallLabel")
+		left.add_theme_color_override("font_color", UI.INK)
+		_offer_timers.append({"label": left, "expires": float(o["expires"])})
+		var b := _button(card, "Lihat", func():
+			_show_offers()
+			return null, true, "", "GoldButton")
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		b.custom_minimum_size.x = 140
+
+
+func _show_offers() -> void:
+	if is_instance_valid(_offer_overlay) or model.active_offers(Game.now()).is_empty():
+		return
+	Audio.play("promote", 0.0)
+	var p := _open_panel("Penawaran Terbatas", "gold_crown", _close_offers, 0.14, 0.86)
+	_offer_overlay = p["overlay"]
+	_offer_box = p["content"]
+	p["subtitle"].text = "Hanya berlaku beberapa jam"
+	_fill_offers()
+
+
+func _close_offers() -> void:
+	if is_instance_valid(_offer_overlay):
+		Audio.play("click")
+		_offer_overlay.queue_free()
+	_offer_overlay = null
+
+
+func _fill_offers() -> void:
+	_clear(_offer_box)
+	var now: float = Game.now()
+	var list: Array = model.active_offers(now)
+	if list.is_empty():
+		_label(_offer_box, "Tidak ada penawaran aktif.", "CardLabel")
+		return
+	for o in list:
+		var def: Dictionary = Data.iap_def(o["id"])
+		var box := _inner_box(_offer_box)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		box.add_child(row)
+		row.add_child(_tex(Art.icon(def["icon"]), 96))
+		var col := _col(row)
+		_label(col, def["name"], "CardTitle")
+		_label(col, _reward_text(o["reward"]), "CardLabel")
+		var left := _label(col, "", "SmallLabel")
+		left.add_theme_color_override("font_color", UI.RED)
+		_offer_timers.append({"label": left, "expires": float(o["expires"])})
+		var id: String = o["id"]
+		var buy := _button(box, "Beli · %s" % Store.price_text(id), func():
+			_buy(id)
+			return null, Store.available(), "", "GoldButton")
+		buy.custom_minimum_size.y = 72
+	_tick()
+
+
 # --- Tiket Musim -------------------------------------------------------------
 
 func _build_pass_card(box: VBoxContainer) -> void:
@@ -3049,8 +3141,8 @@ func _fill_store() -> void:
 
 	for def in Data.IAP_PRODUCTS:
 		var id: String = def["id"]
-		if def["type"] == "once" and model.iap_owned(id) or def["type"] == "pass":
-			continue  # Tiket Musim dibeli dari panelnya sendiri
+		if def["type"] == "once" and model.iap_owned(id) or def["type"] in ["pass", "offer"]:
+			continue  # Tiket Musim & paket terbatas dibeli dari panelnya sendiri
 		var box := _inner_box(_store_box)
 		if def["type"] != "gold":
 			box.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))

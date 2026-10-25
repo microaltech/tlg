@@ -26,7 +26,7 @@ func _init() -> void:
 		"test_war_save_leave", "test_chat_send_reply", "test_chat_ambient_unread", "test_chat_save_leave",
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
-		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass",
+		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass", "test_offers",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1379,6 +1379,7 @@ func test_pattern_translation() -> void:
 	check(t.translate_text("Diskon 20%") == "20% off", "persen literal")
 	check(t.translate_text("2 hari 03:00:00") == "2d 03:00:00", "durasi")
 	check(t.translate_text("1.5Rb") == "1.5K" and t.translate_text("2.0Jt") == "2.0M", "singkatan angka")
+	check(t.translate_text("1.2Mlr") == "1.2B" and t.translate_text("456Rb") == "456K", "singkatan miliar & tanpa desimal")
 	check(t.translate_text("  Kerjakan ") == "  Do ", "spasi di tepi dipertahankan")
 	check(t.translate_text("Perak\nKerjakan") == "Silver\nDo", "per baris")
 	# kamus sungguhan termuat dan tiap templat memakai jumlah placeholder % yang sama
@@ -1607,3 +1608,32 @@ func test_pass() -> void:
 	m.ensure_pass(next)
 	check(m.pass_tier() == 0 and not m.season_pass["premium"], "musim baru mulai dari awal")
 	check(m.pass_days_left(next) <= Data.PASS_DAYS and m.pass_days_left(next) >= 1, "sisa hari musim")
+
+
+func test_offers() -> void:
+	var m := fresh()
+	var t := 1000.0
+	var created := []
+	m.offer_created.connect(func(o): created.append(o["id"]))
+	m.prestige = Data.RANKS[1]["prestige"]
+	m.promote()
+	check(created == ["offer_promote"] and not m.active_offer("offer_promote", t).is_empty(), "naik jabatan memunculkan paket")
+	check(m.active_offer("offer_promote", t + 7 * 3600.0).is_empty(), "paket kedaluwarsa setelah 6 jam")
+	m.soldiers = 0
+	m.stage = 10
+	for i in Data.OFFER_LOSS_STREAK:
+		m.fight_stage()
+	check("offer_rescue" in created and m.loss_streak >= Data.OFFER_LOSS_STREAK, "kalah beruntun memunculkan paket bantuan")
+	m.fight_stage()
+	check(created.count("offer_rescue") == 1, "paket yang sama tidak muncul dua kali selagi aktif")
+	var soldiers := m.soldiers
+	check(m.grant_purchase("offer_rescue", "tok-r", t)["ok"] and m.soldiers > soldiers, "beli paket bantuan")
+	check(m.active_offer("offer_rescue", t).is_empty(), "paket hilang setelah dibeli")
+	check(not m.grant_purchase("offer_rescue", "tok-r2", t)["ok"], "paket tidak bisa dibeli tanpa penawaran aktif")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
+	check(var_to_str(m2.offers) == var_to_str(m.offers) and m2.loss_streak == m.loss_streak, "simpan/muat paket")
+	check(m.active_offers(t + 86400.0).is_empty(), "paket kedaluwarsa dibersihkan")
+	m.soldiers = 1 << 40
+	m.fight_stage()
+	check(m.loss_streak == 0, "menang mereset kekalahan beruntun")

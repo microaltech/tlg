@@ -550,9 +550,17 @@ const IAP_PRODUCTS := [
 	{"id": "gold_680", "type": "gold", "name": "680 Emas", "icon": "gold_sack", "price_idr": 149000, "gold": 600, "bonus": 80},
 	{"id": "gold_1380", "type": "gold", "name": "1.380 Emas", "icon": "chest_open", "price_idr": 299000, "gold": 1200, "bonus": 180},
 	{"id": "gold_3280", "type": "gold", "name": "3.280 Emas", "icon": "gold_crown", "price_idr": 699000, "gold": 2800, "bonus": 480},
+	{"id": "offer_promote", "type": "offer", "name": "Paket Naik Jabatan", "icon": "gold_crown", "price_idr": 29000,
+		"desc": "Penawaran terbatas setelah naik jabatan."},
+	{"id": "offer_rescue", "type": "offer", "name": "Paket Bala Bantuan", "icon": "soldiers", "price_idr": 15000,
+		"desc": "Penawaran terbatas setelah kalah beruntun di kampanye."},
 	{"id": "season_pass", "type": "pass", "name": "Tiket Musim Premium", "icon": "pass", "price_idr": 75000,
 		"desc": "Buka jalur hadiah premium Tiket Musim ini: emas, Batu Bintang, Tiket Rekrut, dan pusaka Legenda."},
 ]
+
+## Paket terbatas waktu: berapa lama berlaku (detik) dan pemicu kekalahan beruntun.
+const OFFER_SECONDS := {"offer_promote": 6 * 3600, "offer_rescue": 3 * 3600}
+const OFFER_LOSS_STREAK := 3
 
 ## Tiket Musim (battle pass): musim 30 hari, 30 tingkat. XP dari aktivitas harian.
 const PASS_DAYS := 30

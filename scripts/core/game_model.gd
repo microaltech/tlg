@@ -8,6 +8,8 @@ signal changed
 signal mission_completed(text: String)
 ## Dipancarkan untuk setiap aksi pemain yang dicatat (dipakai tutorial).
 signal tracked(event: String)
+## Paket terbatas waktu baru muncul (UI menampilkannya sekali).
+signal offer_created(offer: Dictionary)
 
 const Data := preload("res://scripts/core/game_data.gd")
 
@@ -96,6 +98,9 @@ var tower := {}
 var ads := {}
 ## Tiket Musim: {"season", "xp", "premium", "free": [tingkat], "paid": [tingkat]}
 var season_pass := {}
+## Paket terbatas aktif: [{"id": id produk, "expires": waktu, "reward": {...}}]
+var offers: Array = []
+var loss_streak := 0
 var _equip_uid := 0
 var rng := RandomNumberGenerator.new()
 
@@ -108,6 +113,8 @@ func new_game(now: float) -> void:
 	tower = {}
 	ads = {"day": -1, "counts": {}}
 	season_pass = {}
+	offers = []
+	loss_streak = 0
 	silver = 500
 	grain = 500
 	soldiers = 2500
@@ -176,6 +183,8 @@ func promote() -> Dictionary:
 		return _fail("Prestise belum cukup untuk naik jabatan.")
 	rank += 1
 	gold += Data.PROMOTE_GOLD
+	_create_offer("offer_promote", {"gold": 300 + 150 * rank, "silver": 20000 * rank,
+		"items": {"star_stone": 1, "recruit_ticket": 2}}, _last_now)
 	changed.emit()
 	return _ok("Selamat! Anda kini menjabat sebagai %s. +%d emas." % [rank_info()["name"], Data.PROMOTE_GOLD])
 
@@ -430,9 +439,14 @@ func fight_stage() -> Dictionary:
 	if soldiers < losses:
 		var lost := int(soldiers * 0.5)
 		soldiers -= lost
+		loss_streak += 1
+		if loss_streak >= Data.OFFER_LOSS_STREAK:
+			_create_offer("offer_rescue", {"soldiers": int(losses * 3), "grain": 50000, "items": {"energy_tea": 2}},
+				_last_now)
 		changed.emit()
 		return _fail("Kalah di %s! %d prajurit gugur. Butuh sekitar %d prajurit." % [info["name"], lost, losses])
 	soldiers -= losses
+	loss_streak = 0
 	silver += int(info["reward_silver"])
 	var gained_prestige := int(int(info["reward_prestige"]) * (1.0 + skill_bonus("prestige")))
 	prestige += gained_prestige
@@ -1769,6 +1783,12 @@ func grant_purchase(id: String, token: String, now: float) -> Dictionary:
 			gold += int(def["gold"])
 			parts.append("+%d emas" % def["gold"])
 			parts.append("kartu aktif %d hari" % card_days_left(now))
+		"offer":
+			var offer := active_offer(id, now)
+			if offer.is_empty():
+				return _fail("Penawaran %s sudah berakhir." % def["name"])
+			offers.erase(offer)
+			parts.append(_give_rewards(offer["reward"]))
 		"pass":
 			ensure_pass(now)
 			if season_pass["premium"]:
@@ -2893,6 +2913,29 @@ func tower_fight(now: float) -> Dictionary:
 	return r
 
 
+# --- Paket terbatas waktu ------------------------------------------------------
+
+func _create_offer(id: String, reward: Dictionary, now: float) -> void:
+	if not active_offer(id, now).is_empty():
+		return  # satu paket per jenis sampai berakhir
+	var offer := {"id": id, "expires": now + float(Data.OFFER_SECONDS[id]), "reward": reward}
+	offers.append(offer)
+	offer_created.emit(offer)
+
+
+## Paket aktif (belum kedaluwarsa) untuk produk ini, atau kosong.
+func active_offer(id: String, now: float) -> Dictionary:
+	for o in offers:
+		if o["id"] == id and float(o["expires"]) > now:
+			return o
+	return {}
+
+
+func active_offers(now: float) -> Array:
+	offers = offers.filter(func(o): return float(o["expires"]) > now)
+	return offers
+
+
 # --- Tiket Musim (battle pass) ----------------------------------------------
 
 func pass_season(now: float) -> int:
@@ -3138,6 +3181,8 @@ func to_dict() -> Dictionary:
 		"tower": tower,
 		"ads": ads,
 		"pass": season_pass,
+		"offers": offers,
+		"loss_streak": loss_streak,
 		"equip_uid": _equip_uid,
 	}
 
@@ -3272,6 +3317,20 @@ func from_dict(d: Dictionary, now: float) -> void:
 			"level": clampi(int(e.get("level", 1)), 1, Data.EQUIP_MAX_LEVEL),
 			"owner": owner if counselors.has(owner) else ""})
 	_equip_uid = int(d.get("equip_uid", equipment.size()))
+	offers = []
+	for o in d.get("offers", []):
+		var reward := {}
+		var src_r: Dictionary = o.get("reward", {})
+		for k in src_r:
+			if k == "items":
+				reward["items"] = {}
+				for item in src_r["items"]:
+					reward["items"][str(item)] = int(src_r["items"][item])
+			else:
+				reward[str(k)] = int(src_r[k])
+		if Data.OFFER_SECONDS.has(str(o.get("id", ""))):
+			offers.append({"id": str(o["id"]), "expires": float(o.get("expires", 0.0)), "reward": reward})
+	loss_streak = int(d.get("loss_streak", 0))
 	season_pass = {}
 	var src_pass: Dictionary = d.get("pass", {})
 	if not src_pass.is_empty():

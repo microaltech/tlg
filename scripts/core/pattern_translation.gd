@@ -41,11 +41,11 @@ var _contexts := {}
 var _placeholder := RegEx.create_from_string("%%|%[-+0 #]*\\d*(?:\\.\\d+)?[dfsx]|\\{[a-z_]+\\}")
 var _splitter := RegEx.create_from_string("(?<=[.!?])\\s+|\\n| · | \\| |; |, | \\+ ")
 ## "angka kata" dan "kata angka" (mis. "+500 pangan", "Karisma 59", "Ketua  03:19").
-var _num_words := RegEx.create_from_string("^([-+]?\\d[\\d.,:]*(?:Rb|Jt)?%?)(\\s+)(\\D.*)$")
+var _num_words := RegEx.create_from_string("^([-+]?\\d[\\d.,:]*(?:Rb|Jt|Mlr)?%?)(\\s+)(\\D.*)$")
 var _words_num := RegEx.create_from_string("^(.*\\D)(\\s+)([-+x]?\\d[\\d.,:/]*%?)$")
 ## Tepi yang dikupas sebelum mencoba lagi: spasi dan butir daftar.
 var _edges := RegEx.create_from_string("^([\\s•·]*)(.*?)([\\s•·]*)$")
-var _short_number := RegEx.create_from_string("^([-+]?[\\d.]+)(Rb|Jt)$")
+var _short_number := RegEx.create_from_string("^([-+]?[\\d.]+)(Rb|Jt|Mlr)$")
 var _letters := RegEx.create_from_string("[A-Za-z]")
 
 
@@ -120,7 +120,7 @@ func _translate(text: String, depth: int) -> String:
 		return hit
 	var m := _short_number.search(text)
 	if m:
-		return m.get_string(1) + ("K" if m.get_string(2) == "Rb" else "M")
+		return m.get_string(1) + {"Rb": "K", "Jt": "M", "Mlr": "B"}[m.get_string(2)]
 	var e := _edges.search(text)
 	if e and e.get_string(2) != text and e.get_string(2) != "":
 		return e.get_string(1) + translate_text(e.get_string(2), depth) + e.get_string(3)

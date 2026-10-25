@@ -92,8 +92,16 @@ var _mission_reset_label: Label
 var _gacha_banner_done := false
 
 
+## Jarak geser (piksel) sebelum sentuhan dianggap menggulir, bukan mengetuk.
+const SCROLL_DEADZONE := 20
+
+
 func _ready() -> void:
 	model = Game.model
+	# Agar layar bisa digeser walau jari mulai di atas kartu/tombol: kontrol bawaan
+	# Godot "menelan" sentuhan (MOUSE_FILTER_STOP) sehingga ScrollContainer tidak
+	# pernah menerimanya. Setiap kontrol baru diubah meneruskan sentuhan ke induknya.
+	get_tree().node_added.connect(_on_node_added)
 	_theme = UI.build()
 	theme = _theme
 
@@ -151,6 +159,17 @@ func _ready() -> void:
 	_rebuild()
 	# Tampilkan hadiah login otomatis setelah layar siap.
 	get_tree().create_timer(0.6).timeout.connect(_maybe_prompt_login)
+
+
+func _on_node_added(node: Node) -> void:
+	if not (node is Control) or not is_ancestor_of(node):
+		return
+	if _tutorial and (node == _tutorial or _tutorial.is_ancestor_of(node)):
+		return  # lapisan tutorial memang harus memblokir sentuhan
+	if node is ScrollContainer:
+		node.scroll_deadzone = SCROLL_DEADZONE
+	elif node.mouse_filter == Control.MOUSE_FILTER_STOP:
+		node.mouse_filter = Control.MOUSE_FILTER_PASS
 
 
 # --- Kerangka -------------------------------------------------------------

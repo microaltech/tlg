@@ -37,6 +37,11 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
 - **Kota** — Tarik Pajak (perak, dari Kecerdasan), Kelola Sawah (pangan, dari
   Politik), Rekrut Prajurit (dari Karisma). Tiap urusan memakai *charge* yang
   terisi 1 per 60 detik, tetap terisi saat game ditutup (offline progress).
+- **Pengaturan** — tombol Pengaturan di menu Kota: nama Tuan (tampil di header,
+  aliansi, arena, peringkat), slider volume musik & efek suara, mode hemat
+  baterai (30 FPS + gambar ulang hanya saat ada perubahan), nyala/mati
+  notifikasi, simpan manual, dan mulai ulang. Preferensi perangkat disimpan di
+  `user://settings.cfg`, terpisah dari progres game.
 - **Selamat datang kembali** — setelah pergi minimal 5 menit (game ditutup atau
   diminimalkan), panel ringkasan menampilkan lama pergi dan apa yang terjadi:
   urusan yang terisi, rekrut gratis siap, hari/event baru, pesan chat aliansi,
@@ -147,7 +152,7 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   kendang, suling) yang berganti per menu: Kota/Penasihat (slendro tenang),
   Kampanye (irama perang), Istana (pelog lembut), dengan crossfade. Efek suara
   untuk setiap aksi (koin, panen, rekrut, latih, serang, menang/kalah, kunjungan,
-  kelahiran, naik jabatan). Musik & suara bisa dimatikan di menu Kota.
+  kelahiran, naik jabatan). Volume musik & efek suara diatur di Pengaturan.
 - **Simpan otomatis** ke `user://save.json` (tiap 15 detik, saat keluar, dan
   saat aplikasi di-minimize di HP).
 
@@ -159,6 +164,7 @@ scenes/main.tscn           Scene utama
 scripts/core/game_data.gd  Data & angka balancing (jabatan, penasihat, tahap)
 scripts/core/game_model.gd Semua logika game, tanpa UI (mudah diuji)
 scripts/core/game.gd       Autoload "Game": simpan/muat & autosave
+scripts/core/settings.gd   Autoload "Settings": volume, hemat baterai, notifikasi
 scripts/core/audio.gd      Autoload "Audio": musik latar & efek suara
 scripts/core/store.gd      Autoload "Store": Google Play Billing / Mode Uji
 scripts/ui/main.gd         UI dibangun lewat kode (header, 4 halaman, navigasi bawah)

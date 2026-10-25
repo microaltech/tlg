@@ -26,7 +26,7 @@ func _init() -> void:
 		"test_war_save_leave", "test_chat_send_reply", "test_chat_ambient_unread", "test_chat_save_leave",
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
-		"test_story", "test_away_report",
+		"test_story", "test_away_report", "test_lord_name",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1287,3 +1287,18 @@ func test_away_report() -> void:
 	var snap2 = JSON.parse_string(JSON.stringify(m.away_snapshot(later)))
 	r = m.away_report(snap2, later + 400.0)
 	check(not r.is_empty() and r["lines"].size() >= 1, "ringkasan dari snapshot JSON")
+
+
+func test_lord_name() -> void:
+	var m := fresh()
+	check(m.lord_name == "" and m.me_name() == "Anda", "nama default")
+	check(not m.set_lord_name(" !! ")["ok"], "nama terlalu pendek ditolak")
+	check(m.set_lord_name("  Wira   Jaya<b> ")["ok"] and m.lord_name == "Wira Jayab", "nama dibersihkan")
+	check(not m.set_lord_name("Wira Jayab")["ok"], "nama sama ditolak")
+	m.set_lord_name("Abcdefghijklmnopqrstu")
+	check(m.lord_name.length() == m.NAME_MAX, "nama dipotong ke batas")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(m2.lord_name == m.lord_name and m2.me_name() == m.lord_name, "simpan/muat nama")
+	m2.new_game(1000.0)
+	check(m2.lord_name == "", "game baru menghapus nama")

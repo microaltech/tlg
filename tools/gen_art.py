@@ -873,6 +873,23 @@ ICONS["prison"] = icon_doc(
     + '<path d="M8 48 L88 48" stroke="#4a4a52" stroke-width="5"/>'
       '<circle cx="74" cy="56" r="6" fill="#c9963f" stroke="#5e3a12" stroke-width="2"/>')
 
+def gear():
+    import math
+    pts = []
+    for i in range(16):
+        r = 40 if i % 2 == 0 else 31
+        for da in (-0.13, 0.13):
+            a = (i + 0.5) * math.pi / 8 + da
+            pts.append("%.1f %.1f" % (48 + r * math.cos(a), 48 + r * math.sin(a)))
+    return icon_doc(
+        '<path d="M%s Z" fill="#8f98a3" stroke="#3f4650" stroke-width="3.5" stroke-linejoin="round"/>' % " L".join(pts)
+        + '<circle cx="48" cy="48" r="22" fill="#c9d1da" stroke="#3f4650" stroke-width="3"/>'
+          '<circle cx="48" cy="48" r="10" fill="#5a2e14" stroke="#3f4650" stroke-width="3"/>'
+          '<path d="M34 36 Q40 28 50 28" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>')
+
+
+ICONS["settings"] = gear()
+
 ICONS["chest"] = chest(False)
 ICONS["chest_open"] = chest(True)
 

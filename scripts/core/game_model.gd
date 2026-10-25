@@ -84,11 +84,14 @@ var war_reward := {}
 var alliance_left_t := -1.0e12
 ## Selisih zona waktu (detik) supaya misi direset pada tengah malam lokal.
 var tz_bias := 0
+## Nama Tuan pilihan pemain; kosong = belum diatur (tampil sebagai "Anda"/"Tuan").
+var lord_name := ""
 var rng := RandomNumberGenerator.new()
 
 
 func new_game(now: float) -> void:
 	_last_now = now
+	lord_name = ""
 	silver = 500
 	grain = 500
 	soldiers = 1000
@@ -787,7 +790,7 @@ func alliance_members(now: float) -> Array:
 	for i in members.size():
 		out.append({"name": members[i]["name"], "role": members[i]["role"], "power": _npc_power(members[i], today),
 			"damage": dmg[i], "me": false})
-	out.append({"name": "Anda", "role": "Anggota", "power": power(), "damage": int(alliance["boss"]["damage"]),
+	out.append({"name": me_name(), "role": "Anggota", "power": power(), "damage": int(alliance["boss"]["damage"]),
 		"me": true})
 	out.sort_custom(func(a, b): return a["power"] > b["power"])
 	return out
@@ -1122,7 +1125,7 @@ func _npc_avatar(name: String) -> String:
 
 
 func _chat_fill(template: String, t: float) -> String:
-	var vals := {"player": "Tuan", "alliance": alliance_def()["name"], "boss": Data.BOSS_NAME, "hp": 100,
+	var vals := {"player": lord_name if lord_name != "" else "Tuan", "alliance": alliance_def()["name"], "boss": Data.BOSS_NAME, "hp": 100,
 		"enemy": "-", "ours": 0, "theirs": 0, "event": event_def()["name"] if not weekly.is_empty() else "-"}
 	if not alliance["boss"].is_empty():
 		var b := boss_info(t)
@@ -1602,7 +1605,7 @@ func arena_leaderboard() -> Dictionary:
 		npcs.append({"name": _npc_name(r), "avatar": Data.ARENA_AVATARS[r.randi_range(0, Data.ARENA_AVATARS.size() - 1)],
 			"rating": rating, "me": false})
 		rating -= r.randi_range(15, 60)
-	var mine := {"name": "Anda", "avatar": "lord", "rating": int(arena["rating"]), "me": true}
+	var mine := {"name": me_name(), "avatar": "lord", "rating": int(arena["rating"]), "me": true}
 	var all := npcs + [mine]
 	all.sort_custom(func(a, b): return a["rating"] > b["rating"] or (a["rating"] == b["rating"] and a["me"]))
 	var rank := all.find(mine) + 1
@@ -1877,7 +1880,7 @@ func lb_top(id: String, now: float) -> Array:
 	var mine := lb_rank(id, now)
 	if mine["rank"] <= Data.LB_TOP:
 		var tag := _lb_tag(-1) if alliance.is_empty() else "[%s]" % alliance_def()["name"].substr(0, 3).to_upper()
-		rows.insert(mine["rank"] - 1, {"name": "Anda", "tag": tag, "avatar": "lord", "value": mine["value"], "me": true})
+		rows.insert(mine["rank"] - 1, {"name": me_name(), "tag": tag, "avatar": "lord", "value": mine["value"], "me": true})
 		rows.resize(Data.LB_TOP)
 		# Jaga urutan menurun di sekitar pemain (nilai simulasi disesuaikan, bukan nilai pemain).
 		for i in rows.size():
@@ -2516,6 +2519,39 @@ func marry_child(index: int) -> Dictionary:
 		child["name"], Data.counselor_def(target)["name"], bonus, Data.ATTR_NAMES[key]])
 
 
+# --- Nama Tuan -------------------------------------------------------------
+
+const NAME_MIN := 2
+const NAME_MAX := 16
+
+
+## Nama yang tampil di daftar (anggota, arena, peringkat).
+func me_name() -> String:
+	return lord_name if lord_name != "" else "Anda"
+
+
+static func _clean_name(raw: String) -> String:
+	var out := ""
+	for ch in raw.strip_edges():
+		# huruf, angka, spasi, dan sedikit tanda baca saja
+		if ch == " " or ch in "-_.'" or ch.to_upper() != ch.to_lower() or ch.is_valid_int():
+			out += ch
+	while "  " in out:
+		out = out.replace("  ", " ")
+	return out.substr(0, NAME_MAX).strip_edges()
+
+
+func set_lord_name(raw: String) -> Dictionary:
+	var name := _clean_name(raw)
+	if name.length() < NAME_MIN:
+		return _fail("Nama minimal %d huruf (huruf, angka, spasi)." % NAME_MIN)
+	if name == lord_name:
+		return _fail("Nama tidak berubah.")
+	lord_name = name
+	changed.emit()
+	return _ok("Mulai sekarang Anda dikenal sebagai %s." % name)
+
+
 # --- Ringkasan saat kembali ----------------------------------------------
 
 ## Minimal lama pergi (detik) sebelum ringkasan "Selamat datang kembali" muncul.
@@ -2617,6 +2653,7 @@ func to_dict() -> Dictionary:
 		"banquet": banquet,
 		"start_day": start_day,
 		"leaderboard": leaderboard,
+		"lord_name": lord_name,
 	}
 
 
@@ -2737,6 +2774,7 @@ func from_dict(d: Dictionary, now: float) -> void:
 		prison["prisoners"].append({"name": str(pr.get("name", "")), "avatar": str(pr.get("avatar", "enemy_bandit")),
 			"stage": int(pr.get("stage", 0)), "hp": int(pr.get("hp", 1)), "max": int(pr.get("max", 1))})
 	start_day = int(d.get("start_day", day_index(now)))
+	lord_name = _clean_name(str(d.get("lord_name", "")))
 	var src_lb: Dictionary = d.get("leaderboard", {})
 	leaderboard = {"week": int(src_lb.get("week", week_index(now))), "reward": {}}
 	var src_lbr: Dictionary = src_lb.get("reward", {})

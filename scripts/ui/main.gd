@@ -196,6 +196,9 @@ func _build_header() -> Control:
 	top.add_child(info)
 	_rank_label = _label(info, "", "TitleLabel")
 	_rank_label.add_theme_font_size_override("font_size", 24)
+	_rank_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_rank_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_rank_label.clip_text = true
 	var power_row := HBoxContainer.new()
 	info.add_child(power_row)
 	power_row.add_child(_tex(Art.icon("power"), 34))
@@ -576,7 +579,7 @@ func _rebuild() -> void:
 func _tick() -> void:
 	var now: float = Game.now()
 	model.sync(now)
-	_rank_label.text = model.rank_info()["name"]
+	_rank_label.text = model.rank_info()["name"] + (" " + model.lord_name if model.lord_name != "" else "")
 	_power_label.text = "Kekuatan %s" % _num(model.power())
 	_res_labels["silver"].text = _num(model.silver)
 	_res_labels["grain"].text = _num(model.grain)
@@ -705,30 +708,16 @@ func _build_city(box: VBoxContainer) -> void:
 		promote.add_theme_font_size_override("font_size", 26)
 
 	var sys := _card(box)
-	var save := _button(sys, "Simpan", func():
-		Game.save_game()
-		return {"ok": true, "msg": "Tersimpan"}, true, "", "GreenButton", true)
-	save.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_button(sys, "Mulai Ulang", _confirm_reset).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var settings := _button(sys, "Pengaturan", func():
+		_show_settings()
+		return null, true, "settings", "GreenButton")
+	settings.add_theme_font_size_override("font_size", 24)
+	settings.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var help := _button(sys, "Panduan", func():
 		_show_help()
 		return null, true, "help", "GoldButton")
 	help.add_theme_font_size_override("font_size", 24)
 	help.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-
-	var audio := _card(box)
-	var music_btn := _button(audio, "", func():
-		Audio.set_music_on(not Audio.music_on)
-		_queue_rebuild()
-		return null, true, "", "GreenButton" if Audio.music_on else "")
-	music_btn.text = "Musik: %s" % ("Nyala" if Audio.music_on else "Mati")
-	music_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var sfx_btn := _button(audio, "", func():
-		Audio.set_sfx_on(not Audio.sfx_on)
-		_queue_rebuild()
-		return null, true, "", "GreenButton" if Audio.sfx_on else "")
-	sfx_btn.text = "Suara: %s" % ("Nyala" if Audio.sfx_on else "Mati")
-	sfx_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 
 func _confirm_reset():
@@ -1503,7 +1492,7 @@ func _show_arena_battle(r: Dictionary) -> void:
 	fighters.add_theme_constant_override("separation", 40)
 	v.add_child(fighters)
 	var sides := []
-	for who in [["Anda", "lord", model.combat_power()], [opp["name"], opp["avatar"], opp["power"]]]:
+	for who in [[model.me_name(), "lord", model.combat_power()], [opp["name"], opp["avatar"], opp["power"]]]:
 		var col := VBoxContainer.new()
 		col.add_theme_constant_override("separation", 6)
 		fighters.add_child(col)
@@ -2808,6 +2797,148 @@ func _show_help() -> void:
 		var col := _col(row)
 		_label(col, topic["title"], "CardLabel").add_theme_font_override("font", UI.font_bold)
 		_label(col, topic["text"], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+
+
+# --- Pengaturan -----------------------------------------------------------
+
+func _show_settings() -> void:
+	var holder := {}
+	var close := func():
+		Audio.play("click")
+		if is_instance_valid(holder.get("overlay")):
+			holder["overlay"].queue_free()
+	var p := _open_panel("Pengaturan", "settings", close)
+	holder["overlay"] = p["overlay"]
+	p["subtitle"].text = "Profil, suara, dan perangkat"
+	var box: VBoxContainer = p["content"]
+
+	var profile := _inner_box(box)
+	_label(profile, "Nama Tuan", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	profile.add_child(row)
+	var name_edit := LineEdit.new()
+	name_edit.placeholder_text = "Belum diatur"
+	name_edit.text = model.lord_name
+	name_edit.max_length = model.NAME_MAX
+	name_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_edit.custom_minimum_size.y = 64
+	name_edit.add_theme_stylebox_override("normal", UI.box(Color("fffaf0"), UI.GOLD_DARK, 2, 12))
+	name_edit.add_theme_stylebox_override("focus", UI.box(Color("fffaf0"), UI.GOLD, 3, 12))
+	name_edit.add_theme_color_override("font_color", UI.INK)
+	name_edit.add_theme_color_override("font_placeholder_color", Color("9a8670"))
+	row.add_child(name_edit)
+	var save_name := func():
+		var r: Dictionary = model.set_lord_name(name_edit.text)
+		name_edit.text = model.lord_name
+		name_edit.release_focus()
+		return r
+	name_edit.text_submitted.connect(func(_t):
+		var r: Dictionary = save_name.call()
+		Audio.play("click" if r["ok"] else "error")
+		_show(r))
+	_button(row, "Simpan", save_name, true, "", "GoldButton").custom_minimum_size.x = 140
+	_label(profile, "Tampil di header, daftar anggota aliansi, arena, dan peringkat.", "SmallLabel") \
+		.add_theme_color_override("font_color", UI.INK)
+
+	var sound := _inner_box(box)
+	_label(sound, "Suara", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	_volume_slider(sound, "Musik latar", "music_volume")
+	_volume_slider(sound, "Efek suara", "sfx_volume")
+
+	var device := _inner_box(box)
+	_label(device, "Perangkat", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	_setting_toggle(device, "Hemat baterai", "battery_saver",
+		"Batasi 30 FPS dan gambar ulang layar hanya saat ada perubahan.")
+	_setting_toggle(device, "Notifikasi", "notifications",
+		"Pengingat saat urusan kota penuh dan rekrut gratis siap.")
+
+	var data := _inner_box(box)
+	_label(data, "Data", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	var data_row := HBoxContainer.new()
+	data_row.add_theme_constant_override("separation", 10)
+	data.add_child(data_row)
+	_button(data_row, "Simpan Sekarang", func():
+		Game.save_game()
+		return {"ok": true, "msg": "Tersimpan"}, true, "", "GreenButton", true).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_button(data_row, "Mulai Ulang", func():
+		close.call()
+		return _confirm_reset()).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_label(data, "Progres tersimpan otomatis tiap 15 detik dan saat game ditutup. Versi %s." % \
+		ProjectSettings.get_setting("application/config/version", "0.1.0"), "SmallLabel") \
+		.add_theme_color_override("font_color", UI.INK)
+
+
+func _volume_slider(parent: Node, title: String, key: String) -> void:
+	var head := HBoxContainer.new()
+	parent.add_child(head)
+	var name_l := _label(head, title, "CardLabel")
+	name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var value_l := _label(head, "", "CardLabel")
+	var slider := HSlider.new()
+	slider.min_value = 0
+	slider.max_value = 100
+	slider.step = 5
+	slider.value = Settings.get(key)
+	slider.custom_minimum_size.y = 56
+	var track := UI.box(Color("d8c49a"), UI.GOLD_DARK, 2, 8)
+	track.content_margin_top = 6
+	track.content_margin_bottom = 6
+	slider.add_theme_stylebox_override("slider", track)
+	var fill := UI.box(UI.GREEN, Color.TRANSPARENT, 0, 8)
+	fill.content_margin_top = 6
+	fill.content_margin_bottom = 6
+	slider.add_theme_stylebox_override("grabber_area", fill)
+	slider.add_theme_stylebox_override("grabber_area_highlight", fill)
+	var knob := _knob_texture()
+	slider.add_theme_icon_override("grabber", knob)
+	slider.add_theme_icon_override("grabber_highlight", knob)
+	parent.add_child(slider)
+	var render := func(v: float):
+		value_l.text = "Mati" if v <= 0 else "%d%%" % int(v)
+	render.call(slider.value)
+	slider.value_changed.connect(func(v: float):
+		render.call(v)
+		Settings.set_value(key, int(v)))
+	if key == "sfx_volume":
+		slider.drag_ended.connect(func(_changed): Audio.play("click"))
+
+
+var _knob: ImageTexture
+
+
+func _knob_texture() -> ImageTexture:
+	if _knob == null:
+		var img := Image.create(44, 44, false, Image.FORMAT_RGBA8)
+		for y in 44:
+			for x in 44:
+				var d := Vector2(x - 21.5, y - 21.5).length()
+				if d <= 21.0:
+					img.set_pixel(x, y, UI.GOLD_DARK if d > 17.0 else UI.GOLD)
+		_knob = ImageTexture.create_from_image(img)
+	return _knob
+
+
+func _setting_toggle(parent: Node, title: String, key: String, desc: String) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	parent.add_child(row)
+	var col := _col(row)
+	_label(col, title, "CardLabel")
+	_label(col, desc, "SmallLabel").add_theme_color_override("font_color", UI.INK)
+	var b := Button.new()
+	b.custom_minimum_size = Vector2(130, 64)
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var refresh := func():
+		var on: bool = Settings.get(key)
+		b.text = "Nyala" if on else "Mati"
+		b.theme_type_variation = "GreenButton" if on else ""
+	refresh.call()
+	b.pressed.connect(func():
+		Settings.set_value(key, not Settings.get(key))
+		Audio.play("click")
+		refresh.call())
+	row.add_child(b)
 
 
 # --- Ringkasan saat kembali ------------------------------------------------

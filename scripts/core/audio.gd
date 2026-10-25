@@ -1,13 +1,10 @@
 extends Node
 ## Autoload "Audio": musik latar (crossfade saat pindah halaman) dan efek suara.
-## Pengaturan nyala/mati disimpan di user://settings.cfg.
+## Volume diatur lewat autoload Settings.
 
-const SETTINGS_PATH := "user://settings.cfg"
 const MUSIC_DB := -6.0
 const SFX_VOICES := 8
 
-var music_on := true
-var sfx_on := true
 var _music: Array[AudioStreamPlayer] = []
 var _active := 0
 var _track := ""
@@ -31,7 +28,8 @@ func _ready() -> void:
 		p.bus = "SFX"
 		add_child(p)
 		_sfx.append(p)
-	_load_settings()
+	_apply_volumes()
+	Settings.changed.connect(_apply_volumes)
 
 
 func _ensure_bus(bus: String) -> void:
@@ -76,7 +74,7 @@ func play_music(track: String) -> void:
 
 ## Mainkan efek suara; pitch sedikit diacak supaya tidak monoton.
 func play(sound: String, pitch_jitter := 0.04) -> void:
-	if not sfx_on or sound == "":
+	if Settings.sfx_volume <= 0 or sound == "":
 		return
 	var s := _stream("sfx_" + sound)
 	if s == null:
@@ -88,29 +86,9 @@ func play(sound: String, pitch_jitter := 0.04) -> void:
 	p.play()
 
 
-func set_music_on(on: bool) -> void:
-	music_on = on
-	AudioServer.set_bus_mute(AudioServer.get_bus_index("Music"), not on)
-	_save_settings()
-
-
-func set_sfx_on(on: bool) -> void:
-	sfx_on = on
-	AudioServer.set_bus_mute(AudioServer.get_bus_index("SFX"), not on)
-	_save_settings()
-
-
-func _load_settings() -> void:
-	var cfg := ConfigFile.new()
-	if cfg.load(SETTINGS_PATH) == OK:
-		music_on = cfg.get_value("audio", "music", true)
-		sfx_on = cfg.get_value("audio", "sfx", true)
-	AudioServer.set_bus_mute(AudioServer.get_bus_index("Music"), not music_on)
-	AudioServer.set_bus_mute(AudioServer.get_bus_index("SFX"), not sfx_on)
-
-
-func _save_settings() -> void:
-	var cfg := ConfigFile.new()
-	cfg.set_value("audio", "music", music_on)
-	cfg.set_value("audio", "sfx", sfx_on)
-	cfg.save(SETTINGS_PATH)
+## Terapkan volume dari Settings ke bus audio (0 = bisu).
+func _apply_volumes() -> void:
+	for pair in [["Music", Settings.music_volume], ["SFX", Settings.sfx_volume]]:
+		var bus := AudioServer.get_bus_index(pair[0])
+		AudioServer.set_bus_mute(bus, int(pair[1]) <= 0)
+		AudioServer.set_bus_volume_db(bus, linear_to_db(maxf(0.01, int(pair[1]) / 100.0)))

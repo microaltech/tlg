@@ -90,6 +90,8 @@ var _equip_overlay: Control
 var _equip_box: VBoxContainer
 var _equip_pick := -1  ## uid pusaka yang sedang menunggu pilihan penasihat.
 var _ad_overlay: Control
+var _pass_overlay: Control
+var _pass_box: VBoxContainer
 var _tower_overlay: Control
 var _tower_box: VBoxContainer
 var _story_overlay: Control
@@ -594,6 +596,8 @@ func _rebuild() -> void:
 		_fill_equipment()
 	if is_instance_valid(_tower_overlay):
 		_fill_tower()
+	if is_instance_valid(_pass_overlay):
+		_fill_pass()
 	if is_instance_valid(_story_overlay):
 		_fill_story()
 	_tick()
@@ -712,6 +716,7 @@ func _charge_widget(parent: Node, key: String, prefix: String) -> void:
 func _build_city(box: VBoxContainer) -> void:
 	_clear(box)
 	box.add_child(_event_banner())
+	_build_pass_card(box)
 	_build_quick_row(box)
 	_build_story_tracker(box)
 	for kind in model.AFFAIRS:
@@ -2435,6 +2440,101 @@ func _fill_bag_targets() -> void:
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 
+# --- Tiket Musim -------------------------------------------------------------
+
+func _build_pass_card(box: VBoxContainer) -> void:
+	var now: float = Game.now()
+	model.ensure_pass(now)
+	var card := _card(box)
+	card.add_child(_tex(Art.icon("pass"), 84))
+	var col := _col(card)
+	_label(col, "Tiket Musim · Tingkat %d / %d" % [model.pass_tier(), Data.PASS_TIERS], "CardTitle") \
+		.add_theme_font_size_override("font_size", 24)
+	var xp: int = model.season_pass["xp"]
+	var in_tier: int = xp - model.pass_tier() * Data.PASS_XP_PER_TIER
+	_bar(col, in_tier if model.pass_tier() < Data.PASS_TIERS else Data.PASS_XP_PER_TIER, Data.PASS_XP_PER_TIER,
+		Color("e0a030"))
+	_label(col, "%d hari lagi%s" % [model.pass_days_left(now), " · Premium aktif" if model.season_pass["premium"] else ""],
+		"SmallLabel").add_theme_color_override("font_color", UI.INK)
+	var n: int = model.pass_claimable_count(now)
+	var b := _button(card, "Klaim (%d)" % n if n > 0 else "Lihat", func():
+		_show_pass()
+		return null, true, "", "GoldButton" if n > 0 else "")
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.custom_minimum_size.x = 150
+
+
+func _show_pass() -> void:
+	if is_instance_valid(_pass_overlay):
+		return
+	var p := _open_panel("Tiket Musim", "pass", _close_pass)
+	_pass_overlay = p["overlay"]
+	_pass_box = p["content"]
+	p["subtitle"].text = "XP dari misi harian, peti, login, menara, arena, dan bos"
+	_fill_pass()
+
+
+func _close_pass() -> void:
+	if is_instance_valid(_pass_overlay):
+		Audio.play("click")
+		_pass_overlay.queue_free()
+	_pass_overlay = null
+
+
+func _pass_reward_text(def: Dictionary) -> String:
+	var text: String = _reward_text(def)
+	if def.has("equip"):
+		text += (", " if text != "" else "") + Data.equip_def(def["equip"])["name"]
+	return text
+
+
+func _fill_pass() -> void:
+	_clear(_pass_box)
+	var now: float = Game.now()
+	model.ensure_pass(now)
+	var head := _inner_box(_pass_box)
+	_label(head, "Tingkat %d / %d · XP %d / %d · %d hari lagi" % [model.pass_tier(), Data.PASS_TIERS,
+		model.season_pass["xp"], Data.PASS_TIERS * Data.PASS_XP_PER_TIER, model.pass_days_left(now)], "CardLabel") \
+		.add_theme_font_override("font", UI.font_bold)
+	if not model.season_pass["premium"]:
+		_label(head, Data.iap_def("season_pass")["desc"], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+		var buy := _button(head, "Beli Premium · %s" % Store.price_text("season_pass"), func():
+			_buy("season_pass")
+			return null, Store.available(), "pass", "GoldButton")
+		buy.custom_minimum_size.y = 72
+	else:
+		_label(head, "Premium aktif: hadiah jalur premium terbuka.", "CardLabel") \
+			.add_theme_color_override("font_color", UI.GREEN)
+	if model.pass_claimable_count(now) > 0:
+		_button(_pass_box, "Klaim Semua (%d)" % model.pass_claimable_count(now), func(): return model.claim_pass_all(Game.now()),
+			true, "chest_open", "GreenButton", false, "reveal_sr")
+	for t in range(1, Data.PASS_TIERS + 1):
+		var reached: bool = t <= model.pass_tier()
+		var box := _inner_box(_pass_box)
+		if reached:
+			box.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 2, 12))
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		box.add_child(row)
+		var num := _label(row, str(t), "CardTitle")
+		num.custom_minimum_size.x = 44
+		num.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		for premium in [false, true]:
+			var cell := _col(row)
+			cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var tag := _label(cell, "PREMIUM" if premium else "GRATIS", "SmallLabel")
+			tag.add_theme_color_override("font_color", _rarity_color("ssr") if premium else UI.INK)
+			_label(cell, _pass_reward_text(Data.pass_reward(t, premium)), "SmallLabel") \
+				.add_theme_color_override("font_color", UI.INK)
+			var tier: int = t
+			var claimed: bool = t in model.season_pass["paid" if premium else "free"]
+			var can: bool = model.pass_can_claim(t, premium)
+			var b := _button(cell, "Diambil" if claimed else "Klaim", func(): return model.claim_pass(tier, premium, Game.now()),
+				can, "", "GreenButton" if can else "", false, "coin")
+			b.custom_minimum_size.y = 52
+			b.add_theme_font_size_override("font_size", 20)
+
+
 # --- Iklan berhadiah -----------------------------------------------------------
 
 func _ad_button(parent: Node, kind: String) -> Button:
@@ -2949,8 +3049,8 @@ func _fill_store() -> void:
 
 	for def in Data.IAP_PRODUCTS:
 		var id: String = def["id"]
-		if def["type"] == "once" and model.iap_owned(id):
-			continue
+		if def["type"] == "once" and model.iap_owned(id) or def["type"] == "pass":
+			continue  # Tiket Musim dibeli dari panelnya sendiri
 		var box := _inner_box(_store_box)
 		if def["type"] != "gold":
 			box.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))

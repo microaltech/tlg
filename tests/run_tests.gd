@@ -26,7 +26,7 @@ func _init() -> void:
 		"test_war_save_leave", "test_chat_send_reply", "test_chat_ambient_unread", "test_chat_save_leave",
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
-		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads",
+		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1576,3 +1576,34 @@ func test_ads() -> void:
 	var m2 := Model.new()
 	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
 	check(m2.ad_left("gold", t) == m.ad_left("gold", t), "simpan/muat batas iklan")
+
+
+func test_pass() -> void:
+	var m := fresh()
+	var t := 1000.0
+	m.ensure_pass(t)
+	check(m.pass_tier() == 0 and not m.claim_pass(1, false, t)["ok"], "Tiket Musim mulai dari tingkat 0")
+	m.claim_login(t)
+	check(m.season_pass["xp"] == Data.PASS_XP["login"], "login memberi XP Tiket Musim")
+	m.add_pass_xp(Data.PASS_XP_PER_TIER * 3)
+	check(m.pass_tier() == 3, "naik tingkat dari XP")
+	var grain := m.grain
+	check(m.claim_pass(1, false, t)["ok"] and m.grain > grain, "klaim hadiah gratis tingkat 1")
+	check(not m.claim_pass(1, false, t)["ok"], "hadiah tingkat diklaim sekali")
+	check(not m.claim_pass(1, true, t)["ok"], "jalur premium terkunci tanpa pembelian")
+	check(m.grant_purchase("season_pass", "tok-pass", t)["ok"] and m.season_pass["premium"], "beli Tiket Musim Premium")
+	check(not m.grant_purchase("season_pass", "tok-pass2", t)["ok"], "premium sekali per musim")
+	check(m.pass_claimable_count(t) == 5, "hadiah tersedia: 2 gratis + 3 premium (retroaktif)")
+	var r := m.claim_pass_all(t)
+	check(r["ok"] and m.pass_claimable_count(t) == 0, "klaim semua hadiah")
+	m.add_pass_xp(1 << 20)
+	check(m.pass_tier() == Data.PASS_TIERS, "tingkat maksimal")
+	m.claim_pass_all(t)
+	check(m.equipment.any(func(e): return e["id"] == "keris_nagasasra"), "hadiah premium terakhir berupa pusaka Legenda")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
+	check(var_to_str(m2.season_pass) == var_to_str(m.season_pass), "simpan/muat Tiket Musim")
+	var next := t + Data.PASS_DAYS * 86400.0
+	m.ensure_pass(next)
+	check(m.pass_tier() == 0 and not m.season_pass["premium"], "musim baru mulai dari awal")
+	check(m.pass_days_left(next) <= Data.PASS_DAYS and m.pass_days_left(next) >= 1, "sisa hari musim")

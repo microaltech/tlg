@@ -94,6 +94,8 @@ var equipment: Array = []
 var tower := {}
 ## Iklan berhadiah yang sudah ditonton hari ini: {"day", "counts": {jenis: n}}
 var ads := {}
+## Tiket Musim: {"season", "xp", "premium", "free": [tingkat], "paid": [tingkat]}
+var season_pass := {}
 var _equip_uid := 0
 var rng := RandomNumberGenerator.new()
 
@@ -105,6 +107,7 @@ func new_game(now: float) -> void:
 	_equip_uid = 0
 	tower = {}
 	ads = {"day": -1, "counts": {}}
+	season_pass = {}
 	silver = 500
 	grain = 500
 	soldiers = 2500
@@ -626,6 +629,8 @@ func ensure_daily(now: float) -> bool:
 
 func _track(event: String, amount := 1) -> void:
 	tracked.emit(event)
+	if Data.PASS_XP.has(event):
+		add_pass_xp(int(Data.PASS_XP[event]) * amount)
 	for m in daily.get("missions", []):
 		var def := Data.mission_def(m["id"])
 		if def["event"] != event:
@@ -665,6 +670,7 @@ func claim_mission(index: int) -> Dictionary:
 	if not mission_done(index):
 		return _fail("Misi belum selesai.")
 	m["claimed"] = true
+	_track("mission")
 	daily["points"] = int(daily["points"]) + Data.DAILY_POINTS
 	weekly["points"] = int(weekly["points"]) + Data.EVENT_MISSION_POINTS
 	var text := _give_rewards(Data.mission_def(m["id"]))
@@ -685,6 +691,7 @@ func claim_chest(index: int) -> Dictionary:
 	if not can_claim_chest(index):
 		return _fail("Poin aktivitas belum cukup.")
 	daily["chests"][index] = true
+	_track("chest")
 	var text := _give_rewards(Data.DAILY_CHESTS[index])
 	changed.emit()
 	return _ok("Peti dibuka: %s." % text)
@@ -1762,6 +1769,12 @@ func grant_purchase(id: String, token: String, now: float) -> Dictionary:
 			gold += int(def["gold"])
 			parts.append("+%d emas" % def["gold"])
 			parts.append("kartu aktif %d hari" % card_days_left(now))
+		"pass":
+			ensure_pass(now)
+			if season_pass["premium"]:
+				return _fail("Tiket Musim Premium musim ini sudah aktif.")
+			season_pass["premium"] = true
+			parts.append("Tiket Musim Premium aktif")
 		"once":
 			if iap_owned(id):
 				return _fail("%s hanya bisa dibeli sekali." % def["name"])
@@ -2545,6 +2558,8 @@ func claim_login(now: float) -> Dictionary:
 	login["streak"] = day
 	login["last_day"] = day_index(now)
 	login["total"] = int(login["total"]) + 1
+	_last_now = maxf(_last_now, now)
+	_track("login")
 	var text := _give_rewards(Data.LOGIN_REWARDS[day - 1])
 	var vip_msg := add_vip_points(Data.VIP_LOGIN_POINTS)
 	changed.emit()
@@ -2878,6 +2893,83 @@ func tower_fight(now: float) -> Dictionary:
 	return r
 
 
+# --- Tiket Musim (battle pass) ----------------------------------------------
+
+func pass_season(now: float) -> int:
+	return day_index(now) / Data.PASS_DAYS
+
+
+func pass_days_left(now: float) -> int:
+	return (pass_season(now) + 1) * Data.PASS_DAYS - day_index(now)
+
+
+## Mulai musim baru bila perlu (hadiah musim lalu yang belum diklaim hangus).
+func ensure_pass(now: float) -> void:
+	if season_pass.is_empty() or int(season_pass["season"]) != pass_season(now):
+		season_pass = {"season": pass_season(now), "xp": 0, "premium": false, "free": [], "paid": []}
+
+
+func add_pass_xp(amount: int) -> void:
+	ensure_pass(_last_now)
+	season_pass["xp"] = mini(int(season_pass["xp"]) + amount, Data.PASS_TIERS * Data.PASS_XP_PER_TIER)
+
+
+func pass_tier() -> int:
+	return mini(Data.PASS_TIERS, int(season_pass.get("xp", 0)) / Data.PASS_XP_PER_TIER)
+
+
+func pass_can_claim(tier: int, premium: bool) -> bool:
+	if tier < 1 or tier > pass_tier() or (premium and not season_pass.get("premium", false)):
+		return false
+	return not tier in season_pass["paid" if premium else "free"]
+
+
+func pass_claimable_count(now: float) -> int:
+	ensure_pass(now)
+	var n := 0
+	for t in range(1, Data.PASS_TIERS + 1):
+		for premium in [false, true]:
+			if pass_can_claim(t, premium):
+				n += 1
+	return n
+
+
+func claim_pass(tier: int, premium: bool, now: float) -> Dictionary:
+	ensure_pass(now)
+	if premium and not season_pass["premium"]:
+		return _fail("Beli Tiket Musim Premium untuk membuka jalur ini.")
+	if not pass_can_claim(tier, premium):
+		return _fail("Hadiah tingkat %d belum bisa diklaim." % tier)
+	season_pass["paid" if premium else "free"].append(tier)
+	var text := _give_pass_reward(Data.pass_reward(tier, premium))
+	changed.emit()
+	return _ok("Tiket Musim tingkat %d: %s." % [tier, text])
+
+
+## Klaim semua hadiah yang tersedia sekaligus.
+func claim_pass_all(now: float) -> Dictionary:
+	ensure_pass(now)
+	var parts := []
+	for t in range(1, Data.PASS_TIERS + 1):
+		for premium in [false, true]:
+			if pass_can_claim(t, premium):
+				season_pass["paid" if premium else "free"].append(t)
+				parts.append(_give_pass_reward(Data.pass_reward(t, premium)))
+	if parts.is_empty():
+		return _fail("Belum ada hadiah Tiket Musim yang bisa diklaim.")
+	changed.emit()
+	return _ok("Tiket Musim: %d hadiah diklaim." % parts.size())
+
+
+func _give_pass_reward(def: Dictionary) -> String:
+	var text := _give_rewards(def)
+	if def.has("equip"):
+		var eq := add_equipment(def["equip"])
+		if not eq.is_empty():
+			text += (", " if text != "" else "") + Data.equip_def(def["equip"])["name"]
+	return text
+
+
 # --- Iklan berhadiah -----------------------------------------------------------
 
 func ad_left(kind: String, now: float) -> int:
@@ -3045,6 +3137,7 @@ func to_dict() -> Dictionary:
 		"equipment": equipment,
 		"tower": tower,
 		"ads": ads,
+		"pass": season_pass,
 		"equip_uid": _equip_uid,
 	}
 
@@ -3179,6 +3272,14 @@ func from_dict(d: Dictionary, now: float) -> void:
 			"level": clampi(int(e.get("level", 1)), 1, Data.EQUIP_MAX_LEVEL),
 			"owner": owner if counselors.has(owner) else ""})
 	_equip_uid = int(d.get("equip_uid", equipment.size()))
+	season_pass = {}
+	var src_pass: Dictionary = d.get("pass", {})
+	if not src_pass.is_empty():
+		season_pass = {"season": int(src_pass.get("season", 0)), "xp": int(src_pass.get("xp", 0)),
+			"premium": bool(src_pass.get("premium", false)), "free": [], "paid": []}
+		for k in ["free", "paid"]:
+			for v in src_pass.get(k, []):
+				season_pass[k].append(int(v))
 	var src_ads: Dictionary = d.get("ads", {})
 	ads = {"day": int(src_ads.get("day", -1)), "counts": {}}
 	for k in src_ads.get("counts", {}):

@@ -918,6 +918,27 @@ def gear():
 
 ICONS["settings"] = gear()
 
+# Pusaka: keris berlekuk, lontar, dan kalung.
+ICONS["eq_weapon"] = icon_doc(
+    '<path d="M50 8 Q58 18 50 28 Q42 38 50 48 Q58 58 50 66 L46 66 Q38 58 46 48 Q54 38 46 28 Q38 18 46 8 Z" '
+    'fill="#c9d1da" stroke="#4a5058" stroke-width="2.5" stroke-linejoin="round"/>'
+    '<path d="M48 14 Q53 22 48 30 Q43 38 48 46" stroke="#ffffff" stroke-width="1.6" fill="none" opacity="0.8"/>'
+    '<path d="M32 66 Q48 60 66 66 L62 74 L36 74 Z" fill="#c9963f" stroke="#6b4a12" stroke-width="2.5"/>'
+    '<path d="M42 74 Q38 84 44 92 L54 92 Q60 84 56 74 Z" fill="#7a4a24" stroke="#3b2210" stroke-width="2.5"/>'
+    '<circle cx="49" cy="70" r="3" fill="#c0392b"/>')
+ICONS["eq_book"] = icon_doc(
+    "".join('<rect x="12" y="%d" width="72" height="12" rx="5" fill="%s" stroke="#7a5a2a" stroke-width="2"/>'
+            '<path d="M22 %d L72 %d" stroke="#8a6a3a" stroke-width="1.5" stroke-dasharray="5 3"/>'
+            % (y, c, y + 6, y + 6) for y, c in [(20, "#e8cf96"), (36, "#f0d9a6"), (52, "#e8cf96"), (68, "#f0d9a6")])
+    + '<path d="M48 14 L48 86" stroke="#a8322d" stroke-width="3"/>'
+      '<circle cx="48" cy="12" r="5" fill="#c9963f" stroke="#6b4a12" stroke-width="2"/>')
+ICONS["eq_charm"] = icon_doc(
+    '<path d="M18 18 Q48 66 78 18" stroke="#c9963f" stroke-width="5" fill="none" stroke-linecap="round"/>'
+    + "".join('<circle cx="%d" cy="%d" r="4" fill="#f4d58a" stroke="#8a6a12" stroke-width="1.5"/>' % (x, y)
+              for x, y in [(26, 30), (34, 40), (62, 40), (70, 30)])
+    + '<path d="M48 50 L62 66 L48 88 L34 66 Z" fill="#2e86c1" stroke="#0e3a5a" stroke-width="3" stroke-linejoin="round"/>'
+      '<path d="M48 56 L56 66 L48 78" stroke="#ffffff" stroke-width="2" fill="none" opacity="0.7"/>')
+
 ICONS["chest"] = chest(False)
 ICONS["chest_open"] = chest(True)
 

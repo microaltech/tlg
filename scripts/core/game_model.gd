@@ -88,12 +88,17 @@ var alliance_left_t := -1.0e12
 var tz_bias := 0
 ## Nama Tuan pilihan pemain; kosong = belum diatur (tampil sebagai "Anda"/"Tuan").
 var lord_name := ""
+## Pusaka milik pemain: [{"uid", "id", "level", "owner"}]; owner = id penasihat atau "".
+var equipment: Array = []
+var _equip_uid := 0
 var rng := RandomNumberGenerator.new()
 
 
 func new_game(now: float) -> void:
 	_last_now = now
 	lord_name = ""
+	equipment = []
+	_equip_uid = 0
 	silver = 500
 	grain = 500
 	soldiers = 2500
@@ -231,7 +236,7 @@ func attr(id: String, key: String) -> int:
 	var def := Data.counselor_def(id)
 	var st: Dictionary = counselors[id]
 	var mult := 1.0 + Data.STAR_BONUS * int(st.get("stars", 0))
-	return int(int(def[key]) * int(st["level"]) * mult) + int(st["bonus"].get(key, 0))
+	return int(int(def[key]) * int(st["level"]) * mult) + int(st["bonus"].get(key, 0)) + equipment_bonus(id, key)
 
 
 func total_attr(key: String) -> int:
@@ -436,6 +441,10 @@ func fight_stage() -> Dictionary:
 		info["name"], losses, info["reward_silver"], gained_prestige, info["reward_gold"]]
 	if stage_item != "":
 		msg += " Rampasan: %s." % Data.ITEMS[stage_item]["name"]
+		if rng.randf() < Data.EQUIP_DROP_CHANCE:
+			var eq := add_equipment(Data.equip_roll(stage, rng.randf(), rng.randf()))
+			if not eq.is_empty():
+				msg += " Pusaka: %s." % Data.equip_def(eq["id"])["name"]
 	var captured := _capture_prisoner(info)
 	if captured != "":
 		msg += " Tertangkap: %s!" % captured
@@ -1437,6 +1446,10 @@ func claim_war_reward() -> Dictionary:
 	if not alliance.is_empty():
 		_add_jasa(int(r["jasa"]))
 		parts.append("+%d jasa" % r["jasa"])
+	if war_reward["win"]:
+		var eq := add_equipment(Data.equip_roll(stage + 30, rng.randf(), rng.randf()))
+		if not eq.is_empty():
+			parts.append(Data.equip_def(eq["id"])["name"])
 	var msg := "Hadiah perang (%s): %s." % ["menang" if war_reward["win"] else "kalah", ", ".join(parts)]
 	war_reward = {}
 	changed.emit()
@@ -2660,6 +2673,116 @@ func notification_plan(now: float) -> Array:
 	return plan
 
 
+# --- Pusaka (peralatan) ------------------------------------------------------
+
+## Tambah pusaka baru. Kosong bila gudang penuh.
+func add_equipment(id: String) -> Dictionary:
+	if Data.equip_def(id).is_empty() or equipment.size() >= Data.EQUIP_CAPACITY:
+		return {}
+	_equip_uid += 1
+	var eq := {"uid": _equip_uid, "id": id, "level": 1, "owner": ""}
+	equipment.append(eq)
+	changed.emit()
+	return eq
+
+
+func equip_find(uid: int) -> Dictionary:
+	for eq in equipment:
+		if int(eq["uid"]) == uid:
+			return eq
+	return {}
+
+
+## Bonus atribut sebuah pusaka pada levelnya sekarang: {"str": 30, ...}
+func equip_stats(eq: Dictionary) -> Dictionary:
+	var out := {}
+	var mult := 1.0 + Data.EQUIP_LEVEL_BONUS * (int(eq["level"]) - 1)
+	var attrs: Dictionary = Data.equip_def(eq["id"])["attrs"]
+	for k in attrs:
+		out[k] = int(round(int(attrs[k]) * mult))
+	return out
+
+
+func equipment_bonus(counselor_id: String, key: String) -> int:
+	var total := 0
+	for eq in equipment:
+		if eq["owner"] == counselor_id:
+			total += int(equip_stats(eq).get(key, 0))
+	return total
+
+
+## Pusaka yang dipakai penasihat di slot tertentu (kosong bila tidak ada).
+func equipped(counselor_id: String, slot: String) -> Dictionary:
+	for eq in equipment:
+		if eq["owner"] == counselor_id and Data.equip_def(eq["id"])["slot"] == slot:
+			return eq
+	return {}
+
+
+func equip(uid: int, counselor_id: String) -> Dictionary:
+	var eq := equip_find(uid)
+	if eq.is_empty():
+		return _fail("Pusaka tidak ditemukan.")
+	if not counselors.has(counselor_id):
+		return _fail("Penasihat belum direkrut.")
+	var def := Data.equip_def(eq["id"])
+	var current := equipped(counselor_id, def["slot"])
+	if not current.is_empty():
+		current["owner"] = ""
+	eq["owner"] = counselor_id
+	changed.emit()
+	return _ok("%s dipakai oleh %s." % [def["name"], Data.counselor_def(counselor_id)["name"]])
+
+
+func unequip(uid: int) -> Dictionary:
+	var eq := equip_find(uid)
+	if eq.is_empty() or eq["owner"] == "":
+		return _fail("Pusaka tidak sedang dipakai.")
+	eq["owner"] = ""
+	changed.emit()
+	return _ok("%s dilepas." % Data.equip_def(eq["id"])["name"])
+
+
+func equip_upgrade_cost(eq: Dictionary) -> int:
+	var base: int = Data.EQUIP_UPGRADE_BASE[Data.equip_def(eq["id"])["rarity"]]
+	return int(base * pow(int(eq["level"]), 1.6))
+
+
+func upgrade_equipment(uid: int) -> Dictionary:
+	var eq := equip_find(uid)
+	if eq.is_empty():
+		return _fail("Pusaka tidak ditemukan.")
+	if int(eq["level"]) >= Data.EQUIP_MAX_LEVEL:
+		return _fail("Pusaka sudah level maksimal.")
+	var cost := equip_upgrade_cost(eq)
+	if silver < cost:
+		return _fail("Perak tidak cukup (butuh %d)." % cost)
+	silver -= cost
+	eq["level"] = int(eq["level"]) + 1
+	_track("equip_upgrade")
+	changed.emit()
+	return _ok("%s naik ke +%d." % [Data.equip_def(eq["id"])["name"], int(eq["level"]) - 1])
+
+
+func equip_salvage_value(eq: Dictionary) -> int:
+	var rarity: String = Data.equip_def(eq["id"])["rarity"]
+	var spent := 0
+	for lv in range(1, int(eq["level"])):
+		spent += int(Data.EQUIP_UPGRADE_BASE[rarity] * pow(lv, 1.6))
+	return int(Data.EQUIP_SALVAGE_BASE[rarity] + spent * Data.EQUIP_SALVAGE_REFUND)
+
+
+func salvage_equipment(uid: int) -> Dictionary:
+	var eq := equip_find(uid)
+	if eq.is_empty():
+		return _fail("Pusaka tidak ditemukan.")
+	var value := equip_salvage_value(eq)
+	silver += value
+	equipment.erase(eq)
+	changed.emit()
+	return _ok("%s dilebur: +%d perak." % [Data.equip_def(eq["id"])["name"], value])
+
+
 # --- Nama Tuan -------------------------------------------------------------
 
 const NAME_MIN := 2
@@ -2796,6 +2919,8 @@ func to_dict() -> Dictionary:
 		"start_day": start_day,
 		"leaderboard": leaderboard,
 		"lord_name": lord_name,
+		"equipment": equipment,
+		"equip_uid": _equip_uid,
 	}
 
 
@@ -2920,6 +3045,15 @@ func from_dict(d: Dictionary, now: float) -> void:
 			"stage": int(pr.get("stage", 0)), "hp": int(pr.get("hp", 1)), "max": int(pr.get("max", 1))})
 	start_day = int(d.get("start_day", day_index(now)))
 	lord_name = _clean_name(str(d.get("lord_name", "")))
+	equipment = []
+	for e in d.get("equipment", []):
+		var owner := str(e.get("owner", ""))
+		if Data.equip_def(str(e.get("id", ""))).is_empty():
+			continue
+		equipment.append({"uid": int(e.get("uid", 0)), "id": str(e["id"]),
+			"level": clampi(int(e.get("level", 1)), 1, Data.EQUIP_MAX_LEVEL),
+			"owner": owner if counselors.has(owner) else ""})
+	_equip_uid = int(d.get("equip_uid", equipment.size()))
 	var src_lb: Dictionary = d.get("leaderboard", {})
 	leaderboard = {"week": int(src_lb.get("week", week_index(now))), "reward": {}}
 	var src_lbr: Dictionary = src_lb.get("reward", {})

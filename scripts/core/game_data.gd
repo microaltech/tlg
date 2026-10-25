@@ -89,6 +89,48 @@ const SKILLS := {
 	"jaka": {"name": "Banteng Tingkir", "effect": "battle", "base": 0.10, "per_star": 0.03},
 	"nawang": {"name": "Selendang Bidadari", "effect": "visit", "base": 0.10, "per_star": 0.03},
 }
+## Pusaka (peralatan): satu per slot per penasihat. Bonus atribut datar yang naik
+## EQUIP_LEVEL_BONUS per level. Didapat dari tahap besar kampanye, perang, dan menara.
+const EQUIP_SLOTS := {
+	"weapon": {"name": "Senjata", "icon": "eq_weapon"},
+	"book": {"name": "Kitab", "icon": "eq_book"},
+	"charm": {"name": "Perhiasan", "icon": "eq_charm"},
+}
+const EQUIPMENT := {
+	"keris_besi": {"name": "Keris Besi", "slot": "weapon", "rarity": "r", "attrs": {"str": 30}},
+	"tombak_klinting": {"name": "Tombak Baru Klinting", "slot": "weapon", "rarity": "sr", "attrs": {"str": 80}},
+	"keris_nagasasra": {"name": "Keris Nagasasra", "slot": "weapon", "rarity": "ssr", "attrs": {"str": 180}},
+	"lontar_kuno": {"name": "Lontar Kuno", "slot": "book", "rarity": "r", "attrs": {"int": 30}},
+	"kitab_negara": {"name": "Kitab Negarakertagama", "slot": "book", "rarity": "sr", "attrs": {"int": 60, "pol": 40}},
+	"lontar_kalimasada": {"name": "Lontar Kalimasada", "slot": "book", "rarity": "ssr", "attrs": {"int": 120, "pol": 80}},
+	"cincin_perak": {"name": "Cincin Perak", "slot": "charm", "rarity": "r", "attrs": {"cha": 30}},
+	"kalung_kencana": {"name": "Kalung Kencana", "slot": "charm", "rarity": "sr", "attrs": {"cha": 80}},
+	"mahkota_binokasih": {"name": "Mahkota Binokasih", "slot": "charm", "rarity": "ssr", "attrs": {"cha": 150, "pol": 50}},
+}
+const EQUIP_MAX_LEVEL := 10
+const EQUIP_LEVEL_BONUS := 0.2  ## +20% bonus dasar per level di atas 1
+## Biaya tingkatkan = dasar * level^1.6 perak; lebur mengembalikan nilai dasar + 30% biaya.
+const EQUIP_UPGRADE_BASE := {"r": 2000, "sr": 5000, "ssr": 12000}
+const EQUIP_SALVAGE_BASE := {"r": 500, "sr": 1500, "ssr": 5000}
+const EQUIP_SALVAGE_REFUND := 0.3
+const EQUIP_CAPACITY := 60
+## Peluang pusaka jatuh di tahap besar (tiap tahap ke-5) dan bobot kelangkaannya.
+const EQUIP_DROP_CHANCE := 0.5
+
+
+static func equip_def(id: String) -> Dictionary:
+	return EQUIPMENT.get(id, {})
+
+
+## Pilih pusaka acak: makin tinggi tahap, makin besar peluang Epik/Legenda.
+static func equip_roll(stage: int, roll: float, pick: float) -> String:
+	var ssr := clampf(0.03 + stage * 0.002, 0.03, 0.2)
+	var sr := clampf(0.22 + stage * 0.004, 0.22, 0.45)
+	var rarity := "ssr" if roll < ssr else ("sr" if roll < ssr + sr else "r")
+	var pool := EQUIPMENT.keys().filter(func(k): return EQUIPMENT[k]["rarity"] == rarity)
+	return pool[mini(int(pick * pool.size()), pool.size() - 1)]
+
+
 ## Ikatan: aktif bila semua anggota dimiliki.
 const BONDS := [
 	{"name": "Pendekar Nusantara", "members": ["arya", "gajah", "satria"], "effect": "combat", "value": 0.10},

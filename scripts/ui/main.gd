@@ -86,6 +86,9 @@ var _lb_cat := "power"
 var _bag_overlay: Control
 var _bag_box: VBoxContainer
 var _bag_pick := ""  ## Item yang sedang menunggu pilihan target.
+var _equip_overlay: Control
+var _equip_box: VBoxContainer
+var _equip_pick := -1  ## uid pusaka yang sedang menunggu pilihan penasihat.
 var _story_overlay: Control
 var _story_box: VBoxContainer  ## Level VIP yang sedang dilihat di panel (-1 = level sekarang).
 var _mission_box: VBoxContainer
@@ -577,6 +580,8 @@ func _rebuild() -> void:
 		_fill_leaderboard()
 	if is_instance_valid(_bag_overlay):
 		_fill_bag()
+	if is_instance_valid(_equip_overlay):
+		_fill_equipment()
 	if is_instance_valid(_story_overlay):
 		_fill_story()
 	_tick()
@@ -789,6 +794,13 @@ func _build_counselors(box: VBoxContainer) -> void:
 				model.skill_value(id) * 100)], "SmallLabel")
 			skill.add_theme_color_override("font_color", Color("6c3483"))
 			skill.add_theme_font_override("font", UI.font_bold)
+		var gear := []
+		for slot in Data.EQUIP_SLOTS:
+			var e: Dictionary = model.equipped(id, slot)
+			if not e.is_empty():
+				gear.append("%s +%d" % [Data.equip_def(e["id"])["name"], int(e["level"]) - 1])
+		if not gear.is_empty():
+			_label(col, "Pusaka: %s" % ", ".join(gear), "SmallLabel").add_theme_color_override("font_color", UI.GOLD_DARK)
 		var lv: int = model.counselors[id]["level"]
 		var cap: int = model.rank_info()["level_cap"]
 		_label(col, "Level %d / %d" % [lv, cap], "CardLabel")
@@ -2275,6 +2287,11 @@ func _build_quick_row(box: VBoxContainer) -> void:
 		return null, true, "bag", "GoldButton")
 	bag.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bag.add_theme_font_size_override("font_size", 22)
+	var eq := _button(row, "Pusaka (%d)" % model.equipment.size(), func():
+		_show_equipment()
+		return null, true, "eq_weapon", "GoldButton")
+	eq.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	eq.add_theme_font_size_override("font_size", 22)
 	if model.do_all_unlocked():
 		var all := _button(row, "Kerjakan Semua", func(): return model.do_all(Game.now()), true, "",
 			"GreenButton", false, "coin")
@@ -2377,6 +2394,130 @@ func _fill_bag_targets() -> void:
 			var r: Dictionary = model.use_item(item_id, target, Game.now())
 			if r["ok"] and model.item_count(item_id) <= 0:
 				_bag_pick = ""
+			return r, true, "", "GreenButton", false, "upgrade")
+		b.custom_minimum_size = Vector2(120, 56)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+
+# --- Pusaka -----------------------------------------------------------------
+
+func _show_equipment() -> void:
+	if is_instance_valid(_equip_overlay):
+		return
+	_equip_pick = -1
+	var p := _open_panel("Pusaka", "eq_weapon", _close_equipment)
+	_equip_overlay = p["overlay"]
+	_equip_box = p["content"]
+	p["subtitle"].text = "Pasang di penasihat untuk menambah atribut"
+	_fill_equipment()
+
+
+func _close_equipment() -> void:
+	if is_instance_valid(_equip_overlay):
+		Audio.play("click")
+		_equip_overlay.queue_free()
+	_equip_overlay = null
+
+
+func _equip_stats_text(e: Dictionary) -> String:
+	var parts := []
+	var st: Dictionary = model.equip_stats(e)
+	for k in st:
+		parts.append("%s +%d" % [Data.ATTR_NAMES[k], st[k]])
+	return ", ".join(parts)
+
+
+func _fill_equipment() -> void:
+	_clear(_equip_box)
+	if _equip_pick >= 0:
+		_fill_equipment_targets()
+		return
+	_label(_equip_box, "Gudang %d / %d · didapat dari tahap besar kampanye, perang guild, dan Menara Ujian." % [
+		model.equipment.size(), Data.EQUIP_CAPACITY], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+	if model.equipment.is_empty():
+		_label(_equip_box, "Belum ada pusaka. Menangkan tahap besar (tiap tahap ke-5) untuk peluang mendapatkannya.",
+			"CardLabel")
+		return
+	var order := {"ssr": 0, "sr": 1, "r": 2}
+	var list: Array = model.equipment.duplicate()
+	list.sort_custom(func(a, b):
+		var da: Dictionary = Data.equip_def(a["id"])
+		var db: Dictionary = Data.equip_def(b["id"])
+		if order[da["rarity"]] != order[db["rarity"]]:
+			return order[da["rarity"]] < order[db["rarity"]]
+		return int(a["level"]) > int(b["level"]))
+	for e in list:
+		var def: Dictionary = Data.equip_def(e["id"])
+		var box := _inner_box(_equip_box)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		box.add_child(row)
+		row.add_child(_tex(Art.icon(Data.EQUIP_SLOTS[def["slot"]]["icon"]), 64))
+		var col := _col(row)
+		var name := _label(col, "%s +%d" % [def["name"], int(e["level"]) - 1], "CardLabel")
+		name.add_theme_font_override("font", UI.font_bold)
+		name.add_theme_color_override("font_color", _rarity_color(def["rarity"]).darkened(0.25))
+		_label(col, "%s · %s" % [Data.EQUIP_SLOTS[def["slot"]]["name"], _equip_stats_text(e)], "SmallLabel") \
+			.add_theme_color_override("font_color", UI.INK)
+		var owner: String = e["owner"]
+		_label(col, "Dipakai: %s" % Data.counselor_def(owner)["name"] if owner != "" else "Belum dipakai", "SmallLabel") \
+			.add_theme_color_override("font_color", UI.GREEN if owner != "" else UI.INK)
+		var uid: int = e["uid"]
+		var actions := HBoxContainer.new()
+		actions.add_theme_constant_override("separation", 6)
+		box.add_child(actions)
+		var put := _button(actions, "Pasang" if owner == "" else "Pindah", func():
+			_equip_pick = uid
+			_queue_rebuild()
+			return null, true, "", "GreenButton")
+		put.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		if owner != "":
+			_button(actions, "Lepas", func(): return model.unequip(uid)).size_flags_horizontal = \
+				Control.SIZE_EXPAND_FILL
+		var maxed: bool = int(e["level"]) >= Data.EQUIP_MAX_LEVEL
+		var cost: int = model.equip_upgrade_cost(e)
+		var up := _button(actions, "Maks" if maxed else "+1 · %s" % _num(cost), func(): return model.upgrade_equipment(uid),
+			not maxed and model.silver >= cost, "silver", "GoldButton", true, "upgrade")
+		up.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_button(actions, "Lebur", func(): return model.salvage_equipment(uid), owner == "").size_flags_horizontal = \
+			Control.SIZE_EXPAND_FILL
+
+
+func _fill_equipment_targets() -> void:
+	var e: Dictionary = model.equip_find(_equip_pick)
+	if e.is_empty():
+		_equip_pick = -1
+		_fill_equipment()
+		return
+	var def: Dictionary = Data.equip_def(e["id"])
+	var head := HBoxContainer.new()
+	_equip_box.add_child(head)
+	_button(head, "Kembali", func():
+		_equip_pick = -1
+		_queue_rebuild()
+		return null).custom_minimum_size = Vector2(150, 56)
+	var title := _label(head, "%s: pilih %s" % [def["name"], "penasihat"], "CardLabel")
+	title.add_theme_font_override("font", UI.font_bold)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var ids: Array = model.counselors.keys()
+	var key: String = def["attrs"].keys()[0]
+	ids.sort_custom(func(a, b): return model.attr(a, key) > model.attr(b, key))
+	for id in ids:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		_inner_box(_equip_box).add_child(row)
+		row.add_child(_tex(Art.portrait(id), 64))
+		var col := _col(row)
+		_label(col, Data.counselor_def(id)["name"], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		var cur: Dictionary = model.equipped(id, def["slot"])
+		_label(col, "%s %d · %s" % [Data.ATTR_NAMES[key], model.attr(id, key),
+			"%s: %s" % [Data.EQUIP_SLOTS[def["slot"]]["name"], Data.equip_def(cur["id"])["name"]] if not cur.is_empty()
+			else "slot kosong"], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+		var target: String = id
+		var uid: int = _equip_pick
+		var b := _button(row, "Pilih", func():
+			var r: Dictionary = model.equip(uid, target)
+			_equip_pick = -1
 			return r, true, "", "GreenButton", false, "upgrade")
 		b.custom_minimum_size = Vector2(120, 56)
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER

@@ -165,6 +165,7 @@ scripts/core/game_data.gd  Data & angka balancing (jabatan, penasihat, tahap)
 scripts/core/game_model.gd Semua logika game, tanpa UI (mudah diuji)
 scripts/core/game.gd       Autoload "Game": simpan/muat & autosave
 scripts/core/settings.gd   Autoload "Settings": volume, hemat baterai, notifikasi
+scripts/core/notifier.gd   Autoload "Notifier": notifikasi lokal Android (via plugin)
 scripts/core/audio.gd      Autoload "Audio": musik latar & efek suara
 scripts/core/store.gd      Autoload "Store": Google Play Billing / Mode Uji
 scripts/ui/main.gd         UI dibangun lewat kode (header, 4 halaman, navigasi bawah)
@@ -262,6 +263,35 @@ aplikasi tidak bisa di-update di Play Store), dan isi lewat environment variable
 `GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD`. Google Play mewajibkan format
 **AAB**: aktifkan `gradle_build/use_gradle_build`, set `export_format` ke AAB,
 lalu **Project → Install Android Build Template**.
+
+## Notifikasi lokal (Android)
+
+Saat game ditinggalkan, `Notifier` menjadwalkan pengingat dari
+`GameModel.notification_plan()`: urusan kota penuh, energi kunjungan penuh,
+rekrut gratis siap, hadiah login esok pukul 09.00, dan pengingat setelah 2 hari
+tidak bermain. Saat game dibuka lagi, semua jadwal dibatalkan. Pemain bisa
+mematikannya di Pengaturan; di Android 13+ izin notifikasi diminta saat pertama
+kali dibuka.
+
+Godot 4.3 tidak punya notifikasi lokal bawaan, jadi dipakai plugin Android kecil
+`TlgNotify` (Java, AlarmManager + BroadcastReceiver):
+
+1. Build AAR (butuh Android SDK dan akses ke Maven Google/Central):
+   ```bash
+   cd plugins/tlg_notify_android
+   gradle assembleRelease
+   mkdir -p ../../addons/tlg_notify/bin
+   cp build/outputs/aar/tlg_notify-release.aar ../../addons/tlg_notify/bin/
+   ```
+2. Di Godot: **Project → Install Android Build Template**, lalu di preset
+   Android centang **Gradle Build → Use Gradle Build**.
+3. Ekspor seperti biasa. Addon `addons/tlg_notify` menyertakan AAR secara
+   otomatis.
+
+Tanpa AAR, ekspor tetap berjalan seperti sebelumnya (tanpa notifikasi) dan semua
+pemanggilan `Notifier` aman. **Catatan:** kode plugin belum dikompilasi atau diuji
+di perangkat karena lingkungan pengembangan ini tidak bisa mengakses Maven Google.
+Uji di HP sungguhan sebelum rilis.
 
 ## Pembelian dalam aplikasi
 

@@ -2519,6 +2519,47 @@ func marry_child(index: int) -> Dictionary:
 		child["name"], Data.counselor_def(target)["name"], bonus, Data.ATTR_NAMES[key]])
 
 
+# --- Rencana notifikasi lokal ---------------------------------------------
+
+const NOTIFY_LOGIN_HOUR := 9  ## jam lokal pengingat hadiah login esok hari
+const NOTIFY_IDLE_SECONDS := 2 * 86400  ## pengingat bila lama tidak bermain
+
+
+## Detik sampai charge `key` penuh; 0 bila sudah penuh.
+func charge_full_eta(key: String, now: float) -> int:
+	var missing := max_charges() - charge_value(key, now)
+	if missing <= 0:
+		return 0
+	return charge_eta(key, now) + (missing - 1) * int(CHARGE_SECONDS)
+
+
+## Notifikasi yang dijadwalkan saat pemain meninggalkan game:
+## [{"id": int, "delay": detik, "title", "text"}]. id tetap per jenis agar
+## penjadwalan ulang menimpa yang lama.
+func notification_plan(now: float) -> Array:
+	var plan := []
+	var city := 0
+	for key in ["silver", "grain", "soldiers"]:
+		city = maxi(city, charge_full_eta(key, now))
+	if city > 0:
+		plan.append({"id": 1, "delay": city, "title": "Urusan kota penuh",
+			"text": "Pajak, sawah, dan prajurit siap dikerjakan, Tuan."})
+	var visit := charge_full_eta("visit", now)
+	if visit > 0:
+		plan.append({"id": 2, "delay": visit, "title": "Energi kunjungan penuh",
+			"text": "Para selir menanti kunjungan Tuan di istana."})
+	var free := free_pull_eta(now)
+	if free > 0:
+		plan.append({"id": 3, "delay": free, "title": "Rekrut gratis siap",
+			"text": "Satu rekrut penasihat gratis menunggu di Balai Rekrut."})
+	var login_at := seconds_until_reset(now) + NOTIFY_LOGIN_HOUR * 3600
+	plan.append({"id": 4, "delay": login_at, "title": "Hadiah login menunggu",
+		"text": "Ambil hadiah harian dan jaga rangkaian login Tuan."})
+	plan.append({"id": 5, "delay": NOTIFY_IDLE_SECONDS, "title": "Kerajaan merindukan Tuan",
+		"text": "Rakyat menunggu perintah. Urusan dan hadiah sudah menumpuk."})
+	return plan
+
+
 # --- Nama Tuan -------------------------------------------------------------
 
 const NAME_MIN := 2

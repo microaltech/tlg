@@ -2850,8 +2850,10 @@ func _show_settings() -> void:
 	_label(device, "Perangkat", "CardLabel").add_theme_font_override("font", UI.font_bold)
 	_setting_toggle(device, "Hemat baterai", "battery_saver",
 		"Batasi 30 FPS dan gambar ulang layar hanya saat ada perubahan.")
-	_setting_toggle(device, "Notifikasi", "notifications",
-		"Pengingat saat urusan kota penuh dan rekrut gratis siap.")
+	var notif_desc := "Pengingat saat urusan kota penuh, rekrut gratis siap, dan hadiah login."
+	if not Notifier.available():
+		notif_desc += " (Hanya di Android dengan plugin TlgNotify.)"
+	_setting_toggle(device, "Notifikasi", "notifications", notif_desc)
 
 	var data := _inner_box(box)
 	_label(data, "Data", "CardLabel").add_theme_font_override("font", UI.font_bold)

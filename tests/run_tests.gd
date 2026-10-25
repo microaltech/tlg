@@ -26,7 +26,7 @@ func _init() -> void:
 		"test_war_save_leave", "test_chat_send_reply", "test_chat_ambient_unread", "test_chat_save_leave",
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
-		"test_story", "test_away_report", "test_lord_name",
+		"test_story", "test_away_report", "test_lord_name", "test_notification_plan",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1302,3 +1302,27 @@ func test_lord_name() -> void:
 	check(m2.lord_name == m.lord_name and m2.me_name() == m.lord_name, "simpan/muat nama")
 	m2.new_game(1000.0)
 	check(m2.lord_name == "", "game baru menghapus nama")
+
+
+func test_notification_plan() -> void:
+	var m := fresh()
+	var t := 1000.0
+	var plan := m.notification_plan(t)
+	var ids := plan.map(func(n): return n["id"])
+	check(not 1 in ids and not 2 in ids, "tanpa pengingat urusan bila semua penuh")
+	check(4 in ids and 5 in ids, "pengingat login dan rindu selalu ada")
+	for i in 3:
+		m.do_affair("silver", t)
+	m.do_affair("grain", t)
+	check(m.charge_full_eta("silver", t) == 180 and m.charge_full_eta("grain", t) == 60, "eta charge penuh")
+	check(m.charge_full_eta("silver", t + 70.0) == 110, "eta berkurang seiring waktu")
+	plan = m.notification_plan(t)
+	var city: Array = plan.filter(func(n): return n["id"] == 1)
+	check(city.size() == 1 and city[0]["delay"] == 180, "urusan kota penuh dijadwalkan pada charge terakhir")
+	m.recruit(1, t, true)
+	plan = m.notification_plan(t)
+	var free: Array = plan.filter(func(n): return n["id"] == 3)
+	check(free.size() == 1 and free[0]["delay"] == m.free_pull_eta(t), "rekrut gratis dijadwalkan")
+	var login: Array = plan.filter(func(n): return n["id"] == 4)
+	check(login[0]["delay"] == m.seconds_until_reset(t) + 9 * 3600, "login esok jam 9")
+	check(plan.all(func(n): return n["delay"] > 0 and n["title"] != "" and n["text"] != ""), "isi notifikasi lengkap")

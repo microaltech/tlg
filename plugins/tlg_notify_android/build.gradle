@@ -1,0 +1,25 @@
+// Plugin Android Godot (v2) untuk notifikasi lokal. Build:
+//   cd plugins/tlg_notify_android && gradle assembleRelease
+// lalu salin build/outputs/aar/tlg_notify-release.aar ke addons/tlg_notify/bin/.
+plugins {
+    id 'com.android.library' version '8.2.2'
+}
+
+android {
+    namespace 'com.tlg.notify'
+    compileSdk 34
+
+    defaultConfig {
+        minSdk 21
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    // Disediakan oleh Godot saat runtime; versinya harus sama dengan editor.
+    compileOnly 'org.godotengine:godot:4.3.stable'
+}

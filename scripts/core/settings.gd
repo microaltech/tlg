@@ -16,6 +16,9 @@ var analytics := true  ## statistik bermain lokal (tidak dikirim ke mana pun)
 var battle_speed := 1  ## kecepatan tayangan perang: 1 atau 2
 var skip_battles := false  ## lewati tayangan perang, langsung tampilkan hasil
 var server_url := ""  ## alamat server sosial (kosong = mode offline)
+## Kalender login versi teks; dinyalakan otomatis bila kalender bergambar
+## pernah membuat game crash di perangkat ini.
+var simple_login := false
 
 
 func _ready() -> void:
@@ -33,6 +36,7 @@ func _ready() -> void:
 		battle_speed = 2 if int(cfg.get_value("battle", "speed", 1)) == 2 else 1
 		skip_battles = bool(cfg.get_value("battle", "skip", false))
 		server_url = str(cfg.get_value("online", "url", ""))
+		simple_login = bool(cfg.get_value("device", "simple_login", false))
 	_apply_power()
 
 
@@ -55,6 +59,7 @@ func save() -> void:
 	cfg.set_value("battle", "speed", battle_speed)
 	cfg.set_value("battle", "skip", skip_battles)
 	cfg.set_value("online", "url", server_url)
+	cfg.set_value("device", "simple_login", simple_login)
 	cfg.save(PATH)
 
 

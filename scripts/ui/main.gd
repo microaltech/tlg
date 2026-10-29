@@ -1525,6 +1525,8 @@ func _badge(parent: Control, pos: Vector2) -> Dictionary:
 func _open_panel(title: String, icon_name: String, on_close: Callable, top := 0.06,
 		bottom := 0.94) -> Dictionary:
 	Telemetry.mark("panel: " + title)
+	get_tree().process_frame.connect(func(): Telemetry.mark("proses: " + title), CONNECT_ONE_SHOT)
+	RenderingServer.frame_pre_draw.connect(func(): Telemetry.mark("mulai gambar: " + title), CONNECT_ONE_SHOT)
 	RenderingServer.frame_post_draw.connect(func(): Telemetry.mark("tergambar: " + title), CONNECT_ONE_SHOT)
 	var overlay := Control.new()
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -5646,6 +5648,9 @@ func _show_login() -> void:
 	_login_overlay = p["overlay"]
 	_login_box = p["content"]
 	_login_subtitle = p["subtitle"]
+	if not Settings.simple_login and Telemetry.crashed_before_drawn("Hadiah Login Harian"):
+		Settings.simple_login = true
+		Settings.save()
 	_fill_login()
 	Telemetry.mark("login: kalender terisi")
 	_tick()
@@ -5673,7 +5678,16 @@ func _fill_login() -> void:
 		warn.add_theme_color_override("font_color", UI.RED)
 	_label(_login_box, "Login setiap hari tanpa terputus. Hari 7 berisi hadiah besar!", "CardLabel")
 
-	var rows := [[0, 1, 2, 3], [4, 5, 6]]
+	if Settings.simple_login:
+		Telemetry.mark("login: mode teks")
+		for i in Data.LOGIN_REWARDS.size():
+			var state := "sudah diambil" if i < claimed else ("hari ini" if can and i == today - 1 else "")
+			var line := _label(_login_box, tr("Hari %d" % (i + 1)) + ": " + tr(_reward_text(Data.LOGIN_REWARDS[i]))
+				+ ("  (%s)" % tr(state) if state != "" else ""), "CardLabel")
+			line.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # sudah diterjemahkan per bagian
+			if state == "hari ini":
+				line.add_theme_font_override("font", UI.font_bold)
+	var rows := [[0, 1, 2, 3], [4, 5, 6]] if not Settings.simple_login else []
 	for row_days in rows:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 8)

@@ -34,6 +34,8 @@ var crashes: Array = []
 ## True bila sesi sebelumnya berhenti tidak normal (dicatat saat game dibuka ini).
 var crashed_last_time := false
 var _trail: Array = []
+## Jejak sesi sebelumnya (dibaca saat game dibuka).
+var previous_trail: Array = []
 var _session_start := 0.0
 var _save_timer := 0.0
 var _beat_left := 0.0
@@ -46,6 +48,7 @@ func _ready() -> void:
 	crashes = _read_json(CRASH_PATH, [])
 	if FileAccess.file_exists(TRAIL_PATH):
 		_trail = Array(FileAccess.get_file_as_string(TRAIL_PATH).split("\n", false))
+		previous_trail = _trail.duplicate()
 	if FileAccess.file_exists(LOCK_PATH):
 		_record_crash(FileAccess.get_file_as_string(LOCK_PATH))
 		crashed_last_time = true
@@ -97,6 +100,20 @@ func mark(event: String) -> void:
 	_beat_left = BEAT_SECONDS
 	_beat_timer = 0.0
 	_write_trail()
+
+
+## True bila sesi sebelumnya crash setelah panel ini dibuka tapi sebelum
+## panel itu sempat tergambar.
+func crashed_before_drawn(title: String) -> bool:
+	if not crashed_last_time:
+		return false
+	for i in range(previous_trail.size() - 1, -1, -1):
+		var line: String = previous_trail[i]
+		if line.ends_with(" tergambar: " + title):
+			return false
+		if line.ends_with(" panel: " + title):
+			return true
+	return false
 
 
 func _write_trail() -> void:

@@ -116,6 +116,10 @@ var _silat_overlay: Control
 var _map_overlay: Control
 var _tale_overlay: Control
 var _codex_overlay: Control
+var _wheel_overlay: Control
+var _wheel_box: VBoxContainer
+var _wheel_spinning := false
+var _wheel_rot := -PI / 8.0  ## sudut roda terakhir; awalnya segmen pertama tepat di bawah penunjuk
 var _codex_box: VBoxContainer
 var _codex_tab := "counselors"
 var _tale_box: VBoxContainer
@@ -672,6 +676,8 @@ func _rebuild() -> void:
 		_fill_tale()
 	if is_instance_valid(_codex_overlay):
 		_fill_codex()
+	if is_instance_valid(_wheel_overlay) and not _wheel_spinning:
+		_fill_wheel()
 	_update_avatar()
 	if is_instance_valid(_pass_overlay):
 		_fill_pass()
@@ -829,6 +835,7 @@ func _build_city(box: VBoxContainer) -> void:
 	_clear(box)
 	box.add_child(_event_banner())
 	_build_festival_card(box)
+	_build_wheel_card(box)
 	_build_offer_cards(box)
 	_build_pass_card(box)
 	_build_achievement_card(box)
@@ -4134,6 +4141,140 @@ func _fill_horse_riders() -> void:
 			return r, cur != hid, "", "GreenButton", false, "upgrade")
 		b.custom_minimum_size = Vector2(120, 56)
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+
+# --- Roda Keberuntungan ----------------------------------------------------------------
+
+func _build_wheel_card(box: VBoxContainer) -> void:
+	var now: float = Game.now()
+	var free: bool = model.wheel_free_ready(now)
+	var tickets: int = model.wheel["tickets"]
+	var card := _card(box)
+	card.add_child(_tex(Art.icon("wheel"), 84))
+	var col := _col(card)
+	_label(col, "Roda Keberuntungan", "CardTitle")
+	_label(col, "Putaran gratis siap!" if free else ("Tiket putaran: %d" % tickets if tickets > 0
+		else "Putaran gratis berikutnya besok"), "CardLabel")
+	var b := _button(card, "Putar", func():
+		_show_wheel()
+		return null, true, "", "GoldButton" if free or tickets > 0 else "GreenButton")
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.custom_minimum_size.x = 150
+
+
+func _show_wheel() -> void:
+	if is_instance_valid(_wheel_overlay):
+		return
+	var p := _open_panel("Roda Keberuntungan", "wheel", _close_wheel)
+	_wheel_overlay = p["overlay"]
+	_wheel_box = p["content"]
+	p["subtitle"].text = "Satu putaran gratis setiap hari. Hadiah sumber daya mengikuti hasil urusan Tuan."
+	_fill_wheel()
+
+
+func _close_wheel() -> void:
+	if _wheel_spinning:
+		return
+	if is_instance_valid(_wheel_overlay):
+		Audio.play("click")
+		_wheel_overlay.queue_free()
+	_wheel_overlay = null
+
+
+func _fill_wheel() -> void:
+	_clear(_wheel_box)
+	var now: float = Game.now()
+	var side := minf(500.0, size.x * 0.92 - 80.0)
+	var holder := Control.new()
+	holder.custom_minimum_size = Vector2(side + 20, side + 30)
+	_wheel_box.add_child(holder)
+	var dial := Control.new()
+	dial.size = Vector2(side, side)
+	dial.position = Vector2(10, 24)
+	dial.pivot_offset = dial.size / 2
+	dial.rotation = _wheel_rot
+	dial.draw.connect(func(): _draw_wheel(dial))
+	holder.add_child(dial)
+	var pointer := Control.new()
+	pointer.size = Vector2(side + 20, 40)
+	pointer.draw.connect(func():
+		var c := Vector2((side + 20) / 2.0, 0)
+		pointer.draw_colored_polygon(PackedVector2Array([c + Vector2(-20, 0), c + Vector2(20, 0), c + Vector2(0, 40)]),
+			Color("c0392b"))
+		pointer.draw_polyline(PackedVector2Array([c + Vector2(-20, 0), c + Vector2(20, 0), c + Vector2(0, 40),
+			c + Vector2(-20, 0)]), Color("fff3d6"), 3))
+	holder.add_child(pointer)
+
+	var free: bool = model.wheel_free_ready(now)
+	var tickets: int = model.wheel["tickets"]
+	var gold_left: int = model.wheel_gold_left(now)
+	var spin := func(source: String):
+		if _wheel_spinning:
+			return null
+		var r: Dictionary = model.spin_wheel(source, Game.now())
+		if not r["ok"]:
+			return r
+		_wheel_spinning = true
+		Audio.play("gacha_roll")
+		# Tengah segmen hasil harus berhenti tepat di bawah penunjuk (atas), setelah >= 5 putaran.
+		var seg := TAU / Data.WHEEL_SEGMENTS.size()
+		var target := -(int(r["index"]) + 0.5) * seg
+		while target < dial.rotation + TAU * 5.0:
+			target += TAU
+		var tw := create_tween()
+		tw.tween_property(dial, "rotation", target, 3.2).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		tw.tween_callback(func():
+			_wheel_rot = fmod(target, TAU)
+			_wheel_spinning = false
+			Audio.play("reveal_sr")
+			_show(r)
+			_queue_rebuild())
+		return null
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	_wheel_box.add_child(row)
+	var bfree := _button(row, "Putar Gratis" if free else "Gratis besok", func(): return spin.call("free"), free, "",
+		"GoldButton" if free else "")
+	bfree.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var bt := _button(row, "Tiket (%d)" % tickets, func(): return spin.call("ticket"), tickets > 0, "ticket",
+		"GoldButton" if tickets > 0 else "")
+	bt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_button(_wheel_box, "Putar · %d emas (sisa %d hari ini)" % [Data.WHEEL_GOLD_COST, gold_left],
+		func(): return spin.call("gold"), gold_left > 0 and model.gold >= Data.WHEEL_GOLD_COST, "gold", "GreenButton")
+	if Ads.mode != Ads.Mode.UNAVAILABLE:
+		_ad_button(_wheel_box, "wheel")
+	var odds := _inner_box(_wheel_box)
+	_label(odds, "Peluang hadiah", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	for i in Data.WHEEL_SEGMENTS.size():
+		var sg: Dictionary = Data.WHEEL_SEGMENTS[i]
+		_label(odds, "%s: %s · %d%%" % [sg["label"], _reward_text(model.wheel_segment_reward(i)), sg["weight"]],
+			"SmallLabel").add_theme_color_override("font_color", UI.INK)
+
+
+func _draw_wheel(dial: Control) -> void:
+	var r := dial.size.x / 2.0
+	var c := Vector2(r, r)
+	var n: int = Data.WHEEL_SEGMENTS.size()
+	var seg := TAU / n
+	dial.draw_circle(c, r, Color("7a4b1f"))
+	for i in n:
+		var a0 := -PI / 2 + i * seg
+		var pts := PackedVector2Array([c])
+		for k in 13:
+			pts.append(c + Vector2.from_angle(a0 + seg * k / 12.0) * (r - 10))
+		dial.draw_colored_polygon(pts, Color(Data.WHEEL_SEGMENTS[i]["color"]))
+		dial.draw_line(c, c + Vector2.from_angle(a0) * (r - 10), Color("7a4b1f"), 3)
+		var mid := a0 + seg / 2
+		var icon: Texture2D = Art.icon(Data.WHEEL_SEGMENTS[i]["icon"])
+		dial.draw_set_transform(c + Vector2.from_angle(mid) * r * 0.66, mid + PI / 2, Vector2.ONE)
+		dial.draw_texture_rect(icon, Rect2(-32, -32, 64, 64), false)
+		var label := tr(Data.WHEEL_SEGMENTS[i]["label"])
+		dial.draw_string(UI.font_bold, Vector2(-55, 50), label, HORIZONTAL_ALIGNMENT_CENTER, 110, 14, Color("3b2416"))
+		dial.draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+	for i in n * 2:
+		dial.draw_circle(c + Vector2.from_angle(i * seg / 2) * (r - 5), 4, Color("f4d58a"))
+	dial.draw_circle(c, 34, Color("a8742c"))
+	dial.draw_circle(c, 26, Color("f4d58a"))
 
 
 # --- Ensiklopedia ------------------------------------------------------------------

@@ -133,3 +133,17 @@ dalam 30 hari. Angka akhirnya:
 
 Hasilnya (seed 1–3), Menteri tercapai di hari ke-17 sampai 20 dan 9 dari 10 wilayah
 dikuasai dalam 30 hari.
+
+## Sidang Istana, kisah penasihat, ensiklopedia, dan roda
+
+Kesetiaan rakyat (hingga +10% hasil urusan), skill kedua dari kisah penasihat,
+bonus koleksi ensiklopedia, dan hadiah roda kembali memajukan Menteri ke hari ke-16
+sampai 18. Ambang disesuaikan:
+
+| Jabatan | Lama | Baru |
+|---|---|---|
+| Menteri | 18.500 | 20.000 |
+| Perdana Menteri | 40.000 | 45.000 |
+
+Hasilnya (seed 1–3), Menteri tercapai di hari ke-20 sampai 22, dan tahap di hari
+ke-30 adalah 76–77.

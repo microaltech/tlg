@@ -310,6 +310,9 @@ func session(now: float) -> void:
 		for kind in Data.AD_REWARDS:
 			while m.ad_left(kind, now) > 0:
 				m.grant_ad_reward(kind, now)
+	while m.spin_wheel("ticket", now)["ok"]:
+		pass
+	m.spin_wheel("free", now)
 	gold_add(g, "iklan")
 
 	# Rekrut x10 dengan emas yang terkumpul (pemain gratis menabung untuk x10).

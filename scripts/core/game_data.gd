@@ -16,8 +16,8 @@ const RANKS := [
 	{"name": "Camat", "prestige": 300, "max_charges": 4, "mult": 1.25, "level_cap": 40, "child_seats": 3},
 	{"name": "Bupati", "prestige": 1500, "max_charges": 5, "mult": 1.5, "level_cap": 60, "child_seats": 4},
 	{"name": "Gubernur", "prestige": 6000, "max_charges": 6, "mult": 2.0, "level_cap": 80, "child_seats": 5},
-	{"name": "Menteri", "prestige": 18500, "max_charges": 7, "mult": 2.5, "level_cap": 100, "child_seats": 6},
-	{"name": "Perdana Menteri", "prestige": 40000, "max_charges": 8, "mult": 3.0, "level_cap": 150, "child_seats": 8},
+	{"name": "Menteri", "prestige": 20000, "max_charges": 7, "mult": 2.5, "level_cap": 100, "child_seats": 6},
+	{"name": "Perdana Menteri", "prestige": 45000, "max_charges": 8, "mult": 3.0, "level_cap": 150, "child_seats": 8},
 ]
 
 ## Kelangkaan penasihat untuk gacha. rate = peluang per tarikan.
@@ -485,6 +485,7 @@ const AD_REWARDS := {
 	"recruit": {"name": "Tiket Rekrut", "icon": "ticket_recruit", "reward": {"items": {"recruit_ticket": 1}}, "limit": 2},
 	"refill": {"name": "Isi penuh urusan & energi", "icon": "item_tea", "reward": {}, "limit": 3},
 	"gold": {"name": "Emas gratis", "icon": "gold", "reward": {"gold": 20}, "limit": 3},
+	"wheel": {"name": "+1 putaran roda", "icon": "wheel", "reward": {}, "limit": 3},
 }
 
 ## Menara Ujian: lantai bertingkat, dilawan dengan kekuatan tempur; reset tiap minggu.
@@ -1251,6 +1252,23 @@ const BEAUTY_LORE := {
 	"kemuning": "Peracik jamu istana yang menguasai ratusan resep.",
 	"kantil": "Penari topeng misterius dari tanah seberang.",
 }
+
+
+## Roda Keberuntungan: 1 putaran gratis per hari, putaran tambahan dari iklan (tiket) atau
+## emas. "yields": kali hasil urusan saat ini; "weight": bobot peluang (total 100).
+const WHEEL_GOLD_COST := 30
+const WHEEL_GOLD_LIMIT := 5
+const WHEEL_SEGMENTS := [
+	{"label": "Perak", "icon": "silver", "yields": {"silver": 3.0}, "weight": 20, "color": "#c9d1da"},
+	{"label": "Pangan", "icon": "grain", "yields": {"grain": 3.0}, "weight": 20, "color": "#e8d49a"},
+	{"label": "Prajurit", "icon": "soldiers", "yields": {"soldiers": 2.0}, "weight": 18, "color": "#e0a890"},
+	{"label": "20 Emas", "icon": "gold", "reward": {"gold": 20}, "weight": 15, "color": "#f4d58a"},
+	{"label": "Teh Semangat", "icon": "item_tea", "reward": {"items": {"energy_tea": 1}}, "weight": 12, "color": "#b8e0b0"},
+	{"label": "Tiket Rekrut", "icon": "ticket_recruit", "reward": {"items": {"recruit_ticket": 1}}, "weight": 8,
+		"color": "#b0c8f0"},
+	{"label": "80 Emas", "icon": "gold_pile", "reward": {"gold": 80}, "weight": 5, "color": "#f0b860"},
+	{"label": "Batu Bintang", "icon": "item_star", "reward": {"items": {"star_stone": 1}}, "weight": 2, "color": "#d8b0f0"},
+]
 
 
 ## Festival musiman bertema hari besar Indonesia. Tanggal tetap memakai "start"/"end"

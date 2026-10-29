@@ -133,6 +133,8 @@ var court := {}
 var tales := {}
 ## Ensiklopedia: equip (id pusaka yang pernah dimiliki), claimed (kategori lengkap yang sudah diklaim).
 var codex := {}
+## Roda Keberuntungan: {day, free (gratis hari ini sudah dipakai), tickets, gold_spins}.
+var wheel := {}
 var rng := RandomNumberGenerator.new()
 
 
@@ -148,6 +150,7 @@ func new_game(now: float) -> void:
 	court = {"day": -1, "cases": [], "done": {}, "loyalty": 50}
 	tales = {}
 	codex = {"equip": [], "claimed": []}
+	wheel = {"day": -1, "free": false, "tickets": 0, "gold_spins": 0}
 	buildings = {"levels": {"istana": 1, "pasar": 0, "lumbung": 0, "barak": 0}, "job": {}}
 	cosmetics = {"owned": ["frame_kayu", "costume_lord"], "frame": "frame_kayu", "costume": "costume_lord"}
 	equipment = []
@@ -3477,6 +3480,76 @@ func assign_horse(id: String, counselor_id: String) -> Dictionary:
 	return _ok("%s kini menunggangi %s." % [Data.counselor_def(counselor_id)["name"], Data.HORSES[id]["name"]])
 
 
+# --- Roda Keberuntungan --------------------------------------------------------------
+
+func ensure_wheel(now: float) -> void:
+	if int(wheel.get("day", -1)) != day_index(now):
+		wheel["day"] = day_index(now)
+		wheel["free"] = false
+		wheel["gold_spins"] = 0
+
+
+func wheel_free_ready(now: float) -> bool:
+	ensure_wheel(now)
+	return not wheel["free"]
+
+
+func wheel_gold_left(now: float) -> int:
+	ensure_wheel(now)
+	return maxi(0, Data.WHEEL_GOLD_LIMIT - int(wheel["gold_spins"]))
+
+
+## Hadiah nyata sebuah segmen saat ini.
+func wheel_segment_reward(index: int) -> Dictionary:
+	var seg: Dictionary = Data.WHEEL_SEGMENTS[index]
+	if seg.has("reward"):
+		return seg["reward"]
+	var out := {}
+	for k in seg["yields"]:
+		out[k] = int(affair_yield(k) * float(seg["yields"][k]))
+	return out
+
+
+## Putar roda. source: "free" (sekali sehari), "ticket" (dari iklan), atau "gold".
+## Hasil memuat "index" segmen agar UI bisa memutar roda ke sana.
+func spin_wheel(source: String, now: float) -> Dictionary:
+	ensure_wheel(now)
+	match source:
+		"free":
+			if wheel["free"]:
+				return _fail("Putaran gratis hari ini sudah dipakai.")
+			wheel["free"] = true
+		"ticket":
+			if int(wheel["tickets"]) <= 0:
+				return _fail("Tidak ada tiket putaran. Tonton iklan untuk mendapatkannya.")
+			wheel["tickets"] = int(wheel["tickets"]) - 1
+		"gold":
+			if wheel_gold_left(now) <= 0:
+				return _fail("Batas putaran dengan emas hari ini sudah habis.")
+			if gold < Data.WHEEL_GOLD_COST:
+				return _fail("Emas tidak cukup (butuh %d)." % Data.WHEEL_GOLD_COST)
+			gold -= Data.WHEEL_GOLD_COST
+			wheel["gold_spins"] = int(wheel["gold_spins"]) + 1
+		_:
+			return _fail("Cara putar tidak dikenal.")
+	var total := 0
+	for seg in Data.WHEEL_SEGMENTS:
+		total += int(seg["weight"])
+	var roll := rng.randi_range(0, total - 1)
+	var index := 0
+	for i in Data.WHEEL_SEGMENTS.size():
+		roll -= int(Data.WHEEL_SEGMENTS[i]["weight"])
+		if roll < 0:
+			index = i
+			break
+	var text := _give_rewards(wheel_segment_reward(index))
+	_track("wheel")
+	changed.emit()
+	var result := _ok("Roda berhenti di %s: %s." % [Data.WHEEL_SEGMENTS[index]["label"], text])
+	result["index"] = index
+	return result
+
+
 # --- Ensiklopedia -------------------------------------------------------------------
 
 ## Semua entri suatu kategori: [{id, name, icon/portrait, found}].
@@ -4342,6 +4415,9 @@ func grant_ad_reward(kind: String, now: float) -> Dictionary:
 		for key in CHARGE_KEYS:
 			charges[key] = {"value": max_charges(), "t": now}
 		text = "semua urusan dan energi terisi penuh"
+	elif kind == "wheel":
+		wheel["tickets"] = int(wheel["tickets"]) + 1
+		text = "1 putaran Roda Keberuntungan"
 	else:
 		text = _give_rewards(Data.AD_REWARDS[kind]["reward"])
 	_track("ad")
@@ -4541,6 +4617,7 @@ func to_dict() -> Dictionary:
 		"court": court,
 		"tales": tales,
 		"codex": codex,
+		"wheel": wheel,
 		"cosmetics": cosmetics,
 	}
 
@@ -4594,6 +4671,10 @@ func from_dict(d: Dictionary, now: float) -> void:
 			r["equip"] = str(src_r["equip"])
 		expeditions.append({"dest": str(e["dest"]), "counselor": str(e["counselor"]),
 			"end_t": float(e.get("end_t", now)), "reward": r})
+	var src_wheel: Dictionary = d.get("wheel", {})
+	if not src_wheel.is_empty():
+		wheel = {"day": int(src_wheel.get("day", -1)), "free": bool(src_wheel.get("free", false)),
+			"tickets": maxi(0, int(src_wheel.get("tickets", 0))), "gold_spins": maxi(0, int(src_wheel.get("gold_spins", 0)))}
 	var src_codex: Dictionary = d.get("codex", {})
 	for id in src_codex.get("equip", []):
 		if Data.EQUIPMENT.has(str(id)) and not codex["equip"].has(str(id)):

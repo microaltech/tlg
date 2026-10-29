@@ -187,7 +187,7 @@ func _walk_ui() -> void:
 	var panels := ["_show_missions", "_show_login", "_show_event", "_show_store", "_show_vip", "_show_bag",
 		"_show_story", "_show_settings", "_show_privacy", "_show_help", "_show_equipment", "_show_tower",
 		"_show_pass", "_show_achievements", "_show_offers", "_show_promotion", "_show_expeditions", "_show_stable",
-		"_show_profile", "_show_silat", "_show_map"]
+		"_show_profile", "_show_silat", "_show_map", "_show_wheel"]
 	for c in Data.CODEX:
 		main._codex_tab = c["id"]
 		main._show_codex()

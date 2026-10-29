@@ -27,7 +27,7 @@ func _init() -> void:
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
 		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass", "test_offers", "test_achievements", "test_save_code",
-		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses", "test_story_choices", "test_duel_plan", "test_silat", "test_territory", "test_court", "test_tales", "test_codex",
+		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses", "test_story_choices", "test_duel_plan", "test_silat", "test_territory", "test_court", "test_tales", "test_codex", "test_wheel",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -2241,3 +2241,35 @@ func test_codex() -> void:
 		check(m.codex_entries(c["id"]).size() > 0 and Data.SKILL_EFFECT_NAMES.has(c["effect"]), "kategori %s valid" % c["id"])
 	for b in Data.BEAUTIES:
 		check(Data.BEAUTY_LORE.has(b["id"]), "cerita selir %s" % b["id"])
+
+
+func test_wheel() -> void:
+	var m := fresh()
+	var t := 1000.0
+	var total := 0
+	for seg in Data.WHEEL_SEGMENTS:
+		total += int(seg["weight"])
+	check(total == 100, "bobot roda berjumlah 100")
+	check(m.wheel_free_ready(t), "putaran gratis siap")
+	var r := m.spin_wheel("free", t)
+	check(r["ok"] and r["index"] >= 0 and r["index"] < Data.WHEEL_SEGMENTS.size(), "putar gratis")
+	check(not m.wheel_free_ready(t) and not m.spin_wheel("free", t)["ok"], "gratis sekali sehari")
+	check(not m.spin_wheel("ticket", t)["ok"], "tanpa tiket")
+	check(m.grant_ad_reward("wheel", t)["ok"] and m.wheel["tickets"] == 1, "iklan memberi tiket")
+	check(m.spin_wheel("ticket", t)["ok"] and m.wheel["tickets"] == 0, "pakai tiket")
+	m.gold = 1000
+	for i in Data.WHEEL_GOLD_LIMIT:
+		m.spin_wheel("gold", t)
+	check(m.wheel_gold_left(t) == 0 and not m.spin_wheel("gold", t)["ok"], "batas putaran emas")
+	check(not m.spin_wheel("aneh", t)["ok"], "sumber tak dikenal")
+	check(m.wheel_free_ready(t + 86400.0) and m.wheel_gold_left(t + 86400.0) == Data.WHEEL_GOLD_LIMIT, "reset besok")
+	var counts := {}
+	var bot := fresh()
+	bot.wheel["tickets"] = 2000
+	for i in 2000:
+		var idx: int = bot.spin_wheel("ticket", t)["index"]
+		counts[idx] = int(counts.get(idx, 0)) + 1
+	check(int(counts.get(0, 0)) > int(counts.get(7, 0)) * 4, "segmen umum jauh lebih sering dari Batu Bintang")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
+	check(var_to_str(m2.wheel) == var_to_str(m.wheel), "simpan/muat roda")

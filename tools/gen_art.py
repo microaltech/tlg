@@ -1132,6 +1132,17 @@ ICONS["codex"] = icon_doc(
     + '<circle cx="64" cy="44" r="10" fill="#e8c070" stroke="#a8742c" stroke-width="2"/>'
       '<path d="M64 36 L66 42 L72 44 L66 46 L64 52 L62 46 L56 44 L62 42 Z" fill="#fff6d8"/>')
 
+# Roda Keberuntungan.
+ICONS["wheel"] = icon_doc(
+    '<circle cx="48" cy="50" r="40" fill="#7a4b1f"/>'
+    + "".join('<path d="M48 50 L%.1f %.1f A36 36 0 0 1 %.1f %.1f Z" fill="%s"/>' % (
+        48 + 36 * math.cos(math.radians(a)), 50 + 36 * math.sin(math.radians(a)),
+        48 + 36 * math.cos(math.radians(a + 45)), 50 + 36 * math.sin(math.radians(a + 45)), c)
+        for a, c in zip(range(-90, 270, 45), ["#c9d1da", "#e8d49a", "#e0a890", "#f4d58a", "#b8e0b0", "#b0c8f0",
+                                               "#f0b860", "#d8b0f0"]))
+    + '<circle cx="48" cy="50" r="8" fill="#a8742c" stroke="#f4d58a" stroke-width="3"/>'
+      '<path d="M40 4 L56 4 L48 18 Z" fill="#c0392b" stroke="#fff3d6" stroke-width="2"/>')
+
 # Pusaka: keris berlekuk, lontar, dan kalung.
 ICONS["eq_weapon"] = icon_doc(
     '<path d="M50 8 Q58 18 50 28 Q42 38 50 48 Q58 58 50 66 L46 66 Q38 58 46 48 Q54 38 46 28 Q38 18 46 8 Z" '

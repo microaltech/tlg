@@ -114,6 +114,9 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
 - **Ensiklopedia Nusantara** — di halaman Penasihat: album 5 koleksi (penasihat,
   selir, kuda, pusaka yang pernah dimiliki, wilayah) dengan cerita singkat tiap
   entri. Koleksi lengkap memberi emas dan bonus permanen.
+- **Roda Keberuntungan** — di menu Kota: 1 putaran gratis per hari, tiket putaran
+  dari iklan berhadiah (maks 3/hari), dan putaran dengan 30 emas (maks 5/hari).
+  8 hadiah dengan peluang tertera, dari sumber daya sampai Batu Bintang (2%).
 - **Festival musiman** — Pesta Tahun Baru (28 Des–7 Jan), Berkah Ramadan &
   Lebaran (awal Ramadan sampai sepekan setelah Idulfitri, tanggal per tahun di
   `FESTIVALS`), Pesta Kemerdekaan (10–24 Agu), Semangat Sumpah Pemuda (24 Okt–2 Nov),

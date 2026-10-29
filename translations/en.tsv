@@ -1693,3 +1693,5 @@ Game tertutup secara tidak normal pada sesi sebelumnya. Bantu kami memperbaikiny
 Perangkat grafis: %s	Graphics device: %s
 sudah diambil	already claimed
 hari ini	today
+Kalender login teks	Text login calendar
+Tampilkan hadiah login sebagai daftar teks. Nyala otomatis bila kalender bergambar membuat game berhenti.	Show login rewards as a text list. Turns on automatically if the picture calendar made the game stop.

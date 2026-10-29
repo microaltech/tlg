@@ -112,6 +112,8 @@ var _avatar_pic: TextureRect
 var _avatar_frame: Panel
 var _avatar_key := ""  ## kostum+bingkai yang sedang tampil di avatar header
 var _profile_overlay: Control
+var _silat_overlay: Control
+var _silat_box: VBoxContainer
 var _profile_box: VBoxContainer
 var _build_timer := {}  ## {label, bar, rush, total} untuk pembangunan yang berjalan
 var _fest_box: VBoxContainer
@@ -653,6 +655,8 @@ func _rebuild() -> void:
 		_fill_stable()
 	if is_instance_valid(_profile_overlay):
 		_fill_profile()
+	if is_instance_valid(_silat_overlay):
+		_fill_silat()
 	_update_avatar()
 	if is_instance_valid(_pass_overlay):
 		_fill_pass()
@@ -1791,6 +1795,7 @@ func _build_arena(box: VBoxContainer) -> void:
 		var sr: Dictionary = arena["season_reward"]
 		_button(season, "Klaim hadiah musim lalu (%s)" % sr["league"], func(): return model.claim_arena_season(),
 			true, "chest", "GreenButton", false, "reveal_ssr")
+	_build_silat_card(box)
 
 	_segment_tabs(box, [["lawan", "Lawan"], ["peringkat", "Peringkat"], ["toko", "Toko"], ["catatan", "Catatan"]],
 		_arena_tab, func(key): _arena_tab = key)
@@ -1914,6 +1919,177 @@ func _show_arena_battle(r: Dictionary) -> void:
 			int(opp["power"]) % 3], "win": win, "bg": "arena",
 		"detail": "%+d poin arena · +%d koin arena%s" % [r["delta"], r["coins"],
 			" · +%d perak" % Data.ARENA_WIN["silver"] if win else ""]})
+
+
+# --- Turnamen Silat -----------------------------------------------------------------
+
+func _build_silat_card(box: VBoxContainer) -> void:
+	var card := _card(box)
+	card.add_child(_tex(Art.icon("silat"), 92))
+	var col := _col(card)
+	_label(col, "Turnamen Silat", "CardTitle")
+	if not model.silat_unlocked():
+		_label(col, "Terbuka setelah menang Tahap %d." % Data.SILAT_UNLOCK_STAGE, "CardLabel")
+		return
+	model.ensure_silat(Game.now())
+	var status: String
+	var hot := false
+	if model.silat.is_empty():
+		status = "Pilih jagoan untuk turnamen minggu ini."
+		hot = true
+	elif model.silat_can_claim():
+		status = "Turnamen selesai. Ambil hadiahnya!"
+		hot = true
+	elif model.silat_done():
+		status = "Turnamen minggu ini selesai."
+	else:
+		status = "%s · babak %s" % [Data.counselor_def(model.silat["champion"])["name"],
+			Data.SILAT_ROUNDS[int(model.silat["wins"])]]
+		hot = true
+	_label(col, status, "CardLabel")
+	var b := _button(card, "Buka", func():
+		_show_silat()
+		return null, true, "", "GoldButton" if hot else "GreenButton")
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.custom_minimum_size.x = 150
+
+
+func _show_silat() -> void:
+	if is_instance_valid(_silat_overlay):
+		return
+	var p := _open_panel("Turnamen Silat", "silat", _close_silat)
+	_silat_overlay = p["overlay"]
+	_silat_box = p["content"]
+	p["subtitle"].text = "8 pendekar dari perguruan se-Nusantara. Turnamen baru tiap Senin."
+	_fill_silat()
+
+
+func _close_silat() -> void:
+	if is_instance_valid(_silat_overlay):
+		Audio.play("click")
+		_silat_overlay.queue_free()
+	_silat_overlay = null
+
+
+func _silat_entrant(index: int) -> Dictionary:
+	if index == -1:
+		var id: String = model.silat["champion"]
+		return {"name": Data.counselor_def(id)["name"], "avatar": id, "power": model.silat_power(id), "me": true}
+	return model.silat["others"][index]
+
+
+func _fill_silat() -> void:
+	_clear(_silat_box)
+	var now: float = Game.now()
+	model.ensure_silat(now)
+	if model.silat.is_empty():
+		_fill_silat_pick(now)
+		return
+	var head := _inner_box(_silat_box)
+	var hrow := HBoxContainer.new()
+	hrow.add_theme_constant_override("separation", 12)
+	head.add_child(hrow)
+	var champ: String = model.silat["champion"]
+	hrow.add_child(_tex(Art.portrait(champ), 96))
+	var hcol := _col(hrow)
+	_label(hcol, "Jagoan: %s" % Data.counselor_def(champ)["name"], "CardTitle")
+	_label(hcol, "Kekuatan silat %s" % _num(model.silat_power(champ)), "CardLabel")
+	var opp: Dictionary = model.silat_opponent()
+	if not opp.is_empty():
+		var round_name: String = Data.SILAT_ROUNDS[int(model.silat["wins"])]
+		var chance: float = model.silat_win_chance()
+		_label(hcol, "%s melawan %s (%s) · kekuatan %s" % [round_name, opp["name"], opp["school"], _num(opp["power"])],
+			"SmallLabel").add_theme_color_override("font_color", UI.INK)
+		_label(hcol, "Peluang menang %d%%" % roundi(chance * 100), "SmallLabel") \
+			.add_theme_color_override("font_color", UI.GREEN.darkened(0.3) if chance >= 0.5 else UI.RED)
+		var fight := _button(head, "Bertanding: %s" % round_name, func():
+			var my_power: int = model.silat_power(champ)
+			var r: Dictionary = model.silat_fight(Game.now())
+			if not r.has("win"):
+				return r
+			var win: bool = r["win"]
+			var o: Dictionary = r["opponent"]
+			var ratio := float(o["power"]) / maxi(1, my_power)
+			var plan: Dictionary = model.duel_plan(1.0, 1.0, clampf(1.0 - 0.6 * ratio, 0.15, 0.95) if win else 0.0,
+				0.0 if win else clampf(1.0 - 0.6 / maxf(ratio, 0.01), 0.1, 0.9), int(o["power"]) + int(model.silat["wins"]))
+			plan["hero"] = {}  # jagoan bertarung sendiri, tanpa bantuan penasihat lain
+			_play_duel(plan, {"title": tr("Turnamen Silat · %s") % tr(r["round"]), "me_name": Data.counselor_def(champ)["name"],
+				"them_name": o["name"], "me_total": my_power, "them_total": o["power"], "units": ["power", "power"],
+				"me_portrait": champ, "them_portrait": o["avatar"], "me_weapon": "keris",
+				"them_weapon": ["tombak", "gada", "keris"][int(o["power"]) % 3], "win": win, "bg": "arena",
+				"headline": "JUARA!" if model.silat_can_claim() and win else ("MENANG!" if win else "GUGUR..."),
+				"detail": r["msg"]})
+			return null, true, "", "GoldButton", false, "attack")
+		fight.custom_minimum_size.y = 80
+	elif model.silat_can_claim():
+		var wins: int = model.silat["wins"]
+		_label(head, "Hasil: %s" % ("Juara!" if wins >= Data.SILAT_ROUNDS.size() else "gugur di babak %s" %
+			Data.SILAT_ROUNDS[wins]), "CardLabel").add_theme_font_override("font", UI.font_bold)
+		_button(head, "Ambil hadiah: %s" % _reward_text(Data.SILAT_REWARDS[wins]), func(): return model.claim_silat(),
+			true, "chest", "GoldButton", false, "reveal_ssr")
+	else:
+		_label(head, "Turnamen berikutnya dimulai Senin.", "SmallLabel").add_theme_color_override("font_color", UI.INK)
+
+	_label(_silat_box, "Bagan pertandingan", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	var bracket: Array = model.silat_bracket()
+	for level in bracket.size():
+		var inner := _inner_box(_silat_box)
+		_label(inner, Data.SILAT_ROUNDS[level], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		for m in bracket[level]:
+			var row := HBoxContainer.new()
+			row.add_theme_constant_override("separation", 8)
+			inner.add_child(row)
+			for k in 2:
+				var e: Dictionary = _silat_entrant(m[k])
+				var cell := HBoxContainer.new()
+				cell.add_theme_constant_override("separation", 6)
+				cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				row.add_child(cell)
+				var pic := _tex(Art.portrait(e["avatar"]), 44)
+				var lost: bool = m[2] != -2 and m[2] != m[k]
+				if lost:
+					pic.modulate = Color(0.45, 0.45, 0.45)
+				cell.add_child(pic)
+				var name_l := _label(cell, e["name"], "SmallLabel")
+				name_l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+				name_l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+				name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				name_l.add_theme_color_override("font_color", UI.GREEN.darkened(0.3) if m[2] == m[k] else
+					(Color("8a7a6a") if lost else UI.INK))
+				if e.get("me", false):
+					name_l.add_theme_font_override("font", UI.font_bold)
+				if k == 0:
+					_label(row, "vs", "SmallLabel").add_theme_color_override("font_color", UI.GOLD_DARK)
+	var rewards := _inner_box(_silat_box)
+	_label(rewards, "Hadiah", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	for i in Data.SILAT_REWARDS.size():
+		var what: String = "Juara (+ %s)" % Data.COSMETICS["frame_silat"]["name"] if i == Data.SILAT_ROUNDS.size() \
+			else "Gugur di %s" % Data.SILAT_ROUNDS[i]
+		_label(rewards, "%s: %s" % [what, _reward_text(Data.SILAT_REWARDS[i])], "SmallLabel") \
+			.add_theme_color_override("font_color", UI.INK)
+
+
+## Pilih jagoan: daftar penasihat urut kekuatan silat.
+func _fill_silat_pick(now: float) -> void:
+	_label(_silat_box, "Pilih jagoan untuk turnamen minggu ini. Kekuatan silat dihitung dari Kekuatan (utama) "
+		+ "dan atribut lain. Jagoan tidak bisa diganti sampai turnamen berikutnya.", "SmallLabel") \
+		.add_theme_color_override("font_color", UI.INK)
+	var ids: Array = model.counselors.keys()
+	ids.sort_custom(func(a, b): return model.silat_power(a) > model.silat_power(b))
+	for id in ids:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		_inner_box(_silat_box).add_child(row)
+		row.add_child(_tex(Art.portrait(id), 64))
+		var col := _col(row)
+		_label(col, Data.counselor_def(id)["name"], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		_label(col, "Kekuatan silat %s" % _num(model.silat_power(id)), "SmallLabel") \
+			.add_theme_color_override("font_color", UI.INK)
+		var cid: String = id
+		var b := _button(row, "Daftarkan", func(): return model.silat_join(cid, Game.now()), true, "", "GreenButton",
+			false, "upgrade")
+		b.custom_minimum_size = Vector2(150, 56)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 
 # --- Aliansi ---------------------------------------------------------------
@@ -3966,6 +4142,8 @@ func _cosmetic_source(def: Dictionary) -> String:
 		for f in Data.FESTIVALS:
 			if f["id"] == u.substr(9):
 				return "Toko festival %s" % f["name"]
+	if u == "silat":
+		return "Hadiah juara Turnamen Silat"
 	if def.has("iap"):
 		return "Toko"
 	return ""

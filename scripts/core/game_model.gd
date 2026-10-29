@@ -123,6 +123,8 @@ var buildings := {}
 var expeditions: Array = []
 ## Kuda yang dimiliki: {id: {level, rider}}.
 var horses := {}
+## Turnamen Silat minggu ini: {week, champion, power, opponents, wins, out, claimed}. Kosong bila belum mendaftar.
+var silat := {}
 var rng := RandomNumberGenerator.new()
 
 
@@ -133,6 +135,7 @@ func new_game(now: float) -> void:
 	festival = {}
 	expeditions = []
 	horses = {}
+	silat = {}
 	buildings = {"levels": {"istana": 1, "pasar": 0, "lumbung": 0, "barak": 0}, "job": {}}
 	cosmetics = {"owned": ["frame_kayu", "costume_lord"], "frame": "frame_kayu", "costume": "costume_lord"}
 	equipment = []
@@ -3454,6 +3457,158 @@ func assign_horse(id: String, counselor_id: String) -> Dictionary:
 	return _ok("%s kini menunggangi %s." % [Data.counselor_def(counselor_id)["name"], Data.HORSES[id]["name"]])
 
 
+# --- Turnamen Silat ---------------------------------------------------------------
+
+func silat_unlocked() -> bool:
+	return stage >= Data.SILAT_UNLOCK_STAGE
+
+
+## Kekuatan silat penasihat: kekuatan fisik diutamakan, atribut lain membantu.
+func silat_power(counselor_id: String) -> int:
+	if not counselors.has(counselor_id):
+		return 0
+	return int(attr(counselor_id, "str") * 1.5 + (attr(counselor_id, "int") + attr(counselor_id, "pol")
+		+ attr(counselor_id, "cha")) * 0.5)
+
+
+## Turnamen minggu lalu dibuang saat minggu berganti (hadiah yang belum diklaim ikut hangus).
+func ensure_silat(now: float) -> void:
+	if not silat.is_empty() and int(silat["week"]) != week_index(now):
+		silat = {}
+
+
+func silat_join(counselor_id: String, now: float) -> Dictionary:
+	if not silat_unlocked():
+		return _fail("Menangkan Tahap %d untuk membuka Turnamen Silat." % Data.SILAT_UNLOCK_STAGE)
+	ensure_silat(now)
+	if not silat.is_empty():
+		return _fail("Anda sudah mendaftar turnamen minggu ini.")
+	if not counselors.has(counselor_id):
+		return _fail("Penasihat belum direkrut.")
+	var power := silat_power(counselor_id)
+	var r := _seeded(["silat", week_index(now)])
+	# Tujuh peserta lain. Bagan: [jagoan vs 0], [1 vs 2], [3 vs 4], [5 vs 6]. Lawan jagoan
+	# di tiap babak (0, 1, 3) punya kekuatan sesuai babaknya; sisanya peserta biasa.
+	var others := []
+	for i in 7:
+		var tier: int = {1: 1, 3: 2}.get(i, 0)
+		var f: Array = Data.SILAT_OPPONENT[tier]
+		others.append({"name": _npc_name(r), "school": Data.SILAT_SCHOOLS[i],
+			"avatar": Data.ARENA_AVATARS[r.randi_range(0, Data.ARENA_AVATARS.size() - 1)],
+			"power": maxi(10, int(power * r.randf_range(float(f[0]), float(f[1]))))})
+	silat = {"week": week_index(now), "champion": counselor_id, "power": power, "others": others,
+		"wins": 0, "out": false, "claimed": false}
+	_track("silat")
+	changed.emit()
+	return _ok("%s terdaftar di Turnamen Silat!" % Data.counselor_def(counselor_id)["name"])
+
+
+## Indeks peserta lain yang dihadapi jagoan di tiap babak.
+const SILAT_PATH := [0, 1, 3]
+
+
+## Lawan jagoan di babak berjalan.
+func silat_opponent() -> Dictionary:
+	if silat.is_empty() or silat["out"] or int(silat["wins"]) >= Data.SILAT_ROUNDS.size():
+		return {}
+	return silat["others"][SILAT_PATH[int(silat["wins"])]]
+
+
+func silat_win_chance() -> float:
+	var opp := silat_opponent()
+	if opp.is_empty():
+		return 0.0
+	var a := pow(float(maxi(1, silat_power(silat["champion"]))), 3.0)
+	var b := pow(float(maxi(1, opp["power"])), 3.0)
+	return a / (a + b)
+
+
+func silat_done() -> bool:
+	return not silat.is_empty() and (silat["out"] or int(silat["wins"]) >= Data.SILAT_ROUNDS.size())
+
+
+func silat_fight(now: float) -> Dictionary:
+	ensure_silat(now)
+	var opp := silat_opponent()
+	if opp.is_empty():
+		return _fail("Tidak ada pertandingan yang menunggu.")
+	var round_name: String = Data.SILAT_ROUNDS[int(silat["wins"])]
+	var win := rng.randf() < silat_win_chance()
+	var hero: String = Data.counselor_def(silat["champion"])["name"]
+	_track("silat_fight")
+	var r: Dictionary
+	if win:
+		silat["wins"] = int(silat["wins"]) + 1
+		if int(silat["wins"]) >= Data.SILAT_ROUNDS.size():
+			r = _ok("%s menjuarai Turnamen Silat! Ambil hadiah juara." % hero)
+		else:
+			r = _ok("%s menang di %s melawan %s!" % [hero, round_name, opp["name"]])
+	else:
+		silat["out"] = true
+		r = _ok("%s kalah di %s melawan %s." % [hero, round_name, opp["name"]])
+	r.merge({"win": win, "opponent": opp, "round": round_name})
+	changed.emit()
+	return r
+
+
+func silat_can_claim() -> bool:
+	return silat_done() and not silat["claimed"]
+
+
+func claim_silat() -> Dictionary:
+	if not silat_can_claim():
+		return _fail("Hadiah turnamen belum bisa diambil.")
+	silat["claimed"] = true
+	var wins := int(silat["wins"])
+	var text := _give_rewards(Data.SILAT_REWARDS[wins])
+	if wins >= Data.SILAT_ROUNDS.size() and unlock_cosmetic("frame_silat"):
+		text += ", " + Data.COSMETICS["frame_silat"]["name"]
+	changed.emit()
+	return _ok("Hadiah turnamen: %s." % text)
+
+
+## Pemenang tiap pertandingan bagan untuk ditampilkan: [[perempat x4], [semi x2], [final]].
+## Peserta: -1 = jagoan pemain, 0..6 = peserta lain. Pertandingan antar-NPC ditentukan
+## kekuatan dengan RNG minggu ini; pertandingan jagoan mengikuti hasil sebenarnya.
+func silat_bracket() -> Array:
+	if silat.is_empty():
+		return []
+	var r := _seeded(["silat-bracket", int(silat["week"])])
+	var seeds := [-1, 0, 1, 2, 3, 4, 5, 6]
+	var rounds := []
+	var current := seeds
+	var wins := int(silat["wins"])
+	for level in 3:
+		var next := []
+		var matches := []
+		for i in range(0, current.size(), 2):
+			var a: int = current[i]
+			var b: int = current[i + 1]
+			var winner := -2  ## -2 = belum bertanding
+			if a == -1 or b == -1:
+				if wins > level:
+					winner = -1
+				elif silat["out"] and wins == level:
+					winner = b if a == -1 else a
+			elif wins > level or silat["out"] or level == 0:
+				# Calon lawan jagoan babak berikutnya selalu lolos agar bagan cocok dengan lawan sebenarnya.
+				if a in SILAT_PATH:
+					winner = a
+				elif b in SILAT_PATH:
+					winner = b
+				else:
+					var pa := float(silat["others"][a]["power"])
+					var pb := float(silat["others"][b]["power"])
+					winner = a if r.randf() < pa / (pa + pb) else b
+			matches.append([a, b, winner])
+			next.append(winner)
+		rounds.append(matches)
+		if next.has(-2):
+			break
+		current = next
+	return rounds
+
+
 # --- Festival musiman ---------------------------------------------------------
 
 ## Unix time tengah malam waktu lokal pemain untuk tanggal tertentu.
@@ -3656,6 +3811,8 @@ func check_cosmetic_unlocks() -> Array:
 			ok = vip_level() >= int(u.substr(4))
 		elif u.begins_with("stage:"):
 			ok = stage >= int(u.substr(6))
+		elif u == "silat":
+			ok = false  # hanya dari hadiah juara turnamen
 		if ok and unlock_cosmetic(id):
 			got.append(id)
 	return got
@@ -4068,6 +4225,7 @@ func to_dict() -> Dictionary:
 		"buildings": buildings,
 		"expeditions": expeditions,
 		"horses": horses,
+		"silat": silat,
 		"cosmetics": cosmetics,
 	}
 
@@ -4121,6 +4279,18 @@ func from_dict(d: Dictionary, now: float) -> void:
 			r["equip"] = str(src_r["equip"])
 		expeditions.append({"dest": str(e["dest"]), "counselor": str(e["counselor"]),
 			"end_t": float(e.get("end_t", now)), "reward": r})
+	var src_silat: Dictionary = d.get("silat", {})
+	if not Data.counselor_def(str(src_silat.get("champion", ""))).is_empty():
+		var others := []
+		for o in src_silat.get("others", []):
+			if o is Dictionary:
+				others.append({"name": str(o.get("name", "")), "school": str(o.get("school", "")),
+					"avatar": str(o.get("avatar", "arya")), "power": int(o.get("power", 10))})
+		if others.size() == 7:
+			silat = {"week": int(src_silat.get("week", 0)), "champion": str(src_silat["champion"]),
+				"power": int(src_silat.get("power", 0)), "others": others,
+				"wins": clampi(int(src_silat.get("wins", 0)), 0, Data.SILAT_ROUNDS.size()),
+				"out": bool(src_silat.get("out", false)), "claimed": bool(src_silat.get("claimed", false))}
 	var src_cos: Dictionary = d.get("cosmetics", {})
 	for id in src_cos.get("owned", []):
 		unlock_cosmetic(str(id))

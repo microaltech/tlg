@@ -94,6 +94,11 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   tangkisan, serangan meleset, kritis dengan jeda gerak lambat, hitungan kombo,
   satu jurus penasihat, dan lawan yang rebah saat KO. Naskah dari
   `GameModel.duel_plan`, hasil tetap dihitung lebih dulu.
+- **Turnamen Silat** — dari Tahap 10, di halaman Arena: tiap minggu pilih satu
+  penasihat jagoan untuk bagan 8 pendekar (perempat final, semifinal, final), lalu
+  bertanding dalam duel visual. Kekuatan silat terutama dari Kekuatan; lawan
+  menyesuaikan kekuatan jagoan saat mendaftar, jadi melatihnya setelah mendaftar
+  menaikkan peluang. Hadiah sesuai babak, juara mendapat Bingkai Juara Silat.
 - **Festival musiman** — Pesta Tahun Baru (28 Des–7 Jan), Berkah Ramadan &
   Lebaran (awal Ramadan sampai sepekan setelah Idulfitri, tanggal per tahun di
   `FESTIVALS`), Pesta Kemerdekaan (10–24 Agu), Semangat Sumpah Pemuda (24 Okt–2 Nov),

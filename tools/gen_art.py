@@ -1092,6 +1092,14 @@ for _hid, (_coat, _mane, _wings) in HORSE_SPECS.items():
     ICONS["horse_" + _hid] = horse(_coat, _mane, _wings)
 ICONS["stable"] = horse("#8a5a3a", "#2a1a10")
 
+# Turnamen Silat: dua keris bersilang di atas bunga teratai merah.
+ICONS["silat"] = icon_doc(
+    '<circle cx="48" cy="48" r="42" fill="#8e1b1b" stroke="#e8c070" stroke-width="4"/>'
+    '<path d="M22 22 Q30 30 26 38 Q34 42 38 50 Q46 54 74 74" stroke="#e8e8e0" stroke-width="5" fill="none" stroke-linecap="round"/>'
+    '<path d="M74 22 Q66 30 70 38 Q62 42 58 50 Q50 54 22 74" stroke="#e8e8e0" stroke-width="5" fill="none" stroke-linecap="round"/>'
+    '<path d="M16 70 L28 78 M80 70 L68 78" stroke="#e8c070" stroke-width="7" stroke-linecap="round"/>'
+    '<circle cx="48" cy="48" r="7" fill="#e8c070"/>')
+
 # Pusaka: keris berlekuk, lontar, dan kalung.
 ICONS["eq_weapon"] = icon_doc(
     '<path d="M50 8 Q58 18 50 28 Q42 38 50 48 Q58 58 50 66 L46 66 Q38 58 46 48 Q54 38 46 28 Q38 18 46 8 Z" '

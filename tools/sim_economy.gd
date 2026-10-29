@@ -162,6 +162,18 @@ func session(now: float) -> void:
 				if r_i < riders.size():
 					m.assign_horse(id, riders[r_i])
 
+	# Turnamen Silat: daftarkan penasihat terkuat, bertanding sampai gugur/juara, klaim.
+	if m.silat_unlocked():
+		m.ensure_silat(now)
+		if m.silat.is_empty():
+			var champ: Array = m.counselors.keys()
+			champ.sort_custom(func(a, b): return m.silat_power(a) > m.silat_power(b))
+			m.silat_join(champ[0], now)
+		while not m.silat_opponent().is_empty():
+			m.silat_fight(now)
+		if m.silat_can_claim():
+			m.claim_silat()
+
 	# Bangunan: bangun yang termurah bila perak masih cukup untuk 2x biayanya.
 	if m.build_job().is_empty():
 		var pick := ""

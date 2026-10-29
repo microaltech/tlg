@@ -1040,6 +1040,24 @@ const HORSES := {
 const HORSE_ORDER := ["kuda_jawa", "kuda_gayo", "kuda_sandel", "kuda_bima", "kuda_sembrani"]
 
 
+## Turnamen Silat mingguan: pilih satu penasihat jagoan, lalu bertanding di bagan 8
+## peserta (perempat final, semifinal, final). Kekuatan lawan relatif terhadap kekuatan
+## silat jagoan saat mendaftar. Kalah berarti gugur; hadiah sesuai babak tercapai.
+const SILAT_UNLOCK_STAGE := 10
+const SILAT_ROUNDS := ["Perempat Final", "Semifinal", "Final"]
+## Rentang faktor kekuatan lawan per babak. Melatih jagoan setelah mendaftar menaikkan peluang.
+const SILAT_OPPONENT := [[0.55, 0.80], [0.75, 0.95], [0.90, 1.10]]
+## Hadiah menurut jumlah babak yang dimenangkan (0 = gugur di perempat final, 3 = juara).
+const SILAT_REWARDS := [
+	{"silver": 20000},
+	{"silver": 40000, "gold": 50},
+	{"silver": 60000, "gold": 100, "items": {"star_stone": 1}},
+	{"silver": 100000, "gold": 200, "items": {"star_stone": 2}},
+]
+const SILAT_SCHOOLS := ["Perguruan Merapi", "Perguruan Lawu", "Perguruan Bromo", "Perguruan Rinjani",
+	"Perguruan Kerinci", "Perguruan Salak", "Perguruan Slamet"]
+
+
 ## Festival musiman bertema hari besar Indonesia. Tanggal tetap memakai "start"/"end"
 ## [bulan, tanggal] tiap tahun (boleh melewati tahun baru); hari raya yang mengikuti
 ## kalender Hijriah memakai "dates" per tahun: [[bln, tgl mulai], [bln, tgl akhir]].
@@ -1105,13 +1123,15 @@ const COSMETICS := {
 		"unlock": "festival:sumpah_pemuda"},
 	"frame_pahlawan": {"type": "frame", "name": "Bingkai Pahlawan", "colors": ["#4a3520", "#c9963f"],
 		"unlock": "festival:pahlawan"},
+	"frame_silat": {"type": "frame", "name": "Bingkai Juara Silat", "colors": ["#8e1b1b", "#f4d03f"],
+		"unlock": "silat"},
 	"costume_lord": {"type": "costume", "name": "Busana Bangsawan", "portrait": "lord", "unlock": "default"},
 	"costume_batik": {"type": "costume", "name": "Busana Batik", "portrait": "lord_batik", "gold": 400},
 	"costume_zirah": {"type": "costume", "name": "Zirah Senapati", "portrait": "lord_zirah", "unlock": "stage:50"},
 	"costume_raja": {"type": "costume", "name": "Busana Raja", "portrait": "lord_raja", "iap": "costume_raja"},
 }
 const COSMETIC_ORDER := ["frame_kayu", "frame_emas", "frame_giok", "frame_menteri", "frame_vip", "frame_tahun_baru",
-	"frame_ramadan", "frame_merdeka", "frame_sumpah_pemuda", "frame_pahlawan",
+	"frame_ramadan", "frame_merdeka", "frame_sumpah_pemuda", "frame_pahlawan", "frame_silat",
 	"costume_lord", "costume_batik", "costume_zirah", "costume_raja"]
 
 

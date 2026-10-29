@@ -27,7 +27,7 @@ func _init() -> void:
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
 		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass", "test_offers", "test_achievements", "test_save_code",
-		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses", "test_story_choices", "test_duel_plan",
+		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses", "test_story_choices", "test_duel_plan", "test_silat",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -2048,3 +2048,46 @@ func test_duel_plan() -> void:
 	for seed in 30:
 		var q := m.duel_plan(1.0, 1.0, 0.3 + seed * 0.02, 0.0, seed)
 		check(q["steps"].any(func(st): return st["by"] == 1 and st["dmg"] > 0.0), "lawan sempat memukul (seed %d)" % seed)
+
+
+func test_silat() -> void:
+	var m := fresh()
+	var t := 20000 * 86400.0
+	check(not m.silat_join("arya", t)["ok"], "turnamen terkunci di awal")
+	m.stage = Data.SILAT_UNLOCK_STAGE
+	check(not m.silat_join("gajah", t)["ok"], "jagoan harus dimiliki")
+	m.counselors["arya"]["level"] = 3000  # sangat kuat
+	check(m.silat_power("arya") > m.silat_power("sekar"), "kekuatan silat dari atribut")
+	check(m.silat_join("arya", t)["ok"] and not m.silat_join("sekar", t)["ok"], "daftar sekali per minggu")
+	check(m.silat["others"].size() == 7 and m.silat_opponent() == m.silat["others"][0], "lawan perempat final")
+	check(m.silat_bracket().size() >= 1 and m.silat_bracket()[0].size() == 4, "bagan 4 pertandingan perempat final")
+	check(not m.claim_silat()["ok"], "hadiah belum bisa diambil")
+	for o in m.silat["others"]:
+		o["power"] = 1
+	for i in 3:
+		var r := m.silat_fight(t)
+		check(r["ok"] and r["win"], "menang babak %d" % (i + 1))
+	check(m.silat_done() and m.silat_opponent().is_empty() and not m.silat_fight(t)["ok"], "turnamen selesai")
+	var br := m.silat_bracket()
+	check(br.size() == 3 and br[2][0][2] == -1, "bagan: jagoan juara")
+	check(br[1][0][1] == Model.SILAT_PATH[1] and br[2][0][1] == Model.SILAT_PATH[2], "lawan di bagan sama dengan lawan sebenarnya")
+	var gold := m.gold
+	check(m.claim_silat()["ok"] and m.gold == gold + 200 and m.owns_cosmetic("frame_silat"), "hadiah juara + bingkai")
+	check(not m.claim_silat()["ok"], "hadiah sekali")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
+	check(var_to_str(m2.silat) == var_to_str(m.silat), "simpan/muat turnamen")
+	m.ensure_silat(t + 7 * 86400.0)
+	check(m.silat.is_empty(), "turnamen baru minggu depan")
+	var weak := fresh()
+	weak.stage = Data.SILAT_UNLOCK_STAGE
+	weak.silat_join("sekar", t)
+	for o in weak.silat["others"]:
+		o["power"] = 1 << 30
+	var lr := weak.silat_fight(t)
+	check(lr["ok"] and not lr["win"] and weak.silat["out"] and weak.silat_can_claim(), "kalah: gugur, hadiah hiburan")
+	var silver := weak.silver
+	weak.claim_silat()
+	check(weak.silver == silver + 20000 and not weak.owns_cosmetic("frame_silat"), "hadiah gugur di perempat final")
+	var wb := weak.silat_bracket()
+	check(wb[0][0][2] == 0, "bagan: lawan maju setelah jagoan kalah")

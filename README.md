@@ -89,6 +89,11 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   Lewati dan Kecepatan ×2 tidak mengubah hasil. Pengaturan "Lewati tayangan
   perang" menampilkan hasil langsung. Formasi (Seimbang, Serbu, Bertahan) dipilih
   di halaman Kampanye dan memberi bonus kecil dengan kelemahan.
+- **Duel visual** — Arena, serangan Bos Aliansi (melawan raksasa Buto Ijo), dan
+  Menara Ujian ditayangkan sebagai duel satu lawan satu: terjangan bergantian,
+  tangkisan, serangan meleset, kritis dengan jeda gerak lambat, hitungan kombo,
+  satu jurus penasihat, dan lawan yang rebah saat KO. Naskah dari
+  `GameModel.duel_plan`, hasil tetap dihitung lebih dulu.
 - **Festival musiman** — Pesta Tahun Baru (28 Des–7 Jan), Berkah Ramadan &
   Lebaran (awal Ramadan sampai sepekan setelah Idulfitri, tanggal per tahun di
   `FESTIVALS`), Pesta Kemerdekaan (10–24 Agu), Semangat Sumpah Pemuda (24 Okt–2 Nov),

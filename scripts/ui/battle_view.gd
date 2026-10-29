@@ -377,7 +377,7 @@ func _clash(me_prev: float, me_now: float, them_prev: float, them_now: float) ->
 	for side in 2:
 		var n := int(round(totals[side] * lost[side]))
 		if n > 0:
-			_float_text("-" + _fmt(n), Vector2(size.x * (0.3 if side == 0 else 0.7), _field.position.y + 20),
+			_float_text(tr("-" + _fmt(n)), Vector2(size.x * (0.3 if side == 0 else 0.7), _field.position.y + 20),
 				Color("ff9a8a") if side == 0 else Color("fff0b0"))
 
 

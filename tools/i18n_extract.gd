@@ -13,7 +13,7 @@ const CODE := [
 	"res://scripts/core/game_data.gd", "res://scripts/core/game_model.gd", "res://scripts/ui/main.gd", "res://scripts/ui/tutorial_layer.gd",
 	"res://scripts/core/store.gd", "res://scripts/core/notifier.gd", "res://scripts/core/telemetry.gd",
 	"res://scripts/core/game.gd", "res://scripts/core/ads.gd", "res://scripts/core/play_games.gd",
-	"res://scripts/ui/battle_view.gd",
+	"res://scripts/ui/battle_view.gd", "res://scripts/ui/duel_view.gd",
 ]
 ## Bidang data yang bukan teks tampilan (ID, ikon, kunci internal).
 const SKIP_FIELDS := ["id", "icon", "event", "type", "wait", "target", "speaker", "effect", "rarity", "members",

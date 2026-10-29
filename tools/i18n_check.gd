@@ -213,6 +213,17 @@ func _walk_ui() -> void:
 	await _snap("story_choice")
 	await _close_modals()
 	m.story = saved_story
+	for big in [false, true]:
+		main._play_duel(m.duel_plan(1.0, 1.0, 0.5, 0.0, 3), {"title": "Arena", "me_name": m.me_name(), "them_name": "x",
+			"me_total": 100, "them_total": 100, "units": ["power", "hp"], "them_big": big, "win": true,
+			"detail": "", "headline": "%s TUMBANG!" % Data.BOSS_NAME if big else "MENANG!"})
+		await _frames(90)
+		await _snap("duel")
+		for v in main.get_children():
+			if v.has_method("skip"):
+				v.skip()
+		await _snap("duel_end")
+		await _close_modals()
 	for formation in Data.FORMATION_ORDER:
 		m.set_formation(formation)
 		main._play_battle(m.battle_plan(0.5, 0.0, 1), {"title": "Arena", "me_name": m.me_name(), "them_name": "x",

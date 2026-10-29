@@ -7,6 +7,7 @@ const Art := preload("res://scripts/ui/art.gd")
 const UI := preload("res://scripts/ui/ui_theme.gd")
 const TutorialLayer := preload("res://scripts/ui/tutorial_layer.gd")
 const BattleView := preload("res://scripts/ui/battle_view.gd")
+const DuelView := preload("res://scripts/ui/duel_view.gd")
 
 const PAGES := [
 	{"key": "city", "title": "Kota", "icon": "tab_city", "bg": "city"},
@@ -1142,6 +1143,19 @@ func _play_battle(plan: Dictionary, info: Dictionary, on_done := Callable()) -> 
 		_queue_rebuild())
 
 
+## Tayangkan duel satu lawan satu; on_done dipanggil setelah pemain menekan Lanjut.
+func _play_duel(plan: Dictionary, info: Dictionary, on_done := Callable()) -> void:
+	var view := DuelView.new()
+	view.setup(plan, info)
+	add_child(view)
+	move_child(view, _toast.get_index())
+	Audio.play_music("battle")
+	view.finished.connect(func():
+		if on_done.is_valid():
+			on_done.call()
+		_queue_rebuild())
+
+
 func _attack():
 	if _battling:
 		return null
@@ -1887,21 +1901,17 @@ func _build_arena_shop(box: VBoxContainer, now: float) -> void:
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 
-## Layar pertarungan arena: tayangan perang 3 ronde sesuai persentase HP dari model.
+## Layar pertarungan arena: duel Tuan melawan Tuan sesuai sisa HP dari model.
 func _show_arena_battle(r: Dictionary) -> void:
 	var opp: Dictionary = r["opponent"]
-	var me := []
-	var them := []
-	for state in r["rounds"]:
-		me.append(float(state["me"]) / 100.0)
-		them.append(float(state["them"]) / 100.0)
-	var plan: Dictionary = model.battle_plan(me[-1], them[-1], 0)
-	plan["me"] = me
-	plan["them"] = them
+	var last: Dictionary = r["rounds"][-1]
 	var win: bool = r["win"]
-	_play_battle(plan, {"title": "Arena", "me_name": model.me_name(), "them_name": opp["name"],
-		"me_count": model.combat_power(), "them_count": opp["power"], "units": ["power", "power"],
-		"me_portrait": model.lord_portrait(), "them_portrait": opp["avatar"], "win": win, "bg": "arena",
+	var plan: Dictionary = model.duel_plan(1.0, 1.0, float(last["me"]) / 100.0, float(last["them"]) / 100.0,
+		int(opp["power"]) + int(r["delta"]))
+	_play_duel(plan, {"title": "Arena", "me_name": model.me_name(), "them_name": opp["name"],
+		"me_total": model.combat_power(), "them_total": opp["power"], "me_portrait": model.lord_portrait(),
+		"them_portrait": opp["avatar"], "me_weapon": "keris", "them_weapon": ["tombak", "keris", "gada"][
+			int(opp["power"]) % 3], "win": win, "bg": "arena",
 		"detail": "%+d poin arena · +%d koin arena%s" % [r["delta"], r["coins"],
 			" · +%d perak" % Data.ARENA_WIN["silver"] if win else ""]})
 
@@ -2060,10 +2070,21 @@ func _build_alliance_boss(box: VBoxContainer, now: float) -> void:
 	else:
 		_label(card, "Serangan tersisa hari ini: %d / %d" % [info["attacks_left"], model.boss_attacks_per_day()], "CardLabel")
 		var attack := _button(card, "SERANG!", func():
+			var before: int = model.boss_info(Game.now())["hp"]
 			var r: Dictionary = model.attack_boss(Game.now())
-			if r["ok"]:
-				_pending_boss_hit = r["damage"]
-			return r, info["attacks_left"] > 0, "", "GoldButton", false, "attack")
+			if not r["ok"]:
+				return r
+			_pending_boss_hit = r["damage"]
+			var hp_max: int = maxi(1, info["hp_max"])
+			var after: int = before - int(r["damage"])
+			var plan: Dictionary = model.duel_plan(1.0, float(before) / hp_max, 0.55 + float(before % 31) / 100.0,
+				float(after) / hp_max, before, 8, 0)
+			_play_duel(plan, {"title": info["name"], "me_name": model.me_name(), "them_name": Data.BOSS_NAME,
+				"me_total": model.combat_power(), "them_total": hp_max, "units": ["power", "hp"],
+				"me_portrait": model.lord_portrait(), "them_portrait": "boss_buto", "me_weapon": "tombak",
+				"them_weapon": "gada", "them_big": true, "win": true, "bg": "alliance",
+				"headline": "%s TUMBANG!" % Data.BOSS_NAME if after <= 0 else "SERANGAN BERHASIL!", "detail": r["msg"]})
+			return null, info["attacks_left"] > 0, "", "GoldButton", false, "attack")
 		attack.custom_minimum_size.y = 90
 	_label(card, "Kerusakan Anda: %s · anggota lain: %s" % [_num(info["my_damage"]), _num(info["npc_damage"])],
 		"CardLabel")
@@ -3284,10 +3305,13 @@ func _fill_tower() -> void:
 		var ratio := float(info["power"]) / maxi(1, my_power)
 		var plan: Dictionary = model.battle_plan(clampf(1.0 - 0.6 * ratio, 0.15, 0.95) if r["win"] else 0.0,
 			0.0 if r["win"] else clampf(1.0 - 0.6 / maxf(ratio, 0.01), 0.1, 0.9), next * 104729 + left)
-		_play_battle(plan, {"title": tr("Menara Ujian · Lantai %d") % next, "me_name": model.me_name(),
-			"them_name": tr("Penjaga Lantai %d") % next, "me_count": my_power, "them_count": info["power"],
-			"units": ["power", "power"], "me_portrait": model.lord_portrait(), "them_portrait": Data.ENEMIES[next % Data.ENEMIES.size()]["id"],
-			"win": r["win"], "detail": r["msg"], "bg": "campaign"}, _fill_tower)
+		var duel: Dictionary = model.duel_plan(1.0, 1.0, plan["me"][-1], plan["them"][-1], next * 104729 + left)
+		_play_duel(duel, {"title": tr("Menara Ujian · Lantai %d") % next, "me_name": model.me_name(),
+			"them_name": tr("Penjaga Lantai %d") % next, "me_total": my_power, "them_total": info["power"],
+			"units": ["power", "power"], "me_portrait": model.lord_portrait(),
+			"them_portrait": Data.ENEMIES[next % Data.ENEMIES.size()]["id"], "me_weapon": "keris",
+			"them_weapon": ["tombak", "gada", "keris"][next % 3], "win": r["win"], "detail": r["msg"], "bg": "campaign"},
+			_fill_tower)
 		return null, left > 0, "", "GoldButton", false, "win")
 	fight.custom_minimum_size.y = 84
 	_label(_tower_box, "Lantai minggu ini %d · rekor %d · percobaan hari ini %d / %d" % [

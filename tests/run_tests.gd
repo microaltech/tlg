@@ -27,7 +27,7 @@ func _init() -> void:
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
 		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass", "test_offers", "test_achievements", "test_save_code",
-		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses", "test_story_choices",
+		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses", "test_story_choices", "test_duel_plan",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -2013,3 +2013,38 @@ func test_story_choices() -> void:
 				for l in c["story"]:
 					follow = follow or l.get("requires", "") == "%s:%s" % [ch["id"], o["id"]]
 			check(follow, "ada dialog lanjutan untuk %s:%s" % [ch["id"], o["id"]])
+
+
+func test_duel_plan() -> void:
+	var m := fresh()
+	var state := m.rng.state
+	var p := m.duel_plan(1.0, 1.0, 0.6, 0.0, 7)
+	check(m.rng.state == state, "naskah duel tidak memakai RNG game")
+	var steps: Array = p["steps"]
+	check(steps.size() == 8 and p["win"], "8 serangan, pemain menang")
+	check(steps[-1]["by"] == 0 and is_equal_approx(steps[-1]["me"], 0.6) and steps[-1]["them"] == 0.0,
+		"pukulan penentu milik pemenang, HP akhir sesuai hasil")
+	var ok := true
+	var me := 1.0
+	var them := 1.0
+	var skills := 0
+	for st in steps:
+		ok = ok and st["me"] <= me + 0.0001 and st["them"] <= them + 0.0001
+		ok = ok and (st["dmg"] == 0.0) == (st["kind"] in ["miss", "block"])
+		me = st["me"]
+		them = st["them"]
+		if st["kind"] == "skill":
+			skills += 1
+			ok = ok and st["by"] == 0
+	check(ok and skills == 1, "HP tidak pernah naik, jurus sekali untuk pemain")
+	check(var_to_str(m.duel_plan(1.0, 1.0, 0.6, 0.0, 7)) == var_to_str(p), "naskah sama untuk kunci sama")
+	var lose := m.duel_plan(1.0, 1.0, 0.0, 0.3, 9)
+	check(not lose["win"] and lose["steps"][-1]["by"] == 1 and lose["steps"][-1]["me"] == 0.0, "kalah: lawan memukul terakhir")
+	var boss := m.duel_plan(1.0, 0.8, 0.7, 0.75, 3, 8, 0)
+	check(boss["win"] and boss["steps"][-1]["by"] == 0 and is_equal_approx(boss["steps"][-1]["them"], 0.75),
+		"serangan bos: pemenang dipaksa, HP bos dari sisa sebelumnya")
+	var none := m.duel_plan(1.0, 1.0, 1.0, 1.0, 4)
+	check(none["steps"].all(func(st): return st["kind"] in ["miss", "block"]), "tanpa kerusakan semua meleset/ditangkis")
+	for seed in 30:
+		var q := m.duel_plan(1.0, 1.0, 0.3 + seed * 0.02, 0.0, seed)
+		check(q["steps"].any(func(st): return st["by"] == 1 and st["dmg"] > 0.0), "lawan sempat memukul (seed %d)" % seed)

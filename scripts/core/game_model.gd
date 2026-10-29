@@ -372,6 +372,89 @@ func battle_heroes(count := 3) -> Array:
 ## Naskah tayangan perang. Hasil sudah dihitung lebih dulu; naskah hanya membagi
 ## sisa pasukan kedua pihak (1.0 = utuh) ke tiap ronde agar animasinya sesuai hasil.
 ## Memakai RNG tersendiri sehingga tidak mengubah hasil acak game.
+## Naskah duel satu lawan satu: serangan bergantian dengan jenis "hit", "crit",
+## "miss" (dihindari), "block" (ditangkis), atau "skill" (jurus penasihat, sekali
+## untuk pihak pemain). HP (0..1) bergerak dari *_start ke *_end; serangan terakhir
+## milik pihak yang unggul. RNG tersendiri agar tidak mengubah hasil acak game.
+## Mengembalikan {"steps": [{by, kind, dmg, me, them}], "hero": {...}, ...}.
+func duel_plan(me_start: float, them_start: float, me_end: float, them_end: float, seed_key: int,
+		exchanges := 8, winner := -1) -> Dictionary:
+	var r := RandomNumberGenerator.new()
+	r.seed = seed_key
+	me_end = clampf(me_end, 0.0, me_start)
+	them_end = clampf(them_end, 0.0, them_start)
+	# Pemenang (penyerang terakhir) ditebak dari sisa HP relatif bila tidak ditentukan.
+	if winner < 0:
+		winner = 0 if them_end / maxf(them_start, 0.001) <= me_end / maxf(me_start, 0.001) else 1
+	var me_won := winner == 0
+	# Urutan penyerang: bergantian, serangan terakhir milik pemenang.
+	var order := []
+	for i in exchanges:
+		order.append((winner + exchanges - 1 - i) % 2)
+	var pools := [them_start - them_end, me_start - me_end]  ## kerusakan yang diberikan tiap pihak
+	var kinds := []
+	var weights := []
+	for i in exchanges:
+		var side: int = order[i]
+		var last := i == exchanges - 1
+		if pools[side] <= 0.0001:
+			kinds.append("miss" if r.randf() < 0.5 else "block")
+		elif not last and r.randf() < 0.25:
+			kinds.append("miss" if r.randf() < 0.5 else "block")
+		else:
+			kinds.append("hit")
+		weights.append(r.randf_range(0.6, 1.4) * (1.8 if last else 1.0) if kinds[i] == "hit" else 0.0)
+	# Pastikan tiap pihak yang memberi kerusakan punya minimal satu serangan kena.
+	for side in 2:
+		var has_hit := false
+		for i in exchanges:
+			has_hit = has_hit or (order[i] == side and kinds[i] == "hit")
+		if pools[side] > 0.0001 and not has_hit:
+			for i in range(exchanges - 1, -1, -1):
+				if order[i] == side:
+					kinds[i] = "hit"
+					weights[i] = 1.0
+					break
+	var totals := [0.0, 0.0]
+	var hits := [0.0, 0.0]
+	for i in exchanges:
+		totals[order[i]] += weights[i]
+		if kinds[i] == "hit":
+			hits[order[i]] += 1.0
+	var heroes := battle_heroes(1)
+	var skill_at := -1
+	if not heroes.is_empty():
+		# Jurus di serangan kena terakhir milik pemain (pukulan penentu bila menang).
+		for i in range(exchanges - 1, -1, -1):
+			if order[i] == 0 and kinds[i] == "hit":
+				skill_at = i
+				break
+	var steps := []
+	var me := me_start
+	var them := them_start
+	for i in exchanges:
+		var side: int = order[i]
+		var dmg := 0.0
+		var kind: String = kinds[i]
+		if kind == "hit":
+			dmg = pools[side] * weights[i] / maxf(totals[side], 0.0001)
+			var avg: float = pools[side] / maxf(1.0, hits[side])
+			if i == skill_at:
+				kind = "skill"
+			elif dmg > avg * 1.3:
+				kind = "crit"
+		if side == 0:
+			them = maxf(them_end, them - dmg)
+		else:
+			me = maxf(me_end, me - dmg)
+		if i == exchanges - 1:
+			me = me_end
+			them = them_end
+		steps.append({"by": side, "kind": kind, "dmg": dmg, "me": me, "them": them})
+	return {"steps": steps, "hero": heroes[0] if not heroes.is_empty() else {}, "win": me_won,
+		"me_start": me_start, "them_start": them_start}
+
+
 func battle_plan(me_end: float, them_end: float, seed_key: int, rounds := 3) -> Dictionary:
 	var r := RandomNumberGenerator.new()
 	r.seed = seed_key

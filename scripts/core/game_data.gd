@@ -880,6 +880,19 @@ const STAGE_STR_BASE := 12
 const STAGE_STR_GROWTH := 1.13
 ## Rasio korban minimum walau kekuatan Anda jauh di atas musuh.
 const LOSS_RATIO_MIN := 0.5
+## Formasi pasukan: pilihan taktik sebelum perang. "power" mengubah kekuatan tempur
+## (arena, menara, bos, perang), "losses" korban kampanye, "prestige" prestise kampanye.
+const FORMATIONS := {
+	"balanced": {"name": "Seimbang", "icon": "formation_balanced", "power": 0.0, "losses": 0.0, "prestige": 0.0,
+		"desc": "Tanpa bonus maupun kelemahan."},
+	"assault": {"name": "Serbu", "icon": "formation_assault", "power": 0.06, "losses": 0.12, "prestige": 0.10,
+		"desc": "Kekuatan tempur +6%, prestise kampanye +10%, tetapi korban +12%."},
+	"defense": {"name": "Bertahan", "icon": "formation_defense", "power": -0.06, "losses": -0.12, "prestige": 0.0,
+		"desc": "Korban kampanye -12%, tetapi kekuatan tempur -6%."},
+}
+const FORMATION_ORDER := ["balanced", "assault", "defense"]
+## Tahap kampanye yang ditayangkan sebagai perang penuh (tahap besar = tiap tahap ke-5).
+const BATTLE_FULL_EVERY := 5
 
 
 static func stage_info(index: int) -> Dictionary:

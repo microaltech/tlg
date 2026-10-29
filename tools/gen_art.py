@@ -937,6 +937,24 @@ ICONS["tower"] = icon_doc(
     '<rect x="42" y="78" width="12" height="10" fill="#3b2210"/>'
     '<path d="M44 64 L52 64 L52 72 L44 72 Z" fill="#3b2210"/>')
 
+# Formasi pasukan: susunan titik prajurit di atas panji.
+def formation_icon(points, color):
+    b = '<rect x="8" y="8" width="80" height="80" rx="16" fill="#f4e4c1" stroke="#7a4b1f" stroke-width="3"/>'
+    for x, y in points:
+        b += '<circle cx="%d" cy="%d" r="7" fill="%s" stroke="#3b2416" stroke-width="2"/>' % (x, y, color)
+    return icon_doc(b)
+
+
+ICONS["formation_balanced"] = formation_icon(
+    [(x, y) for x in (30, 48, 66) for y in (30, 48, 66)], "#3f7fc4")
+ICONS["formation_assault"] = formation_icon(
+    [(70, 48), (54, 36), (54, 60), (38, 24), (38, 48), (38, 72), (22, 36), (22, 60)], "#c0392b")
+ICONS["formation_defense"] = icon_doc(
+    '<rect x="8" y="8" width="80" height="80" rx="16" fill="#f4e4c1" stroke="#7a4b1f" stroke-width="3"/>'
+    '<path d="M48 16 L76 26 Q76 62 48 82 Q20 62 20 26 Z" fill="#8a6a3a" stroke="#3b2416" stroke-width="3" '
+    'stroke-linejoin="round"/>'
+    '<path d="M48 26 L66 32 Q66 58 48 72 Q30 58 30 32 Z" fill="#e8c070"/>')
+
 # Pusaka: keris berlekuk, lontar, dan kalung.
 ICONS["eq_weapon"] = icon_doc(
     '<path d="M50 8 Q58 18 50 28 Q42 38 50 48 Q58 58 50 66 L46 66 Q38 58 46 48 Q54 38 46 28 Q38 18 46 8 Z" '

@@ -108,12 +108,15 @@ var counters := {}
 ## Pencapaian: id -> jumlah tingkat yang hadiahnya sudah diklaim.
 var achievements := {}
 var _equip_uid := 0
+## Formasi pasukan yang dipakai di semua pertempuran (lihat Data.FORMATIONS).
+var formation := "balanced"
 var rng := RandomNumberGenerator.new()
 
 
 func new_game(now: float) -> void:
 	_last_now = now
 	lord_name = ""
+	formation = "balanced"
 	equipment = []
 	_equip_uid = 0
 	tower = {}
@@ -313,7 +316,56 @@ func skill_bonus(effect: String) -> float:
 
 ## Kekuatan yang dipakai untuk pertarungan arena, bos aliansi, dan perang.
 func combat_power() -> int:
-	return int(power() * (1.0 + skill_bonus("combat")))
+	return int(power() * (1.0 + skill_bonus("combat")) * (1.0 + float(formation_def()["power"])))
+
+
+# --- Formasi & rencana pertempuran ---------------------------------------------
+
+func formation_def() -> Dictionary:
+	return Data.FORMATIONS.get(formation, Data.FORMATIONS["balanced"])
+
+
+func set_formation(id: String) -> Dictionary:
+	if not Data.FORMATIONS.has(id):
+		return _fail("Formasi tidak dikenal.")
+	formation = id
+	changed.emit()
+	return _ok("Formasi %s dipakai." % Data.FORMATIONS[id]["name"])
+
+
+## Penasihat yang tampil di layar perang: tiga terkuat (atribut kekuatan) beserta jurusnya.
+func battle_heroes(count := 3) -> Array:
+	var ids := counselors.keys()
+	ids.sort_custom(func(a, b): return attr(a, "str") > attr(b, "str"))
+	var out := []
+	for id in ids.slice(0, count):
+		var sk: Dictionary = Data.SKILLS.get(id, {})
+		out.append({"id": id, "name": Data.counselor_def(id)["name"],
+			"skill": str(sk.get("name", "Serangan Pamungkas"))})
+	return out
+
+
+## Naskah tayangan perang. Hasil sudah dihitung lebih dulu; naskah hanya membagi
+## sisa pasukan kedua pihak (1.0 = utuh) ke tiap ronde agar animasinya sesuai hasil.
+## Memakai RNG tersendiri sehingga tidak mengubah hasil acak game.
+func battle_plan(me_end: float, them_end: float, seed_key: int, rounds := 3) -> Dictionary:
+	var r := RandomNumberGenerator.new()
+	r.seed = seed_key
+	me_end = clampf(me_end, 0.0, 1.0)
+	them_end = clampf(them_end, 0.0, 1.0)
+	var me := [1.0]
+	var them := [1.0]
+	for k in range(1, rounds + 1):
+		var t := float(k) / rounds
+		var jm := r.randf_range(-0.08, 0.08) if k < rounds else 0.0
+		var jt := r.randf_range(-0.08, 0.08) if k < rounds else 0.0
+		me.append(clampf(lerpf(1.0, me_end, t) + jm, me_end, me[-1]))
+		them.append(clampf(lerpf(1.0, them_end, t) + jt, them_end, them[-1]))
+	var heroes := battle_heroes()
+	var skills := []
+	for k in rounds:
+		skills.append(k % heroes.size() if not heroes.is_empty() else -1)
+	return {"me": me, "them": them, "heroes": heroes, "skills": skills, "formation": formation}
 
 
 func upgrade_counselor(id: String) -> Dictionary:
@@ -437,7 +489,8 @@ func current_stage_info() -> Dictionary:
 func expected_losses() -> int:
 	var info := current_stage_info()
 	var ratio := clampf(float(info["enemy_str"]) / maxi(1, total_attr("str")), Data.LOSS_RATIO_MIN, 4.0)
-	return int(ceil(int(info["enemy_soldiers"]) * ratio * (1.0 + event_bonus("losses")) * (1.0 - skill_bonus("battle"))))
+	return int(ceil(int(info["enemy_soldiers"]) * ratio * (1.0 + event_bonus("losses")) * (1.0 - skill_bonus("battle"))
+		* (1.0 + float(formation_def()["losses"]))))
 
 
 func fight_stage() -> Dictionary:
@@ -456,7 +509,8 @@ func fight_stage() -> Dictionary:
 	soldiers -= losses
 	loss_streak = 0
 	silver += int(info["reward_silver"])
-	var gained_prestige := int(int(info["reward_prestige"]) * (1.0 + skill_bonus("prestige")))
+	var gained_prestige := int(int(info["reward_prestige"]) * (1.0 + skill_bonus("prestige"))
+		* (1.0 + float(formation_def()["prestige"])))
 	prestige += gained_prestige
 	gold += int(info["reward_gold"])
 	var stage_item := ""
@@ -3283,6 +3337,7 @@ func to_dict() -> Dictionary:
 		"achievements": achievements,
 		"loss_streak": loss_streak,
 		"equip_uid": _equip_uid,
+		"formation": formation,
 	}
 
 
@@ -3298,6 +3353,9 @@ func from_dict(d: Dictionary, now: float) -> void:
 	gold = int(d.get("gold", gold))
 	pity = int(d.get("pity", 0))
 	rateup_guarantee = bool(d.get("rateup_guarantee", false))
+	formation = str(d.get("formation", "balanced"))
+	if not Data.FORMATIONS.has(formation):
+		formation = "balanced"
 	free_pull_t = float(d.get("free_pull_t", free_pull_t))
 	# JSON mengubah semua angka menjadi float, jadi normalisasi ke int.
 	counselors = {}

@@ -6,6 +6,7 @@ const Data := preload("res://scripts/core/game_data.gd")
 const Art := preload("res://scripts/ui/art.gd")
 const UI := preload("res://scripts/ui/ui_theme.gd")
 const TutorialLayer := preload("res://scripts/ui/tutorial_layer.gd")
+const BattleView := preload("res://scripts/ui/battle_view.gd")
 
 const PAGES := [
 	{"key": "city", "title": "Kota", "icon": "tab_city", "bg": "city"},
@@ -953,6 +954,7 @@ func _build_campaign(page: Dictionary) -> void:
 	_icon_row(col, "gold", "Hadiah: %d emas%s" % [info["reward_gold"],
 		"  (tahap besar!)" if (model.stage + 1) % 5 == 0 else ""])
 
+	_build_formation(box)
 	var attack := _button(box, "SERANG!", _attack, true, "", "GoldButton", false, "attack")
 	_attack_button = attack
 	attack.custom_minimum_size.y = 96
@@ -975,22 +977,64 @@ func _build_campaign(page: Dictionary) -> void:
 		_label(tcol, "Terbuka setelah menang Tahap %d." % Data.TOWER_UNLOCK_STAGE, "CardLabel")
 
 
+## Pilihan formasi pasukan di halaman kampanye.
+func _build_formation(box: VBoxContainer) -> void:
+	var inner := _inner_box(box)
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 8)
+	inner.add_child(head)
+	head.add_child(_tex(Art.icon(model.formation_def()["icon"]), 40))
+	_label(head, "Formasi pasukan", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	var items := []
+	for id in Data.FORMATION_ORDER:
+		items.append([id, Data.FORMATIONS[id]["name"]])
+	_segment_tabs(inner, items, model.formation, func(id): model.set_formation(id))
+	_label(inner, model.formation_def()["desc"], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+
+
+## Tayangkan perang otomatis; on_done dipanggil setelah pemain menekan Lanjut.
+func _play_battle(plan: Dictionary, info: Dictionary, on_done := Callable()) -> void:
+	var view := BattleView.new()
+	view.setup(plan, info)
+	add_child(view)
+	move_child(view, _toast.get_index())
+	Audio.play_music("battle")
+	view.finished.connect(func():
+		if on_done.is_valid():
+			on_done.call()
+		_queue_rebuild())
+
+
 func _attack():
 	if _battling:
+		return null
+	# Hasil dihitung dulu oleh model; animasi hanya menggambarkannya.
+	var info: Dictionary = model.current_stage_info()
+	var big_stage: bool = (model.stage + 1) % Data.BATTLE_FULL_EVERY == 0
+	var mine_before: int = model.soldiers
+	var enemy_total: int = info["enemy_soldiers"]
+	var result: Dictionary = model.fight_stage()
+	var win: bool = result["ok"]
+	var mine_after: int = model.soldiers
+	var enemy_after: int = 0 if win else int(enemy_total * clampf(1.0 - float(mine_before) / maxf(1.0,
+		float(mine_before + (mine_before - mine_after) * 2)), 0.3, 0.8))
+	if Settings.skip_battles:
+		Audio.play("win" if win else "lose", 0.0)
+		_show(result)
+		return null
+	if big_stage:
+		var plan: Dictionary = model.battle_plan(float(mine_after) / maxi(1, mine_before),
+			float(enemy_after) / maxi(1, enemy_total), model.stage * 7919 + mine_before)
+		_play_battle(plan, {"title": tr("Tahap Besar · %s") % tr(info["name"]), "me_name": model.me_name(),
+			"them_name": info["enemy_name"], "me_count": mine_before, "them_count": enemy_total,
+			"me_portrait": "lord", "them_portrait": info["enemy_id"], "win": win, "detail": result["msg"],
+			"bg": "campaign"})
 		return null
 	_battling = true
 	var lord := _vs_lord
 	var enemy := _vs_enemy
 	var lord_x := lord.position.x
 	var enemy_x := enemy.position.x
-	# Hasil dihitung dulu oleh model; animasi hanya menggambarkannya.
-	var mine_before: int = model.soldiers
-	var enemy_total: int = model.current_stage_info()["enemy_soldiers"]
-	var result: Dictionary = model.fight_stage()
-	var win: bool = result["ok"]
-	var mine_after: int = model.soldiers
-	var enemy_after: int = 0 if win else int(enemy_total * clampf(1.0 - float(mine_before) / maxf(1.0,
-		float(mine_before + (mine_before - mine_after) * 2)), 0.3, 0.8))
 	var panel := _battle_bars(mine_before, enemy_total)
 	var tw := create_tween()
 	for clash in 3:
@@ -1706,108 +1750,23 @@ func _build_arena_shop(box: VBoxContainer, now: float) -> void:
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 
-## Layar pertarungan arena: 3 ronde dengan bar HP, lalu hasil.
+## Layar pertarungan arena: tayangan perang 3 ronde sesuai persentase HP dari model.
 func _show_arena_battle(r: Dictionary) -> void:
 	var opp: Dictionary = r["opponent"]
-	var overlay := Control.new()
-	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	overlay.add_to_group("modal")
-	add_child(overlay)
-	move_child(overlay, _toast.get_index())
-	var bg := TextureRect.new()
-	bg.texture = Art.bg("arena")
-	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	overlay.add_child(bg)
-	var dim := ColorRect.new()
-	dim.color = Color(0.05, 0.02, 0.02, 0.55)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	overlay.add_child(dim)
-
-	var v := VBoxContainer.new()
-	v.set_anchors_preset(Control.PRESET_FULL_RECT)
-	v.alignment = BoxContainer.ALIGNMENT_CENTER
-	v.add_theme_constant_override("separation", 18)
-	overlay.add_child(v)
-	var round_label := _label(v, "Bersiap!", "TitleLabel")
-	round_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-
-	var fighters := HBoxContainer.new()
-	fighters.alignment = BoxContainer.ALIGNMENT_CENTER
-	fighters.add_theme_constant_override("separation", 40)
-	v.add_child(fighters)
-	var sides := []
-	for who in [[model.me_name(), "lord", model.combat_power()], [opp["name"], opp["avatar"], opp["power"]]]:
-		var col := VBoxContainer.new()
-		col.add_theme_constant_override("separation", 6)
-		fighters.add_child(col)
-		var holder := Control.new()
-		holder.custom_minimum_size = Vector2(250, 250)
-		col.add_child(holder)
-		var pic := _tex(Art.portrait(who[1]), 250)
-		holder.add_child(pic)
-		var n := _label(col, who[0], "TitleLabel")
-		n.add_theme_font_size_override("font_size", 26)
-		n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		n.custom_minimum_size.x = 250
-		var hp := _bar(col, 100, 100, Color("4caf50"))
-		hp.custom_minimum_size = Vector2(250, 22)
-		var p := _label(col, tr("Kekuatan %s", "power") % _num(who[2]), "SmallLabel")
-		p.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-		p.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		sides.append({"pic": pic, "hp": hp})
-
-	var result_label := _label(v, "", "BigLabel")
-	result_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	result_label.modulate.a = 0.0
-	var detail := _label(v, "", "CardLabel")
-	detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	detail.add_theme_color_override("font_color", UI.PARCHMENT)
-	var done := Button.new()
-	done.text = "Lanjut"
-	done.theme_type_variation = "GoldButton"
-	done.custom_minimum_size = Vector2(300, 84)
-	done.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	done.modulate.a = 0.0
-	done.disabled = true
-	done.pressed.connect(func():
-		Audio.play("click")
-		overlay.queue_free())
-	v.add_child(done)
-
-	var rounds: Array = r["rounds"]
-	var tw := create_tween()
-	tw.tween_interval(0.4)
-	for k in range(1, rounds.size()):
-		var state: Dictionary = rounds[k]
-		tw.tween_callback(func():
-			round_label.text = "Ronde %d" % k
-			Audio.play("attack"))
-		for s_i in 2:
-			var side: Dictionary = sides[s_i]
-			var pic: TextureRect = side["pic"]
-			var target: int = state["me"] if s_i == 0 else state["them"]
-			tw.tween_callback(func(): pic.modulate = Color(3, 2.5, 2.5))
-			tw.tween_property(pic, "position:x", 10.0 if s_i == 0 else -10.0, 0.05)
-			tw.tween_property(pic, "position:x", 0.0, 0.05)
-			tw.tween_callback(func(): pic.modulate = Color.WHITE)
-			tw.tween_property(side["hp"], "value", float(target), 0.25)
-		tw.tween_interval(0.35)
-	tw.tween_callback(func():
-		var win: bool = r["win"]
-		round_label.text = "Selesai"
-		result_label.text = "MENANG!" if win else "KALAH..."
-		result_label.add_theme_color_override("font_color", UI.GOLD if win else Color("e06050"))
-		detail.text = "%+d poin arena · +%d koin arena%s" % [r["delta"], r["coins"],
-			" · +%d perak" % Data.ARENA_WIN["silver"] if win else ""]
-		Audio.play("win" if win else "lose", 0.0)
-		var loser: TextureRect = sides[1 if win else 0]["pic"]
-		loser.modulate = Color(0.45, 0.45, 0.45)
-		done.disabled = false)
-	tw.tween_property(result_label, "modulate:a", 1.0, 0.25)
-	tw.tween_property(done, "modulate:a", 1.0, 0.2)
+	var me := []
+	var them := []
+	for state in r["rounds"]:
+		me.append(float(state["me"]) / 100.0)
+		them.append(float(state["them"]) / 100.0)
+	var plan: Dictionary = model.battle_plan(me[-1], them[-1], 0)
+	plan["me"] = me
+	plan["them"] = them
+	var win: bool = r["win"]
+	_play_battle(plan, {"title": "Arena", "me_name": model.me_name(), "them_name": opp["name"],
+		"me_count": model.combat_power(), "them_count": opp["power"], "units": ["power", "power"],
+		"me_portrait": "lord", "them_portrait": opp["avatar"], "win": win, "bg": "arena",
+		"detail": "%+d poin arena · +%d koin arena%s" % [r["delta"], r["coins"],
+			" · +%d perak" % Data.ARENA_WIN["silver"] if win else ""]})
 
 
 # --- Aliansi ---------------------------------------------------------------
@@ -2100,10 +2059,19 @@ func _build_alliance_war(box: VBoxContainer, now: float) -> void:
 		var idx: int = i
 		var locked: bool = model.war_fort_locked(i)
 		var b := _button(frow, "Terkunci" if locked else ("Direbut" if hp <= 0 else "Serang"), func():
+			var my_power: int = model.combat_power()
 			var r: Dictionary = model.attack_fort(idx, Game.now())
-			if r["ok"]:
-				_pending_fort_hit = {"index": idx, "damage": r["damage"]}
-			return r, hp > 0 and not locked and attacks > 0, "", "GoldButton", false, "attack")
+			if not r["ok"]:
+				return r
+			_pending_fort_hit = {"index": idx, "damage": r["damage"]}
+			var plan: Dictionary = model.battle_plan(0.7 + float(hp % 23) / 100.0,
+				float(hp - int(r["damage"])) / maxi(1, hp), hp + idx)
+			_play_battle(plan, {"title": Data.WAR_FORTS[idx]["name"], "me_name": model.me_name(),
+				"them_name": model.war_enemy_def()["name"], "me_count": my_power, "them_count": hp,
+				"units": ["power", "hp"], "me_portrait": "lord", "them_portrait": "enemy_warlord",
+				"win": true, "headline": "DIREBUT!" if r["captured"] else "SERANGAN BERHASIL!",
+				"detail": r["msg"], "bg": "alliance"})
+			return null, hp > 0 and not locked and attacks > 0, "", "GoldButton", false, "attack")
 		b.custom_minimum_size = Vector2(130, 60)
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		if not _pending_fort_hit.is_empty() and _pending_fort_hit["index"] == i:
@@ -2936,8 +2904,19 @@ func _fill_tower() -> void:
 	_label(head, "Hadiah: %s" % _tower_reward_text(info), "SmallLabel").add_theme_color_override("font_color", UI.INK)
 	var left: int = model.tower_attempts_left(now)
 	var fight := _button(head, "Serang Lantai %d  (%d percobaan)" % [next, left], func():
+		var my_power: int = model.combat_power()
 		var r: Dictionary = model.tower_fight(Game.now())
-		return r, left > 0, "", "GoldButton", false, "win")
+		if not r.has("win"):
+			return r
+		# Sisa pasukan sebanding dengan selisih kekuatan kedua pihak.
+		var ratio := float(info["power"]) / maxi(1, my_power)
+		var plan: Dictionary = model.battle_plan(clampf(1.0 - 0.6 * ratio, 0.15, 0.95) if r["win"] else 0.0,
+			0.0 if r["win"] else clampf(1.0 - 0.6 / maxf(ratio, 0.01), 0.1, 0.9), next * 104729 + left)
+		_play_battle(plan, {"title": tr("Menara Ujian · Lantai %d") % next, "me_name": model.me_name(),
+			"them_name": tr("Penjaga Lantai %d") % next, "me_count": my_power, "them_count": info["power"],
+			"units": ["power", "power"], "me_portrait": "lord", "them_portrait": Data.ENEMIES[next % Data.ENEMIES.size()]["id"],
+			"win": r["win"], "detail": r["msg"], "bg": "campaign"}, _fill_tower)
+		return null, left > 0, "", "GoldButton", false, "win")
 	fight.custom_minimum_size.y = 84
 	_label(_tower_box, "Lantai minggu ini %d · rekor %d · percobaan hari ini %d / %d" % [
 		model.tower["floor"], model.tower["best"], left, Data.TOWER_ATTEMPTS + int(model.vip_perk("arena_tickets"))],
@@ -3603,6 +3582,8 @@ func _show_settings() -> void:
 	if not Notifier.available():
 		notif_desc += " (Hanya di Android dengan plugin TlgNotify.)"
 	_setting_toggle(device, "Notifikasi", "notifications", notif_desc)
+	_setting_toggle(device, "Lewati tayangan perang", "skip_battles",
+		"Langsung tampilkan hasil perang tanpa animasi. Hasil pertempuran tetap sama.")
 
 	var data := _inner_box(box)
 	_label(data, "Data", "CardLabel").add_theme_font_override("font", UI.font_bold)

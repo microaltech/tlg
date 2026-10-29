@@ -27,6 +27,7 @@ func _init() -> void:
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
 		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass", "test_offers", "test_achievements", "test_save_code",
+		"test_formation", "test_battle_plan",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1680,3 +1681,50 @@ func test_save_code() -> void:
 	check(Model.decode_save("bukan kode").is_empty(), "teks acak ditolak")
 	check(Model.decode_save(Model.SAVE_CODE_PREFIX + "AAAA").is_empty(), "kode rusak ditolak")
 	check(Model.decode_save(Model.encode_save({"a": 1})).is_empty(), "data bukan save ditolak")
+
+
+func test_formation() -> void:
+	var m := fresh()
+	var power := m.combat_power()
+	var losses := m.expected_losses()
+	check(not m.set_formation("acak")["ok"] and m.formation == "balanced", "formasi tak dikenal ditolak")
+	check(m.set_formation("assault")["ok"], "pilih formasi serbu")
+	check(m.combat_power() > power and m.expected_losses() > losses, "serbu: kekuatan & korban naik")
+	m.set_formation("defense")
+	check(m.combat_power() < power and m.expected_losses() < losses, "bertahan: kekuatan & korban turun")
+	var a := fresh()
+	var b := fresh()
+	a.set_formation("assault")
+	a.fight_stage()
+	b.fight_stage()
+	check(a.prestige > b.prestige, "serbu menambah prestise kampanye")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(m2.formation == "defense", "simpan/muat formasi")
+	var bad := m.to_dict()
+	bad["formation"] = "tidak_ada"
+	m2.from_dict(bad, 1000.0)
+	check(m2.formation == "balanced", "formasi rusak kembali ke seimbang")
+
+
+func test_battle_plan() -> void:
+	var m := fresh()
+	var seed_before := m.rng.state
+	var p := m.battle_plan(0.4, 0.0, 123)
+	check(m.rng.state == seed_before, "naskah perang tidak memakai RNG game")
+	check(p["me"].size() == 4 and p["them"].size() == 4, "3 ronde + keadaan awal")
+	check(p["me"][0] == 1.0 and is_equal_approx(p["me"][-1], 0.4) and p["them"][-1] == 0.0, "akhir sesuai hasil")
+	var mono := true
+	for k in range(1, 4):
+		mono = mono and p["me"][k] <= p["me"][k - 1] and p["them"][k] <= p["them"][k - 1]
+		mono = mono and p["me"][k] >= 0.4 and p["them"][k] >= 0.0
+	check(mono, "sisa pasukan tidak pernah bertambah atau melewati hasil akhir")
+	check(var_to_str(m.battle_plan(0.4, 0.0, 123)) == var_to_str(p), "naskah sama untuk kunci sama")
+	check(p["heroes"].size() == 2 and p["skills"].size() == 3, "penasihat dan jurus per ronde")
+	check(p["heroes"][0]["skill"] != "" and Data.counselor_def(p["heroes"][0]["id"]).size() > 0, "jurus bernama")
+	var lose := m.battle_plan(-1.0, 2.0, 5)
+	check(lose["me"][-1] == 0.0 and lose["them"][-1] == 1.0, "nilai di luar 0..1 dijepit")
+	var empty := Model.new()
+	empty.new_game(1000.0)
+	empty.counselors = {}
+	check(empty.battle_plan(0.5, 0.0, 1)["skills"].all(func(x): return x == -1), "tanpa penasihat tanpa jurus")

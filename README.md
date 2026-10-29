@@ -81,6 +81,14 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   menambah bintang (maks. 5, +20% atribut per bintang); setelah penuh menjadi
   perak. 6 penasihat (termasuk 2 Legenda) hanya bisa didapat lewat rekrut.
   Emas didapat dari kampanye (bonus tiap tahap ke-5) dan naik jabatan.
+- **Perang visual otomatis** — tahap besar kampanye (tiap tahap ke-5), Menara
+  Ujian, Arena, dan serangan benteng perang aliansi ditayangkan sebagai perang:
+  dua barisan prajurit saling menyerbu 3 ronde, tiga penasihat terkuat meneriakkan
+  jurusnya, korban berjatuhan sesuai hasil. Hasil dihitung model lebih dulu
+  (`GameModel.battle_plan` hanya membagi sisa pasukan per ronde), jadi tombol
+  Lewati dan Kecepatan ×2 tidak mengubah hasil. Pengaturan "Lewati tayangan
+  perang" menampilkan hasil langsung. Formasi (Seimbang, Serbu, Bertahan) dipilih
+  di halaman Kampanye dan memberi bonus kecil dengan kelemahan.
 - **Kampanye** — tahap tanpa batas yang dibuat prosedural. Kekuatan total
   menentukan berapa prajurit yang gugur. Menang memberi perak, prestise & emas serta
   membuka penasihat/selir baru.

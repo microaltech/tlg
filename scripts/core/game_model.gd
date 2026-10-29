@@ -176,7 +176,7 @@ func new_game(now: float) -> void:
 	prison = {"prisoners": [], "day": -1, "used": 0}
 	officials = []
 	banquet = {"held": {}, "invite_day": -1, "attended": []}
-	story = {"chapter": 0, "claimed": [], "seen": []}
+	story = {"chapter": 0, "claimed": [], "seen": [], "choices": {}}
 	_npc_cache = {}
 	_unlock_content()
 	ensure_daily(now)
@@ -336,7 +336,8 @@ func skill_bonus(effect: String) -> float:
 
 ## Kekuatan yang dipakai untuk pertarungan arena, bos aliansi, dan perang.
 func combat_power() -> int:
-	return int(power() * (1.0 + skill_bonus("combat")) * (1.0 + float(formation_def()["power"])))
+	return int(power() * (1.0 + skill_bonus("combat")) * (1.0 + float(formation_def()["power"]))
+		* (1.0 + story_bonus("combat")))
 
 
 # --- Formasi & rencana pertempuran ---------------------------------------------
@@ -411,7 +412,8 @@ func affair_yield(kind: String) -> int:
 	return int((int(a["base"]) + total_attr(a["attr"]) * int(a["per_point"])) * float(rank_info()["mult"])
 		* (1.0 + event_bonus("yield_" + kind) + alliance_bonus() + vip_perk("yield"))
 		* (1.0 + skill_bonus("yield_" + kind) + skill_bonus("yield_all") + officials_bonus() + honor_bonus()
-			+ building_bonus("yield_" + kind) + building_bonus("yield_all")))
+			+ building_bonus("yield_" + kind) + building_bonus("yield_all")
+			+ story_bonus("yield_" + kind) + story_bonus("yield_all")))
 
 
 func do_affair(kind: String, now: float) -> Dictionary:
@@ -531,7 +533,7 @@ func fight_stage() -> Dictionary:
 	loss_streak = 0
 	silver += int(info["reward_silver"])
 	var gained_prestige := int(int(info["reward_prestige"]) * (1.0 + skill_bonus("prestige"))
-		* (1.0 + float(formation_def()["prestige"])))
+		* (1.0 + float(formation_def()["prestige"]) + story_bonus("prestige")))
 	prestige += gained_prestige
 	gold += int(info["reward_gold"])
 	var stage_item := ""
@@ -2293,11 +2295,60 @@ func claim_quest(index: int) -> Dictionary:
 	return _ok("Misi utama selesai: %s." % text)
 
 
+## Pilihan cerita yang menunggu keputusan di bab ini ({} bila tidak ada / sudah dipilih).
+func story_choice_pending() -> Dictionary:
+	if story_done():
+		return {}
+	var ch: Dictionary = Data.STORY_CHOICES.get(int(story["chapter"]), {})
+	if ch.is_empty() or story["choices"].has(ch["id"]):
+		return {}
+	return ch
+
+
+func choose_story(option_id: String) -> Dictionary:
+	var ch := story_choice_pending()
+	if ch.is_empty():
+		return _fail("Tidak ada pilihan cerita saat ini.")
+	if story["claimed"].size() < story_quests().size():
+		return _fail("Selesaikan semua misi bab ini dulu.")
+	for o in ch["options"]:
+		if o["id"] == option_id:
+			story["choices"][ch["id"]] = option_id
+			var text := _give_rewards(o["reward"])
+			_track("story_choice")
+			changed.emit()
+			return _ok("%s %s." % [o["outcome"], text])
+	return _fail("Pilihan tidak dikenal.")
+
+
+## Bonus permanen dari pilihan cerita untuk suatu efek.
+func story_bonus(effect: String) -> float:
+	var total := 0.0
+	for ch in Data.STORY_CHOICES.values():
+		var picked: String = story["choices"].get(ch["id"], "")
+		for o in ch["options"]:
+			if o["id"] == picked:
+				total += float(o["effect"].get(effect, 0.0))
+	return total
+
+
+## Dialog bab sesuai pilihan cerita sebelumnya (baris "requires": "pilihan:opsi").
+func story_lines(chapter: int) -> Array:
+	return Data.STORY_CHAPTERS[chapter]["story"].filter(func(line):
+		var req: String = line.get("requires", "")
+		if req == "":
+			return true
+		var parts := req.split(":")
+		return story["choices"].get(parts[0], "") == parts[1])
+
+
 func claim_chapter() -> Dictionary:
 	if story_done():
 		return _fail("Semua bab sudah tamat.")
 	if story["claimed"].size() < story_quests().size():
 		return _fail("Selesaikan semua misi bab ini dulu.")
+	if not story_choice_pending().is_empty():
+		return _fail("Tentukan pilihan cerita bab ini dulu.")
 	var def := story_chapter_def()
 	var text := _give_rewards(def["reward"])
 	story["chapter"] = int(story["chapter"]) + 1
@@ -4073,7 +4124,13 @@ func from_dict(d: Dictionary, now: float) -> void:
 		if Data.ITEMS.has(str(id)) and int(d["inventory"][id]) > 0:
 			inventory[str(id)] = int(d["inventory"][id])
 	var src_story: Dictionary = d.get("story", {})
-	story = {"chapter": clampi(int(src_story.get("chapter", 0)), 0, Data.STORY_CHAPTERS.size()), "claimed": [], "seen": []}
+	story = {"chapter": clampi(int(src_story.get("chapter", 0)), 0, Data.STORY_CHAPTERS.size()), "claimed": [], "seen": [],
+		"choices": {}}
+	var src_choices: Dictionary = src_story.get("choices", {})
+	for ch in Data.STORY_CHOICES.values():
+		var picked := str(src_choices.get(ch["id"], ""))
+		if ch["options"].any(func(o): return o["id"] == picked):
+			story["choices"][ch["id"]] = picked
 	for k in ["claimed", "seen"]:
 		for v in src_story.get(k, []):
 			story[k].append(int(v))

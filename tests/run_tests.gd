@@ -27,7 +27,7 @@ func _init() -> void:
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
 		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass", "test_offers", "test_achievements", "test_save_code",
-		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses",
+		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses", "test_story_choices",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1265,6 +1265,8 @@ func test_story() -> void:
 	m.claim_quest(1)
 	m.claim_quest(2)
 	check(m.story_claimable() == 1, "hadiah bab siap")
+	check(not m.claim_chapter()["ok"] and m.story_choice_pending()["id"] == "begal", "pilihan cerita harus diambil dulu")
+	check(m.choose_story("ampuni")["ok"] and m.story["choices"]["begal"] == "ampuni", "ambil pilihan cerita")
 	gold = m.gold
 	check(m.claim_chapter()["ok"] and m.story["chapter"] == 1 and m.gold == gold + 100, "bab tamat, lanjut bab 2")
 	check(m.story_pending_dialog() == 1, "cerita bab 2 menunggu")
@@ -1557,6 +1559,7 @@ func test_honor() -> void:
 		m.add_equipment("keris_besi")
 	for i in 3:
 		m.claim_quest(i)
+	m.choose_story("rakyat")
 	var r := m.claim_chapter()
 	check(r["ok"] and "Patih" in r["msg"], "menamatkan bab 7 memberi gelar Patih")
 
@@ -1957,3 +1960,43 @@ func test_horses() -> void:
 	check(m2.horses.size() == 2 and m2.horses["kuda_jawa"]["level"] == Data.HORSE_MAX_LEVEL
 		and [m2.horses["kuda_jawa"]["rider"], m2.horses["kuda_sembrani"]["rider"]].count("arya") == 1,
 		"data rusak: satu penasihat satu kuda")
+
+
+func test_story_choices() -> void:
+	var m := fresh()
+	check(m.story_choice_pending()["id"] == "begal" and not m.choose_story("ampuni")["ok"], "pilihan setelah misi bab selesai")
+	m.story["claimed"] = [0, 1, 2]
+	check(not m.choose_story("kabur")["ok"], "pilihan tak dikenal")
+	var soldiers := m.soldiers
+	var base := m.affair_yield("soldiers")
+	check(m.choose_story("ampuni")["ok"] and m.soldiers == soldiers + 5000, "hadiah pilihan")
+	check(is_equal_approx(m.story_bonus("yield_soldiers"), 0.05) and m.affair_yield("soldiers") > base, "bonus permanen")
+	check(m.story_choice_pending().is_empty() and not m.choose_story("tumpas")["ok"], "pilihan tidak bisa diubah")
+	var lines := m.story_lines(1)
+	check(lines.any(func(l): return l.get("requires", "") == "begal:ampuni")
+		and not lines.any(func(l): return l.get("requires", "") == "begal:tumpas"), "dialog bab berikutnya sesuai pilihan")
+	check(m.story_lines(0).size() == Data.STORY_CHAPTERS[0]["story"].size(), "bab tanpa syarat utuh")
+	m.claim_chapter()
+	check(m.story["chapter"] == 1 and m.story_choice_pending().is_empty(), "bab 2 tanpa pilihan")
+	var power := m.combat_power()
+	m.story["chapter"] = 4
+	m.story["claimed"] = [0, 1, 2]
+	check(m.choose_story("serbu")["ok"] and m.combat_power() > power, "pilihan perang menambah kekuatan tempur")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(var_to_str(m2.story) == var_to_str(m.story), "simpan/muat pilihan cerita")
+	var bad := m.to_dict()
+	bad["story"]["choices"] = {"begal": "lari", "palsu": "x", "panglima": "serbu"}
+	m2.from_dict(bad, 1000.0)
+	check(m2.story["choices"] == {"panglima": "serbu"}, "pilihan rusak dibuang")
+	for chapter in Data.STORY_CHOICES:
+		var ch: Dictionary = Data.STORY_CHOICES[chapter]
+		check(chapter < Data.STORY_CHAPTERS.size() and ch["options"].size() == 2, "pilihan %s valid" % ch["id"])
+		for o in ch["options"]:
+			for k in o["effect"]:
+				check(Data.SKILL_EFFECT_NAMES.has(k), "efek %s punya nama" % k)
+			var follow := false
+			for c in Data.STORY_CHAPTERS:
+				for l in c["story"]:
+					follow = follow or l.get("requires", "") == "%s:%s" % [ch["id"], o["id"]]
+			check(follow, "ada dialog lanjutan untuk %s:%s" % [ch["id"], o["id"]])

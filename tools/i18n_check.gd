@@ -274,6 +274,9 @@ func _run_bot() -> void:
 				_msg(m.claim_event_tier(i), "event")
 			for i in m.story_quests().size():
 				_msg(m.claim_quest(i), "story")
+			var pending: Dictionary = m.story_choice_pending()
+			if not pending.is_empty():
+				_msg(m.choose_story(pending["options"][m.story["chapter"] % 2]["id"]), "story")
 			_msg(m.claim_chapter(), "story")
 			_msg(m.claim_lb_reward(), "lb")
 			_msg(m.claim_vip_daily(now), "vip")

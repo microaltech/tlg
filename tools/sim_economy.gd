@@ -243,6 +243,8 @@ func session(now: float) -> void:
 		m.claim_event_tier(idx)
 	for idx in m.story_quests().size():
 		m.claim_quest(idx)
+	if not m.story_choice_pending().is_empty() and m.story["claimed"].size() == m.story_quests().size():
+		m.choose_story(m.story_choice_pending()["options"][0]["id"])
 	m.claim_chapter()
 	gold_add(g, "misi/event/cerita")
 

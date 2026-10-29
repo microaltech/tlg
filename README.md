@@ -109,6 +109,11 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   Jawa dan Gayo (perak), Sandel dan Bima (emas), serta Kuda Sembrani bersayap.
   Kuda yang ditunggangi menambah semua atribut penunggangnya 4–12% (+1% per level,
   maks level 10); naik level dengan pakan (pangan).
+- **Cerita bercabang** — di akhir bab 1, 3, 5, dan 7 Tuan memilih jalan (mis.
+  mengampuni begal atau menghukumnya, berdamai dengan Panglima Lalim atau
+  menyerbu bentengnya). Tiap pilihan memberi hadiah berbeda, bonus permanen kecil
+  (hasil urusan, kekuatan tempur, atau prestise), dan dialog bab berikutnya
+  mengikuti pilihan itu. Keputusan yang sudah diambil tampil di panel cerita.
 - **Kampanye** — tahap tanpa batas yang dibuat prosedural. Kekuatan total
   menentukan berapa prajurit yang gugur. Menang memberi perak, prestise & emas serta
   membuka penasihat/selir baru.

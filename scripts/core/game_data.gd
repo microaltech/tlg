@@ -726,7 +726,11 @@ const STORY_CHAPTERS := [
 		], "reward": {"gold": 100, "items": {"recruit_ticket": 1}}},
 	{"title": "Tangan Besi", "story": [
 		{"speaker": "bayu", "text": "Kabar Tuan sampai ke kota kecamatan. Para pejabat menunggu bukti kepemimpinan Tuan."},
-		{"speaker": "sekar", "text": "Kumpulkan penasihat yang cakap dan buktikan diri di medan perang. Jabatan Camat menanti."}],
+		{"speaker": "sekar", "text": "Kumpulkan penasihat yang cakap dan buktikan diri di medan perang. Jabatan Camat menanti."},
+		{"speaker": "arya", "text": "Bekas begal yang Tuan ampuni kini berlatih keras di barak. Mereka bersumpah membalas budi.",
+			"requires": "begal:ampuni"},
+		{"speaker": "arya", "text": "Sejak hukuman di alun-alun, tak ada begal yang berani mendekati desa kita.",
+			"requires": "begal:tumpas"}],
 		"quests": [
 			{"type": "stage", "target": 5, "text": "Taklukkan Tahap 5", "reward": {"gold": 50}},
 			{"type": "counselors", "target": 4, "text": "Miliki 4 penasihat", "reward": {"silver": 5000}},
@@ -744,7 +748,11 @@ const STORY_CHAPTERS := [
 		], "reward": {"gold": 200, "items": {"recruit_ticket": 2}}},
 	{"title": "Panggung Bupati", "story": [
 		{"speaker": "dewi", "text": "Kabupaten ini butuh pemimpin yang disegani di arena dan didukung pejabat yang setia."},
-		{"speaker": "gajah", "text": "Para tuan dari seluruh negeri berlaga di arena. Tunjukkan kekuatan kita, Tuan!"}],
+		{"speaker": "gajah", "text": "Para tuan dari seluruh negeri berlaga di arena. Tunjukkan kekuatan kita, Tuan!"},
+		{"speaker": "ratna", "text": "Saudagar dari kadipaten sekutu membanjiri pasar kita. Kas negeri makin penuh.",
+			"requires": "jodoh:terima"},
+		{"speaker": "ratna", "text": "Adipati itu masih tersinggung, tetapi rakyat memuji Tuan yang tidak mudah dibeli.",
+			"requires": "jodoh:tolak"}],
 		"quests": [
 			{"type": "rank", "target": 2, "text": "Naik jabatan menjadi Bupati", "reward": {"gold": 100}},
 			{"type": "power", "target": 1000, "text": "Capai kekuatan 1.000", "reward": {"items": {"scroll_train": 3}}},
@@ -761,7 +769,11 @@ const STORY_CHAPTERS := [
 		], "reward": {"gold": 400, "items": {"recruit_ticket": 3}}},
 	{"title": "Menuju Istana Raja", "story": [
 		{"speaker": "resi", "text": "Negeri ini menanti pemimpin yang bijak. Jalan menuju istana raja terbuka bagi Tuan."},
-		{"speaker": "kedaton", "text": "Buktikan bahwa Tuan layak menjadi tangan kanan raja: Perdana Menteri negeri ini."}],
+		{"speaker": "kedaton", "text": "Buktikan bahwa Tuan layak menjadi tangan kanan raja: Perdana Menteri negeri ini."},
+		{"speaker": "bayu", "text": "Bekas pengikut Panglima Lalim kini menggarap sawah di perbatasan. Lumbung kita melimpah.",
+			"requires": "panglima:damai"},
+		{"speaker": "satria", "text": "Kabar runtuhnya benteng Panglima Lalim membuat para pemberontak lain gemetar.",
+			"requires": "panglima:serbu"}],
 		"quests": [
 			{"type": "stage", "target": 40, "text": "Taklukkan Tahap 40", "reward": {"gold": 200}},
 			{"type": "power", "target": 10000, "text": "Capai kekuatan 10.000", "reward": {"items": {"star_stone": 2}}},
@@ -777,7 +789,11 @@ const STORY_CHAPTERS := [
 		], "reward": {"gold": 1200, "items": {"recruit_ticket": 5}}},
 	{"title": "Sumpah Mahapatih", "story": [
 		{"speaker": "lord", "text": "Aku bersumpah tidak akan beristirahat sebelum seluruh Nusantara bersatu!"},
-		{"speaker": "gajah", "text": "Sumpah Tuan menggetarkan para raja. Mari kita wujudkan bersama, Mahapatih!"}],
+		{"speaker": "gajah", "text": "Sumpah Tuan menggetarkan para raja. Mari kita wujudkan bersama, Mahapatih!"},
+		{"speaker": "sekar", "text": "Rakyat yang menerima harta karun itu menyebut nama Tuan dalam doa mereka.",
+			"requires": "harta:rakyat"},
+		{"speaker": "tantular", "text": "Pusaka yang ditempa dari harta raja lama kini bersinar di tangan para penasihat Tuan.",
+			"requires": "harta:pusaka"}],
 		"quests": [
 			{"type": "stage", "target": 65, "text": "Taklukkan Tahap 65", "reward": {"gold": 400}},
 			{"type": "tower", "target": 25, "text": "Capai lantai 25 Menara Ujian", "reward": {"items": {"star_stone": 3}}},
@@ -785,6 +801,43 @@ const STORY_CHAPTERS := [
 			{"type": "equip_level", "target": 6, "text": "Tingkatkan satu pusaka ke +5", "reward": {"silver": 300000}},
 		], "reward": {"gold": 2000, "items": {"star_stone": 5, "recruit_ticket": 10}}},
 ]
+## Pilihan cerita di akhir bab (kunci: indeks bab). Tiap pilihan memberi hadiah dan
+## bonus permanen kecil ("effect": {efek: nilai}); bab berikutnya punya dialog sesuai pilihan.
+## Efek: yield_silver/grain/soldiers/all (hasil urusan), combat (kekuatan tempur), prestige.
+const STORY_CHOICES := {
+	0: {"id": "begal", "speaker": "sekar",
+		"prompt": "Para begal yang tertangkap berlutut memohon ampun. Apa keputusan Tuan?",
+		"options": [
+			{"id": "tumpas", "text": "Hukum mereka di alun-alun", "reward": {"gold": 50}, "effect": {"prestige": 0.03},
+				"outcome": "Keadilan ditegakkan di depan rakyat. Nama Tuan mulai disegani."},
+			{"id": "ampuni", "text": "Ampuni dan jadikan prajurit", "reward": {"soldiers": 5000},
+				"effect": {"yield_soldiers": 0.05}, "outcome": "Bekas begal itu bersumpah setia dan menjadi barisan terdepan Tuan."},
+		]},
+	2: {"id": "jodoh", "speaker": "ratna",
+		"prompt": "Seorang adipati menawarkan persekutuan lewat perjodohan keluarga. Bagaimana jawaban Tuan?",
+		"options": [
+			{"id": "terima", "text": "Terima persekutuan dagang", "reward": {"silver": 20000}, "effect": {"yield_silver": 0.05},
+				"outcome": "Kafilah dagang adipati mulai singgah di pasar Tuan."},
+			{"id": "tolak", "text": "Tolak dengan hormat, tetap mandiri", "reward": {"gold": 100}, "effect": {"combat": 0.03},
+				"outcome": "Pasukan Tuan bangga melayani pemimpin yang tidak tunduk kepada siapa pun."},
+		]},
+	4: {"id": "panglima", "speaker": "enemy_warlord",
+		"prompt": "Cukup! Aku menyerah... Biarkan pasukanku hidup, dan mereka akan menggarap tanah Tuan.",
+		"options": [
+			{"id": "damai", "text": "Terima penyerahan, bangun perdamaian", "reward": {"grain": 50000},
+				"effect": {"yield_grain": 0.05}, "outcome": "Bekas pemberontak meletakkan senjata dan mengangkat cangkul."},
+			{"id": "serbu", "text": "Serbu bentengnya sampai tuntas", "reward": {"gold": 200, "items": {"star_stone": 1}},
+				"effect": {"combat": 0.05}, "outcome": "Benteng Panglima Lalim rata dengan tanah. Tak ada lagi yang berani melawan."},
+		]},
+	6: {"id": "harta", "speaker": "tantular",
+		"prompt": "Di bawah keraton lama ditemukan harta karun raja terdahulu. Untuk apa harta ini, Tuan?",
+		"options": [
+			{"id": "rakyat", "text": "Bagikan kepada rakyat", "reward": {"silver": 200000}, "effect": {"yield_all": 0.03},
+				"outcome": "Rakyat bersuka cita. Mereka bekerja lebih giat untuk negeri."},
+			{"id": "pusaka", "text": "Tempa menjadi pusaka", "reward": {"items": {"star_stone": 3}}, "effect": {"combat": 0.04},
+				"outcome": "Para empu menempa harta itu menjadi pusaka yang bertuah."},
+		]},
+}
 ## Gelar kehormatan setelah menamatkan bab tertentu (jumlah bab tamat) dan bonus
 ## semua hasil urusan kota. Gelar tertinggi menggantikan nama jabatan di header.
 const HONOR_TITLES := [

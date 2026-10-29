@@ -2506,14 +2506,110 @@ func _fill_story() -> void:
 	var reward := _inner_box(_story_box)
 	reward.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))
 	_label(reward, "Hadiah tamat bab: " + _reward_text(def["reward"]), "CardLabel").add_theme_font_override("font", UI.font_bold)
-	_button(reward, "Tamatkan Bab", func(): return model.claim_chapter(), all_claimed, "chest", "GoldButton", false,
-		"promote").add_theme_font_size_override("font_size", 24)
+	var choice: Dictionary = model.story_choice_pending()
+	if not choice.is_empty():
+		_label(reward, "Di akhir bab ini Tuan harus mengambil keputusan penting.", "SmallLabel") \
+			.add_theme_color_override("font_color", Color("8e44ad"))
+		_button(reward, "Tentukan Pilihan", func():
+			_show_story_choice()
+			return null, all_claimed, "chest", "GoldButton").add_theme_font_size_override("font_size", 24)
+	else:
+		_button(reward, "Tamatkan Bab", func(): return model.claim_chapter(), all_claimed, "chest", "GoldButton", false,
+			"promote").add_theme_font_size_override("font_size", 24)
+	_build_story_decisions(_story_box)
+
+
+## Daftar keputusan cerita yang sudah diambil beserta bonusnya.
+func _build_story_decisions(box: VBoxContainer) -> void:
+	var made := []
+	for chapter in Data.STORY_CHOICES:
+		var ch: Dictionary = Data.STORY_CHOICES[chapter]
+		var picked: String = model.story["choices"].get(ch["id"], "")
+		for o in ch["options"]:
+			if o["id"] == picked:
+				made.append([chapter, o])
+	if made.is_empty():
+		return
+	_label(box, "Keputusan Tuan", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	for entry in made:
+		var o: Dictionary = entry[1]
+		var inner := _inner_box(box)
+		_label(inner, "Bab %d: %s" % [entry[0] + 1, o["text"]], "CardLabel")
+		_label(inner, _story_effect_text(o["effect"]), "SmallLabel").add_theme_color_override("font_color", Color("6c3483"))
+
+
+static func _story_effect_text(effect: Dictionary) -> String:
+	var parts := []
+	for k in effect:
+		parts.append(Data.SKILL_EFFECT_NAMES[k] % roundi(float(effect[k]) * 100))
+	return ", ".join(parts)
+
+
+## Dialog keputusan cerita: pembicara mengajukan pertanyaan, dua pilihan dengan
+## hadiah dan bonus permanen. Memilih langsung menamatkan bab.
+func _show_story_choice() -> void:
+	var ch: Dictionary = model.story_choice_pending()
+	if ch.is_empty():
+		return
+	var overlay := Control.new()
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.add_to_group("modal")
+	add_child(overlay)
+	move_child(overlay, _toast.get_index())
+	var dim := ColorRect.new()
+	dim.color = Color(0.03, 0.01, 0.02, 0.85)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(dim)
+	var v := VBoxContainer.new()
+	v.position = Vector2(30, 140)
+	v.custom_minimum_size.x = size.x - 60
+	v.add_theme_constant_override("separation", 14)
+	overlay.add_child(v)
+	var title := _label(v, "Keputusan Tuan", "TitleLabel")
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var pic := _tex(Art.portrait(ch["speaker"]), 240)
+	pic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	v.add_child(pic)
+	var panel := PanelContainer.new()
+	v.add_child(panel)
+	var pv := VBoxContainer.new()
+	pv.add_theme_constant_override("separation", 8)
+	panel.add_child(pv)
+	var sp: String = ch["speaker"]
+	var who: String = Data.STORY_SPEAKER_NAMES.get(sp, Data.counselor_def(sp).get("name", Data.beauty_def(sp).get("name", sp)))
+	_label(pv, who, "CardTitle")
+	_label(pv, ch["prompt"], "CardLabel").add_theme_font_size_override("font_size", 26)
+	for o in ch["options"]:
+		var opt: Dictionary = o
+		var b := Button.new()
+		b.theme_type_variation = "GoldButton"
+		b.custom_minimum_size = Vector2(0, 120)
+		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		b.text = "%s\n%s · %s" % [opt["text"], _story_effect_text(opt["effect"]), _reward_text(opt["reward"])]
+		b.add_theme_font_size_override("font_size", 22)
+		b.pressed.connect(func():
+			var r: Dictionary = model.choose_story(opt["id"])
+			if r["ok"]:
+				var done: Dictionary = model.claim_chapter()
+				r["msg"] = "%s %s" % [r["msg"], done["msg"]]
+				Audio.play("promote")
+			else:
+				Audio.play("error")
+			_show(r)
+			overlay.queue_free())
+		v.add_child(b)
+	var later := _button(v, "Nanti saja", func():
+		overlay.queue_free()
+		return null)
+	later.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	later.custom_minimum_size.x = 260
 
 
 ## Dialog cerita bab: potret pembicara dan teks, maju dengan tombol Lanjut.
 func _show_story_dialog(chapter: int) -> void:
 	model.mark_story_seen(chapter)
-	var lines: Array = Data.STORY_CHAPTERS[chapter]["story"]
+	var lines: Array = model.story_lines(chapter)
 	var overlay := Control.new()
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP

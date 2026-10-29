@@ -36,7 +36,7 @@ func _ready() -> void:
 		battle_speed = 2 if int(cfg.get_value("battle", "speed", 1)) == 2 else 1
 		skip_battles = bool(cfg.get_value("battle", "skip", false))
 		server_url = str(cfg.get_value("online", "url", ""))
-		simple_login = bool(cfg.get_value("device", "simple_login", false))
+		simple_login = bool(cfg.get_value("device", "simple_login_v2", false))
 	_apply_power()
 
 
@@ -59,7 +59,7 @@ func save() -> void:
 	cfg.set_value("battle", "speed", battle_speed)
 	cfg.set_value("battle", "skip", skip_battles)
 	cfg.set_value("online", "url", server_url)
-	cfg.set_value("device", "simple_login", simple_login)
+	cfg.set_value("device", "simple_login_v2", simple_login)
 	cfg.save(PATH)
 
 

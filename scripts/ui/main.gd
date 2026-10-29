@@ -8,6 +8,7 @@ const UI := preload("res://scripts/ui/ui_theme.gd")
 const TutorialLayer := preload("res://scripts/ui/tutorial_layer.gd")
 const BattleView := preload("res://scripts/ui/battle_view.gd")
 const DuelView := preload("res://scripts/ui/duel_view.gd")
+const LoginGrid := preload("res://scripts/ui/login_grid.gd")
 
 const PAGES := [
 	{"key": "city", "title": "Kota", "icon": "tab_city", "bg": "city"},
@@ -5314,6 +5315,8 @@ func _show_settings() -> void:
 	if not Notifier.available():
 		notif_desc += " (Hanya di Android dengan plugin TlgNotify.)"
 	_setting_toggle(device, "Notifikasi", "notifications", notif_desc)
+	_setting_toggle(device, "Kalender login teks", "simple_login",
+		"Tampilkan hadiah login sebagai daftar teks. Nyala otomatis bila kalender bergambar membuat game berhenti.")
 	_setting_toggle(device, "Lewati tayangan perang", "skip_battles",
 		"Langsung tampilkan hasil perang tanpa animasi. Hasil pertempuran tetap sama.")
 
@@ -5665,13 +5668,22 @@ func _fill_login() -> void:
 			line.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # sudah diterjemahkan per bagian
 			if state == "hari ini":
 				line.add_theme_font_override("font", UI.font_bold)
-	var rows := [[0, 1, 2, 3], [4, 5, 6]] if not Settings.simple_login else []
-	for row_days in rows:
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 8)
-		_login_box.add_child(row)
-		for i in row_days:
-			row.add_child(_login_cell(i, i < claimed, can and i == today - 1))
+	else:
+		Telemetry.mark("login: mode gambar")
+		var grid := LoginGrid.new()
+		for i in Data.LOGIN_REWARDS.size():
+			var def: Dictionary = Data.LOGIN_REWARDS[i]
+			var main_key := "gold"
+			for key in Data.REWARD_KEYS:
+				if def.has(key):
+					main_key = key
+					break
+			var big := i == Data.LOGIN_REWARDS.size() - 1
+			grid.days.append({"title": tr("Hari %d" % (i + 1)), "big": big,
+				"icon": Art.icon("chest" if big else main_key),
+				"lines": Array(_reward_text(def).split(", ")).map(func(t): return tr(t)),
+				"claimed": i < claimed, "today": can and i == today - 1})
+		_login_box.add_child(grid)
 
 	if can:
 		var day7: bool = today == Data.LOGIN_REWARDS.size()
@@ -5682,50 +5694,6 @@ func _fill_login() -> void:
 		_login_next_label = _label(_login_box, "", "CardLabel")
 		_login_next_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_login_next_label.add_theme_font_override("font", UI.font_bold)
-
-
-func _login_cell(i: int, claimed: bool, is_today: bool) -> Control:
-	var def: Dictionary = Data.LOGIN_REWARDS[i]
-	var big := i == Data.LOGIN_REWARDS.size() - 1
-	var bg := Color("fff3c8") if is_today else (Color("e2cfa6") if claimed else Color(1, 1, 1, 0.45))
-	var style := UI.box(bg, UI.GOLD if is_today else UI.GOLD_DARK, 4 if is_today else 2, 12)
-	style.set_content_margin_all(8)
-	var cell := PanelContainer.new()
-	cell.add_theme_stylebox_override("panel", style)
-	cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cell.size_flags_stretch_ratio = 2.0 if big else 1.0
-	var v := VBoxContainer.new()
-	v.alignment = BoxContainer.ALIGNMENT_CENTER
-	v.add_theme_constant_override("separation", 2)
-	cell.add_child(v)
-	var title := _label(v, "Hari %d" % (i + 1), "CardLabel")
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_override("font", UI.font_bold)
-
-	var side := 78.0 if big else 58.0
-	var holder := Control.new()
-	holder.custom_minimum_size = Vector2(side, side)
-	holder.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	v.add_child(holder)
-	var main_key := "gold"
-	for key in Data.REWARD_KEYS:
-		if def.has(key):
-			main_key = key
-			break
-	var icon := _tex(Art.icon("chest" if big else main_key), side)
-	if claimed:
-		icon.modulate = Color(1, 1, 1, 0.45)
-	holder.add_child(icon)
-	if claimed:
-		var tick := _tex(Art.icon("check"), side * 0.6)
-		tick.position = Vector2(side * 0.45, side * 0.4)
-		holder.add_child(tick)
-
-	var reward := _label(v, _reward_text(def).replace(", ", "\n"), "SmallLabel")
-	reward.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	reward.add_theme_color_override("font_color", UI.INK)
-	reward.add_theme_font_size_override("font_size", 16)
-	return cell
 
 
 # --- Rekrut (gacha) -------------------------------------------------------

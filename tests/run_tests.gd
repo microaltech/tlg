@@ -1821,6 +1821,19 @@ func test_cosmetics() -> void:
 	bad["cosmetics"] = {"owned": ["tidak_ada"], "frame": "costume_zirah", "costume": "frame_kayu"}
 	m2.from_dict(bad, 1000.0)
 	check(m2.cosmetics["frame"] == "frame_kayu" and m2.cosmetics["costume"] == "costume_lord", "data kosmetik rusak diabaikan")
+	var got_signal := []
+	m.cosmetic_unlocked.connect(func(id): got_signal.append(id))
+	var r := m.grant_purchase("costume_raja", "tok-raja", 1000.0)
+	check(r["ok"] and m.owns_cosmetic("costume_raja") and m.lord_portrait() == "lord_raja", "beli Busana Raja")
+	check(got_signal == ["costume_raja"], "sinyal kosmetik baru")
+	check(not m.grant_purchase("costume_raja", "tok-raja-2", 1000.0)["ok"], "Busana Raja tidak bisa dibeli dua kali")
+	m.vip["points"] = 100000
+	m.sync(1000.0)
+	check(m.owns_cosmetic("frame_vip"), "bingkai VIP terbuka otomatis saat sinkron")
+	for id in Data.COSMETICS:
+		var c: Dictionary = Data.COSMETICS[id]
+		check(c["type"] in ["frame", "costume"] and (c["type"] == "frame") == c.has("colors"), "kosmetik %s valid" % id)
+		check(id in Data.COSMETIC_ORDER, "kosmetik %s ada di urutan" % id)
 
 
 func test_buildings() -> void:

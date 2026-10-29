@@ -107,6 +107,11 @@ var _exp_timers: Array = []  ## [{label, bar, index, total}]
 var _stable_overlay: Control
 var _stable_box: VBoxContainer
 var _horse_pick := ""  ## kuda yang sedang menunggu pilihan penunggang
+var _avatar_pic: TextureRect
+var _avatar_frame: Panel
+var _avatar_key := ""  ## kostum+bingkai yang sedang tampil di avatar header
+var _profile_overlay: Control
+var _profile_box: VBoxContainer
 var _build_timer := {}  ## {label, bar, rush, total} untuk pembangunan yang berjalan
 var _fest_box: VBoxContainer
 var _tower_box: VBoxContainer
@@ -186,6 +191,11 @@ func _ready() -> void:
 			return
 		_confirm("Ganti progres sekarang dengan save dari Google Play?", "Pulihkan",
 			func(): _show(Game.import_code(data))))
+	model.cosmetic_unlocked.connect(func(id):
+		if _startup_prompted:
+			Audio.play("reveal_sr")
+			_show({"ok": true, "msg": tr("Kosmetik baru: %s!") % tr(Data.COSMETICS[id]["name"])})
+		_queue_rebuild())
 	model.achievement_reached.connect(func(id, tier):
 		for a in Data.ACHIEVEMENTS:
 			if a["id"] == id and _startup_prompted:
@@ -640,6 +650,9 @@ func _rebuild() -> void:
 		_fill_expeditions()
 	if is_instance_valid(_stable_overlay):
 		_fill_stable()
+	if is_instance_valid(_profile_overlay):
+		_fill_profile()
+	_update_avatar()
 	if is_instance_valid(_pass_overlay):
 		_fill_pass()
 	if is_instance_valid(_offer_overlay):
@@ -1060,6 +1073,7 @@ func _build_campaign(page: Dictionary) -> void:
 		vs.position = Vector2(296, 60)
 		banner.add_child(vs)
 	_vs_enemy.texture = Art.portrait(info["enemy_id"])
+	_vs_lord.texture = Art.portrait(model.lord_portrait())
 
 	var box: VBoxContainer = page["content"]
 	_clear(box)
@@ -1150,7 +1164,7 @@ func _attack():
 			float(enemy_after) / maxi(1, enemy_total), model.stage * 7919 + mine_before)
 		_play_battle(plan, {"title": tr("Tahap Besar · %s") % tr(info["name"]), "me_name": model.me_name(),
 			"them_name": info["enemy_name"], "me_count": mine_before, "them_count": enemy_total,
-			"me_portrait": "lord", "them_portrait": info["enemy_id"], "win": win, "detail": result["msg"],
+			"me_portrait": model.lord_portrait(), "them_portrait": info["enemy_id"], "win": win, "detail": result["msg"],
 			"bg": "campaign"})
 		return null
 	_battling = true
@@ -1887,7 +1901,7 @@ func _show_arena_battle(r: Dictionary) -> void:
 	var win: bool = r["win"]
 	_play_battle(plan, {"title": "Arena", "me_name": model.me_name(), "them_name": opp["name"],
 		"me_count": model.combat_power(), "them_count": opp["power"], "units": ["power", "power"],
-		"me_portrait": "lord", "them_portrait": opp["avatar"], "win": win, "bg": "arena",
+		"me_portrait": model.lord_portrait(), "them_portrait": opp["avatar"], "win": win, "bg": "arena",
 		"detail": "%+d poin arena · +%d koin arena%s" % [r["delta"], r["coins"],
 			" · +%d perak" % Data.ARENA_WIN["silver"] if win else ""]})
 
@@ -2191,7 +2205,7 @@ func _build_alliance_war(box: VBoxContainer, now: float) -> void:
 				float(hp - int(r["damage"])) / maxi(1, hp), hp + idx)
 			_play_battle(plan, {"title": Data.WAR_FORTS[idx]["name"], "me_name": model.me_name(),
 				"them_name": model.war_enemy_def()["name"], "me_count": my_power, "them_count": hp,
-				"units": ["power", "hp"], "me_portrait": "lord", "them_portrait": "enemy_warlord",
+				"units": ["power", "hp"], "me_portrait": model.lord_portrait(), "them_portrait": "enemy_warlord",
 				"win": true, "headline": "DIREBUT!" if r["captured"] else "SERANGAN BERHASIL!",
 				"detail": r["msg"], "bg": "alliance"})
 			return null, hp > 0 and not locked and attacks > 0, "", "GoldButton", false, "attack")
@@ -2343,7 +2357,7 @@ func _chat_bubble(m: Dictionary) -> Control:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	row.alignment = BoxContainer.ALIGNMENT_END if me else BoxContainer.ALIGNMENT_BEGIN
-	var avatar := _tex(Art.portrait("lord" if me else m.get("avatar", "arya")), 56)
+	var avatar := _tex(Art.portrait(model.lord_portrait() if me else m.get("avatar", "arya")), 56)
 	avatar.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 2)
@@ -2655,7 +2669,7 @@ func _show_story_dialog(chapter: int) -> void:
 	var show_line := func():
 		var line: Dictionary = lines[state["i"]]
 		var sp: String = line["speaker"]
-		pic.texture = Art.portrait(sp)
+		pic.texture = Art.portrait(model.lord_portrait() if sp == "lord" else sp)
 		var who: String = Data.STORY_SPEAKER_NAMES.get(sp, "")
 		if who == "":
 			who = Data.counselor_def(sp).get("name", Data.beauty_def(sp).get("name", sp))
@@ -3272,7 +3286,7 @@ func _fill_tower() -> void:
 			0.0 if r["win"] else clampf(1.0 - 0.6 / maxf(ratio, 0.01), 0.1, 0.9), next * 104729 + left)
 		_play_battle(plan, {"title": tr("Menara Ujian · Lantai %d") % next, "me_name": model.me_name(),
 			"them_name": tr("Penjaga Lantai %d") % next, "me_count": my_power, "them_count": info["power"],
-			"units": ["power", "power"], "me_portrait": "lord", "them_portrait": Data.ENEMIES[next % Data.ENEMIES.size()]["id"],
+			"units": ["power", "power"], "me_portrait": model.lord_portrait(), "them_portrait": Data.ENEMIES[next % Data.ENEMIES.size()]["id"],
 			"win": r["win"], "detail": r["msg"], "bg": "campaign"}, _fill_tower)
 		return null, left > 0, "", "GoldButton", false, "win")
 	fight.custom_minimum_size.y = 84
@@ -3829,11 +3843,18 @@ func _build_avatar() -> Control:
 	b.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	b.pressed.connect(func():
 		Audio.play("click")
-		_show_vip())
+		_show_profile())
 	holder.add_child(b)
-	var pic := _tex(Art.portrait("lord"), 104)
+	var pic := _tex(Art.portrait(model.lord_portrait()), 104)
 	pic.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	holder.add_child(pic)
+	_avatar_pic = pic
+	# Bingkai profil digambar di atas potret (hanya garis tepi).
+	_avatar_frame = Panel.new()
+	_avatar_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_avatar_frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	holder.add_child(_avatar_frame)
+	_update_avatar()
 	var tag := PanelContainer.new()
 	var st := UI.box(Color("c0392b"), UI.GOLD, 2, 10)
 	st.content_margin_left = 8
@@ -3851,6 +3872,146 @@ func _build_avatar() -> Control:
 	holder.add_child(tag)
 	_vip_badge = _badge(holder, Vector2(82, -4))
 	return holder
+
+
+## Perbarui potret kostum dan bingkai avatar header bila berubah.
+func _update_avatar() -> void:
+	var key: String = model.lord_portrait() + "|" + str(model.cosmetics.get("frame", ""))
+	if key == _avatar_key or not is_instance_valid(_avatar_pic):
+		return
+	_avatar_key = key
+	_avatar_pic.texture = Art.portrait(model.lord_portrait())
+	var colors: Array = model.frame_colors()
+	var st := StyleBoxFlat.new()
+	st.draw_center = false
+	st.border_color = Color(colors[0])
+	st.set_border_width_all(6)
+	st.set_corner_radius_all(14)
+	st.expand_margin_left = 2
+	st.expand_margin_right = 2
+	st.expand_margin_top = 2
+	st.expand_margin_bottom = 2
+	_avatar_frame.add_theme_stylebox_override("panel", st)
+	var inner: Panel = _avatar_frame.get_child(0) if _avatar_frame.get_child_count() > 0 else null
+	if inner == null:
+		inner = Panel.new()
+		inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		inner.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		_avatar_frame.add_child(inner)
+	var st2 := StyleBoxFlat.new()
+	st2.draw_center = false
+	st2.border_color = Color(colors[1])
+	st2.set_border_width_all(2)
+	st2.set_corner_radius_all(10)
+	st2.expand_margin_left = -6
+	st2.expand_margin_right = -6
+	st2.expand_margin_top = -6
+	st2.expand_margin_bottom = -6
+	inner.add_theme_stylebox_override("panel", st2)
+
+
+# --- Profil & kosmetik ------------------------------------------------------------
+
+func _show_profile() -> void:
+	if is_instance_valid(_profile_overlay):
+		return
+	var p := _open_panel("Profil", "frame", _close_profile)
+	_profile_overlay = p["overlay"]
+	_profile_box = p["content"]
+	p["subtitle"].text = "Bingkai dan busana hanya mengubah tampilan, tidak menambah kekuatan."
+	_fill_profile()
+
+
+func _close_profile() -> void:
+	if is_instance_valid(_profile_overlay):
+		Audio.play("click")
+		_profile_overlay.queue_free()
+	_profile_overlay = null
+
+
+## Cara mendapatkan kosmetik yang belum dimiliki.
+func _cosmetic_source(def: Dictionary) -> String:
+	var u := str(def.get("unlock", ""))
+	if u.begins_with("rank:"):
+		return "Hadiah jabatan %s" % Data.RANKS[int(u.substr(5))]["name"]
+	if u.begins_with("vip:"):
+		return "Hadiah VIP %d" % int(u.substr(4))
+	if u.begins_with("stage:"):
+		return "Hadiah menang Tahap %d" % int(u.substr(6))
+	if u.begins_with("festival:"):
+		for f in Data.FESTIVALS:
+			if f["id"] == u.substr(9):
+				return "Toko festival %s" % f["name"]
+	if def.has("iap"):
+		return "Toko"
+	return ""
+
+
+func _fill_profile() -> void:
+	_clear(_profile_box)
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 16)
+	_inner_box(_profile_box).add_child(head)
+	head.add_child(_frame_preview(model.frame_colors(), 140))
+	var col := _col(head)
+	var n := _label(col, model.me_name(), "CardTitle")
+	n.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_label(col, model.rank_info()["name"], "CardLabel")
+	_label(col, tr("Kekuatan %s", "power") % _num(model.power()), "SmallLabel").add_theme_color_override("font_color", UI.INK)
+	var vip := _button(col, "VIP %d · Lihat Hak VIP" % model.vip_level(), func():
+		_close_profile()
+		_show_vip()
+		return null, true, "vip", "GoldButton" if model.vip_daily_can_claim(Game.now()) else "GreenButton")
+	vip.custom_minimum_size.y = 60
+	for section in [["frame", "Bingkai Profil"], ["costume", "Busana Tuan"]]:
+		_label(_profile_box, section[1], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		var grid := GridContainer.new()
+		grid.columns = 2
+		grid.add_theme_constant_override("h_separation", 10)
+		grid.add_theme_constant_override("v_separation", 10)
+		_profile_box.add_child(grid)
+		for id in Data.COSMETIC_ORDER:
+			var def: Dictionary = Data.COSMETICS[id]
+			if def["type"] != section[0]:
+				continue
+			var cell := _inner_box(grid)
+			cell.get_parent().size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			cell.alignment = BoxContainer.ALIGNMENT_CENTER
+			var owned: bool = model.owns_cosmetic(id)
+			var preview: Control
+			if def["type"] == "frame":
+				preview = _frame_preview(def["colors"], 110)
+			else:
+				preview = _frame_preview(model.frame_colors(), 110, def["portrait"])
+			preview.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			if not owned:
+				preview.modulate = Color(0.6, 0.6, 0.6)
+			cell.add_child(preview)
+			var name_l := _label(cell, def["name"], "CardLabel")
+			name_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			name_l.add_theme_font_override("font", UI.font_bold)
+			var cid: String = id
+			var worn: bool = model.cosmetics.get(def["type"], "") == id
+			var b: Button
+			if owned:
+				b = _button(cell, "Dipakai" if worn else "Pakai", func(): return model.wear_cosmetic(cid), not worn,
+					"", "" if worn else "GreenButton", false, "upgrade")
+			elif int(def.get("gold", 0)) > 0:
+				var ok: bool = model.gold >= int(def["gold"])
+				b = _button(cell, "%d" % def["gold"], func(): return model.buy_cosmetic(cid), ok, "gold",
+					"GoldButton" if ok else "", false, "coin")
+			elif def.has("iap"):
+				var iap: String = def["iap"]
+				b = _button(cell, Store.price_text(iap), func():
+					_buy(iap)
+					return null, Store.available(), "", "GoldButton")
+			else:
+				var src := _label(cell, _cosmetic_source(def), "SmallLabel")
+				src.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+				src.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+				src.add_theme_color_override("font_color", UI.INK)
+				continue
+			b.custom_minimum_size = Vector2(0, 56)
 
 
 func _show_vip() -> void:

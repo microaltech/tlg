@@ -12,6 +12,8 @@ signal tracked(event: String)
 signal offer_created(offer: Dictionary)
 ## Tingkat pencapaian baru tercapai (untuk Google Play Games & notifikasi UI).
 signal achievement_reached(id: String, tier: int)
+## Kosmetik baru terbuka (dari jabatan, VIP, tahap, festival, atau pembelian).
+signal cosmetic_unlocked(id: String)
 
 const Data := preload("res://scripts/core/game_data.gd")
 
@@ -232,6 +234,7 @@ func sync(now: float) -> void:
 	var weekly_reset := ensure_weekly(now)
 	ensure_leaderboard(now)
 	ensure_festival(now)
+	check_cosmetic_unlocks()
 	var alliance_changed := _alliance_rollover(now)
 	alliance_changed = ensure_war(now) or alliance_changed
 	if ensure_arena(now) or alliance_changed or weekly_reset or daily_reset or built:
@@ -1886,6 +1889,12 @@ func grant_purchase(id: String, token: String, now: float) -> Dictionary:
 				return _fail("Tiket Musim Premium musim ini sudah aktif.")
 			season_pass["premium"] = true
 			parts.append("Tiket Musim Premium aktif")
+		"cosmetic":
+			if owns_cosmetic(def["cosmetic"]):
+				return _fail("%s sudah dimiliki." % def["name"])
+			unlock_cosmetic(def["cosmetic"])
+			wear_cosmetic(def["cosmetic"])
+			parts.append("%s dipakai" % Data.COSMETICS[def["cosmetic"]]["name"])
 		"once":
 			if iap_owned(id):
 				return _fail("%s hanya bisa dibeli sekali." % def["name"])
@@ -2317,7 +2326,8 @@ func choose_story(option_id: String) -> Dictionary:
 			var text := _give_rewards(o["reward"])
 			_track("story_choice")
 			changed.emit()
-			return _ok("%s %s." % [o["outcome"], text])
+			# Dua kalimat terpisah agar hadiah ("+20000 perak") diterjemahkan sebagai satu bagian.
+			return _ok(str(o["outcome"]) + " " + text)
 	return _fail("Pilihan tidak dikenal.")
 
 
@@ -3546,6 +3556,7 @@ func unlock_cosmetic(id: String) -> bool:
 	if not Data.COSMETICS.has(id) or owns_cosmetic(id):
 		return false
 	cosmetics["owned"].append(id)
+	cosmetic_unlocked.emit(id)
 	changed.emit()
 	return true
 

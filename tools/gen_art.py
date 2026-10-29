@@ -281,6 +281,19 @@ def body(p):
             '<path d="M34 222 Q48 202 88 204" stroke="%s" stroke-width="3" fill="none"/>'
             % (m, shade(m, -0.4), shade(m, 0.3)))
         out.append(pad + mirror(pad))
+    if "batik" in p.get("extras", []):
+        # Motif kawung sederhana di badan (empat elips mengelilingi titik).
+        c = p.get("batik_color", GOLD)
+        for y in range(212, 256, 18):
+            half = 60 + (y - 200) * 1.4
+            for x in range(int(128 - half) + 10, int(128 + half) - 6, 20):
+                if 104 < x < 152 and y < 232:
+                    continue  # jangan menutupi kerah
+                out.append(
+                    '<g opacity="0.75">' + "".join(
+                        '<ellipse cx="%d" cy="%d" rx="2.6" ry="4.5" fill="%s" transform="rotate(%d %d %d)"/>' % (
+                            x + dx, y + dy, c, rot, x + dx, y + dy)
+                        for dx, dy, rot in [(0, -5, 0), (0, 5, 0), (-5, 0, 90), (5, 0, 90)]) + '</g>')
     if "necklace" in p.get("extras", []):
         out.append(
             '<path d="M102 186 Q128 214 154 186" stroke="%s" stroke-width="4" fill="none"/>'
@@ -500,6 +513,16 @@ CHARACTERS = {
     "lord": dict(gender="m", skin=SKIN["medium"], hair="#1d130c", hair_style="short", headwear="blangkon",
                  hat_color="#3b2416", outfit="#1f3a5f", inner="#efe6d2", beard="mustache", brows="calm",
                  extras=["necklace"], bg=("#4f7cac", "#13233a")),
+    # Kostum Tuan
+    "lord_batik": dict(gender="m", skin=SKIN["medium"], hair="#1d130c", hair_style="short", headwear="udeng",
+                       hat_color="#7a4a1e", outfit="#6b3a1a", inner="#efe6d2", beard="mustache", brows="calm",
+                       extras=["necklace", "batik"], batik_color="#e8c070", bg=("#c98a3a", "#4a2410")),
+    "lord_zirah": dict(gender="m", skin=SKIN["medium"], hair="#1d130c", hair_style="short", headwear="helmet",
+                       outfit="#5e1810", inner="#efe6d2", beard="mustache", brows="fierce", mouth="fierce",
+                       extras=["armor", "scar"], metal="#8a8a95", plume="#1f3a5f", bg=("#7a8aa0", "#1a2230")),
+    "lord_raja": dict(gender="m", skin=SKIN["medium"], hair="#1d130c", hair_style="short", headwear="crown",
+                      outfit="#4a1f6b", inner="#f4e4c1", beard="mustache", brows="calm",
+                      extras=["necklace", "batik"], batik_color="#f4d58a", bg=("#9a5ac0", "#2a0e3a")),
     # Musuh
     "enemy_bandit": dict(gender="m", skin=SKIN["tan"], hair="#2a1a10", hair_style="short", headwear="bandana",
                          hat_color="#5d4a2e", outfit="#4a3b2a", beard="stubble", brows="fierce", mouth="grin",

@@ -114,6 +114,11 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   menyerbu bentengnya). Tiap pilihan memberi hadiah berbeda, bonus permanen kecil
   (hasil urusan, kekuatan tempur, atau prestise), dan dialog bab berikutnya
   mengikuti pilihan itu. Keputusan yang sudah diambil tampil di panel cerita.
+- **Profil, bingkai & kostum** — ketuk avatar di header untuk membuka Profil
+  (VIP ada di sana). 10 bingkai profil (kayu, emas, giok, Menteri, VIP, dan satu
+  per festival) dan 4 busana Tuan (Bangsawan, Batik, Zirah Senapati dari Tahap 50,
+  dan Busana Raja lewat IAP `costume_raja`). Kostum mengganti potret Tuan di header,
+  kampanye, perang, chat, dan cerita. Hanya tampilan, tidak menambah kekuatan.
 - **Kampanye** — tahap tanpa batas yang dibuat prosedural. Kekuatan total
   menentukan berapa prajurit yang gugur. Menang memberi perak, prestise & emas serta
   membuka penasihat/selir baru.

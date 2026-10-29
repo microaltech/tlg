@@ -134,6 +134,14 @@ func _prepare_save(m: Model) -> void:
 		m.charges["visit"]["value"] = 5
 		m.visit_beauty(m.beauties.keys()[0], t)
 	m.children[0]["level"] = Data.CHILD_MAX_LEVEL
+	m.send_expedition("alas_purwo", "arya", now - 7200.0)
+	m.send_expedition("borobudur", "sekar", now)
+	m.buy_horse("kuda_jawa")
+	m.buy_horse("kuda_sembrani")
+	m.assign_horse("kuda_jawa", "arya")
+	m.start_build("istana", now)
+	m.buy_cosmetic("costume_batik")
+	m.story["choices"] = {"begal": "ampuni"}
 	m.sync(now)
 
 
@@ -170,7 +178,10 @@ func _walk_ui() -> void:
 			await _snap(p["key"])
 	var panels := ["_show_missions", "_show_login", "_show_event", "_show_store", "_show_vip", "_show_bag",
 		"_show_story", "_show_settings", "_show_privacy", "_show_help", "_show_equipment", "_show_tower",
-		"_show_pass", "_show_achievements", "_show_offers", "_show_promotion"]
+		"_show_pass", "_show_achievements", "_show_offers", "_show_promotion", "_show_expeditions", "_show_stable",
+		"_show_profile"]
+	if not Game.model.festival.is_empty():
+		panels.append("_show_festival")
 	for f in panels:
 		print_verbose("[cek] ", f)
 		main.call(f)
@@ -181,9 +192,38 @@ func _walk_ui() -> void:
 		main._show_leaderboard()
 		await _snap("leaderboard/" + cat["id"])
 		await _close_modals()
-	main._show_story_dialog(0)
+	main._show_story_dialog(1)
 	await _snap("story_dialog")
 	await _close_modals()
+	main._show_expeditions()
+	main._exp_pick = "alas_purwo"
+	main._fill_expeditions()
+	await _snap("expedition_targets")
+	await _close_modals()
+	main._show_stable()
+	main._horse_pick = "kuda_jawa"
+	main._fill_stable()
+	await _snap("horse_riders")
+	await _close_modals()
+	var m: Model = Game.model
+	var saved_story: Dictionary = m.story.duplicate(true)
+	m.story["chapter"] = 4
+	m.story["claimed"] = range(m.story_quests().size())
+	main._show_story_choice()
+	await _snap("story_choice")
+	await _close_modals()
+	m.story = saved_story
+	for formation in Data.FORMATION_ORDER:
+		m.set_formation(formation)
+		main._play_battle(m.battle_plan(0.5, 0.0, 1), {"title": "Arena", "me_name": m.me_name(), "them_name": "x",
+			"me_count": 100, "them_count": 100, "units": ["power", "hp"], "win": true, "detail": m.claim_quest(0)["msg"]})
+		await _frames(40)
+		await _snap("battle/" + formation)
+		for v in main.get_children():
+			if v.has_method("skip"):
+				v.skip()
+		await _snap("battle_end/" + formation)
+		await _close_modals()
 	main._show_intro(Data.FEATURE_INTROS[0])
 	await _snap("intro")
 	await _close_modals()

@@ -556,6 +556,8 @@ const IAP_PRODUCTS := [
 		"desc": "Penawaran terbatas setelah kalah beruntun di kampanye."},
 	{"id": "season_pass", "type": "pass", "name": "Tiket Musim Premium", "icon": "pass", "price_idr": 75000,
 		"desc": "Buka jalur hadiah premium Tiket Musim ini: emas, Batu Bintang, Tiket Rekrut, dan pusaka Legenda."},
+	{"id": "costume_raja", "type": "cosmetic", "name": "Busana Raja", "icon": "frame", "price_idr": 49000,
+		"cosmetic": "costume_raja", "desc": "Kostum Tuan bermahkota emas. Hanya tampilan, tidak menambah kekuatan."},
 ]
 
 ## Pencapaian bertingkat. metric: nama di GameModel.story_metric, atau "count:<event>"

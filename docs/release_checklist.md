@@ -16,6 +16,7 @@
       "Pembelian dalam aplikasi" di README).
 - [ ] (Opsional) Build plugin notifikasi `plugins/tlg_notify_android`, lalu uji
       di HP Android 13+.
+- [ ] Buat juga produk IAP `costume_raja` (sekali beli, Rp49.000).
 - [ ] Buat juga produk IAP `season_pass`, `offer_promote`, dan `offer_rescue`
       (semuanya consumable).
 - [ ] Iklan: pasang plugin AdMob, ganti `REWARDED_UNIT_ID` di

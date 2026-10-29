@@ -910,6 +910,36 @@ static func stage_info(index: int) -> Dictionary:
 	}
 
 
+## Bangunan kota: naik level dengan perak dan waktu pembangunan (satu pembangunan
+## sekaligus). Level Keraton dibatasi jabatan; bangunan lain dibatasi level Keraton.
+const BUILDINGS := {
+	"istana": {"name": "Keraton", "icon": "bld_istana", "effect": "yield_all", "per_level": 0.01,
+		"cost_base": 4000, "cost_growth": 2.1,
+		"desc": "Pusat pemerintahan. Semua hasil urusan +1% per level. Bangunan lain tidak bisa melebihi level Keraton."},
+	"pasar": {"name": "Pasar", "icon": "bld_pasar", "effect": "yield_silver", "per_level": 0.03,
+		"cost_base": 2000, "cost_growth": 2.0, "desc": "Hasil Tarik Pajak +3% per level."},
+	"lumbung": {"name": "Lumbung", "icon": "bld_lumbung", "effect": "yield_grain", "per_level": 0.03,
+		"cost_base": 2000, "cost_growth": 2.0, "desc": "Hasil Kelola Sawah +3% per level."},
+	"barak": {"name": "Barak", "icon": "bld_barak", "effect": "yield_soldiers", "per_level": 0.03,
+		"cost_base": 2000, "cost_growth": 2.0, "desc": "Hasil Rekrut Prajurit +3% per level."},
+}
+const BUILDING_ORDER := ["istana", "pasar", "lumbung", "barak"]
+const BUILDING_MAX_LEVEL := 10
+const BUILD_SECONDS_BASE := 60.0  ## lama membangun ke level 1; berlipat tiap level
+const BUILD_SECONDS_GROWTH := 2.0
+const BUILD_RUSH_SECONDS_PER_GOLD := 120  ## 1 emas mempercepat 2 menit pembangunan
+## Batas level Keraton menurut jabatan: 2 + 2 per jabatan.
+static func keraton_cap(rank_index: int) -> int:
+	return mini(BUILDING_MAX_LEVEL, 2 + 2 * rank_index)
+
+
+## Tingkat tampilan bangunan (0 = tanah kosong, 1–3 makin megah) dari levelnya.
+static func building_tier(level: int) -> int:
+	if level <= 0:
+		return 0
+	return 1 if level <= 3 else (2 if level <= 6 else 3)
+
+
 ## Festival musiman bertema hari besar Indonesia. Tanggal tetap memakai "start"/"end"
 ## [bulan, tanggal] tiap tahun (boleh melewati tahun baru); hari raya yang mengikuti
 ## kalender Hijriah memakai "dates" per tahun: [[bln, tgl mulai], [bln, tgl akhir]].

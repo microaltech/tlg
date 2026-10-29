@@ -69,6 +69,7 @@ func run(days: int, sessions: int, seed_value: int) -> void:
 	print("  anak lahir %d, menikah %d, pejabat %d" % [stats["births"], m.married_count, m.officials.size()])
 	print("  kampanye: %d menang, %d kalah; sesi tertahan batas level: %d" % [
 		stats["wins"], stats["fails"], stats["level_capped"]])
+	print("  bangunan: ", m.buildings["levels"])
 	print("  penasihat: %d/%d, bintang total %d, cerita bab %d" % [
 		m.counselors.size(), Data.COUNSELORS.size(), m.story_metric("stars_total"), m.story["chapter"] + 1])
 
@@ -129,6 +130,15 @@ func session(now: float) -> void:
 	while m.can_promote():
 		m.promote()
 	gold_add(g, "kampanye/jabatan")
+
+	# Bangunan: bangun yang termurah bila perak masih cukup untuk 2x biayanya.
+	if m.build_job().is_empty():
+		var pick := ""
+		for id in Data.BUILDING_ORDER:
+			if m.building_level(id) < m.building_cap(id) and (pick == "" or m.building_cost(id) < m.building_cost(pick)):
+				pick = id
+		if pick != "" and m.silver >= m.building_cost(pick) * 2:
+			m.start_build(pick, now)
 
 	# Latih penasihat termurah selama perak cukup.
 	var capped := false

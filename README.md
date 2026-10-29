@@ -95,6 +95,11 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   dan Hari Pahlawan (5–16 Nov). Tiap festival punya token sendiri dari hadiah harian
   dan 6 tugas, toko festival (emas, tiket, batu bintang, pusaka), dan bingkai profil
   khusus. Token hangus saat festival selesai.
+- **Kota yang tumbuh** — Keraton, Pasar, Lumbung, dan Barak naik level (maks 10)
+  dengan perak dan waktu pembangunan (satu pembangunan sekaligus, bisa dipercepat
+  dengan emas). Bonus hasil urusan per level; Keraton dibatasi jabatan dan
+  membatasi bangunan lain. Gambar bangunan di banner Kota berubah dari tanah
+  kosong, bangunan sederhana, sampai megah (aset `assets/buildings/`).
 - **Kampanye** — tahap tanpa batas yang dibuat prosedural. Kekuatan total
   menentukan berapa prajurit yang gugur. Menang memberi perak, prestise & emas serta
   membuka penasihat/selir baru.

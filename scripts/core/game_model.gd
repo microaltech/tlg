@@ -115,6 +115,8 @@ var formation := "balanced"
 var festival := {}
 ## Kosmetik: owned (id), frame & costume yang dipakai.
 var cosmetics := {}
+## Bangunan kota: levels {id: level} dan job pembangunan berjalan {id, end_t} atau {}.
+var buildings := {}
 var rng := RandomNumberGenerator.new()
 
 
@@ -123,6 +125,7 @@ func new_game(now: float) -> void:
 	lord_name = ""
 	formation = "balanced"
 	festival = {}
+	buildings = {"levels": {"istana": 1, "pasar": 0, "lumbung": 0, "barak": 0}, "job": {}}
 	cosmetics = {"owned": ["frame_kayu", "costume_lord"], "frame": "frame_kayu", "costume": "costume_lord"}
 	equipment = []
 	_equip_uid = 0
@@ -216,6 +219,7 @@ var _last_now := 0.0
 
 func sync(now: float) -> void:
 	_last_now = now
+	var built := finish_build(now)
 	for key in CHARGE_KEYS:
 		_sync_charge(key, now)
 	var daily_reset := ensure_daily(now)
@@ -224,7 +228,7 @@ func sync(now: float) -> void:
 	ensure_festival(now)
 	var alliance_changed := _alliance_rollover(now)
 	alliance_changed = ensure_war(now) or alliance_changed
-	if ensure_arena(now) or alliance_changed or weekly_reset or daily_reset:
+	if ensure_arena(now) or alliance_changed or weekly_reset or daily_reset or built:
 		changed.emit()
 
 
@@ -399,7 +403,8 @@ func affair_yield(kind: String) -> int:
 	var a: Dictionary = AFFAIRS[kind]
 	return int((int(a["base"]) + total_attr(a["attr"]) * int(a["per_point"])) * float(rank_info()["mult"])
 		* (1.0 + event_bonus("yield_" + kind) + alliance_bonus() + vip_perk("yield"))
-		* (1.0 + skill_bonus("yield_" + kind) + skill_bonus("yield_all") + officials_bonus() + honor_bonus()))
+		* (1.0 + skill_bonus("yield_" + kind) + skill_bonus("yield_all") + officials_bonus() + honor_bonus()
+			+ building_bonus("yield_" + kind) + building_bonus("yield_all")))
 
 
 func do_affair(kind: String, now: float) -> Dictionary:
@@ -2815,6 +2820,10 @@ func notification_plan(now: float) -> Array:
 		"text": "Ambil hadiah harian dan jaga rangkaian login Tuan."})
 	plan.append({"id": 5, "delay": NOTIFY_IDLE_SECONDS, "title": "Kerajaan merindukan Tuan",
 		"text": "Rakyat menunggu perintah. Urusan dan hadiah sudah menumpuk."})
+	var build := build_eta(now)
+	if build > 0:
+		plan.append({"id": 6, "delay": build, "title": "Pembangunan selesai",
+			"text": "%s sudah selesai dibangun. Mulai pembangunan berikutnya, Tuan." % Data.BUILDINGS[build_job()["id"]]["name"]})
 	return plan
 
 
@@ -2988,6 +2997,98 @@ func tower_fight(now: float) -> Dictionary:
 	var r := _ok("Lantai %d ditaklukkan! %s." % [level, ", ".join(parts)])
 	r["win"] = true
 	return r
+
+
+# --- Bangunan kota ------------------------------------------------------------
+
+func building_level(id: String) -> int:
+	return int(buildings.get("levels", {}).get(id, 0))
+
+
+func building_cap(id: String) -> int:
+	if id == "istana":
+		return Data.keraton_cap(rank)
+	return mini(Data.BUILDING_MAX_LEVEL, building_level("istana"))
+
+
+func building_cost(id: String) -> int:
+	var def: Dictionary = Data.BUILDINGS[id]
+	return int(float(def["cost_base"]) * pow(float(def["cost_growth"]), building_level(id)))
+
+
+func build_seconds(id: String) -> int:
+	return int(Data.BUILD_SECONDS_BASE * pow(Data.BUILD_SECONDS_GROWTH, building_level(id)))
+
+
+## Total bonus suatu efek dari semua bangunan.
+func building_bonus(effect: String) -> float:
+	var total := 0.0
+	for id in Data.BUILDINGS:
+		if Data.BUILDINGS[id]["effect"] == effect:
+			total += float(Data.BUILDINGS[id]["per_level"]) * building_level(id)
+	return total
+
+
+func build_job() -> Dictionary:
+	return buildings.get("job", {})
+
+
+func build_eta(now: float) -> int:
+	var job := build_job()
+	return maxi(0, int(ceil(float(job["end_t"]) - now))) if not job.is_empty() else 0
+
+
+func start_build(id: String, now: float) -> Dictionary:
+	if not Data.BUILDINGS.has(id):
+		return _fail("Bangunan tidak dikenal.")
+	finish_build(now)
+	var name: String = Data.BUILDINGS[id]["name"]
+	if not build_job().is_empty():
+		return _fail("Tukang sedang membangun %s. Tunggu sampai selesai." % Data.BUILDINGS[build_job()["id"]]["name"])
+	if building_level(id) >= Data.BUILDING_MAX_LEVEL:
+		return _fail("%s sudah mencapai level tertinggi." % name)
+	if building_level(id) >= building_cap(id):
+		if id == "istana":
+			return _fail("Naikkan jabatan untuk memperluas Keraton.")
+		return _fail("Tingkatkan Keraton dulu agar %s bisa naik level." % name)
+	var cost := building_cost(id)
+	if silver < cost:
+		return _fail("Perak tidak cukup (butuh %d)." % cost)
+	silver -= cost
+	buildings["job"] = {"id": id, "end_t": now + build_seconds(id)}
+	changed.emit()
+	return _ok("Pembangunan %s ke level %d dimulai." % [name, building_level(id) + 1])
+
+
+## Selesaikan pembangunan bila waktunya sudah lewat. Mengembalikan true bila selesai.
+func finish_build(now: float) -> bool:
+	var job := build_job()
+	if job.is_empty() or now < float(job["end_t"]):
+		return false
+	var id: String = job["id"]
+	buildings["levels"][id] = building_level(id) + 1
+	buildings["job"] = {}
+	_track("build")
+	return true
+
+
+func rush_cost(now: float) -> int:
+	return int(ceil(float(build_eta(now)) / Data.BUILD_RUSH_SECONDS_PER_GOLD))
+
+
+func rush_build(now: float) -> Dictionary:
+	var job := build_job()
+	if job.is_empty():
+		return _fail("Tidak ada pembangunan yang berjalan.")
+	var cost := rush_cost(now)
+	if gold < cost:
+		return _fail("Emas tidak cukup (butuh %d)." % cost)
+	gold -= cost
+	var id: String = job["id"]
+	buildings["job"]["end_t"] = now
+	finish_build(now)
+	changed.emit()
+	return _ok("%s selesai dibangun: level %d!" % [Data.BUILDINGS[id]["name"], building_level(id)])
 
 
 # --- Festival musiman ---------------------------------------------------------
@@ -3592,6 +3693,7 @@ func to_dict() -> Dictionary:
 		"equip_uid": _equip_uid,
 		"formation": formation,
 		"festival": festival,
+		"buildings": buildings,
 		"cosmetics": cosmetics,
 	}
 
@@ -3620,6 +3722,13 @@ func from_dict(d: Dictionary, now: float) -> void:
 			festival["bought"][str(k)] = int(src_fest["bought"][k])
 		for v in src_fest.get("claimed", []):
 			festival["claimed"].append(str(v))
+	var src_bld: Dictionary = d.get("buildings", {})
+	for id in Data.BUILDINGS:
+		buildings["levels"][id] = clampi(int(src_bld.get("levels", {}).get(id, buildings["levels"][id])), 0,
+			Data.BUILDING_MAX_LEVEL)
+	var src_job: Dictionary = src_bld.get("job", {})
+	if Data.BUILDINGS.has(str(src_job.get("id", ""))):
+		buildings["job"] = {"id": str(src_job["id"]), "end_t": float(src_job.get("end_t", now))}
 	var src_cos: Dictionary = d.get("cosmetics", {})
 	for id in src_cos.get("owned", []):
 		unlock_cosmetic(str(id))

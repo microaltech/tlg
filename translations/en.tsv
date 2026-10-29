@@ -1143,3 +1143,31 @@ Toko festival	Festival shop
 Pusaka acak dengan peluang Legenda tinggi	Random heirloom with a high Legendary chance
 %s · sisa %d	%s · %d left
 Festival berikutnya: %s, %s	Next festival: %s, %s
+Keraton	Palace
+Pusat pemerintahan. Semua hasil urusan +1% per level. Bangunan lain tidak bisa melebihi level Keraton.	Seat of government. All affair yields +1% per level. Other buildings cannot exceed the Palace level.
+Pasar	Market
+Hasil Tarik Pajak +3% per level.	Collect Taxes yield +3% per level.
+Lumbung	Granary
+Hasil Kelola Sawah +3% per level.	Manage Farms yield +3% per level.
+Barak	Barracks
+Hasil Rekrut Prajurit +3% per level.	Recruit Troops yield +3% per level.
+Pembangunan selesai	Construction complete
+%s sudah selesai dibangun. Mulai pembangunan berikutnya, Tuan.	%s is finished. Start the next construction, my Lord.
+Bangunan tidak dikenal.	Unknown building.
+Tukang sedang membangun %s. Tunggu sampai selesai.	The builders are working on the %s. Wait until it is finished.
+%s sudah mencapai level tertinggi.	%s has reached its highest level.
+Naikkan jabatan untuk memperluas Keraton.	Get promoted to expand the Palace.
+Tingkatkan Keraton dulu agar %s bisa naik level.	Upgrade the Palace first so the %s can level up.
+Pembangunan %s ke level %d dimulai.	Construction of %s to level %d has started.
+Tidak ada pembangunan yang berjalan.	No construction in progress.
+%s selesai dibangun: level %d!	%s finished: level %d!
+Selesai dalam %s	Done in %s
+Percepat · %d	Speed up · %d
+Bangunan Kota	City Buildings
+Membangun %s ke level %d	Building %s to level %d
+%s · Lv %d / %d	%s · Lv %d / %d
+Level tertinggi	Max level
+%s perak · %s	%s silver · %s
+Naikkan jabatan dulu	Get promoted first
+Butuh Keraton level %d	Requires Palace level %d
+Bangun	Build

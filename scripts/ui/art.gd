@@ -27,3 +27,7 @@ static func icon(name: String) -> Texture2D:
 
 static func bg(name: String) -> Texture2D:
 	return tex("res://assets/bg/" + name)
+
+
+static func building(name: String) -> Texture2D:
+	return tex("res://assets/buildings/" + name)

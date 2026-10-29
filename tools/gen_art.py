@@ -1314,6 +1314,164 @@ def bg_arena():
     return svg_doc(W, H, b, 1080, 540, defs)
 
 
+# --- Bangunan kota (160x120, alas di y=112) -------------------------------
+
+def bld_doc(body):
+    return svg_doc(160, 120, body, 240, 180)
+
+
+def _ground(w=140):
+    return '<ellipse cx="80" cy="113" rx="%d" ry="6" fill="#000" opacity="0.25"/>' % (w // 2)
+
+
+def _roof(cx, y, w, h, color, tiers=1):
+    """Atap joglo/meru bertingkat: tiap tingkat makin kecil ke atas."""
+    out = ""
+    for t in range(tiers):
+        ww = w * (1 - 0.28 * t)
+        top = y - h * t * 0.8
+        out += '<path d="M%.1f %.1f L%.1f %.1f L%.1f %.1f L%.1f %.1f Z" fill="%s" stroke="%s" stroke-width="1.5"/>' % (
+            cx - ww / 2, top, cx - ww / 4, top - h, cx + ww / 4, top - h, cx + ww / 2, top,
+            shade(color, 0.08 * t), shade(color, -0.35))
+    return out
+
+
+def _flag(x, y, color):
+    return ('<path d="M%d %d L%d %d" stroke="#5e3a12" stroke-width="2"/>'
+            '<path d="M%d %d L%d %d L%d %d Z" fill="%s"/>' % (x, y, x, y - 26, x, y - 26, x + 14, y - 21, x, y - 16, color))
+
+
+def bld_plot():
+    """Tanah kosong berpatok dan bertali, siap dibangun."""
+    b = _ground(120)
+    b += '<path d="M28 112 L80 98 L132 112 L80 118 Z" fill="#a07850" stroke="#6b4a2a" stroke-width="2"/>'
+    for x, y in [(28, 112), (80, 98), (132, 112), (80, 118)]:
+        b += '<path d="M%d %d L%d %d" stroke="#5e3a12" stroke-width="3"/>' % (x, y, x, y - 14)
+    b += '<path d="M28 98 L80 84 L132 98 L80 104 Z" fill="none" stroke="#e8c070" stroke-width="1.5" stroke-dasharray="4 3"/>'
+    b += '<rect x="96" y="100" width="22" height="8" fill="#8a6a3a"/><rect x="100" y="94" width="22" height="8" fill="#a07850"/>'
+    return bld_doc(b)
+
+
+def bld_istana(tier):
+    b = _ground()
+    if tier == 1:
+        b += '<rect x="50" y="88" width="60" height="24" fill="#d9b98a" stroke="#6b4a2a" stroke-width="2"/>'
+        b += '<rect x="74" y="96" width="12" height="16" fill="#3b2416"/>'
+        b += _roof(80, 90, 92, 18, "#7a2e22", 2)
+    elif tier == 2:
+        b += '<rect x="20" y="96" width="120" height="16" fill="#c9a77a" stroke="#6b4a2a" stroke-width="2"/>'
+        b += '<rect x="40" y="80" width="80" height="22" fill="#e6c99a" stroke="#6b4a2a" stroke-width="2"/>'
+        for x in range(46, 120, 14):
+            b += '<rect x="%d" y="82" width="4" height="20" fill="%s"/>' % (x, GOLD_DARK)
+        b += '<rect x="72" y="88" width="16" height="14" fill="#3b2416"/>'
+        b += _roof(80, 82, 112, 18, "#7a2e22", 3)
+        b += _roof(28, 98, 30, 10, "#8e3b26") + _roof(132, 98, 30, 10, "#8e3b26")
+    else:
+        b += '<rect x="8" y="100" width="144" height="12" fill="#b2553a" stroke="#5e2416" stroke-width="2"/>'
+        b += '<rect x="14" y="94" width="132" height="8" fill="%s"/>' % GOLD
+        b += '<rect x="34" y="72" width="92" height="24" fill="#f0d7a6" stroke="#6b4a2a" stroke-width="2"/>'
+        for x in range(40, 126, 12):
+            b += '<rect x="%d" y="74" width="4" height="22" fill="%s"/>' % (x, GOLD)
+        b += '<path d="M70 96 L70 82 Q80 74 90 82 L90 96 Z" fill="#3b2416" stroke="%s" stroke-width="2"/>' % GOLD
+        b += _roof(80, 74, 124, 18, "#6b1a12", 4)
+        b += '<circle cx="80" cy="16" r="4" fill="%s"/>' % GOLD
+        b += _roof(22, 96, 34, 14, "#7a2e22", 2) + _roof(138, 96, 34, 14, "#7a2e22", 2)
+        b += _flag(10, 100, "#c0392b") + _flag(150, 100, "#c0392b")
+    return bld_doc(b)
+
+
+def bld_pasar(tier):
+    b = _ground()
+    stalls = {1: [(80, "#c0392b")], 2: [(44, "#c0392b"), (80, "#2e86c1"), (116, "#27ae60")],
+              3: []}[tier]
+    for cx, c in stalls:
+        b += '<rect x="%d" y="92" width="32" height="20" fill="#d9b98a" stroke="#6b4a2a" stroke-width="1.5"/>' % (cx - 16)
+        b += '<rect x="%d" y="88" width="32" height="6" fill="#8a6a3a"/>' % (cx - 16)
+        b += "".join('<circle cx="%d" cy="88" r="3" fill="%s"/>' % (cx - 10 + i * 7, f)
+                     for i, f in enumerate(["#e67e22", "#f1c40f", "#27ae60", "#c0392b"]))
+        b += '<path d="M%d 82 L%d 82 L%d 72 L%d 72 Z" fill="%s"/>' % (cx - 22, cx + 22, cx + 18, cx - 18, c)
+        b += "".join('<path d="M%d 82 L%d 88 L%d 82 Z" fill="%s"/>' % (cx - 22 + i * 11, cx - 16 + i * 11, cx - 11 + i * 11,
+                                                                       shade(c, -0.2)) for i in range(4))
+        b += '<path d="M%d 82 L%d 112 M%d 82 L%d 112" stroke="#5e3a12" stroke-width="2"/>' % (cx - 20, cx - 20, cx + 20, cx + 20)
+    if tier == 3:
+        b += '<rect x="14" y="78" width="132" height="34" fill="#e6c99a" stroke="#6b4a2a" stroke-width="2"/>'
+        for i, x in enumerate(range(20, 146, 21)):
+            b += '<rect x="%d" y="88" width="15" height="24" fill="%s"/>' % (x, ["#c0392b", "#2e86c1", "#27ae60", "#f1c40f",
+                                                                               "#8e44ad", "#e67e22"][i % 6])
+            b += '<rect x="%d" y="96" width="15" height="4" fill="#d9b98a"/>' % x
+        b += _roof(80, 80, 150, 22, "#7a4a24", 2)
+        b += '<rect x="60" y="40" width="40" height="12" rx="3" fill="%s" stroke="#6b4a12" stroke-width="1.5"/>' % GOLD
+        b += _flag(14, 80, "#f1c40f") + _flag(146, 80, "#2e86c1")
+    return bld_doc(b)
+
+
+def _barn(cx, s=1.0):
+    return ('<g transform="translate(%d 0) scale(%.2f 1)">'
+            '<path d="M-14 112 L-14 92 M14 112 L14 92" stroke="#5e3a12" stroke-width="3"/>'
+            '<rect x="-16" y="90" width="32" height="4" fill="#5e3a12"/>'
+            '<rect x="-14" y="72" width="28" height="18" fill="#c9a77a" stroke="#6b4a2a" stroke-width="1.5"/>'
+            '<path d="M-24 76 Q-22 40 0 30 Q22 40 24 76 Z" fill="#d4a94a" stroke="#8a6a12" stroke-width="2"/>'
+            '<path d="M-18 64 Q0 58 18 64 M-14 52 Q0 46 14 52" stroke="#8a6a12" stroke-width="1.5" fill="none"/>'
+            '</g>' % (cx, s))
+
+
+def bld_lumbung(tier):
+    b = _ground()
+    if tier == 1:
+        b += _barn(80)
+    elif tier == 2:
+        b += _barn(52) + _barn(108)
+        b += '<path d="M70 112 L90 112 L88 100 L72 100 Z" fill="#e8d4a0" stroke="#8a6a3a" stroke-width="1.5"/>'
+    else:
+        b += _barn(30, 0.9) + _barn(130, 0.9) + _barn(80, 1.3)
+        for x in (52, 64, 96, 108):
+            b += '<path d="M%d 112 L%d 112 L%d 102 L%d 102 Z" fill="#e8d4a0" stroke="#8a6a3a" stroke-width="1.5"/>' % (
+                x - 6, x + 6, x + 5, x - 5)
+        b += _flag(80, 30, "#27ae60")
+    return bld_doc(b)
+
+
+def bld_barak(tier):
+    b = _ground()
+    if tier == 1:
+        b += '<path d="M50 112 L80 72 L110 112 Z" fill="#c9a77a" stroke="#6b4a2a" stroke-width="2"/>'
+        b += '<path d="M74 112 L80 92 L86 112 Z" fill="#3b2416"/>'
+        b += _flag(80, 74, "#c0392b")
+        b += '<path d="M116 112 L124 82 M122 112 L114 84" stroke="#7a5a32" stroke-width="2"/>'
+    elif tier == 2:
+        for x in range(14, 148, 8):
+            b += '<path d="M%d 112 L%d 96 L%d 92 L%d 96 L%d 112" fill="#8a5a3a" stroke="#5e3a12" stroke-width="1"/>' % (
+                x, x, x + 3, x + 6, x + 6)
+        b += '<rect x="40" y="76" width="80" height="26" fill="#a86a42" stroke="#5e3a12" stroke-width="2"/>'
+        b += '<rect x="74" y="86" width="12" height="16" fill="#3b2416"/>'
+        b += _roof(80, 78, 96, 14, "#5e3a12")
+        b += _flag(124, 92, "#c0392b")
+    else:
+        b += '<rect x="10" y="78" width="140" height="34" fill="#8a7a6a" stroke="#4a3a2a" stroke-width="2"/>'
+        for x in range(10, 150, 14):
+            b += '<rect x="%d" y="70" width="8" height="10" fill="#8a7a6a" stroke="#4a3a2a" stroke-width="1.5"/>' % x
+        b += '<rect x="62" y="40" width="36" height="72" fill="#9a8a7a" stroke="#4a3a2a" stroke-width="2"/>'
+        for x in range(62, 98, 9):
+            b += '<rect x="%d" y="32" width="6" height="10" fill="#9a8a7a" stroke="#4a3a2a" stroke-width="1.5"/>' % x
+        b += '<path d="M70 112 L70 92 Q80 82 90 92 L90 112 Z" fill="#3b2416"/>'
+        b += '<rect x="76" y="56" width="8" height="12" fill="#3b2416"/>'
+        b += _flag(80, 34, "#c0392b") + _flag(20, 72, "#f1c40f") + _flag(140, 72, "#f1c40f")
+    return bld_doc(b)
+
+
+def scaffold():
+    """Perancah bambu untuk bangunan yang sedang dibangun."""
+    b = ""
+    for x in (30, 60, 100, 130):
+        b += '<path d="M%d 112 L%d 40" stroke="#b8955a" stroke-width="4"/>' % (x, x)
+    for y in (60, 84, 106):
+        b += '<path d="M24 %d L136 %d" stroke="#b8955a" stroke-width="4"/>' % (y, y)
+    b += '<path d="M30 106 L60 60 M100 106 L130 60" stroke="#8a6a3a" stroke-width="3"/>'
+    for x, y in [(30, 60), (60, 84), (100, 60), (130, 84)]:
+        b += '<circle cx="%d" cy="%d" r="3" fill="#5e3a12"/>' % (x, y)
+    return bld_doc(b)
+
+
 def pattern_kawung():
     """Tile motif batik kawung untuk latar aplikasi."""
     s = 96
@@ -1340,6 +1498,12 @@ def main():
     write("bg/alliance.svg", bg_alliance())
     write("bg/arena.svg", bg_arena())
     write("bg/kawung.svg", pattern_kawung())
+    write("buildings/plot.svg", bld_plot())
+    write("buildings/scaffold.svg", scaffold())
+    for name, fn in [("istana", bld_istana), ("pasar", bld_pasar), ("lumbung", bld_lumbung), ("barak", bld_barak)]:
+        for tier in (1, 2, 3):
+            write("buildings/%s_%d.svg" % (name, tier), fn(tier))
+        write("icons/bld_%s.svg" % name, fn(2))
     print("Aset ditulis ke", os.path.normpath(ROOT))
 
 

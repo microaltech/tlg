@@ -99,6 +99,8 @@ var _pass_overlay: Control
 var _pass_box: VBoxContainer
 var _tower_overlay: Control
 var _fest_overlay: Control
+var _town: Control  ## lapisan bangunan di banner Kota
+var _build_timer := {}  ## {label, bar, rush, total} untuk pembangunan yang berjalan
 var _fest_box: VBoxContainer
 var _tower_box: VBoxContainer
 var _story_overlay: Control
@@ -733,6 +735,11 @@ func _tick() -> void:
 		tw["button"].disabled = wait > 0 or model.grain < tw["cost"]
 		tw["button"].text = "Istirahat %02d:%02d" % [wait / 60, wait % 60] if wait > 0 \
 			else "Didik  %s" % _num(tw["cost"])
+	if not _build_timer.is_empty() and is_instance_valid(_build_timer["label"]):
+		var eta: int = model.build_eta(now)
+		_build_timer["label"].text = "Selesai dalam %s" % _duration(eta)
+		_build_timer["bar"].value = _build_timer["total"] - eta
+		_build_timer["rush"].text = "Percepat · %d" % model.rush_cost(now)
 	for key in _charge_widgets:
 		var w: Dictionary = _charge_widgets[key]
 		if not is_instance_valid(w["label"]):
@@ -778,6 +785,7 @@ func _build_city(box: VBoxContainer) -> void:
 	_build_achievement_card(box)
 	_build_quick_row(box)
 	_build_story_tracker(box)
+	_build_town_banner()
 	for kind in model.AFFAIRS:
 		var a: Dictionary = model.AFFAIRS[kind]
 		var card := _card(box)
@@ -796,6 +804,8 @@ func _build_city(box: VBoxContainer) -> void:
 		_affair_buttons[kind] = b
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		b.custom_minimum_size.x = 170
+
+	_build_buildings(box)
 
 	var rank_card := _card(box)
 	rank_card.add_child(_tex(Art.icon("prestige"), 92))
@@ -826,6 +836,92 @@ func _build_city(box: VBoxContainer) -> void:
 		return null, true, "help", "GoldButton")
 	help.add_theme_font_size_override("font_size", 24)
 	help.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+
+## Posisi bangunan di banner Kota: [tengah x, alas y, skala]. Keraton di tengah, paling besar.
+const TOWN_LAYOUT := {"pasar": [215, 206, 0.95], "lumbung": [530, 206, 0.95], "barak": [648, 210, 0.85],
+	"istana": [372, 208, 1.3]}
+
+
+## Gambar bangunan kota di banner sesuai levelnya; perancah untuk yang sedang dibangun.
+func _build_town_banner() -> void:
+	var page: Dictionary = _pages["city"]
+	if not is_instance_valid(_town):
+		_town = Control.new()
+		_town.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		page["banner"].add_child(_town)
+		page["banner"].move_child(_town, page["title"].get_index())
+	_clear(_town)
+	var job: Dictionary = model.build_job()
+	for id in ["barak", "pasar", "lumbung", "istana"]:
+		var spot: Array = TOWN_LAYOUT[id]
+		var w: float = 160.0 * spot[2]
+		var h: float = 120.0 * spot[2]
+		var tier: int = Data.building_tier(model.building_level(id))
+		var pic := _tex(Art.building("%s_%d" % [id, tier]) if tier > 0 else Art.building("plot"), w)
+		pic.custom_minimum_size = Vector2(w, h)
+		pic.size = Vector2(w, h)
+		pic.position = Vector2(spot[0] - w / 2, spot[1] - h)
+		pic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_town.add_child(pic)
+		if job.get("id", "") == id:
+			var sc := _tex(Art.building("scaffold"), w)
+			sc.custom_minimum_size = pic.custom_minimum_size
+			sc.size = pic.size
+			sc.position = pic.position
+			sc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			_town.add_child(sc)
+
+
+## Daftar bangunan kota: level, bonus, dan tombol bangun / percepat.
+func _build_buildings(box: VBoxContainer) -> void:
+	var now: float = Game.now()
+	var inner := _col(_card(box))
+	_label(inner, "Bangunan Kota", "CardTitle")
+	var job: Dictionary = model.build_job()
+	_build_timer = {}
+	if not job.is_empty():
+		var jrow := HBoxContainer.new()
+		jrow.add_theme_constant_override("separation", 10)
+		inner.add_child(jrow)
+		var jcol := _col(jrow)
+		var jid: String = job["id"]
+		_label(jcol, "Membangun %s ke level %d" % [Data.BUILDINGS[jid]["name"], model.building_level(jid) + 1],
+			"CardLabel").add_theme_font_override("font", UI.font_bold)
+		var total: int = maxi(1, model.build_seconds(jid))
+		var bar := _bar(jcol, total - model.build_eta(now), total, Color("e0a030"))
+		var tl := _label(jcol, "", "SmallLabel")
+		tl.add_theme_color_override("font_color", UI.INK)
+		var rush := _button(jrow, "", func(): return model.rush_build(Game.now()), true, "gold", "GoldButton",
+			false, "upgrade")
+		rush.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		rush.custom_minimum_size.x = 190
+		_build_timer = {"label": tl, "bar": bar, "rush": rush, "total": total}
+	for id in Data.BUILDING_ORDER:
+		var def: Dictionary = Data.BUILDINGS[id]
+		var lv: int = model.building_level(id)
+		var cap: int = model.building_cap(id)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		inner.add_child(row)
+		var tier: int = Data.building_tier(lv)
+		row.add_child(_tex(Art.building("%s_%d" % [id, tier]) if tier > 0 else Art.building("plot"), 84))
+		var col := _col(row)
+		_label(col, "%s · Lv %d / %d" % [def["name"], lv, cap], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		_label(col, def["desc"], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+		if lv >= Data.BUILDING_MAX_LEVEL:
+			_label(col, "Level tertinggi", "SmallLabel").add_theme_color_override("font_color", UI.GREEN.darkened(0.2))
+			continue
+		var bid: String = id
+		var can: bool = job.is_empty() and lv < cap and model.silver >= model.building_cost(id)
+		var info := "%s perak · %s" % [_num(model.building_cost(id)), _duration(model.build_seconds(id))]
+		if lv >= cap:
+			info = "Naikkan jabatan dulu" if id == "istana" else "Butuh Keraton level %d" % (lv + 1)
+		_label(col, info, "SmallLabel").add_theme_color_override("font_color", UI.INK if lv < cap else UI.RED)
+		var b := _button(row, "Bangun", func(): return model.start_build(bid, Game.now()), can, "",
+			"GreenButton" if can else "", false, "upgrade")
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		b.custom_minimum_size.x = 140
 
 
 func _confirm_reset():

@@ -27,7 +27,7 @@ func _init() -> void:
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
 		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass", "test_offers", "test_achievements", "test_save_code",
-		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics",
+		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1818,3 +1818,50 @@ func test_cosmetics() -> void:
 	bad["cosmetics"] = {"owned": ["tidak_ada"], "frame": "costume_zirah", "costume": "frame_kayu"}
 	m2.from_dict(bad, 1000.0)
 	check(m2.cosmetics["frame"] == "frame_kayu" and m2.cosmetics["costume"] == "costume_lord", "data kosmetik rusak diabaikan")
+
+
+func test_buildings() -> void:
+	var m := fresh()
+	var t := 1000.0
+	check(m.building_level("istana") == 1 and m.building_level("pasar") == 0, "Keraton level 1 sejak awal")
+	check(m.building_cap("istana") == 2 and m.building_cap("pasar") == 1, "batas dari jabatan dan Keraton")
+	m.silver = 0
+	check(not m.start_build("pasar", t)["ok"], "perak kurang")
+	m.silver = 1000000
+	var base := m.affair_yield("silver")
+	var cost := m.building_cost("pasar")
+	check(m.start_build("pasar", t)["ok"] and m.silver == 1000000 - cost, "mulai membangun pasar")
+	check(not m.start_build("lumbung", t)["ok"], "satu pembangunan sekaligus")
+	check(m.build_eta(t + 30.0) == 30 and m.building_level("pasar") == 0, "belum selesai")
+	check(m.notification_plan(t).any(func(n): return n["id"] == 6 and n["delay"] == 60), "notifikasi pembangunan")
+	m.sync(t + 61.0)
+	check(m.building_level("pasar") == 1 and m.build_job().is_empty(), "selesai setelah waktunya")
+	check(m.affair_yield("silver") > base, "pasar menaikkan hasil pajak")
+	check(not m.start_build("pasar", t + 61.0)["ok"], "pasar tidak boleh melebihi Keraton")
+	check(m.start_build("istana", t + 61.0)["ok"], "bangun Keraton level 2")
+	var eta := m.build_eta(t + 61.0)
+	check(eta == int(Data.BUILD_SECONDS_BASE * Data.BUILD_SECONDS_GROWTH), "waktu berlipat per level")
+	m.gold = 0
+	check(not m.rush_build(t + 61.0)["ok"], "percepat butuh emas")
+	m.gold = 100
+	var rush := m.rush_cost(t + 61.0)
+	check(rush == 1 and m.rush_build(t + 61.0)["ok"] and m.gold == 99 and m.building_level("istana") == 2,
+		"percepat dengan emas")
+	m.start_build("istana", t + 62.0)
+	m.sync(t + 100000.0)
+	check(m.building_level("istana") == 2 and not m.start_build("istana", t + 100000.0)["ok"],
+		"Keraton dibatasi jabatan")
+	m.rank = 1
+	check(m.building_cap("istana") == 4, "jabatan naik, Keraton bisa diperluas")
+	m.start_build("barak", t + 100000.0)
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t + 100000.0)
+	check(var_to_str(m2.buildings) == var_to_str(m.buildings), "simpan/muat bangunan & pembangunan berjalan")
+	m2.sync(t + 200000.0)
+	check(m2.building_level("barak") == 1, "pembangunan selesai saat offline")
+	var bad := m.to_dict()
+	bad["buildings"] = {"levels": {"pasar": 99}, "job": {"id": "candi", "end_t": 0}}
+	m2.from_dict(bad, t)
+	check(m2.building_level("pasar") == Data.BUILDING_MAX_LEVEL and m2.build_job().is_empty(), "data rusak dijepit")
+	check(Data.building_tier(0) == 0 and Data.building_tier(3) == 1 and Data.building_tier(4) == 2
+		and Data.building_tier(10) == 3, "tingkat tampilan")

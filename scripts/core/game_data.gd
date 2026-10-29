@@ -940,6 +940,28 @@ static func building_tier(level: int) -> int:
 	return 1 if level <= 3 else (2 if level <= 6 else 3)
 
 
+## Ekspedisi: kirim satu penasihat ke tujuan selama beberapa jam. Hadiah dihitung saat
+## berangkat dari hasil urusan saat ini dan kecocokan atribut penasihat ("attr").
+## "yields": {sumber daya: kali hasil urusan}; "gold": [min, max]; "items": [[id, peluang]].
+const EXPEDITION_UNLOCK_STAGE := 3
+const EXPEDITION_SLOTS := 2  ## +1 slot sejak jabatan Gubernur
+const EXPEDITION_EXTRA_SLOT_RANK := 3
+const EXPEDITIONS := [
+	{"id": "alas_purwo", "name": "Hutan Alas Purwo", "icon": "exp_hutan", "hours": 1, "attr": "str", "stage": 3,
+		"desc": "Berburu dan menebang kayu di hutan angker.", "yields": {"grain": 1.5, "soldiers": 0.6},
+		"gold": [0, 5], "items": []},
+	{"id": "borobudur", "name": "Candi Borobudur", "icon": "exp_candi", "hours": 2, "attr": "pol", "stage": 6,
+		"desc": "Berziarah dan belajar dari para biksu.", "yields": {"silver": 1.5},
+		"gold": [5, 10], "items": [["scroll_train", 0.6], ["pill_intimacy", 0.3]]},
+	{"id": "sunda_kelapa", "name": "Pelabuhan Sunda Kelapa", "icon": "exp_pelabuhan", "hours": 4, "attr": "cha",
+		"stage": 10, "desc": "Berdagang rempah dengan saudagar dari seberang.", "yields": {"silver": 4.0, "grain": 2.0},
+		"gold": [10, 20], "items": [["silver_box", 0.5], ["recruit_ticket", 0.15]]},
+	{"id": "merapi", "name": "Gunung Merapi", "icon": "exp_gunung", "hours": 8, "attr": "int", "stage": 20,
+		"desc": "Mencari pusaka sakti di lereng gunung berapi.", "yields": {"silver": 3.0},
+		"gold": [15, 30], "items": [["scroll_train", 1.0], ["star_stone", 0.25], ["equip", 0.35]]},
+]
+
+
 ## Festival musiman bertema hari besar Indonesia. Tanggal tetap memakai "start"/"end"
 ## [bulan, tanggal] tiap tahun (boleh melewati tahun baru); hari raya yang mengikuti
 ## kalender Hijriah memakai "dates" per tahun: [[bln, tgl mulai], [bln, tgl akhir]].

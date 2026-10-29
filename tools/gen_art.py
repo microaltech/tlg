@@ -997,6 +997,38 @@ ICONS["frame"] = icon_doc(
     '<rect x="24" y="24" width="48" height="48" rx="8" fill="#4f7cac"/>'
     '<circle cx="48" cy="42" r="10" fill="#e0b088"/><path d="M30 72 Q48 52 66 72 Z" fill="#1f3a5f"/>')
 
+# Ekspedisi: hutan, candi, pelabuhan, gunung.
+ICONS["exp_hutan"] = icon_doc(
+    '<circle cx="48" cy="48" r="42" fill="#cfe5a0"/>'
+    '<path d="M28 88 L28 64 M66 88 L66 58" stroke="#5e3a12" stroke-width="6"/>'
+    '<path d="M28 20 L46 52 L36 52 L50 72 L6 72 L20 52 L10 52 Z" fill="#2f6b30" stroke="#1a3a1a" stroke-width="2" stroke-linejoin="round"/>'
+    '<path d="M66 12 L86 46 L76 46 L90 66 L42 66 L56 46 L46 46 Z" fill="#3a8a3a" stroke="#1a3a1a" stroke-width="2" stroke-linejoin="round"/>'
+    '<path d="M40 90 L86 74" stroke="#7a5a32" stroke-width="4" stroke-linecap="round"/>'
+    '<path d="M86 74 L80 70 L88 66 Z" fill="#c9d1da"/>')
+ICONS["exp_candi"] = icon_doc(
+    '<circle cx="48" cy="48" r="42" fill="#f4d7a0"/>'
+    '<path d="M10 86 L86 86 L80 76 L16 76 Z" fill="#8a7a6a" stroke="#4a3a2a" stroke-width="2"/>'
+    '<path d="M18 76 L78 76 L72 64 L24 64 Z" fill="#9a8a7a" stroke="#4a3a2a" stroke-width="2"/>'
+    '<path d="M26 64 L70 64 L64 52 L32 52 Z" fill="#aa9a8a" stroke="#4a3a2a" stroke-width="2"/>'
+    '<path d="M34 52 L62 52 Q62 34 48 30 Q34 34 34 52 Z" fill="#b8a898" stroke="#4a3a2a" stroke-width="2"/>'
+    '<path d="M48 30 L48 12" stroke="#4a3a2a" stroke-width="4" stroke-linecap="round"/>'
+    + "".join('<path d="M%d %d Q%d %d %d %d Q%d %d %d %d Z" fill="#b8a898" stroke="#4a3a2a" stroke-width="1.5"/>' % (
+        x - 4, y, x - 4, y - 8, x, y - 10, x + 4, y - 8, x + 4, y) for x, y in [(22, 76), (36, 64), (60, 64), (74, 76)]))
+ICONS["exp_pelabuhan"] = icon_doc(
+    '<circle cx="48" cy="48" r="42" fill="#aed6f1"/>'
+    '<path d="M6 70 Q24 64 48 70 Q72 76 90 70 L90 90 L6 90 Z" fill="#2e86c1"/>'
+    '<path d="M18 66 L78 66 L70 78 L26 78 Z" fill="#8a5a3a" stroke="#4a2a12" stroke-width="2"/>'
+    '<path d="M48 66 L48 14" stroke="#4a2a12" stroke-width="4"/>'
+    '<path d="M50 16 L76 56 L50 56 Z" fill="#f4e4c1" stroke="#a8742c" stroke-width="2"/>'
+    '<path d="M46 22 L24 56 L46 56 Z" fill="#e8c070" stroke="#a8742c" stroke-width="2"/>'
+    '<path d="M48 14 L60 18 L48 22 Z" fill="#c0392b"/>')
+ICONS["exp_gunung"] = icon_doc(
+    '<circle cx="48" cy="48" r="42" fill="#f5cba7"/>'
+    '<path d="M6 88 L36 34 L42 40 L48 30 L56 40 L60 34 L90 88 Z" fill="#6a5a8a" stroke="#3a2a4a" stroke-width="2" stroke-linejoin="round"/>'
+    '<path d="M36 34 L42 40 L48 30 L56 40 L60 34 L54 50 L42 50 Z" fill="#4a3a5a"/>'
+    '<path d="M48 30 Q40 16 46 6 Q50 18 56 12 Q58 22 48 30 Z" fill="#9a9aa0" opacity="0.8"/>'
+    '<path d="M44 50 Q46 62 40 74 M52 50 Q52 64 58 76" stroke="#e67e22" stroke-width="3" fill="none"/>')
+
 # Pusaka: keris berlekuk, lontar, dan kalung.
 ICONS["eq_weapon"] = icon_doc(
     '<path d="M50 8 Q58 18 50 28 Q42 38 50 48 Q58 58 50 66 L46 66 Q38 58 46 48 Q54 38 46 28 Q38 18 46 8 Z" '

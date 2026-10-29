@@ -131,6 +131,18 @@ func session(now: float) -> void:
 		m.promote()
 	gold_add(g, "kampanye/jabatan")
 
+	# Ekspedisi: klaim yang kembali, kirim penasihat paling cocok ke tujuan terjauh yang terbuka.
+	m.claim_all_expeditions(now)
+	if m.expedition_unlocked():
+		for dest in Data.EXPEDITIONS.duplicate():
+			if m.stage < int(dest["stage"]) or m.expeditions.size() >= m.expedition_slots():
+				continue
+			var free: Array = m.counselors.keys().filter(func(id): return not m.expedition_busy(id))
+			if free.is_empty():
+				break
+			free.sort_custom(func(a, b): return m.expedition_mult(dest, a) > m.expedition_mult(dest, b))
+			m.send_expedition(dest["id"], free[0], now)
+
 	# Bangunan: bangun yang termurah bila perak masih cukup untuk 2x biayanya.
 	if m.build_job().is_empty():
 		var pick := ""

@@ -100,6 +100,10 @@ var _pass_box: VBoxContainer
 var _tower_overlay: Control
 var _fest_overlay: Control
 var _town: Control  ## lapisan bangunan di banner Kota
+var _exp_overlay: Control
+var _exp_box: VBoxContainer
+var _exp_pick := ""  ## tujuan ekspedisi yang sedang menunggu pilihan penasihat
+var _exp_timers: Array = []  ## [{label, bar, index, total}]
 var _build_timer := {}  ## {label, bar, rush, total} untuk pembangunan yang berjalan
 var _fest_box: VBoxContainer
 var _tower_box: VBoxContainer
@@ -629,6 +633,8 @@ func _rebuild() -> void:
 		_fill_tower()
 	if is_instance_valid(_fest_overlay):
 		_fill_festival()
+	if is_instance_valid(_exp_overlay):
+		_fill_expeditions()
 	if is_instance_valid(_pass_overlay):
 		_fill_pass()
 	if is_instance_valid(_offer_overlay):
@@ -735,6 +741,11 @@ func _tick() -> void:
 		tw["button"].disabled = wait > 0 or model.grain < tw["cost"]
 		tw["button"].text = "Istirahat %02d:%02d" % [wait / 60, wait % 60] if wait > 0 \
 			else "Didik  %s" % _num(tw["cost"])
+	for et in _exp_timers:
+		if is_instance_valid(et["label"]) and et["index"] < model.expeditions.size():
+			var left: int = model.expedition_eta(et["index"], now)
+			et["label"].text = "Kembali dalam %s" % _duration(left) if left > 0 else "Sudah kembali!"
+			et["bar"].value = et["total"] - left
 	if not _build_timer.is_empty() and is_instance_valid(_build_timer["label"]):
 		var eta: int = model.build_eta(now)
 		_build_timer["label"].text = "Selesai dalam %s" % _duration(eta)
@@ -954,6 +965,7 @@ func _build_counselors(box: VBoxContainer) -> void:
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		l.add_theme_color_override("font_color", UI.ATTR_COLORS[key])
 		l.add_theme_font_override("font", UI.font_bold)
+	_build_expedition_card(box)
 	_build_bonds(box)
 
 	for id in model.counselors:
@@ -3292,6 +3304,164 @@ func _fill_equipment_targets() -> void:
 		var b := _button(row, "Pilih", func():
 			var r: Dictionary = model.equip(uid, target)
 			_equip_pick = -1
+			return r, true, "", "GreenButton", false, "upgrade")
+		b.custom_minimum_size = Vector2(120, 56)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+
+# --- Ekspedisi -----------------------------------------------------------------
+
+func _build_expedition_card(box: VBoxContainer) -> void:
+	var card := _card(box)
+	card.add_child(_tex(Art.icon("exp_hutan"), 84))
+	var col := _col(card)
+	_label(col, "Ekspedisi", "CardTitle")
+	var now: float = Game.now()
+	if not model.expedition_unlocked():
+		_label(col, "Terbuka setelah menang Tahap %d." % Data.EXPEDITION_UNLOCK_STAGE, "CardLabel")
+		return
+	var ready: int = model.expeditions_ready(now)
+	_label(col, "Rombongan %d / %d · %d sudah kembali" % [model.expeditions.size(), model.expedition_slots(), ready],
+		"CardLabel")
+	var b := _button(card, "Klaim (%d)" % ready if ready > 0 else "Buka", func():
+		_show_expeditions()
+		return null, true, "", "GoldButton" if ready > 0 else "GreenButton")
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.custom_minimum_size.x = 150
+
+
+func _show_expeditions() -> void:
+	if is_instance_valid(_exp_overlay):
+		return
+	var p := _open_panel("Ekspedisi", "exp_hutan", _close_expeditions)
+	_exp_overlay = p["overlay"]
+	_exp_box = p["content"]
+	p["subtitle"].text = "Kirim penasihat ke penjuru Nusantara. Atribut yang cocok membawa hasil lebih banyak."
+	_exp_pick = ""
+	_fill_expeditions()
+
+
+func _close_expeditions() -> void:
+	if is_instance_valid(_exp_overlay):
+		Audio.play("click")
+		_exp_overlay.queue_free()
+	_exp_overlay = null
+	_exp_pick = ""
+
+
+func _expedition_reward_text(reward: Dictionary) -> String:
+	var text: String = _reward_text(reward)
+	if reward.has("equip"):
+		text += (", " if text != "" else "") + Data.equip_def(reward["equip"])["name"]
+	return text
+
+
+func _fill_expeditions() -> void:
+	_clear(_exp_box)
+	_exp_timers = []
+	if _exp_pick != "":
+		_fill_expedition_targets()
+		return
+	var now: float = Game.now()
+	var slots: int = model.expedition_slots()
+	_label(_exp_box, "Rombongan berjalan (%d / %d)" % [model.expeditions.size(), slots], "CardLabel") \
+		.add_theme_font_override("font", UI.font_bold)
+	if model.expeditions.is_empty():
+		_label(_exp_box, "Belum ada rombongan yang berangkat.", "SmallLabel").add_theme_color_override("font_color", UI.INK)
+	for i in model.expeditions.size():
+		var e: Dictionary = model.expeditions[i]
+		var dest: Dictionary = model.expedition_def(e["dest"])
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		_inner_box(_exp_box).add_child(row)
+		row.add_child(_tex(Art.portrait(e["counselor"]), 64))
+		var col := _col(row)
+		_label(col, "%s · %s" % [Data.counselor_def(e["counselor"])["name"], dest["name"]], "CardLabel") \
+			.add_theme_font_override("font", UI.font_bold)
+		var total := int(float(dest["hours"]) * 3600)
+		var left: int = model.expedition_eta(i, now)
+		var bar := _bar(col, total - left, total, Color("e0a030"))
+		var tl := _label(col, "", "SmallLabel")
+		tl.add_theme_color_override("font_color", UI.INK)
+		_label(col, "Membawa: %s" % _expedition_reward_text(e["reward"]), "SmallLabel") \
+			.add_theme_color_override("font_color", UI.INK)
+		_exp_timers.append({"label": tl, "bar": bar, "index": i, "total": total})
+		var idx: int = i
+		var b := _button(row, "Klaim", func(): return model.claim_expedition(idx, Game.now()), left <= 0,
+			"", "GoldButton" if left <= 0 else "", false, "coin")
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		b.custom_minimum_size.x = 120
+	_tick()
+
+	_label(_exp_box, "Tujuan", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	var full: bool = model.expeditions.size() >= slots
+	for dest in Data.EXPEDITIONS:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		_inner_box(_exp_box).add_child(row)
+		row.add_child(_tex(Art.icon(dest["icon"]), 72))
+		var col := _col(row)
+		_label(col, "%s · %d jam" % [dest["name"], dest["hours"]], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		_label(col, dest["desc"], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+		var open: bool = model.stage >= int(dest["stage"])
+		if not open:
+			_label(col, "Terbuka setelah Tahap %d" % dest["stage"], "SmallLabel").add_theme_color_override("font_color", UI.RED)
+		else:
+			var loot := []
+			for key in dest["yields"]:
+				loot.append(Data.REWARD_NAMES[key])
+			loot.append(Data.REWARD_NAMES["gold"])
+			for entry in dest["items"]:
+				loot.append("Pusaka" if entry[0] == "equip" else Data.ITEMS[entry[0]]["name"])
+			_label(col, "Cocok: %s · hasil: %s" % [Data.ATTR_NAMES[dest["attr"]], ", ".join(loot)], "SmallLabel") \
+				.add_theme_color_override("font_color", UI.ATTR_COLORS[dest["attr"]].darkened(0.2))
+		var did: String = dest["id"]
+		var ok: bool = open and not full
+		var b := _button(row, "Kirim", func():
+			_exp_pick = did
+			_fill_expeditions()
+			return null, ok, "", "GreenButton" if ok else "")
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		b.custom_minimum_size.x = 120
+	if full:
+		_label(_exp_box, "Semua rombongan sedang berangkat. Tunggu sampai ada yang kembali.", "SmallLabel") \
+			.add_theme_color_override("font_color", UI.INK)
+
+
+## Pilih penasihat untuk tujuan _exp_pick, diurutkan dari pengali hadiah terbesar.
+func _fill_expedition_targets() -> void:
+	var dest: Dictionary = model.expedition_def(_exp_pick)
+	var head := HBoxContainer.new()
+	_exp_box.add_child(head)
+	_button(head, "Kembali", func():
+		_exp_pick = ""
+		_fill_expeditions()
+		return null).custom_minimum_size = Vector2(150, 56)
+	var title := _label(head, "%s: pilih penasihat" % dest["name"], "CardLabel")
+	title.add_theme_font_override("font", UI.font_bold)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var ids: Array = model.counselors.keys().filter(func(id): return not model.expedition_busy(id))
+	ids.sort_custom(func(a, b): return model.expedition_mult(dest, a) > model.expedition_mult(dest, b))
+	if ids.is_empty():
+		_label(_exp_box, "Semua penasihat sedang dalam ekspedisi.", "SmallLabel") \
+			.add_theme_color_override("font_color", UI.INK)
+	for id in ids:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		_inner_box(_exp_box).add_child(row)
+		row.add_child(_tex(Art.portrait(id), 64))
+		var col := _col(row)
+		_label(col, Data.counselor_def(id)["name"], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		var mult: float = model.expedition_mult(dest, id)
+		_label(col, "%s %s · hasil x%.1f" % [Data.ATTR_NAMES[dest["attr"]], _num(model.attr(id, dest["attr"])), mult],
+			"SmallLabel").add_theme_color_override("font_color", UI.GREEN.darkened(0.3) if mult >= 1.0 else UI.INK)
+		_label(col, "Perkiraan: %s" % _reward_text(model.expedition_preview(dest, id)), "SmallLabel") \
+			.add_theme_color_override("font_color", UI.INK)
+		var cid: String = id
+		var did: String = _exp_pick
+		var b := _button(row, "Kirim", func():
+			var r: Dictionary = model.send_expedition(did, cid, Game.now())
+			_exp_pick = ""
 			return r, true, "", "GreenButton", false, "upgrade")
 		b.custom_minimum_size = Vector2(120, 56)
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER

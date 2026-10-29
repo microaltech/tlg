@@ -27,7 +27,7 @@ func _init() -> void:
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
 		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass", "test_offers", "test_achievements", "test_save_code",
-		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings",
+		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1865,3 +1865,49 @@ func test_buildings() -> void:
 	check(m2.building_level("pasar") == Data.BUILDING_MAX_LEVEL and m2.build_job().is_empty(), "data rusak dijepit")
 	check(Data.building_tier(0) == 0 and Data.building_tier(3) == 1 and Data.building_tier(4) == 2
 		and Data.building_tier(10) == 3, "tingkat tampilan")
+
+
+func test_expeditions() -> void:
+	var m := fresh()
+	var t := 1000.0
+	check(not m.send_expedition("alas_purwo", "arya", t)["ok"], "ekspedisi terkunci di awal")
+	m.stage = 3
+	check(not m.send_expedition("borobudur", "arya", t)["ok"], "tujuan terkunci tahapnya")
+	check(not m.send_expedition("alas_purwo", "gajah", t)["ok"], "penasihat belum dimiliki")
+	var dest := m.expedition_def("alas_purwo")
+	var best: String = "arya" if m.attr("arya", "str") >= m.attr("sekar", "str") else "sekar"
+	var other: String = "sekar" if best == "arya" else "arya"
+	check(m.expedition_mult(dest, best) > m.expedition_mult(dest, other), "atribut cocok memberi hasil lebih")
+	var preview := m.expedition_preview(dest, best)
+	check(preview["grain"] > 0 and preview["soldiers"] > 0, "perkiraan hasil")
+	check(m.send_expedition("alas_purwo", best, t)["ok"] and m.expedition_busy(best), "berangkat")
+	check(not m.send_expedition("alas_purwo", best, t)["ok"], "penasihat yang sama tidak bisa dikirim dua kali")
+	check(m.send_expedition("alas_purwo", other, t)["ok"], "slot kedua")
+	m.counselors["gajah"] = {"level": 1, "stars": 0, "bonus": {}}
+	check(m.expedition_slots() == 2 and not m.send_expedition("alas_purwo", "gajah", t)["ok"], "slot penuh")
+	check(m.notification_plan(t).any(func(n): return n["id"] == 7 and n["delay"] == 3600), "notifikasi kepulangan")
+	check(not m.claim_expedition(0, t + 100.0)["ok"] and m.expeditions_ready(t + 100.0) == 0, "belum kembali")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
+	check(var_to_str(m2.expeditions) == var_to_str(m.expeditions), "simpan/muat ekspedisi")
+	var grain := m.grain
+	var reward: Dictionary = m.expeditions[0]["reward"]
+	check(m.expeditions_ready(t + 3600.0) == 2, "dua rombongan kembali")
+	check(m.claim_all_expeditions(t + 3600.0)["ok"] and m.expeditions.is_empty(), "klaim semua")
+	check(m.grain >= grain + int(reward["grain"]), "hadiah diterima")
+	check(not m.expedition_busy(best) and int(m.counters.get("expedition", 0)) == 2, "penasihat bebas lagi")
+	m.rank = Data.EXPEDITION_EXTRA_SLOT_RANK
+	check(m.expedition_slots() == 3, "slot tambahan dari jabatan")
+	m.stage = 20
+	var eq := m.equipment.size()
+	var stars := 0
+	for i in 20:
+		m.send_expedition("merapi", "arya", t)
+		stars += int(m.expeditions[0]["reward"].get("items", {}).get("star_stone", 0))
+		m.claim_expedition(0, t + 8 * 3600.0)
+	check(m.equipment.size() > eq and stars > 0, "Merapi memberi pusaka dan batu bintang")
+	var bad := m.to_dict()
+	bad["expeditions"] = [{"dest": "atlantis", "counselor": "arya"}, "x",
+		{"dest": "merapi", "counselor": "arya", "end_t": 5.0, "reward": {"gold": 3, "items": {"palsu": 1}, "equip": "palsu"}}]
+	m2.from_dict(bad, t)
+	check(m2.expeditions.size() == 1 and m2.expeditions[0]["reward"] == {"gold": 3, "items": {}}, "data rusak dibersihkan")

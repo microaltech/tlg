@@ -117,6 +117,8 @@ var festival := {}
 var cosmetics := {}
 ## Bangunan kota: levels {id: level} dan job pembangunan berjalan {id, end_t} atau {}.
 var buildings := {}
+## Ekspedisi berjalan: [{dest, counselor, end_t, reward}].
+var expeditions: Array = []
 var rng := RandomNumberGenerator.new()
 
 
@@ -125,6 +127,7 @@ func new_game(now: float) -> void:
 	lord_name = ""
 	formation = "balanced"
 	festival = {}
+	expeditions = []
 	buildings = {"levels": {"istana": 1, "pasar": 0, "lumbung": 0, "barak": 0}, "job": {}}
 	cosmetics = {"owned": ["frame_kayu", "costume_lord"], "frame": "frame_kayu", "costume": "costume_lord"}
 	equipment = []
@@ -2820,6 +2823,14 @@ func notification_plan(now: float) -> Array:
 		"text": "Ambil hadiah harian dan jaga rangkaian login Tuan."})
 	plan.append({"id": 5, "delay": NOTIFY_IDLE_SECONDS, "title": "Kerajaan merindukan Tuan",
 		"text": "Rakyat menunggu perintah. Urusan dan hadiah sudah menumpuk."})
+	var back := -1
+	for i in expeditions.size():
+		var eta := expedition_eta(i, now)
+		if eta > 0 and (back < 0 or eta < back):
+			back = eta
+	if back > 0:
+		plan.append({"id": 7, "delay": back, "title": "Rombongan ekspedisi kembali",
+			"text": "Penasihat Tuan pulang membawa hasil ekspedisi."})
 	var build := build_eta(now)
 	if build > 0:
 		plan.append({"id": 6, "delay": build, "title": "Pembangunan selesai",
@@ -3089,6 +3100,124 @@ func rush_build(now: float) -> Dictionary:
 	finish_build(now)
 	changed.emit()
 	return _ok("%s selesai dibangun: level %d!" % [Data.BUILDINGS[id]["name"], building_level(id)])
+
+
+# --- Ekspedisi ------------------------------------------------------------------
+
+func expedition_unlocked() -> bool:
+	return stage >= Data.EXPEDITION_UNLOCK_STAGE
+
+
+func expedition_slots() -> int:
+	return Data.EXPEDITION_SLOTS + (1 if rank >= Data.EXPEDITION_EXTRA_SLOT_RANK else 0)
+
+
+func expedition_def(id: String) -> Dictionary:
+	for d in Data.EXPEDITIONS:
+		if d["id"] == id:
+			return d
+	return {}
+
+
+func expedition_busy(counselor_id: String) -> bool:
+	return expeditions.any(func(e): return e["counselor"] == counselor_id)
+
+
+## Pengali hadiah dari atribut penasihat dibanding rata-rata penasihat Anda (0.6–2.0).
+func expedition_mult(dest: Dictionary, counselor_id: String) -> float:
+	if not counselors.has(counselor_id):
+		return 0.0
+	var key: String = dest["attr"]
+	var avg := float(total_attr(key) - (total_intimacy() if key == "cha" else 0)) / maxi(1, counselors.size())
+	return clampf(0.6 + 0.4 * attr(counselor_id, key) / maxf(1.0, avg), 0.6, 2.0)
+
+
+## Perkiraan hadiah sumber daya (tanpa emas & item acak) untuk ditampilkan sebelum berangkat.
+func expedition_preview(dest: Dictionary, counselor_id: String) -> Dictionary:
+	var mult := expedition_mult(dest, counselor_id)
+	var out := {}
+	for key in dest["yields"]:
+		out[key] = int(affair_yield(key) * float(dest["yields"][key]) * mult)
+	return out
+
+
+func send_expedition(dest_id: String, counselor_id: String, now: float) -> Dictionary:
+	if not expedition_unlocked():
+		return _fail("Menangkan Tahap %d untuk membuka Ekspedisi." % Data.EXPEDITION_UNLOCK_STAGE)
+	var dest := expedition_def(dest_id)
+	if dest.is_empty():
+		return _fail("Tujuan tidak dikenal.")
+	if stage < int(dest["stage"]):
+		return _fail("%s terbuka setelah Tahap %d." % [dest["name"], dest["stage"]])
+	if not counselors.has(counselor_id):
+		return _fail("Penasihat belum direkrut.")
+	if expedition_busy(counselor_id):
+		return _fail("%s sedang dalam ekspedisi." % Data.counselor_def(counselor_id)["name"])
+	if expeditions.size() >= expedition_slots():
+		return _fail("Semua rombongan ekspedisi sedang berangkat.")
+	# Hadiah ditentukan saat berangkat agar tidak berubah saat game dibuka ulang.
+	var reward := expedition_preview(dest, counselor_id)
+	var gold_range: Array = dest["gold"]
+	reward["gold"] = rng.randi_range(int(gold_range[0]), int(gold_range[1]))
+	var items := {}
+	var equip := ""
+	for entry in dest["items"]:
+		if rng.randf() >= float(entry[1]):
+			continue
+		if entry[0] == "equip":
+			equip = Data.equip_roll(stage, rng.randf(), rng.randf())
+		else:
+			items[entry[0]] = int(items.get(entry[0], 0)) + 1
+	if not items.is_empty():
+		reward["items"] = items
+	if equip != "":
+		reward["equip"] = equip
+	expeditions.append({"dest": dest_id, "counselor": counselor_id,
+		"end_t": now + float(dest["hours"]) * 3600.0, "reward": reward})
+	changed.emit()
+	return _ok("%s berangkat ke %s. Kembali dalam %d jam." % [Data.counselor_def(counselor_id)["name"], dest["name"],
+		dest["hours"]])
+
+
+func expedition_eta(index: int, now: float) -> int:
+	return maxi(0, int(ceil(float(expeditions[index]["end_t"]) - now)))
+
+
+func expeditions_ready(now: float) -> int:
+	return expeditions.filter(func(e): return now >= float(e["end_t"])).size()
+
+
+func claim_expedition(index: int, now: float) -> Dictionary:
+	if index < 0 or index >= expeditions.size():
+		return _fail("Ekspedisi tidak ditemukan.")
+	var e: Dictionary = expeditions[index]
+	if now < float(e["end_t"]):
+		return _fail("Rombongan belum kembali.")
+	expeditions.remove_at(index)
+	var reward: Dictionary = e["reward"]
+	var parts := []
+	var text := _give_rewards(reward)
+	if text != "":
+		parts.append(text)
+	if reward.has("equip"):
+		var eq := add_equipment(str(reward["equip"]))
+		if not eq.is_empty():
+			parts.append(Data.equip_def(eq["id"])["name"])
+	_track("expedition")
+	changed.emit()
+	return _ok("%s kembali dari %s: %s." % [Data.counselor_def(e["counselor"])["name"],
+		expedition_def(e["dest"])["name"], ", ".join(parts)])
+
+
+func claim_all_expeditions(now: float) -> Dictionary:
+	var msgs := []
+	for i in range(expeditions.size() - 1, -1, -1):
+		var r := claim_expedition(i, now)
+		if r["ok"]:
+			msgs.append(r["msg"])
+	if msgs.is_empty():
+		return _fail("Belum ada rombongan yang kembali.")
+	return _ok(" ".join(msgs))
 
 
 # --- Festival musiman ---------------------------------------------------------
@@ -3569,6 +3698,8 @@ func away_snapshot(now: float) -> Dictionary:
 		"war_reward": not war_reward.is_empty(),
 		"season": not arena.is_empty() and not arena.get("season_reward", {}).is_empty(),
 		"lb_reward": not leaderboard.get("reward", {}).is_empty(),
+		"exp_ready": expeditions_ready(now), "building": build_job().get("id", ""),
+		"building_level": building_level(build_job().get("id", "istana")),
 	}
 
 
@@ -3609,6 +3740,12 @@ func away_report(snap: Dictionary, now: float) -> Dictionary:
 		lines.append({"icon": "trophy", "text": "Musim arena selesai. Hadiah liga siap diklaim."})
 	if not leaderboard.get("reward", {}).is_empty() and not bool(snap.get("lb_reward", false)):
 		lines.append({"icon": "gold_crown", "text": "Peringkat global minggu lalu sudah keluar. Ambil hadiahnya."})
+	var built := str(snap.get("building", ""))
+	if Data.BUILDINGS.has(built) and building_level(built) > int(snap.get("building_level", 0)):
+		lines.append({"icon": Data.BUILDINGS[built]["icon"], "text": "Pembangunan %s selesai: level %d." % [
+			Data.BUILDINGS[built]["name"], building_level(built)]})
+	if expeditions_ready(now) > int(snap.get("exp_ready", 0)):
+		lines.append({"icon": "exp_hutan", "text": "%d rombongan ekspedisi sudah kembali." % expeditions_ready(now)})
 	if lines.is_empty():
 		lines.append({"icon": "tab_city", "text": "Kerajaan aman. Semua urusan menunggu perintah Tuan."})
 	return {"seconds": int(away), "lines": lines}
@@ -3694,6 +3831,7 @@ func to_dict() -> Dictionary:
 		"formation": formation,
 		"festival": festival,
 		"buildings": buildings,
+		"expeditions": expeditions,
 		"cosmetics": cosmetics,
 	}
 
@@ -3729,6 +3867,24 @@ func from_dict(d: Dictionary, now: float) -> void:
 	var src_job: Dictionary = src_bld.get("job", {})
 	if Data.BUILDINGS.has(str(src_job.get("id", ""))):
 		buildings["job"] = {"id": str(src_job["id"]), "end_t": float(src_job.get("end_t", now))}
+	for e in d.get("expeditions", []):
+		if not (e is Dictionary) or expedition_def(str(e.get("dest", ""))).is_empty() \
+				or Data.counselor_def(str(e.get("counselor", ""))).is_empty():
+			continue
+		var r := {}
+		var src_r: Dictionary = e.get("reward", {})
+		for key in Data.REWARD_KEYS:
+			if src_r.has(key):
+				r[key] = int(src_r[key])
+		if src_r.has("items"):
+			r["items"] = {}
+			for id in src_r["items"]:
+				if Data.ITEMS.has(id):
+					r["items"][str(id)] = int(src_r["items"][id])
+		if not Data.equip_def(str(src_r.get("equip", ""))).is_empty():
+			r["equip"] = str(src_r["equip"])
+		expeditions.append({"dest": str(e["dest"]), "counselor": str(e["counselor"]),
+			"end_t": float(e.get("end_t", now)), "reward": r})
 	var src_cos: Dictionary = d.get("cosmetics", {})
 	for id in src_cos.get("owned", []):
 		unlock_cosmetic(str(id))

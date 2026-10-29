@@ -100,6 +100,11 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   dengan emas). Bonus hasil urusan per level; Keraton dibatasi jabatan dan
   membatasi bangunan lain. Gambar bangunan di banner Kota berubah dari tanah
   kosong, bangunan sederhana, sampai megah (aset `assets/buildings/`).
+- **Ekspedisi** — dari Tahap 3, kirim penasihat ke Hutan Alas Purwo (1 jam),
+  Candi Borobudur (2 jam), Pelabuhan Sunda Kelapa (4 jam), atau Gunung Merapi
+  (8 jam). Hadiah ditentukan saat berangkat dan makin besar bila atribut penasihat
+  cocok dengan tujuan. 2 rombongan sekaligus (3 sejak Gubernur), dengan notifikasi
+  saat kembali.
 - **Kampanye** — tahap tanpa batas yang dibuat prosedural. Kekuatan total
   menentukan berapa prajurit yang gugur. Menang memberi perak, prestise & emas serta
   membuka penasihat/selir baru.

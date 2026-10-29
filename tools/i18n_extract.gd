@@ -26,7 +26,7 @@ const SKIP_CONSTS := ["NPC_NAMES", "CHILD_NAMES", "ARENA_AVATARS", "ITEM_ORDER",
 ## Literal kode yang bukan teks tampilan.
 const SKIP_LINE := "push_warning|push_error|print\\(|printerr|assert|\\.connect\\(|has_signal|\\.bus ="
 ## Nama teknis atau teks yang sengaja tidak diterjemahkan.
-const THEME_NAMES := ["Rp", "Content-Type: application/json", "Authorization: Bearer", "AdMob", "Top Lord Like", "GodotPlayGameServices", "ProgressBar", "GodotGooglePlayBilling", "TlgNotify", "Android", "--- log ---","CardLabel", "CardTitle", "TitleLabel", "SmallLabel", "BigLabel", "GoldButton",
+const THEME_NAMES := ["Rp", "Content-Type: application/json", "Authorization: Bearer", "AdMob", "Top Lord Like", "GodotPlayGameServices", "ProgressBar", "Button", "ScrollContainer", "LineEdit", "Label", "GodotGooglePlayBilling", "TlgNotify", "Android", "--- log ---","CardLabel", "CardTitle", "TitleLabel", "SmallLabel", "BigLabel", "GoldButton",
 	"GreenButton", "NavButton", "DarkPanel", "Chip", "Toast", "Music", "SFX", "Master"]
 
 var found := {}  ## teks -> lokasi

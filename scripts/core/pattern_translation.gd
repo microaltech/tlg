@@ -275,12 +275,16 @@ func _compile(src: String, dst: String) -> Dictionary:
 			literal += "%"
 		else:
 			slots.append(token if token.begins_with("{") else ("%s" if text_arg else "%d"))
+			# Penanda posisi placeholder: tanpa ini " +%d (penuh)" menyatu menjadi
+			# " + (" dan keliru dianggap pemisah daftar " + ".
+			literal += "\u0001"
 		pos = m.get_end()
 	var tail := src.substr(pos)
 	for k in regex:
 		regex[k] += _escape(tail) + "$"
 	literal += tail
-	if slots.is_empty() or literal.strip_edges() == "":
+	var fixed := literal.replace("\u0001", "")
+	if slots.is_empty() or fixed.strip_edges() == "":
 		return {}
 	var container := false
 	for mark in LIST_MARKS:
@@ -289,7 +293,8 @@ func _compile(src: String, dst: String) -> Dictionary:
 		for mark in CLOSING_MARKS:
 			container = container or src.ends_with("%s" + mark)
 	return {"strict": RegEx.create_from_string(regex["strict"]), "medium": RegEx.create_from_string(regex["medium"]),
-		"loose": RegEx.create_from_string(regex["loose"]), "container": container, "slots": slots, "dst": dst, "weight": literal.length()}
+		"loose": RegEx.create_from_string(regex["loose"]), "container": container, "slots": slots, "dst": dst,
+		"weight": fixed.length()}
 
 
 static func _escape(s: String) -> String:

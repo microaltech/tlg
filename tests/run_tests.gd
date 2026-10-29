@@ -27,7 +27,7 @@ func _init() -> void:
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
 		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass", "test_offers", "test_achievements", "test_save_code",
-		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses", "test_story_choices", "test_duel_plan", "test_silat", "test_territory", "test_court", "test_tales", "test_codex", "test_wheel", "test_chat_remote",
+		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses", "test_story_choices", "test_duel_plan", "test_silat", "test_territory", "test_court", "test_tales", "test_codex", "test_wheel", "test_chat_remote", "test_translation_list_with_numbers",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -2300,3 +2300,18 @@ func test_chat_remote() -> void:
 	m.chat_messages(5000.0 + 30.0)
 	check(m._chat()["msgs"].filter(func(x): return x.get("me", false)).size() == 1, "pesan sendiri tercatat")
 	check(m._chat()["msgs"].size() >= before + 1, "pesan tersimpan")
+
+
+## Regresi: templat "%s +%d (penuh)" dulu dianggap templat daftar (" +%d (" menyatu
+## menjadi pemisah " + "), sehingga menelan daftar panjang dan item pertama tak terjemah.
+func test_translation_list_with_numbers() -> void:
+	var t = load("res://scripts/core/pattern_translation.gd").new()
+	t.add_entry("Tarik Pajak", "Collect Taxes")
+	t.add_entry("Kelola Sawah", "Manage Farms")
+	t.add_entry("Rekrut Prajurit", "Recruit Troops")
+	t.add_entry("Energi kunjungan", "Visit energy")
+	t.add_entry("%s +%d (penuh)", "%s +%d (full)")
+	t.add_entry("Urusan terisi kembali: %s.", "Affairs refilled: %s.")
+	var src := "Urusan terisi kembali: Tarik Pajak +6 (penuh), Kelola Sawah +6 (penuh), Rekrut Prajurit +6 (penuh), Energi kunjungan +6 (penuh)."
+	check(t.translate_text(src) == "Affairs refilled: Collect Taxes +6 (full), Manage Farms +6 (full), Recruit Troops +6 (full), Visit energy +6 (full).",
+		"daftar 4 item dengan angka diterjemahkan utuh")

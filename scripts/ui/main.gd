@@ -34,6 +34,8 @@ var _fx: Control
 ## key -> {"label": Label, "bar": ProgressBar, "prefix": String}; diperbarui tiap detik.
 var _charge_widgets := {}
 var _rebuild_queued := false
+## Halaman tersembunyi yang isinya sudah usang; dibangun ulang saat dibuka.
+var _dirty_pages := {}
 var _battling := false
 var _vs_lord: TextureRect
 var _vs_enemy: TextureRect
@@ -251,6 +253,41 @@ func _notification(what: int) -> void:
 	# teks yang dirangkai kode (dan ukuran tata letak) ikut diperbarui.
 	if what == NOTIFICATION_TRANSLATION_CHANGED and is_node_ready():
 		_queue_rebuild()
+	elif what == NOTIFICATION_WM_GO_BACK_REQUEST and is_node_ready():
+		_on_back()
+
+
+## Tombol Back Android: tutup jendela teratas; di layar utama, tanya dulu sebelum keluar.
+## (application/config/quit_on_go_back dimatikan agar Back tidak langsung menutup game.)
+func _on_back() -> void:
+	var modals := get_tree().get_nodes_in_group("modal").filter(func(n):
+		return (n is CanvasItem and n.is_visible_in_tree()) or (n is Window and n.visible))
+	if _tutorial and is_instance_valid(_tutorial) and _tutorial.visible:
+		return  # tutorial memandu langkah demi langkah; Back diabaikan
+	if modals.is_empty():
+		_confirm("Keluar dari game? Progres sudah tersimpan.", "Keluar Game", func():
+			Game.save_game()
+			get_tree().quit())
+		return
+	var top: Node = modals[-1]
+	for m in modals:
+		if m.get_index() > top.get_index() and m.get_parent() == top.get_parent():
+			top = m
+	Audio.play("click")
+	if top is Window:
+		top.hide()
+	elif top.has_method("skip") and top.has_method("close"):
+		top.close()  # tayangan perang/duel: hasil sudah dihitung, langsung tutup
+	else:
+		# Panel biasa: tekan tombol Tutup-nya agar logika penutupan panel ikut berjalan.
+		var closed := false
+		for b in top.find_children("*", "Button", true, false):
+			if b.text == "Tutup" and b.is_visible_in_tree():
+				b.pressed.emit()
+				closed = true
+				break
+		if not closed:
+			top.queue_free()
 
 
 func _on_node_added(node: Node) -> void:
@@ -449,6 +486,9 @@ func _build_nav() -> Control:
 
 func _switch_page(key: String, animate := true) -> void:
 	_current = key
+	if _dirty_pages.has(key):
+		_dirty_pages.erase(key)
+		_build_page_content(key)
 	if _tutorial:
 		_tutorial.on_page(key)
 	Audio.play_music({"campaign": "battle", "palace": "palace", "gacha": "palace"}.get(key, "city"))
@@ -640,13 +680,14 @@ func _rebuild() -> void:
 		if is_instance_valid(l) and not l.is_queued_for_deletion():
 			alive.append(l)
 	_event_timer_labels = alive
-	_build_city(_pages["city"]["content"])
-	_build_counselors(_pages["counselor"]["content"])
-	_build_gacha(_pages["gacha"])
-	_build_campaign(_pages["campaign"])
-	_build_palace(_pages["palace"]["content"])
-	_build_alliance(_pages["alliance"]["content"])
-	_build_arena(_pages["arena"]["content"])
+	# Hanya halaman yang terlihat yang dibangun ulang; membangun ketujuh halaman
+	# tiap aksi terlalu berat di HP. Halaman lain dibangun saat dibuka (_switch_page).
+	for k in _pages:
+		if k == _current:
+			_dirty_pages.erase(k)
+			_build_page_content(k)
+		else:
+			_dirty_pages[k] = true
 	if is_instance_valid(_mission_overlay):
 		_fill_missions()
 	if is_instance_valid(_login_overlay):
@@ -808,6 +849,24 @@ func _tick() -> void:
 		w["label"].text = "%s %d/%d%s" % [w["prefix"], model.charge_value(key, now), model.max_charges(),
 			"" if eta == 0 else "  ·  +1 dalam %ds" % eta]
 		w["bar"].value = model.CHARGE_SECONDS - eta if eta > 0 else model.CHARGE_SECONDS
+
+
+func _build_page_content(key: String) -> void:
+	match key:
+		"city":
+			_build_city(_pages["city"]["content"])
+		"counselor":
+			_build_counselors(_pages["counselor"]["content"])
+		"gacha":
+			_build_gacha(_pages["gacha"])
+		"campaign":
+			_build_campaign(_pages["campaign"])
+		"palace":
+			_build_palace(_pages["palace"]["content"])
+		"alliance":
+			_build_alliance(_pages["alliance"]["content"])
+		"arena":
+			_build_arena(_pages["arena"]["content"])
 
 
 static func _duration(seconds: int) -> String:
@@ -1514,7 +1573,7 @@ func _open_panel(title: String, icon_name: String, on_close: Callable, top := 0.
 	var tw := create_tween().set_parallel()
 	tw.tween_property(overlay, "modulate:a", 1.0, 0.15)
 	tw.tween_property(panel, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	return {"overlay": overlay, "content": content, "subtitle": subtitle}
+	return {"overlay": overlay, "content": content, "subtitle": subtitle, "panel_box": v, "close": close}
 
 
 func _show_missions() -> void:
@@ -5510,7 +5569,7 @@ func _show_away() -> void:
 			holder["overlay"].queue_free()
 		_maybe_prompt_login.call_deferred()
 	Audio.play("promote", 0.0)
-	var p := _open_panel("Selamat Datang Kembali", "tab_city", close, 0.16, 0.76)
+	var p := _open_panel("Selamat Datang Kembali", "tab_city", close, 0.08, 0.9)
 	holder["overlay"] = p["overlay"]
 	p["subtitle"].text = "Tuan pergi selama " + _away_text(int(report["seconds"]))
 	for line in report["lines"]:
@@ -5519,7 +5578,8 @@ func _show_away() -> void:
 		_inner_box(p["content"]).add_child(row)
 		row.add_child(_tex(Art.icon(line["icon"]), 56))
 		_label(_col(row), line["text"], "CardLabel")
-	_button(p["content"], "Lanjutkan", close, true, "", "GoldButton").custom_minimum_size.y = 80
+	# Tombol di luar area gulir agar selalu terlihat walau ringkasannya panjang.
+	_button(p["panel_box"], "Lanjutkan", close, true, "", "GoldButton").custom_minimum_size.y = 80
 
 
 static func _away_text(seconds: int) -> String:

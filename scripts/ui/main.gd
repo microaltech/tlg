@@ -245,10 +245,7 @@ func _ready() -> void:
 		if get_tree().get_nodes_in_group("modal").is_empty():
 			_maybe_prompt_login())
 	# Tampilkan ringkasan kembali lalu hadiah login otomatis setelah layar siap.
-	if Telemetry.crashed_last_time:
-		get_tree().create_timer(0.6).timeout.connect(_show_crash_notice)
-	else:
-		get_tree().create_timer(0.6).timeout.connect(_maybe_prompt_login)
+	get_tree().create_timer(0.6).timeout.connect(_maybe_prompt_login)
 
 
 func _notification(what: int) -> void:
@@ -5589,25 +5586,6 @@ func _show_away() -> void:
 		row.add_child(_tex(Art.icon(line["icon"]), 56))
 		_label(_col(row), line["text"], "CardLabel")
 	# Tombol di luar area gulir agar selalu terlihat walau ringkasannya panjang.
-	_button(p["panel_box"], "Lanjutkan", close, true, "", "GoldButton").custom_minimum_size.y = 80
-
-
-## Game sempat berhenti tidak normal: tawarkan menyalin laporan untuk pengembang.
-func _show_crash_notice() -> void:
-	var holder := {}
-	var close := func():
-		Audio.play("click")
-		if is_instance_valid(holder.get("overlay")):
-			holder["overlay"].queue_free()
-		_maybe_prompt_login.call_deferred()
-	var p := _open_panel("Maaf, game sempat berhenti", "help", close, 0.2, 0.75)
-	holder["overlay"] = p["overlay"]
-	p["subtitle"].text = "Progres terakhir sudah tersimpan."
-	_label(p["content"], "Game tertutup secara tidak normal pada sesi sebelumnya. Bantu kami memperbaikinya: "
-		+ "salin laporan lalu kirimkan ke pengembang (mis. lewat WhatsApp atau email).", "CardLabel")
-	_button(p["content"], "Salin Laporan", func():
-		DisplayServer.clipboard_set(Telemetry.problem_report())
-		return {"ok": true, "msg": "Laporan disalin. Tempelkan di email ke pengembang."}, true, "", "GreenButton")
 	_button(p["panel_box"], "Lanjutkan", close, true, "", "GoldButton").custom_minimum_size.y = 80
 
 

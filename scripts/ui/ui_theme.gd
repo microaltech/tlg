@@ -30,6 +30,15 @@ static func box(bg: Color, border := Color.TRANSPARENT, width := 0, radius := 12
 	return s
 
 
+## Kecilkan ukuran huruf label satu baris (sudah di pohon node) agar muat di max_width.
+static func fit_font(label: Label, max_width: float) -> void:
+	var font_size := label.get_theme_font_size("font_size")
+	var width := label.get_theme_font("font").get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1,
+		font_size).x + label.get_theme_constant("outline_size")
+	if width > max_width:
+		label.add_theme_font_size_override("font_size", maxi(24, int(font_size * max_width / width)))
+
+
 static func _button_styles(t: Theme, type: String, base: Color, edge: Color, font_color: Color) -> void:
 	var normal := box(base, GOLD, 2)
 	normal.border_width_bottom = 6

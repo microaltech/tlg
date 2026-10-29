@@ -519,6 +519,7 @@ func _finish() -> void:
 	panel.theme_type_variation = "Toast"
 	panel.position = Vector2(30, size.y * 0.30)
 	panel.custom_minimum_size.x = size.x - 60
+	panel.size.x = size.x - 60
 	add_child(panel)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 10)
@@ -528,7 +529,10 @@ func _finish() -> void:
 	big.theme_type_variation = "BigLabel"
 	big.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	big.add_theme_color_override("font_color", UI.GOLD if win else Color("e06050"))
+	big.text = tr(big.text)  # ukur teks yang benar-benar tampil
+	big.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	box.add_child(big)
+	UI.fit_font(big, size.x - 60 - 48)
 	var detail := Label.new()
 	detail.text = str(info.get("detail", ""))
 	detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

@@ -27,7 +27,7 @@ func _init() -> void:
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
 		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass", "test_offers", "test_achievements", "test_save_code",
-		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses", "test_story_choices", "test_duel_plan", "test_silat",
+		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses", "test_story_choices", "test_duel_plan", "test_silat", "test_territory",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -2091,3 +2091,48 @@ func test_silat() -> void:
 	check(weak.silver == silver + 20000 and not weak.owns_cosmetic("frame_silat"), "hadiah gugur di perempat final")
 	var wb := weak.silat_bracket()
 	check(wb[0][0][2] == 0, "bagan: lawan maju setelah jagoan kalah")
+
+
+func test_territory() -> void:
+	var m := fresh()
+	var t := 1000.0
+	check(m.region_owned("mataram") and m.next_region() == "pasundan", "ibu kota Mataram sejak awal")
+	check(not m.conquer_region("majapahit", t)["ok"], "harus berurutan")
+	check(not m.conquer_region("pasundan", t)["ok"], "butuh tahap kampanye")
+	var per := m.tribute_per_hour()
+	check(per["silver"] > 0 and per["grain"] == 0, "upeti dari Mataram")
+	check(not m.collect_tribute(t)["ok"], "upeti belum terkumpul")
+	var silver := m.silver
+	check(m.collect_tribute(t + 7200.0)["ok"] and m.silver == silver + per["silver"] * 2, "upeti 2 jam")
+	check(m.tribute_pending(t + 7200.0 + 100 * 3600.0)["silver"] == per["silver"] * int(Data.MAP_TRIBUTE_HOURS),
+		"upeti dibatasi 12 jam")
+	m.stage = 8
+	m.soldiers = 0
+	check(not m.conquer_region("pasundan", t)["ok"], "butuh prajurit")
+	m.soldiers = 1 << 40
+	m.counselors["arya"]["level"] = 5000
+	var prestige := m.prestige
+	var r := m.conquer_region("pasundan", t + 7200.0)
+	check(r["ok"] and r["win"] and m.region_owned("pasundan") and m.prestige > prestige, "taklukkan Pasundan")
+	check(m.soldiers < 1 << 40 and m.tribute_per_hour()["grain"] > 0, "prajurit dikerahkan, upeti pangan bertambah")
+	check(m.region_power("ternate") > m.region_power("pasundan") * 50, "garnisun makin kuat")
+	var weak := fresh()
+	weak.stage = 8
+	weak.soldiers = 1 << 40
+	var lost := 0
+	weak.counselors["arya"]["level"] = 1
+	weak.counselors["sekar"]["level"] = 1
+	for i in 5:
+		var lr := weak.conquer_region("pasundan", t)
+		if lr["ok"] and not lr["win"]:
+			lost += 1
+	check(lost >= 1, "kekuatan kurang bisa kalah")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
+	check(var_to_str(m2.territory) == var_to_str(m.territory), "simpan/muat wilayah")
+	var bad := m.to_dict()
+	bad["territory"] = {"owned": ["atlantis", "bali"], "collect_t": 5.0}
+	m2.from_dict(bad, t)
+	check(m2.territory["owned"] == ["mataram", "bali"], "wilayah rusak dibersihkan, ibu kota tetap")
+	for reg in Data.REGIONS:
+		check(reg["kind"] in ["silver", "grain", "soldiers"], "jenis upeti %s valid" % reg["id"])

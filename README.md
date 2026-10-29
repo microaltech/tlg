@@ -99,6 +99,11 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   bertanding dalam duel visual. Kekuatan silat terutama dari Kekuatan; lawan
   menyesuaikan kekuatan jagoan saat mendaftar, jadi melatihnya setelah mendaftar
   menaikkan peluang. Hadiah sesuai babak, juara mendapat Bingkai Juara Silat.
+- **Peta Nusantara** — di halaman Kampanye: peta pulau-pulau dengan 10 wilayah
+  (Mataram sebagai ibu kota, lalu Pasundan, Majapahit, Sriwijaya, Bali, Kutai,
+  Samudra Pasai, Nusa Tenggara, Gowa, Ternate) yang ditaklukkan berurutan lewat
+  tayangan perang. Butuh tahap kampanye dan prajurit; peluang dari kekuatan tempur
+  melawan garnisun. Tiap wilayah mengirim upeti per jam (maks 12 jam terkumpul).
 - **Festival musiman** — Pesta Tahun Baru (28 Des–7 Jan), Berkah Ramadan &
   Lebaran (awal Ramadan sampai sepekan setelah Idulfitri, tanggal per tahun di
   `FESTIVALS`), Pesta Kemerdekaan (10–24 Agu), Semangat Sumpah Pemuda (24 Okt–2 Nov),

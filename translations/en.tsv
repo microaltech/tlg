@@ -1344,3 +1344,53 @@ Hadiah juara Turnamen Silat	Silat Tournament champion reward
 JUARA!	CHAMPION!
 GUGUR...	ELIMINATED...
 Hadiah	Rewards
+Mataram	Mataram
+Jawa	Java
+Ibu kota Tuan di jantung tanah Jawa.	Your capital in the heart of Java.
+Pasundan	Pasundan
+Tanah Sunda yang subur dengan sawah bertingkat.	The fertile Sundanese land of terraced rice fields.
+Majapahit	Majapahit
+Bekas pusat kerajaan besar dengan prajurit tangguh.	The former seat of a great kingdom, home to tough soldiers.
+Sriwijaya	Srivijaya
+Sumatra	Sumatra
+Bandar dagang di tepi Sungai Musi.	A trading port on the banks of the Musi River.
+Bali	Bali
+Pulau seribu pura dengan subak yang tersohor.	The island of a thousand temples, famed for its subak irrigation.
+Kutai	Kutai
+Kalimantan	Borneo
+Kerajaan tertua Nusantara di tepi Mahakam.	The archipelago's oldest kingdom, on the banks of the Mahakam.
+Samudra Pasai	Samudra Pasai
+Pelabuhan ramai di ujung utara Sumatra.	A busy harbor at the northern tip of Sumatra.
+Nusa Tenggara	Nusa Tenggara
+Gugusan pulau dengan padang sabana dan kuda Sandel.	A chain of islands with savanna plains and Sandalwood horses.
+Gowa	Gowa
+Sulawesi	Sulawesi
+Kerajaan pelaut dengan armada pinisi.	A seafaring kingdom with a fleet of pinisi ships.
+Ternate	Ternate
+Maluku	Maluku
+Pulau rempah yang diperebutkan bangsa-bangsa.	The spice island fought over by many nations.
+Belum ada upeti yang terkumpul.	No tribute has been collected yet.
+Upeti wilayah: %s.	Regional tribute: %s.
+Wilayah tidak dikenal.	Unknown region.
+%s sudah dikuasai.	%s is already yours.
+Kuasai %s lebih dulu.	Conquer %s first.
+%s bisa diserang setelah menang Tahap %d.	%s can be attacked after winning Stage %d.
+Prajurit tidak cukup (butuh %d).	Not enough soldiers (need %d).
+%s ditaklukkan! -%d prajurit, +%d prestise. Upeti %s bertambah.	%s conquered! -%d soldiers, +%d prestige. %s tribute increased.
+Serangan ke %s gagal. %d prajurit gugur. Perkuat pasukan dan coba lagi.	The attack on %s failed. %d soldiers fell. Strengthen your army and try again.
+Peta Nusantara	Archipelago Map
+Wilayah %d / %d · upeti siap %d jam	Regions %d / %d · tribute ready %d h
+Taklukkan wilayah demi wilayah. Tiap wilayah mengirim upeti tiap jam.	Conquer region after region. Each region sends tribute every hour.
+Upeti per jam: %s	Tribute per hour: %s
+Terkumpul %.1f / %d jam: %s	Collected %.1f / %d h: %s
+belum ada	none yet
+Ambil Upeti	Collect Tribute
+Upeti: %s per jam	Tribute: %s per hour
+Wilayah Tuan.	Your territory.
+Garnisun: kekuatan %s · Anda %s	Garrison: power %s · You %s
+Mengerahkan %s prajurit (Anda punya %s)	Deploys %s soldiers (you have %s)
+Bisa diserang setelah menang Tahap %d.	Can be attacked after winning Stage %d.
+Serang %s	Attack %s
+Penaklukan %s	Conquest of %s
+Garnisun %s	%s Garrison
+DITAKLUKKAN!	CONQUERED!

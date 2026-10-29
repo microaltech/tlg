@@ -118,3 +118,18 @@ pengali `yields` di `EXPEDITIONS` sudah dipangkas setengahnya. Ambang jabatan:
 
 Ambang 19.000 juga dicoba, tetapi Menteri mundur ke hari ke-22 sampai 30 karena
 pengali jabatan ikut tertahan, jadi dipilih 17.500.
+
+## Turnamen Silat dan Peta Nusantara
+
+Hadiah turnamen dan upeti wilayah menambah sumber daya lagi. Upeti awalnya 0,25×
+hasil urusan per jam per wilayah, dan penaklukan memberi prestise 10× tahap syarat.
+Dengan angka itu, Menteri tercapai di hari ke-11 sampai 12 dan seluruh peta dikuasai
+dalam 30 hari. Angka akhirnya:
+
+- upeti 0,1× hasil urusan per jam per wilayah;
+- prestise penaklukan 3× tahap syarat;
+- kekuatan garnisun 2.500 × 1,072^tahap;
+- ambang Menteri 18.500.
+
+Hasilnya (seed 1–3), Menteri tercapai di hari ke-17 sampai 20 dan 9 dari 10 wilayah
+dikuasai dalam 30 hari.

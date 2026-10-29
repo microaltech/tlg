@@ -16,7 +16,7 @@ const RANKS := [
 	{"name": "Camat", "prestige": 300, "max_charges": 4, "mult": 1.25, "level_cap": 40, "child_seats": 3},
 	{"name": "Bupati", "prestige": 1500, "max_charges": 5, "mult": 1.5, "level_cap": 60, "child_seats": 4},
 	{"name": "Gubernur", "prestige": 6000, "max_charges": 6, "mult": 2.0, "level_cap": 80, "child_seats": 5},
-	{"name": "Menteri", "prestige": 17500, "max_charges": 7, "mult": 2.5, "level_cap": 100, "child_seats": 6},
+	{"name": "Menteri", "prestige": 18500, "max_charges": 7, "mult": 2.5, "level_cap": 100, "child_seats": 6},
 	{"name": "Perdana Menteri", "prestige": 40000, "max_charges": 8, "mult": 3.0, "level_cap": 150, "child_seats": 8},
 ]
 
@@ -1056,6 +1056,38 @@ const SILAT_REWARDS := [
 ]
 const SILAT_SCHOOLS := ["Perguruan Merapi", "Perguruan Lawu", "Perguruan Bromo", "Perguruan Rinjani",
 	"Perguruan Kerinci", "Perguruan Salak", "Perguruan Slamet"]
+
+
+## Peta Nusantara: wilayah ditaklukkan berurutan (butuh tahap kampanye dan wilayah
+## sebelumnya). Tiap wilayah memberi upeti per jam = "per_hour" x hasil urusan "kind"
+## saat ini, terkumpul paling lama MAP_TRIBUTE_HOURS jam. "pos": posisi di peta (0..1).
+const MAP_TRIBUTE_HOURS := 12.0
+const MAP_POWER_BASE := 2500.0  ## kekuatan garnisun = BASE x GROWTH^tahap syarat
+const MAP_POWER_GROWTH := 1.072
+const MAP_PRESTIGE_PER_STAGE := 3  ## prestise saat menaklukkan = tahap syarat x ini
+const MAP_SOLDIER_FACTOR := 1.5  ## prajurit yang dikerahkan = prajurit musuh tahap syarat x ini
+const REGIONS := [
+	{"id": "mataram", "name": "Mataram", "island": "Jawa", "pos": [0.44, 0.80], "stage": 0, "kind": "silver",
+		"per_hour": 0.1, "desc": "Ibu kota Tuan di jantung tanah Jawa."},
+	{"id": "pasundan", "name": "Pasundan", "island": "Jawa", "pos": [0.33, 0.79], "stage": 8, "kind": "grain",
+		"per_hour": 0.1, "desc": "Tanah Sunda yang subur dengan sawah bertingkat."},
+	{"id": "majapahit", "name": "Majapahit", "island": "Jawa", "pos": [0.56, 0.80], "stage": 14, "kind": "soldiers",
+		"per_hour": 0.1, "desc": "Bekas pusat kerajaan besar dengan prajurit tangguh."},
+	{"id": "sriwijaya", "name": "Sriwijaya", "island": "Sumatra", "pos": [0.22, 0.58], "stage": 20, "kind": "silver",
+		"per_hour": 0.1, "desc": "Bandar dagang di tepi Sungai Musi."},
+	{"id": "bali", "name": "Bali", "island": "Bali", "pos": [0.645, 0.82], "stage": 28, "kind": "grain",
+		"per_hour": 0.1, "desc": "Pulau seribu pura dengan subak yang tersohor."},
+	{"id": "kutai", "name": "Kutai", "island": "Kalimantan", "pos": [0.48, 0.38], "stage": 36, "kind": "silver",
+		"per_hour": 0.1, "desc": "Kerajaan tertua Nusantara di tepi Mahakam."},
+	{"id": "samudra_pasai", "name": "Samudra Pasai", "island": "Sumatra", "pos": [0.08, 0.22], "stage": 44,
+		"kind": "soldiers", "per_hour": 0.1, "desc": "Pelabuhan ramai di ujung utara Sumatra."},
+	{"id": "nusa_tenggara", "name": "Nusa Tenggara", "island": "Nusa Tenggara", "pos": [0.76, 0.85], "stage": 52,
+		"kind": "grain", "per_hour": 0.1, "desc": "Gugusan pulau dengan padang sabana dan kuda Sandel."},
+	{"id": "gowa", "name": "Gowa", "island": "Sulawesi", "pos": [0.66, 0.60], "stage": 60, "kind": "soldiers",
+		"per_hour": 0.1, "desc": "Kerajaan pelaut dengan armada pinisi."},
+	{"id": "ternate", "name": "Ternate", "island": "Maluku", "pos": [0.83, 0.42], "stage": 68, "kind": "silver",
+		"per_hour": 0.1, "desc": "Pulau rempah yang diperebutkan bangsa-bangsa."},
+]
 
 
 ## Festival musiman bertema hari besar Indonesia. Tanggal tetap memakai "start"/"end"

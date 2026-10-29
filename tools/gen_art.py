@@ -1100,6 +1100,17 @@ ICONS["silat"] = icon_doc(
     '<path d="M16 70 L28 78 M80 70 L68 78" stroke="#e8c070" stroke-width="7" stroke-linecap="round"/>'
     '<circle cx="48" cy="48" r="7" fill="#e8c070"/>')
 
+# Peta Nusantara: gulungan peta dengan pulau dan bendera.
+ICONS["map"] = icon_doc(
+    '<path d="M10 20 L34 12 L62 20 L86 12 L86 76 L62 84 L34 76 L10 84 Z" fill="#f4e4c1" stroke="#7a4b1f" '
+    'stroke-width="3" stroke-linejoin="round"/>'
+    '<path d="M34 12 L34 76 M62 20 L62 84" stroke="#c9a77a" stroke-width="2"/>'
+    '<path d="M16 34 Q24 28 30 40 Q26 52 18 46 Z" fill="#7fa65a"/>'
+    '<path d="M38 58 Q52 52 66 58 Q60 64 40 62 Z" fill="#7fa65a"/>'
+    '<path d="M54 30 Q64 24 72 34 Q68 46 58 42 Z" fill="#7fa65a"/>'
+    '<path d="M24 66 Q40 50 60 40 Q70 34 76 26" stroke="#c0392b" stroke-width="2.5" fill="none" stroke-dasharray="4 3"/>'
+    '<path d="M74 28 L74 12 M74 12 L84 16 L74 20" stroke="#3b2416" stroke-width="2.5" fill="#c0392b"/>')
+
 # Pusaka: keris berlekuk, lontar, dan kalung.
 ICONS["eq_weapon"] = icon_doc(
     '<path d="M50 8 Q58 18 50 28 Q42 38 50 48 Q58 58 50 66 L46 66 Q38 58 46 48 Q54 38 46 28 Q38 18 46 8 Z" '

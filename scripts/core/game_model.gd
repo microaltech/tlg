@@ -125,6 +125,8 @@ var expeditions: Array = []
 var horses := {}
 ## Turnamen Silat minggu ini: {week, champion, power, opponents, wins, out, claimed}. Kosong bila belum mendaftar.
 var silat := {}
+## Peta Nusantara: owned (id wilayah), collect_t (waktu upeti terakhir diambil).
+var territory := {}
 var rng := RandomNumberGenerator.new()
 
 
@@ -136,6 +138,7 @@ func new_game(now: float) -> void:
 	expeditions = []
 	horses = {}
 	silat = {}
+	territory = {"owned": ["mataram"], "collect_t": now}
 	buildings = {"levels": {"istana": 1, "pasar": 0, "lumbung": 0, "barak": 0}, "job": {}}
 	cosmetics = {"owned": ["frame_kayu", "costume_lord"], "frame": "frame_kayu", "costume": "costume_lord"}
 	equipment = []
@@ -3457,6 +3460,108 @@ func assign_horse(id: String, counselor_id: String) -> Dictionary:
 	return _ok("%s kini menunggangi %s." % [Data.counselor_def(counselor_id)["name"], Data.HORSES[id]["name"]])
 
 
+# --- Peta Nusantara -----------------------------------------------------------------
+
+func region_def(id: String) -> Dictionary:
+	for r in Data.REGIONS:
+		if r["id"] == id:
+			return r
+	return {}
+
+
+func region_owned(id: String) -> bool:
+	return territory.get("owned", []).has(id)
+
+
+func region_power(id: String) -> int:
+	return int(Data.MAP_POWER_BASE * pow(Data.MAP_POWER_GROWTH, int(region_def(id)["stage"])))
+
+
+func region_soldiers(id: String) -> int:
+	return int(Data.stage_info(int(region_def(id)["stage"]))["enemy_soldiers"] * Data.MAP_SOLDIER_FACTOR)
+
+
+## Wilayah berikutnya yang bisa diserang (urutan REGIONS), atau "" bila semua sudah dikuasai.
+func next_region() -> String:
+	for r in Data.REGIONS:
+		if not region_owned(r["id"]):
+			return r["id"]
+	return ""
+
+
+func region_win_chance(id: String) -> float:
+	var a := pow(float(maxi(1, combat_power())), 3.0)
+	var b := pow(float(maxi(1, region_power(id))), 3.0)
+	return a / (a + b)
+
+
+## Upeti per jam saat ini: {silver, grain, soldiers}.
+func tribute_per_hour() -> Dictionary:
+	var out := {"silver": 0, "grain": 0, "soldiers": 0}
+	for id in territory.get("owned", []):
+		var r := region_def(id)
+		out[r["kind"]] += int(affair_yield(r["kind"]) * float(r["per_hour"]))
+	return out
+
+
+func tribute_hours(now: float) -> float:
+	return clampf((now - float(territory.get("collect_t", now))) / 3600.0, 0.0, Data.MAP_TRIBUTE_HOURS)
+
+
+func tribute_pending(now: float) -> Dictionary:
+	var hours := tribute_hours(now)
+	var out := {}
+	var per := tribute_per_hour()
+	for k in per:
+		out[k] = int(per[k] * hours)
+	return out
+
+
+func collect_tribute(now: float) -> Dictionary:
+	var pending := tribute_pending(now)
+	territory["collect_t"] = now
+	if pending.values().all(func(v): return v <= 0):
+		return _fail("Belum ada upeti yang terkumpul.")
+	var text := _give_rewards(pending)
+	_track("tribute")
+	changed.emit()
+	return _ok("Upeti wilayah: %s." % text)
+
+
+## Serang wilayah berikutnya. Prajurit dikerahkan (habis) baik menang maupun kalah;
+## menang menguasai wilayah dan menambah upeti.
+func conquer_region(id: String, now: float) -> Dictionary:
+	var r := region_def(id)
+	if r.is_empty():
+		return _fail("Wilayah tidak dikenal.")
+	if region_owned(id):
+		return _fail("%s sudah dikuasai." % r["name"])
+	if id != next_region():
+		return _fail("Kuasai %s lebih dulu." % region_def(next_region())["name"])
+	if stage < int(r["stage"]):
+		return _fail("%s bisa diserang setelah menang Tahap %d." % [r["name"], r["stage"]])
+	var need := region_soldiers(id)
+	if soldiers < need:
+		return _fail("Prajurit tidak cukup (butuh %d)." % need)
+	collect_tribute(now)  # upeti lama dihitung dengan wilayah lama
+	soldiers -= need
+	_track("conquest")
+	var win := rng.randf() < region_win_chance(id)
+	var result: Dictionary
+	if win:
+		territory["owned"].append(id)
+		territory["collect_t"] = now
+		var gained := int(r["stage"]) * Data.MAP_PRESTIGE_PER_STAGE
+		prestige += gained
+		result = _ok("%s ditaklukkan! -%d prajurit, +%d prestise. Upeti %s bertambah." % [r["name"], need,
+			gained, resource_name(r["kind"])])
+	else:
+		result = _ok("Serangan ke %s gagal. %d prajurit gugur. Perkuat pasukan dan coba lagi." % [r["name"], need])
+	result["win"] = win
+	changed.emit()
+	return result
+
+
 # --- Turnamen Silat ---------------------------------------------------------------
 
 func silat_unlocked() -> bool:
@@ -4226,6 +4331,7 @@ func to_dict() -> Dictionary:
 		"expeditions": expeditions,
 		"horses": horses,
 		"silat": silat,
+		"territory": territory,
 		"cosmetics": cosmetics,
 	}
 
@@ -4279,6 +4385,12 @@ func from_dict(d: Dictionary, now: float) -> void:
 			r["equip"] = str(src_r["equip"])
 		expeditions.append({"dest": str(e["dest"]), "counselor": str(e["counselor"]),
 			"end_t": float(e.get("end_t", now)), "reward": r})
+	var src_terr: Dictionary = d.get("territory", {})
+	if not src_terr.is_empty():
+		territory = {"owned": [], "collect_t": float(src_terr.get("collect_t", now))}
+		for r in Data.REGIONS:
+			if src_terr.get("owned", []).has(r["id"]) or r["id"] == "mataram":
+				territory["owned"].append(r["id"])
 	var src_silat: Dictionary = d.get("silat", {})
 	if not Data.counselor_def(str(src_silat.get("champion", ""))).is_empty():
 		var others := []

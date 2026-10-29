@@ -113,6 +113,9 @@ var _avatar_frame: Panel
 var _avatar_key := ""  ## kostum+bingkai yang sedang tampil di avatar header
 var _profile_overlay: Control
 var _silat_overlay: Control
+var _map_overlay: Control
+var _map_box: VBoxContainer
+var _map_pick := ""  ## wilayah yang dipilih di peta
 var _silat_box: VBoxContainer
 var _profile_box: VBoxContainer
 var _build_timer := {}  ## {label, bar, rush, total} untuk pembangunan yang berjalan
@@ -657,6 +660,8 @@ func _rebuild() -> void:
 		_fill_profile()
 	if is_instance_valid(_silat_overlay):
 		_fill_silat()
+	if is_instance_valid(_map_overlay):
+		_fill_map()
 	_update_avatar()
 	if is_instance_valid(_pass_overlay):
 		_fill_pass()
@@ -1102,6 +1107,18 @@ func _build_campaign(page: Dictionary) -> void:
 	attack.custom_minimum_size.y = 96
 	_label(box, "Tips: latih penasihat berkekuatan tinggi agar korban lebih sedikit. "
 		+ "Rekrut prajurit di menu Kota.", "SmallLabel")
+
+	var map_card := _card(box)
+	map_card.add_child(_tex(Art.icon("map"), 92))
+	var mcol := _col(map_card)
+	_label(mcol, "Peta Nusantara", "CardTitle")
+	_label(mcol, "Wilayah %d / %d · upeti siap %d jam" % [model.territory["owned"].size(), Data.REGIONS.size(),
+		int(model.tribute_hours(Game.now()))], "CardLabel")
+	var mb := _button(map_card, "Buka", func():
+		_show_map()
+		return null, true, "", "GoldButton" if model.tribute_hours(Game.now()) >= 1.0 else "GreenButton")
+	mb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	mb.custom_minimum_size.x = 150
 
 	var tower_card := _card(box)
 	tower_card.add_child(_tex(Art.icon("tower"), 92))
@@ -1919,6 +1936,176 @@ func _show_arena_battle(r: Dictionary) -> void:
 			int(opp["power"]) % 3], "win": win, "bg": "arena",
 		"detail": "%+d poin arena · +%d koin arena%s" % [r["delta"], r["coins"],
 			" · +%d perak" % Data.ARENA_WIN["silver"] if win else ""]})
+
+
+# --- Peta Nusantara -----------------------------------------------------------------
+
+## Garis pantai pulau-pulau (koordinat 0..1 dari kotak peta), digambar sederhana.
+const MAP_ISLANDS := [
+	[[0.03, 0.15], [0.10, 0.12], [0.20, 0.35], [0.30, 0.60], [0.32, 0.72], [0.27, 0.74], [0.16, 0.58], [0.06, 0.35]],
+	[[0.29, 0.76], [0.40, 0.75], [0.52, 0.76], [0.61, 0.79], [0.60, 0.84], [0.48, 0.85], [0.36, 0.84], [0.29, 0.81]],
+	[[0.625, 0.80], [0.66, 0.80], [0.665, 0.84], [0.63, 0.845]],
+	[[0.69, 0.83], [0.73, 0.83], [0.74, 0.86], [0.70, 0.86]],
+	[[0.75, 0.85], [0.80, 0.84], [0.82, 0.87], [0.76, 0.88]],
+	[[0.83, 0.84], [0.88, 0.83], [0.89, 0.86], [0.84, 0.87]],
+	[[0.33, 0.30], [0.40, 0.12], [0.52, 0.08], [0.58, 0.20], [0.57, 0.45], [0.50, 0.58], [0.40, 0.56], [0.34, 0.45]],
+	[[0.62, 0.30], [0.70, 0.25], [0.76, 0.28], [0.68, 0.33], [0.67, 0.42], [0.72, 0.48], [0.68, 0.50], [0.67, 0.62],
+		[0.63, 0.66], [0.62, 0.50], [0.60, 0.40]],
+	[[0.81, 0.33], [0.84, 0.32], [0.85, 0.40], [0.82, 0.41]],
+	[[0.80, 0.52], [0.84, 0.51], [0.85, 0.55], [0.81, 0.56]],
+	[[0.88, 0.45], [0.95, 0.42], [1.0, 0.50], [1.0, 0.72], [0.92, 0.66], [0.88, 0.55]],
+]
+
+
+func _show_map() -> void:
+	if is_instance_valid(_map_overlay):
+		return
+	var p := _open_panel("Peta Nusantara", "map", _close_map, 0.03, 0.97)
+	_map_overlay = p["overlay"]
+	_map_box = p["content"]
+	p["subtitle"].text = "Taklukkan wilayah demi wilayah. Tiap wilayah mengirim upeti tiap jam."
+	_map_pick = model.next_region() if model.next_region() != "" else "mataram"
+	_fill_map()
+
+
+func _close_map() -> void:
+	if is_instance_valid(_map_overlay):
+		Audio.play("click")
+		_map_overlay.queue_free()
+	_map_overlay = null
+
+
+## Status wilayah untuk warna penanda: owned, ready (bisa diserang), soon (tahap belum cukup), locked.
+func _region_state(id: String) -> String:
+	if model.region_owned(id):
+		return "owned"
+	if id != model.next_region():
+		return "locked"
+	return "ready" if model.stage >= int(model.region_def(id)["stage"]) else "soon"
+
+
+func _fill_map() -> void:
+	_clear(_map_box)
+	var now: float = Game.now()
+	var w: float = _map_box.size.x if _map_box.size.x > 100.0 else size.x * 0.92 - 56.0
+	var map := Control.new()
+	map.custom_minimum_size = Vector2(w, w * 0.62)
+	map.clip_contents = true
+	_map_box.add_child(map)
+	map.draw.connect(func(): _draw_map(map))
+	for r in Data.REGIONS:
+		var id: String = r["id"]
+		var pos := Vector2(float(r["pos"][0]), float(r["pos"][1])) * map.custom_minimum_size
+		var b := Button.new()
+		b.flat = true
+		b.position = pos - Vector2(30, 30)
+		b.size = Vector2(60, 60)
+		b.pressed.connect(func():
+			Audio.play("click")
+			_map_pick = id
+			_fill_map())
+		map.add_child(b)
+		var name_l := Label.new()
+		name_l.text = r["name"]
+		name_l.add_theme_font_size_override("font_size", 15)
+		name_l.add_theme_color_override("font_color", Color("fff3d6"))
+		name_l.add_theme_color_override("font_outline_color", Color(0.1, 0.05, 0.02))
+		name_l.add_theme_constant_override("outline_size", 5)
+		name_l.position = pos + Vector2(-60, 18)
+		name_l.size = Vector2(120, 20)
+		name_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		map.add_child(name_l)
+
+	# Upeti
+	var trib := _inner_box(_map_box)
+	var per: Dictionary = model.tribute_per_hour()
+	var pending: Dictionary = model.tribute_pending(now)
+	_label(trib, "Upeti per jam: %s" % _reward_text(per), "CardLabel").add_theme_font_override("font", UI.font_bold)
+	var hours: float = model.tribute_hours(now)
+	_bar(trib, hours, Data.MAP_TRIBUTE_HOURS, Color("e0a030"))
+	_label(trib, "Terkumpul %.1f / %d jam: %s" % [hours, int(Data.MAP_TRIBUTE_HOURS),
+		_reward_text(pending) if pending.values().any(func(v): return v > 0) else "belum ada"], "SmallLabel") \
+		.add_theme_color_override("font_color", UI.INK)
+	_button(trib, "Ambil Upeti", func(): return model.collect_tribute(Game.now()), hours >= 0.05, "chest", "GoldButton",
+		false, "coin")
+
+	# Wilayah terpilih
+	var r: Dictionary = model.region_def(_map_pick)
+	if r.is_empty():
+		return
+	var card := _inner_box(_map_box)
+	var state := _region_state(_map_pick)
+	_label(card, "%s · %s" % [r["name"], r["island"]], "CardTitle")
+	_label(card, r["desc"], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+	_label(card, "Upeti: %s per jam" % _reward_text({r["kind"]: int(model.affair_yield(r["kind"]) * float(r["per_hour"]))}),
+		"SmallLabel").add_theme_color_override("font_color", UI.GREEN.darkened(0.3))
+	match state:
+		"owned":
+			_label(card, "Wilayah Tuan.", "CardLabel").add_theme_font_override("font", UI.font_bold)
+		"locked":
+			_label(card, "Kuasai %s lebih dulu." % model.region_def(model.next_region())["name"], "CardLabel")
+		_:
+			var power: int = model.region_power(_map_pick)
+			var need: int = model.region_soldiers(_map_pick)
+			var chance: float = model.region_win_chance(_map_pick)
+			_label(card, "Garnisun: kekuatan %s · Anda %s" % [_num(power), _num(model.combat_power())], "SmallLabel") \
+				.add_theme_color_override("font_color", UI.INK)
+			_label(card, "Mengerahkan %s prajurit (Anda punya %s)" % [_num(need), _num(model.soldiers)], "SmallLabel") \
+				.add_theme_color_override("font_color", UI.INK if model.soldiers >= need else UI.RED)
+			if state == "soon":
+				_label(card, "Bisa diserang setelah menang Tahap %d." % r["stage"], "CardLabel") \
+					.add_theme_color_override("font_color", UI.RED)
+			else:
+				_label(card, "Peluang menang %d%%" % roundi(chance * 100), "SmallLabel") \
+					.add_theme_color_override("font_color", UI.GREEN.darkened(0.3) if chance >= 0.5 else UI.RED)
+			var rid: String = _map_pick
+			var ok: bool = state == "ready" and model.soldiers >= need
+			_button(card, "Serang %s" % r["name"], func():
+				var my_power: int = model.combat_power()
+				var res: Dictionary = model.conquer_region(rid, Game.now())
+				if not res.has("win"):
+					return res
+				var win: bool = res["win"]
+				var ratio := float(power) / maxi(1, my_power)
+				var plan: Dictionary = model.battle_plan(clampf(1.0 - 0.6 * ratio, 0.15, 0.9) if win else 0.0,
+					0.0 if win else clampf(1.0 - 0.6 / maxf(ratio, 0.01), 0.1, 0.9), need + rid.length())
+				_play_battle(plan, {"title": tr("Penaklukan %s") % tr(r["name"]), "me_name": model.me_name(),
+					"them_name": tr("Garnisun %s") % tr(r["name"]), "me_count": need, "them_count": need,
+					"me_portrait": model.lord_portrait(), "them_portrait": Data.ENEMIES[rid.length() % Data.ENEMIES.size()]["id"],
+					"win": win, "detail": res["msg"], "bg": "campaign",
+					"headline": "DITAKLUKKAN!" if win else "KALAH..."})
+				return null, ok, "attack", "GoldButton" if ok else "", false, "attack")
+
+
+func _draw_map(map: Control) -> void:
+	var sz := map.custom_minimum_size
+	map.draw_rect(Rect2(Vector2.ZERO, sz), Color("2e6f9e"))
+	for i in 18:
+		var y := sz.y * (i + 0.5) / 18.0
+		map.draw_line(Vector2(0, y), Vector2(sz.x, y + 6), Color(1, 1, 1, 0.05), 2)
+	for isle in MAP_ISLANDS:
+		var pts := PackedVector2Array()
+		for p in isle:
+			pts.append(Vector2(p[0], p[1]) * sz)
+		map.draw_colored_polygon(pts, Color("7fa65a"))
+		pts.append(pts[0])
+		map.draw_polyline(pts, Color("e8d4a0"), 3)
+	for r in Data.REGIONS:
+		var pos := Vector2(r["pos"][0], r["pos"][1]) * sz
+		var state := _region_state(r["id"])
+		var fill: Color = {"owned": UI.GOLD, "ready": Color("d63a2f"), "soon": Color("e08a2a"), "locked": Color("6a6a6a")}[state]
+		if r["id"] == _map_pick:
+			map.draw_circle(pos, 26, Color(1, 1, 1, 0.9))
+		map.draw_circle(pos, 20, Color("3b2416"))
+		map.draw_circle(pos, 17, fill)
+		if state == "owned":
+			map.draw_line(pos + Vector2(-5, 9), pos + Vector2(-5, -11), Color("3b2416"), 3)
+			map.draw_colored_polygon(PackedVector2Array([pos + Vector2(-4, -11), pos + Vector2(10, -6),
+				pos + Vector2(-4, -1)]), Color("c0392b"))
+		elif state == "ready":
+			map.draw_line(pos + Vector2(-8, -8), pos + Vector2(8, 8), Color("fff3d6"), 3)
+			map.draw_line(pos + Vector2(8, -8), pos + Vector2(-8, 8), Color("fff3d6"), 3)
 
 
 # --- Turnamen Silat -----------------------------------------------------------------

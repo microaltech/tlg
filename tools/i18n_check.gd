@@ -181,7 +181,7 @@ func _walk_ui() -> void:
 	var panels := ["_show_missions", "_show_login", "_show_event", "_show_store", "_show_vip", "_show_bag",
 		"_show_story", "_show_settings", "_show_privacy", "_show_help", "_show_equipment", "_show_tower",
 		"_show_pass", "_show_achievements", "_show_offers", "_show_promotion", "_show_expeditions", "_show_stable",
-		"_show_profile", "_show_silat"]
+		"_show_profile", "_show_silat", "_show_map"]
 	if not Game.model.festival.is_empty():
 		panels.append("_show_festival")
 	for f in panels:

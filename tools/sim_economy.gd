@@ -70,6 +70,7 @@ func run(days: int, sessions: int, seed_value: int) -> void:
 	print("  kampanye: %d menang, %d kalah; sesi tertahan batas level: %d" % [
 		stats["wins"], stats["fails"], stats["level_capped"]])
 	print("  bangunan: ", m.buildings["levels"])
+	print("  wilayah: ", m.territory["owned"])
 	print("  penasihat: %d/%d, bintang total %d, cerita bab %d" % [
 		m.counselors.size(), Data.COUNSELORS.size(), m.story_metric("stars_total"), m.story["chapter"] + 1])
 
@@ -161,6 +162,13 @@ func session(now: float) -> void:
 					r_i += 1
 				if r_i < riders.size():
 					m.assign_horse(id, riders[r_i])
+
+	# Peta: ambil upeti, serang wilayah berikutnya bila peluang >= 60% dan prajurit cukup (sisakan cadangan).
+	m.collect_tribute(now)
+	var nr := m.next_region()
+	if nr != "" and m.stage >= int(m.region_def(nr)["stage"]) and m.region_win_chance(nr) >= 0.6 \
+			and m.soldiers >= m.region_soldiers(nr) * 2:
+		m.conquer_region(nr, now)
 
 	# Turnamen Silat: daftarkan penasihat terkuat, bertanding sampai gugur/juara, klaim.
 	if m.silat_unlocked():

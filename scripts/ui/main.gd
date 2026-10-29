@@ -98,6 +98,8 @@ var _offer_box: VBoxContainer
 var _pass_overlay: Control
 var _pass_box: VBoxContainer
 var _tower_overlay: Control
+var _fest_overlay: Control
+var _fest_box: VBoxContainer
 var _tower_box: VBoxContainer
 var _story_overlay: Control
 var _story_box: VBoxContainer  ## Level VIP yang sedang dilihat di panel (-1 = level sekarang).
@@ -623,6 +625,8 @@ func _rebuild() -> void:
 		_fill_equipment()
 	if is_instance_valid(_tower_overlay):
 		_fill_tower()
+	if is_instance_valid(_fest_overlay):
+		_fill_festival()
 	if is_instance_valid(_pass_overlay):
 		_fill_pass()
 	if is_instance_valid(_offer_overlay):
@@ -768,6 +772,7 @@ func _charge_widget(parent: Node, key: String, prefix: String) -> void:
 func _build_city(box: VBoxContainer) -> void:
 	_clear(box)
 	box.add_child(_event_banner())
+	_build_festival_card(box)
 	_build_offer_cards(box)
 	_build_pass_card(box)
 	_build_achievement_card(box)
@@ -2754,6 +2759,145 @@ func _build_pass_card(box: VBoxContainer) -> void:
 		return null, true, "", "GoldButton" if n > 0 else "")
 	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	b.custom_minimum_size.x = 150
+
+
+## Kartu festival musiman di Kota (hanya saat festival berlangsung).
+func _build_festival_card(box: VBoxContainer) -> void:
+	var now: float = Game.now()
+	model.ensure_festival(now)
+	if model.festival.is_empty():
+		return
+	var def: Dictionary = model.festival_def()
+	var card := _card(box)
+	var style := UI.box(Color(def["color"]).lightened(0.55), Color(def["color"]), 3, 14)
+	style.content_margin_left = 14
+	style.content_margin_right = 14
+	style.content_margin_top = 10
+	style.content_margin_bottom = 10
+	card.get_parent().add_theme_stylebox_override("panel", style)
+	card.add_child(_tex(Art.icon(def["icon"]), 92))
+	var col := _col(card)
+	_label(col, def["name"], "CardTitle")
+	_label(col, "%s: %d · berakhir dalam %s" % [def["token"], model.festival["tokens"],
+		_duration(model.festival_seconds_left(now))], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+	var n: int = model.festival_claimable_count(now)
+	var b := _button(card, "Klaim (%d)" % n if n > 0 else "Buka", func():
+		_show_festival()
+		return null, true, "", "GoldButton" if n > 0 else "GreenButton")
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.custom_minimum_size.x = 150
+
+
+func _show_festival() -> void:
+	if is_instance_valid(_fest_overlay) or model.festival.is_empty():
+		return
+	var def: Dictionary = model.festival_def()
+	var p := _open_panel(def["name"], def["icon"], _close_festival)
+	_fest_overlay = p["overlay"]
+	_fest_box = p["content"]
+	p["subtitle"].text = def["desc"]
+	_fill_festival()
+
+
+func _close_festival() -> void:
+	if is_instance_valid(_fest_overlay):
+		Audio.play("click")
+		_fest_overlay.queue_free()
+	_fest_overlay = null
+
+
+func _fill_festival() -> void:
+	_clear(_fest_box)
+	var now: float = Game.now()
+	model.ensure_festival(now)
+	if model.festival.is_empty():
+		_close_festival()
+		return
+	var def: Dictionary = model.festival_def()
+	var head := _inner_box(_fest_box)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	head.add_child(row)
+	row.add_child(_tex(Art.icon(def["icon"]), 64))
+	var hcol := _col(row)
+	_label(hcol, "%s Anda: %d" % [def["token"], model.festival["tokens"]], "CardTitle")
+	_label(hcol, "Berakhir dalam %s. %s yang tersisa hangus saat festival selesai." % [
+		_duration(model.festival_seconds_left(now)), def["token"]], "SmallLabel") \
+		.add_theme_color_override("font_color", UI.INK)
+	var can_gift: bool = model.festival_gift_can_claim(now)
+	_button(head, "Hadiah harian: +%d %s" % [Data.FESTIVAL_GIFT, def["token"]] if can_gift
+		else "Hadiah harian sudah diambil", func(): return model.claim_festival_gift(Game.now()),
+		can_gift, "", "GoldButton" if can_gift else "", false, "coin")
+
+	_label(_fest_box, "Tugas festival", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	for t in Data.FESTIVAL_TASKS:
+		var box := _inner_box(_fest_box)
+		var trow := HBoxContainer.new()
+		trow.add_theme_constant_override("separation", 10)
+		box.add_child(trow)
+		var col := _col(trow)
+		var prog: int = model.festival_task_progress(t["id"])
+		_label(col, t["text"], "CardLabel")
+		_bar(col, prog, t["target"], Color(def["color"]))
+		_label(col, "%d / %d · +%d %s" % [prog, t["target"], t["tokens"], def["token"]], "SmallLabel") \
+			.add_theme_color_override("font_color", UI.INK)
+		var done: bool = model.festival["claimed"].has(t["id"])
+		var ready: bool = model.festival_task_claimable(t)
+		var id: String = t["id"]
+		var b := _button(trow, "Selesai" if done else "Klaim", func(): return model.claim_festival_task(id, Game.now()),
+			ready, "", "GoldButton" if ready else "", false, "coin")
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		b.custom_minimum_size.x = 130
+
+	_label(_fest_box, "Toko festival", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	for item in Data.FESTIVAL_SHOP:
+		var box := _inner_box(_fest_box)
+		var srow := HBoxContainer.new()
+		srow.add_theme_constant_override("separation", 10)
+		box.add_child(srow)
+		var frame_id: String = "frame_" + str(model.festival["id"])
+		if item["reward"].has("frame"):
+			srow.add_child(_frame_preview(Data.COSMETICS[frame_id]["colors"], 64))
+		else:
+			srow.add_child(_tex(Art.icon(item["icon"]), 64))
+		var col := _col(srow)
+		var desc: String
+		if item["reward"].has("frame"):
+			desc = "%s (bingkai profil khusus festival ini)" % Data.COSMETICS[frame_id]["name"]
+		elif item["reward"].has("equip"):
+			desc = "Pusaka acak dengan peluang Legenda tinggi"
+		else:
+			desc = _reward_text(item["reward"])
+		_label(col, item["name"], "CardLabel")
+		var left: int = model.festival_shop_left(item["id"])
+		_label(col, "%s · sisa %d" % [desc, left], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+		var ok: bool = left > 0 and int(model.festival["tokens"]) >= int(item["cost"])
+		var iid: String = item["id"]
+		var b := _button(srow, "%d" % item["cost"], func(): return model.festival_buy(iid, Game.now()), ok,
+			def["icon"], "GreenButton" if ok else "", false, "coin")
+		b.custom_minimum_size = Vector2(130, 60)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var nxt: Dictionary = model.next_festival(now)
+	if not nxt.is_empty():
+		_label(_fest_box, "Festival berikutnya: %s, %s" % [nxt["def"]["name"],
+			Time.get_date_string_from_unix_time(int(nxt["start_t"]) + model.tz_bias)], "SmallLabel") \
+			.add_theme_color_override("font_color", UI.INK)
+
+
+## Contoh bingkai profil: kotak dengan dua lapis warna dan potret Tuan di dalamnya.
+func _frame_preview(colors: Array, side: float, portrait := "") -> PanelContainer:
+	var outer := PanelContainer.new()
+	var st := UI.box(Color(colors[1]), Color(colors[0]), maxi(3, int(side / 14)), int(side / 5))
+	st.content_margin_left = side / 14
+	st.content_margin_right = side / 14
+	st.content_margin_top = side / 14
+	st.content_margin_bottom = side / 14
+	outer.add_theme_stylebox_override("panel", st)
+	outer.custom_minimum_size = Vector2(side, side)
+	outer.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var pic := _tex(Art.portrait(portrait if portrait != "" else model.lord_portrait()), side - side / 7)
+	outer.add_child(pic)
+	return outer
 
 
 func _show_pass() -> void:

@@ -910,6 +910,81 @@ static func stage_info(index: int) -> Dictionary:
 	}
 
 
+## Festival musiman bertema hari besar Indonesia. Tanggal tetap memakai "start"/"end"
+## [bulan, tanggal] tiap tahun (boleh melewati tahun baru); hari raya yang mengikuti
+## kalender Hijriah memakai "dates" per tahun: [[bln, tgl mulai], [bln, tgl akhir]].
+## Tanggal Ramadan/Lebaran adalah perkiraan dan perlu dicocokkan dengan pengumuman
+## resmi pemerintah tiap tahun (lihat docs/release_checklist.md).
+const FESTIVALS := [
+	{"id": "tahun_baru", "name": "Pesta Tahun Baru", "token": "Kembang Api", "icon": "fest_tahun_baru",
+		"color": "#3a4fa0", "start": [12, 28], "end": [1, 7],
+		"desc": "Sambut tahun baru dengan pesta kembang api di seluruh negeri!"},
+	{"id": "ramadan", "name": "Berkah Ramadan & Lebaran", "token": "Ketupat", "icon": "fest_ramadan",
+		"color": "#1f7a4a", "dates": {
+			2026: [[2, 18], [3, 27]], 2027: [[2, 8], [3, 17]], 2028: [[1, 28], [3, 5]],
+			2029: [[1, 16], [2, 21]], 2030: [[1, 5], [2, 11]]},
+		"desc": "Bulan penuh berkah sampai sepekan setelah Idulfitri. Mohon maaf lahir dan batin!"},
+	{"id": "merdeka", "name": "Pesta Kemerdekaan", "token": "Bendera", "icon": "fest_merdeka",
+		"color": "#c0392b", "start": [8, 10], "end": [8, 24],
+		"desc": "Dirgahayu Republik Indonesia! Ikuti lomba-lomba 17 Agustusan."},
+	{"id": "sumpah_pemuda", "name": "Semangat Sumpah Pemuda", "token": "Ikrar", "icon": "fest_sumpah_pemuda",
+		"color": "#b5651d", "start": [10, 24], "end": [11, 2],
+		"desc": "Satu nusa, satu bangsa, satu bahasa. Kobarkan semangat para pemuda!"},
+	{"id": "pahlawan", "name": "Hari Pahlawan", "token": "Bambu Runcing", "icon": "fest_pahlawan",
+		"color": "#6b4a2a", "start": [11, 5], "end": [11, 16],
+		"desc": "Kenang jasa para pahlawan yang berjuang untuk negeri."},
+]
+## Tugas festival (sama untuk semua festival); kemajuan dihitung dari aksi selama festival.
+const FESTIVAL_TASKS := [
+	{"id": "f_affair", "text": "Kerjakan urusan kota 40 kali", "event": "affair", "target": 40, "tokens": 40},
+	{"id": "f_win", "text": "Menangkan 10 tahap kampanye", "event": "win", "target": 10, "tokens": 50},
+	{"id": "f_upgrade", "text": "Latih penasihat 20 kali", "event": "upgrade", "target": 20, "tokens": 40},
+	{"id": "f_visit", "text": "Kunjungi selir 15 kali", "event": "visit", "target": 15, "tokens": 30},
+	{"id": "f_recruit", "text": "Rekrut penasihat 10 kali", "event": "recruit", "target": 10, "tokens": 50},
+	{"id": "f_mission", "text": "Klaim 15 misi harian", "event": "mission", "target": 15, "tokens": 60},
+]
+const FESTIVAL_GIFT := 20  ## token hadiah harian selama festival
+const FESTIVAL_SHOP := [
+	{"id": "fs_gold", "name": "Kantong Emas", "icon": "gold", "reward": {"gold": 100}, "cost": 60, "limit": 3},
+	{"id": "fs_ticket", "name": "Tiket Rekrut", "icon": "ticket_recruit", "reward": {"items": {"recruit_ticket": 1}},
+		"cost": 40, "limit": 5},
+	{"id": "fs_star", "name": "Batu Bintang", "icon": "item_star", "reward": {"items": {"star_stone": 1}},
+		"cost": 80, "limit": 2},
+	{"id": "fs_tea", "name": "Teh Semangat", "icon": "item_tea", "reward": {"items": {"energy_tea": 2}},
+		"cost": 30, "limit": 3},
+	{"id": "fs_equip", "name": "Pusaka Festival", "icon": "eq_weapon", "reward": {"equip": true}, "cost": 120, "limit": 1},
+	{"id": "fs_frame", "name": "Bingkai Festival", "icon": "frame", "reward": {"frame": true}, "cost": 150, "limit": 1},
+]
+
+## Kosmetik: bingkai profil dan kostum Tuan. Hanya tampilan, tidak menambah kekuatan.
+## "colors" bingkai: [luar, dalam]. "unlock": cara mendapatkan selain dibeli dengan emas
+## ("gold" > 0) atau IAP ("iap"): "rank:<n>", "vip:<n>", "festival:<id>", "stage:<n>".
+const COSMETICS := {
+	"frame_kayu": {"type": "frame", "name": "Bingkai Kayu", "colors": ["#8a5a3a", "#d9b77a"], "unlock": "default"},
+	"frame_emas": {"type": "frame", "name": "Bingkai Emas", "colors": ["#a8742c", "#f4d58a"], "gold": 300},
+	"frame_giok": {"type": "frame", "name": "Bingkai Giok", "colors": ["#1f6f5a", "#8fd9b6"], "gold": 600},
+	"frame_menteri": {"type": "frame", "name": "Bingkai Menteri", "colors": ["#5a2a7a", "#e8c070"], "unlock": "rank:4"},
+	"frame_vip": {"type": "frame", "name": "Bingkai VIP", "colors": ["#2c3e50", "#f1c40f"], "unlock": "vip:3"},
+	"frame_tahun_baru": {"type": "frame", "name": "Bingkai Kembang Api", "colors": ["#1b2a6b", "#f4d03f"],
+		"unlock": "festival:tahun_baru"},
+	"frame_ramadan": {"type": "frame", "name": "Bingkai Ketupat", "colors": ["#1f7a4a", "#f4e4c1"],
+		"unlock": "festival:ramadan"},
+	"frame_merdeka": {"type": "frame", "name": "Bingkai Merah Putih", "colors": ["#c0392b", "#ffffff"],
+		"unlock": "festival:merdeka"},
+	"frame_sumpah_pemuda": {"type": "frame", "name": "Bingkai Ikrar Pemuda", "colors": ["#b5651d", "#fff3d6"],
+		"unlock": "festival:sumpah_pemuda"},
+	"frame_pahlawan": {"type": "frame", "name": "Bingkai Pahlawan", "colors": ["#4a3520", "#c9963f"],
+		"unlock": "festival:pahlawan"},
+	"costume_lord": {"type": "costume", "name": "Busana Bangsawan", "portrait": "lord", "unlock": "default"},
+	"costume_batik": {"type": "costume", "name": "Busana Batik", "portrait": "lord_batik", "gold": 400},
+	"costume_zirah": {"type": "costume", "name": "Zirah Senapati", "portrait": "lord_zirah", "unlock": "stage:50"},
+	"costume_raja": {"type": "costume", "name": "Busana Raja", "portrait": "lord_raja", "iap": "costume_raja"},
+}
+const COSMETIC_ORDER := ["frame_kayu", "frame_emas", "frame_giok", "frame_menteri", "frame_vip", "frame_tahun_baru",
+	"frame_ramadan", "frame_merdeka", "frame_sumpah_pemuda", "frame_pahlawan",
+	"costume_lord", "costume_batik", "costume_zirah", "costume_raja"]
+
+
 ## Ringkasan kebijakan privasi di dalam game (versi lengkap: docs/privacy_policy.md).
 const PRIVACY_SECTIONS := [
 	{"title": "Data di perangkat Anda", "text": "Progres game (save.json), pengaturan, statistik bermain, dan "

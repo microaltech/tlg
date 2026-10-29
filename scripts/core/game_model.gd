@@ -110,6 +110,11 @@ var achievements := {}
 var _equip_uid := 0
 ## Formasi pasukan yang dipakai di semua pertempuran (lihat Data.FORMATIONS).
 var formation := "balanced"
+## Festival musiman yang sedang berjalan: key (id-tahun), progress tugas, klaim, token,
+## pembelian toko, dan hari hadiah harian terakhir. Kosong bila tidak ada festival.
+var festival := {}
+## Kosmetik: owned (id), frame & costume yang dipakai.
+var cosmetics := {}
 var rng := RandomNumberGenerator.new()
 
 
@@ -117,6 +122,8 @@ func new_game(now: float) -> void:
 	_last_now = now
 	lord_name = ""
 	formation = "balanced"
+	festival = {}
+	cosmetics = {"owned": ["frame_kayu", "costume_lord"], "frame": "frame_kayu", "costume": "costume_lord"}
 	equipment = []
 	_equip_uid = 0
 	tower = {}
@@ -165,6 +172,7 @@ func new_game(now: float) -> void:
 	_unlock_content()
 	ensure_daily(now)
 	ensure_weekly(now)
+	ensure_festival(now)
 	changed.emit()
 
 
@@ -213,6 +221,7 @@ func sync(now: float) -> void:
 	var daily_reset := ensure_daily(now)
 	var weekly_reset := ensure_weekly(now)
 	ensure_leaderboard(now)
+	ensure_festival(now)
 	var alliance_changed := _alliance_rollover(now)
 	alliance_changed = ensure_war(now) or alliance_changed
 	if ensure_arena(now) or alliance_changed or weekly_reset or daily_reset:
@@ -719,6 +728,11 @@ func _track(event: String, amount := 1) -> void:
 			mission_completed.emit(def["text"])
 	if not weekly.is_empty():
 		weekly["points"] = int(weekly["points"]) + int(event_def()["points"].get(event, 0)) * amount
+	if not festival.is_empty():
+		var prog: Dictionary = festival["progress"]
+		for t in Data.FESTIVAL_TASKS:
+			if t["event"] == event:
+				prog[t["id"]] = mini(int(t["target"]), int(prog.get(t["id"], 0)) + amount)
 
 
 func mission_done(index: int) -> bool:
@@ -2976,6 +2990,245 @@ func tower_fight(now: float) -> Dictionary:
 	return r
 
 
+# --- Festival musiman ---------------------------------------------------------
+
+## Unix time tengah malam waktu lokal pemain untuk tanggal tertentu.
+func _local_midnight(y: int, m: int, d: int) -> float:
+	return Time.get_unix_time_from_datetime_dict({"year": y, "month": m, "day": d, "hour": 0, "minute": 0,
+		"second": 0}) - tz_bias
+
+
+## Rentang festival yang mungkin berlaku di sekitar tahun `year`: [{def, key, start_t, end_t}].
+func _festival_windows(year: int) -> Array:
+	var out := []
+	for def in Data.FESTIVALS:
+		for y in [year - 1, year]:
+			var a: Array
+			var b: Array
+			var end_year: int = y
+			if def.has("dates"):
+				if not def["dates"].has(y):
+					continue
+				a = def["dates"][y][0]
+				b = def["dates"][y][1]
+			else:
+				a = def["start"]
+				b = def["end"]
+				if int(b[0]) < int(a[0]):
+					end_year = y + 1
+			out.append({"def": def, "key": "%s-%d" % [def["id"], y],
+				"start_t": _local_midnight(y, int(a[0]), int(a[1])),
+				"end_t": _local_midnight(end_year, int(b[0]), int(b[1])) + 86400.0})
+	return out
+
+
+func _local_year(now: float) -> int:
+	return int(Time.get_date_dict_from_unix_time(int(now + tz_bias))["year"])
+
+
+## Festival yang berlangsung pada `now` (def + key, start_t, end_t), atau {}.
+func festival_at(now: float) -> Dictionary:
+	for w in _festival_windows(_local_year(now)):
+		if now >= float(w["start_t"]) and now < float(w["end_t"]):
+			return w
+	return {}
+
+
+## Festival berikutnya setelah `now` (untuk pengumuman "segera hadir").
+func next_festival(now: float) -> Dictionary:
+	var year := _local_year(now)
+	var best := {}
+	for w in _festival_windows(year) + _festival_windows(year + 1):
+		if float(w["start_t"]) > now and (best.is_empty() or float(w["start_t"]) < float(best["start_t"])):
+			best = w
+	return best
+
+
+## Mulai festival baru atau akhiri yang sudah lewat (token festival hangus).
+func ensure_festival(now: float) -> bool:
+	var w := festival_at(now)
+	var key: String = w.get("key", "")
+	if key == str(festival.get("key", "")):
+		return false
+	if key == "":
+		festival = {}
+	else:
+		festival = {"key": key, "id": w["def"]["id"], "progress": {}, "claimed": [], "tokens": 0, "bought": {},
+			"gift_day": -1}
+	changed.emit()
+	return true
+
+
+func festival_def() -> Dictionary:
+	for def in Data.FESTIVALS:
+		if def["id"] == festival.get("id", ""):
+			return def
+	return {}
+
+
+func festival_seconds_left(now: float) -> int:
+	var w := festival_at(now)
+	return maxi(0, int(float(w["end_t"]) - now)) if not w.is_empty() else 0
+
+
+func festival_task_progress(id: String) -> int:
+	return int(festival.get("progress", {}).get(id, 0))
+
+
+func festival_task_claimable(t: Dictionary) -> bool:
+	return not festival.is_empty() and festival_task_progress(t["id"]) >= int(t["target"]) \
+		and not festival["claimed"].has(t["id"])
+
+
+func festival_claimable_count(now: float) -> int:
+	ensure_festival(now)
+	if festival.is_empty():
+		return 0
+	var n := 1 if festival_gift_can_claim(now) else 0
+	for t in Data.FESTIVAL_TASKS:
+		if festival_task_claimable(t):
+			n += 1
+	return n
+
+
+func claim_festival_task(id: String, now: float) -> Dictionary:
+	ensure_festival(now)
+	if festival.is_empty():
+		return _fail("Tidak ada festival yang sedang berlangsung.")
+	for t in Data.FESTIVAL_TASKS:
+		if t["id"] != id:
+			continue
+		if festival["claimed"].has(id):
+			return _fail("Hadiah tugas sudah diambil.")
+		if festival_task_progress(id) < int(t["target"]):
+			return _fail("Tugas festival belum selesai.")
+		festival["claimed"].append(id)
+		festival["tokens"] = int(festival["tokens"]) + int(t["tokens"])
+		changed.emit()
+		return _ok("+%d %s" % [t["tokens"], festival_def()["token"]])
+	return _fail("Tugas tidak ditemukan.")
+
+
+func festival_gift_can_claim(now: float) -> bool:
+	return not festival.is_empty() and int(festival["gift_day"]) != day_index(now)
+
+
+func claim_festival_gift(now: float) -> Dictionary:
+	ensure_festival(now)
+	if not festival_gift_can_claim(now):
+		return _fail("Hadiah festival hari ini sudah diambil.")
+	festival["gift_day"] = day_index(now)
+	festival["tokens"] = int(festival["tokens"]) + Data.FESTIVAL_GIFT
+	changed.emit()
+	return _ok("Hadiah festival: +%d %s" % [Data.FESTIVAL_GIFT, festival_def()["token"]])
+
+
+func festival_shop_left(id: String) -> int:
+	for item in Data.FESTIVAL_SHOP:
+		if item["id"] == id:
+			var left := int(item["limit"]) - int(festival.get("bought", {}).get(id, 0))
+			if item["reward"].has("frame") and owns_cosmetic("frame_" + str(festival.get("id", ""))):
+				left = 0
+			return maxi(0, left)
+	return 0
+
+
+func festival_buy(id: String, now: float) -> Dictionary:
+	ensure_festival(now)
+	if festival.is_empty():
+		return _fail("Tidak ada festival yang sedang berlangsung.")
+	var item := {}
+	for it in Data.FESTIVAL_SHOP:
+		if it["id"] == id:
+			item = it
+	if item.is_empty():
+		return _fail("Barang tidak ditemukan.")
+	if festival_shop_left(id) <= 0:
+		return _fail("Batas pembelian festival sudah habis.")
+	if int(festival["tokens"]) < int(item["cost"]):
+		return _fail("%s tidak cukup (butuh %d)." % [festival_def()["token"], item["cost"]])
+	festival["tokens"] = int(festival["tokens"]) - int(item["cost"])
+	festival["bought"][id] = int(festival["bought"].get(id, 0)) + 1
+	var reward: Dictionary = item["reward"]
+	var text := ""
+	if reward.has("equip"):
+		# Pusaka festival: peluang langka setara tahap sangat jauh.
+		var eq := add_equipment(Data.equip_roll(150, rng.randf() * 0.5, rng.randf()))
+		text = Data.equip_def(eq["id"])["name"] if not eq.is_empty() else ""
+	elif reward.has("frame"):
+		var cid: String = "frame_" + str(festival["id"])
+		unlock_cosmetic(cid)
+		text = Data.COSMETICS[cid]["name"]
+	else:
+		text = _give_rewards(reward)
+	changed.emit()
+	return _ok("Membeli %s: %s." % [item["name"], text])
+
+
+# --- Kosmetik ---------------------------------------------------------------
+
+func owns_cosmetic(id: String) -> bool:
+	return cosmetics.get("owned", []).has(id)
+
+
+func unlock_cosmetic(id: String) -> bool:
+	if not Data.COSMETICS.has(id) or owns_cosmetic(id):
+		return false
+	cosmetics["owned"].append(id)
+	changed.emit()
+	return true
+
+
+## Buka kosmetik yang syaratnya (jabatan, VIP, tahap) sudah terpenuhi. Mengembalikan id baru.
+func check_cosmetic_unlocks() -> Array:
+	var got := []
+	for id in Data.COSMETIC_ORDER:
+		var u := str(Data.COSMETICS[id].get("unlock", ""))
+		var ok := false
+		if u.begins_with("rank:"):
+			ok = rank >= int(u.substr(5))
+		elif u.begins_with("vip:"):
+			ok = vip_level() >= int(u.substr(4))
+		elif u.begins_with("stage:"):
+			ok = stage >= int(u.substr(6))
+		if ok and unlock_cosmetic(id):
+			got.append(id)
+	return got
+
+
+func buy_cosmetic(id: String) -> Dictionary:
+	var def: Dictionary = Data.COSMETICS.get(id, {})
+	if def.is_empty():
+		return _fail("Kosmetik tidak ditemukan.")
+	if owns_cosmetic(id):
+		return _fail("Sudah dimiliki.")
+	if int(def.get("gold", 0)) <= 0:
+		return _fail("Kosmetik ini tidak dijual dengan emas.")
+	if gold < int(def["gold"]):
+		return _fail("Emas tidak cukup (butuh %d)." % def["gold"])
+	gold -= int(def["gold"])
+	unlock_cosmetic(id)
+	wear_cosmetic(id)
+	return _ok("%s didapat!" % def["name"])
+
+
+func wear_cosmetic(id: String) -> Dictionary:
+	if not owns_cosmetic(id):
+		return _fail("Kosmetik belum dimiliki.")
+	var def: Dictionary = Data.COSMETICS[id]
+	cosmetics[def["type"]] = id
+	changed.emit()
+	return _ok("%s dipakai." % def["name"])
+
+
+## Potret Tuan sesuai kostum yang dipakai.
+func lord_portrait() -> String:
+	return str(Data.COSMETICS.get(cosmetics.get("costume", ""), {}).get("portrait", "lord"))
+
+
+func frame_colors() -> Array:
+	return Data.COSMETICS.get(cosmetics.get("frame", ""), Data.COSMETICS["frame_kayu"])["colors"]
+
 # --- Pencapaian --------------------------------------------------------------
 
 func achievement_value(def: Dictionary) -> int:
@@ -3338,6 +3591,8 @@ func to_dict() -> Dictionary:
 		"loss_streak": loss_streak,
 		"equip_uid": _equip_uid,
 		"formation": formation,
+		"festival": festival,
+		"cosmetics": cosmetics,
 	}
 
 
@@ -3354,6 +3609,24 @@ func from_dict(d: Dictionary, now: float) -> void:
 	pity = int(d.get("pity", 0))
 	rateup_guarantee = bool(d.get("rateup_guarantee", false))
 	formation = str(d.get("formation", "balanced"))
+	var src_fest: Dictionary = d.get("festival", {})
+	if not src_fest.is_empty():
+		festival = {"key": str(src_fest.get("key", "")), "id": str(src_fest.get("id", "")), "progress": {},
+			"claimed": [], "tokens": int(src_fest.get("tokens", 0)), "bought": {},
+			"gift_day": int(src_fest.get("gift_day", -1))}
+		for k in src_fest.get("progress", {}):
+			festival["progress"][str(k)] = int(src_fest["progress"][k])
+		for k in src_fest.get("bought", {}):
+			festival["bought"][str(k)] = int(src_fest["bought"][k])
+		for v in src_fest.get("claimed", []):
+			festival["claimed"].append(str(v))
+	var src_cos: Dictionary = d.get("cosmetics", {})
+	for id in src_cos.get("owned", []):
+		unlock_cosmetic(str(id))
+	for slot in ["frame", "costume"]:
+		var worn := str(src_cos.get(slot, ""))
+		if owns_cosmetic(worn) and Data.COSMETICS[worn]["type"] == slot:
+			cosmetics[slot] = worn
 	if not Data.FORMATIONS.has(formation):
 		formation = "balanced"
 	free_pull_t = float(d.get("free_pull_t", free_pull_t))

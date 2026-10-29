@@ -89,6 +89,12 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   Lewati dan Kecepatan ×2 tidak mengubah hasil. Pengaturan "Lewati tayangan
   perang" menampilkan hasil langsung. Formasi (Seimbang, Serbu, Bertahan) dipilih
   di halaman Kampanye dan memberi bonus kecil dengan kelemahan.
+- **Festival musiman** — Pesta Tahun Baru (28 Des–7 Jan), Berkah Ramadan &
+  Lebaran (awal Ramadan sampai sepekan setelah Idulfitri, tanggal per tahun di
+  `FESTIVALS`), Pesta Kemerdekaan (10–24 Agu), Semangat Sumpah Pemuda (24 Okt–2 Nov),
+  dan Hari Pahlawan (5–16 Nov). Tiap festival punya token sendiri dari hadiah harian
+  dan 6 tugas, toko festival (emas, tiket, batu bintang, pusaka), dan bingkai profil
+  khusus. Token hangus saat festival selesai.
 - **Kampanye** — tahap tanpa batas yang dibuat prosedural. Kekuatan total
   menentukan berapa prajurit yang gugur. Menang memberi perak, prestise & emas serta
   membuka penasihat/selir baru.

@@ -27,7 +27,7 @@ func _init() -> void:
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
 		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass", "test_offers", "test_achievements", "test_save_code",
-		"test_formation", "test_battle_plan",
+		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1728,3 +1728,93 @@ func test_battle_plan() -> void:
 	empty.new_game(1000.0)
 	empty.counselors = {}
 	check(empty.battle_plan(0.5, 0.0, 1)["skills"].all(func(x): return x == -1), "tanpa penasihat tanpa jurus")
+
+
+func _date_t(y: int, mo: int, d: int, h := 12) -> float:
+	return Time.get_unix_time_from_datetime_dict({"year": y, "month": mo, "day": d, "hour": h, "minute": 0, "second": 0})
+
+
+func test_festival_calendar() -> void:
+	var m := fresh()
+	check(m.festival_at(_date_t(2026, 8, 17))["def"]["id"] == "merdeka", "17 Agustus = Pesta Kemerdekaan")
+	check(m.festival_at(_date_t(2026, 8, 9)).is_empty() and m.festival_at(_date_t(2026, 8, 25)).is_empty(),
+		"di luar rentang tidak ada festival")
+	check(m.festival_at(_date_t(2026, 8, 24, 23))["def"]["id"] == "merdeka", "hari terakhir masih festival")
+	check(m.festival_at(_date_t(2026, 12, 31))["key"] == "tahun_baru-2026", "tahun baru (Desember)")
+	check(m.festival_at(_date_t(2027, 1, 5))["key"] == "tahun_baru-2026", "tahun baru melewati Januari, kunci sama")
+	check(m.festival_at(_date_t(2026, 3, 20))["def"]["id"] == "ramadan", "Lebaran 2026")
+	check(m.festival_at(_date_t(2031, 3, 1)).is_empty(), "tahun tanpa tanggal Ramadan tidak menebak")
+	check(m.festival_at(_date_t(2026, 10, 28))["def"]["id"] == "sumpah_pemuda", "Sumpah Pemuda")
+	check(m.festival_at(_date_t(2026, 11, 10))["def"]["id"] == "pahlawan", "Hari Pahlawan")
+	var nxt := m.next_festival(_date_t(2026, 9, 1))
+	check(nxt["def"]["id"] == "sumpah_pemuda", "festival berikutnya setelah September")
+	m.tz_bias = 7 * 3600  # WIB
+	var t := Time.get_unix_time_from_datetime_dict({"year": 2026, "month": 8, "day": 9, "hour": 18, "minute": 0,
+		"second": 0})  # 01:00 WIB tanggal 10
+	check(m.festival_at(t)["def"]["id"] == "merdeka", "mulai tengah malam waktu lokal")
+	for f in Data.FESTIVALS:
+		check(Data.COSMETICS.has("frame_" + f["id"]), "bingkai festival %s ada" % f["id"])
+
+
+func test_festival_flow() -> void:
+	var m := fresh()
+	var t := _date_t(2026, 8, 12)
+	m.sync(t)
+	check(m.festival["id"] == "merdeka" and m.festival["tokens"] == 0, "festival dimulai saat sinkron")
+	check(m.festival_claimable_count(t) == 1, "hadiah harian bisa diklaim")
+	check(m.claim_festival_gift(t)["ok"] and not m.claim_festival_gift(t)["ok"], "hadiah harian sekali sehari")
+	check(m.claim_festival_gift(t + 86400.0)["ok"] and m.festival["tokens"] == Data.FESTIVAL_GIFT * 2, "besok bisa lagi")
+	check(not m.claim_festival_task("f_affair", t)["ok"], "tugas belum selesai")
+	for i in 40:
+		m._track("affair")
+	check(m.festival_task_progress("f_affair") == 40, "kemajuan tugas dari aksi")
+	check(m.claim_festival_task("f_affair", t)["ok"] and not m.claim_festival_task("f_affair", t)["ok"],
+		"klaim tugas sekali")
+	var tokens: int = m.festival["tokens"]
+	check(tokens == Data.FESTIVAL_GIFT * 2 + 40, "token bertambah")
+	var gold := m.gold
+	check(m.festival_buy("fs_gold", t)["ok"] and m.gold == gold + 100 and m.festival["tokens"] == tokens - 60,
+		"beli emas dengan token")
+	check(not m.festival_buy("fs_frame", t)["ok"], "token kurang untuk bingkai")
+	m.festival["tokens"] = 1000
+	check(m.festival_buy("fs_frame", t)["ok"] and m.owns_cosmetic("frame_merdeka"), "bingkai festival didapat")
+	check(m.festival_shop_left("fs_frame") == 0 and not m.festival_buy("fs_frame", t)["ok"], "bingkai sekali saja")
+	var eq := m.equipment.size()
+	check(m.festival_buy("fs_equip", t)["ok"] and m.equipment.size() == eq + 1, "pusaka festival")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
+	check(var_to_str(m2.festival) == var_to_str(m.festival), "simpan/muat festival")
+	m.sync(_date_t(2026, 8, 30))
+	check(m.festival.is_empty() and m.festival_claimable_count(_date_t(2026, 8, 30)) == 0, "festival berakhir, token hangus")
+	check(m.owns_cosmetic("frame_merdeka"), "bingkai tetap dimiliki setelah festival")
+	m.sync(_date_t(2026, 10, 25))
+	check(m.festival["id"] == "sumpah_pemuda" and m.festival["tokens"] == 0, "festival baru mulai dari nol")
+
+
+func test_cosmetics() -> void:
+	var m := fresh()
+	check(m.lord_portrait() == "lord" and m.frame_colors() == Data.COSMETICS["frame_kayu"]["colors"], "kosmetik awal")
+	check(not m.wear_cosmetic("frame_emas")["ok"], "belum dimiliki")
+	m.gold = 100
+	check(not m.buy_cosmetic("frame_emas")["ok"], "emas kurang")
+	m.gold = 1000
+	check(m.buy_cosmetic("frame_emas")["ok"] and m.gold == 700 and m.cosmetics["frame"] == "frame_emas",
+		"beli dan langsung pakai")
+	check(not m.buy_cosmetic("frame_emas")["ok"], "tidak bisa beli dua kali")
+	check(not m.buy_cosmetic("frame_menteri")["ok"] and not m.buy_cosmetic("costume_raja")["ok"],
+		"kosmetik hadiah tidak dijual dengan emas")
+	m.rank = 4
+	m.stage = 50
+	var got := m.check_cosmetic_unlocks()
+	check(got.has("frame_menteri") and got.has("costume_zirah") and not got.has("frame_vip"), "terbuka dari jabatan & tahap")
+	check(m.wear_cosmetic("costume_zirah")["ok"] and m.lord_portrait() == "lord_zirah", "ganti kostum")
+	var power := m.power()
+	m.wear_cosmetic("frame_menteri")
+	check(m.power() == power, "kosmetik tidak menambah kekuatan")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(var_to_str(m2.cosmetics) == var_to_str(m.cosmetics), "simpan/muat kosmetik")
+	var bad := m.to_dict()
+	bad["cosmetics"] = {"owned": ["tidak_ada"], "frame": "costume_zirah", "costume": "frame_kayu"}
+	m2.from_dict(bad, 1000.0)
+	check(m2.cosmetics["frame"] == "frame_kayu" and m2.cosmetics["costume"] == "costume_lord", "data kosmetik rusak diabaikan")

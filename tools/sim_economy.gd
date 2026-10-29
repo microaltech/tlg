@@ -216,6 +216,13 @@ func session(now: float) -> void:
 	for a in Data.ACHIEVEMENTS:
 		while m.claim_achievement(a["id"])["ok"]:
 			pass
+	if not m.festival.is_empty():
+		m.claim_festival_gift(now)
+		for t in Data.FESTIVAL_TASKS:
+			m.claim_festival_task(t["id"], now)
+		for item in Data.FESTIVAL_SHOP:
+			while m.festival_buy(item["id"], now)["ok"]:
+				pass
 	gold_add(g, "menara/pass/pencapaian")
 	g = m.gold
 	if watch_ads:

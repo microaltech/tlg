@@ -27,6 +27,10 @@
 
 ## Setiap rilis
 
+- [ ] Festival Ramadan & Lebaran: cocokkan tanggal di `FESTIVALS` (`game_data.gd`)
+      dengan pengumuman resmi Kemenag untuk tahun berjalan, dan tambahkan tahun
+      berikutnya bila daftar akan habis (saat ini sampai 2030).
+
 1. [ ] Naikkan `version/code` (bilangan bulat, wajib selalu naik) dan
        `version/name` di **kedua** preset `export_presets.cfg`, serta
        `application/config/version` di `project.godot`.

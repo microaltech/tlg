@@ -955,6 +955,48 @@ ICONS["formation_defense"] = icon_doc(
     'stroke-linejoin="round"/>'
     '<path d="M48 26 L66 32 Q66 58 48 72 Q30 58 30 32 Z" fill="#e8c070"/>')
 
+# Festival musiman.
+ICONS["fest_tahun_baru"] = icon_doc(
+    '<circle cx="48" cy="48" r="40" fill="#1b2a6b"/>'
+    + "".join('<path d="M48 44 L%.1f %.1f" stroke="%s" stroke-width="4" stroke-linecap="round"/>'
+              '<circle cx="%.1f" cy="%.1f" r="4" fill="%s"/>' % (
+                  48 + 30 * math.cos(math.radians(a)), 44 + 30 * math.sin(math.radians(a)), c,
+                  48 + 34 * math.cos(math.radians(a)), 44 + 34 * math.sin(math.radians(a)), c)
+              for a, c in zip(range(0, 360, 30), ["#f4d03f", "#e74c3c", "#5dade2", "#f4d03f", "#58d68d",
+                                                  "#e74c3c", "#f4d03f", "#af7ac5", "#5dade2", "#f4d03f",
+                                                  "#58d68d", "#e74c3c"]))
+    + '<circle cx="48" cy="44" r="7" fill="#fff6d8"/>'
+      '<path d="M20 86 L26 70 M74 86 L68 72" stroke="#f4d03f" stroke-width="3" stroke-linecap="round"/>')
+ICONS["fest_ramadan"] = icon_doc(
+    '<path d="M48 10 L84 46 L48 82 L12 46 Z" fill="#7fb34d" stroke="#2f5a1a" stroke-width="3" stroke-linejoin="round"/>'
+    '<path d="M30 28 L66 64 M48 10 L48 82 M66 28 L30 64 M12 46 L84 46" stroke="#cfe5a0" stroke-width="3"/>'
+    '<path d="M39 19 L75 55 M57 19 L21 55 M21 37 L57 73 M75 37 L39 73" stroke="#2f5a1a" stroke-width="1.5" opacity="0.6"/>'
+    '<path d="M48 82 Q44 92 36 94 M48 82 Q54 92 62 92" stroke="#2f5a1a" stroke-width="3" fill="none"/>'
+    '<path d="M78 8 Q66 14 68 26 Q74 18 84 18 Q76 14 78 8 Z" fill="#f4d03f"/>')
+ICONS["fest_merdeka"] = icon_doc(
+    '<path d="M22 8 L22 92" stroke="#6b4a2a" stroke-width="5" stroke-linecap="round"/>'
+    '<circle cx="22" cy="8" r="5" fill="#e8c070"/>'
+    '<path d="M25 14 Q50 6 84 16 L84 38 Q50 28 25 36 Z" fill="#d6241e"/>'
+    '<path d="M25 36 Q50 28 84 38 L84 60 Q50 50 25 58 Z" fill="#ffffff" stroke="#c9c9c9" stroke-width="1"/>'
+    '<path d="M40 80 Q48 70 56 80 Q64 90 72 80" stroke="#c0392b" stroke-width="4" fill="none" stroke-linecap="round"/>')
+ICONS["fest_sumpah_pemuda"] = icon_doc(
+    '<path d="M40 50 L56 50 L52 92 L44 92 Z" fill="#8a5a3a" stroke="#3b2210" stroke-width="2.5"/>'
+    '<rect x="36" y="44" width="24" height="10" rx="3" fill="#c9963f" stroke="#6b4a12" stroke-width="2"/>'
+    '<path d="M48 6 Q66 22 60 36 Q58 44 48 44 Q36 44 36 34 Q36 24 44 18 Q44 28 50 30 Q52 18 48 6 Z" fill="#e67e22"/>'
+    '<path d="M48 20 Q56 30 54 38 Q50 42 46 40 Q42 34 48 20 Z" fill="#f4d03f"/>'
+    '<path d="M14 70 L32 62 M82 70 L64 62 M18 50 L32 50 M78 50 L64 50" stroke="#c0392b" stroke-width="4" stroke-linecap="round"/>')
+ICONS["fest_pahlawan"] = icon_doc(
+    '<path d="M30 92 L60 10" stroke="#9aaa4a" stroke-width="9" stroke-linecap="round"/>'
+    '<path d="M60 10 L54 30" stroke="#d8e08a" stroke-width="3"/>'
+    '<path d="M36 76 L40 66 M44 54 L48 44" stroke="#5e6a1e" stroke-width="10" opacity="0.5"/>'
+    '<path d="M60 10 L66 4 L64 18 Z" fill="#c9d1da"/>'
+    '<path d="M54 34 Q78 30 86 44 Q74 42 70 54 Q64 40 54 44 Z" fill="#d6241e"/>'
+    '<path d="M54 44 Q64 40 70 54 Q60 50 52 54 Z" fill="#ffffff"/>')
+ICONS["frame"] = icon_doc(
+    '<rect x="10" y="10" width="76" height="76" rx="14" fill="#f4d58a" stroke="#a8742c" stroke-width="8"/>'
+    '<rect x="24" y="24" width="48" height="48" rx="8" fill="#4f7cac"/>'
+    '<circle cx="48" cy="42" r="10" fill="#e0b088"/><path d="M30 72 Q48 52 66 72 Z" fill="#1f3a5f"/>')
+
 # Pusaka: keris berlekuk, lontar, dan kalung.
 ICONS["eq_weapon"] = icon_doc(
     '<path d="M50 8 Q58 18 50 28 Q42 38 50 48 Q58 58 50 66 L46 66 Q38 58 46 48 Q54 38 46 28 Q38 18 46 8 Z" '

@@ -22,6 +22,7 @@ Store="*res://scripts/core/store.gd"
 Ads="*res://scripts/core/ads.gd"
 Notifier="*res://scripts/core/notifier.gd"
 PlayGames="*res://scripts/core/play_games.gd"
+Online="*res://scripts/core/online.gd"
 
 [editor_plugins]
 

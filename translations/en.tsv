@@ -1640,3 +1640,48 @@ Gratis besok	Free tomorrow
 Tiket (%d)	Ticket (%d)
 Putar · %d emas (sisa %d hari ini)	Spin · %d gold (%d left today)
 Peluang hadiah	Reward odds
+Pemain	Player
+Anda menang melawan %s (online, %+d poin).	You won against %s (online, %+d pts).
+Anda kalah melawan %s (online, %+d poin).	You lost against %s (online, %+d pts).
+Menang melawan %s! %+d poin online, +%d koin arena.	Victory against %s! %+d online pts, +%d arena coins.
+Kalah melawan %s. %+d poin online, +%d koin arena.	Defeat against %s. %+d online pts, +%d arena coins.
+Lawan online (pemain sungguhan)	Online opponents (real players)
+Cari lawan online	Find online opponents
+Belum ada pemain lain di server.	No other players on the server yet.
+Kekuatan %s · poin %d · peluang %d%%	Power %s · %d pts · %d%% chance
+Arena Online	Online Arena
+Online: pesan Anda dibaca pemain sungguhan di aliansi ini.	Online: your messages are read by real players in this alliance.
+Seluruh negeri	Whole realm
+Pemain online	Online players
+Memuat peringkat online...	Loading online rankings...
+Belum ada data dari server.	No data from the server yet.
+Peringkat online Anda: #%s dari %s pemain	Your online rank: #%s of %s players
+Server Online	Online Server
+Isi alamat server untuk chat aliansi, peringkat, dan arena dengan pemain sungguhan. Kosongkan untuk bermain offline.	Enter a server address for alliance chat, rankings, and arena with real players. Leave it empty to play offline.
+Tersambung sebagai %s	Connected as %s
+Menyambungkan...	Connecting...
+Gagal: %s	Failed: %s
+Offline	Offline
+Sambungkan	Connect
+Putuskan (main offline)	Disconnect (play offline)
+Server tidak menjawab.	The server did not respond.
+Mode offline.	Offline mode.
+Tidak bisa terhubung ke server.	Cannot connect to the server.
+Alamat server tidak valid.	Invalid server address.
+Belum bergabung dengan aliansi.	Not in an alliance yet.
+Tunggu sebentar.	Please wait a moment.
+Batas serangan harian.	Daily attack limit reached.
+Token tidak valid.	Invalid token.
+Kesalahan server.	Server error.
+Mode online	Online mode
+Bila Anda mengisi alamat server di Pengaturan, nama Tuan, kostum, aliansi, kekuatan, tahap, dan pesan chat aliansi dikirim ke server itu dan dapat dilihat pemain lain. Kosongkan alamat server untuk berhenti.	If you enter a server address in Settings, your Lord name, costume, alliance, power, stage, and alliance chat messages are sent to that server and can be seen by other players. Clear the server address to stop.
+Laporkan	Report
+Blokir	Block
+Laporkan pesan dari %s ke pengelola server?	Report this message from %s to the server operator?
+Pesan dilaporkan. Terima kasih.	Message reported. Thank you.
+Gagal melaporkan pesan.	Failed to report the message.
+Blokir %s? Pesannya tidak akan tampil lagi di perangkat ini.	Block %s? Their messages will no longer appear on this device.
+%s diblokir.	%s blocked.
+Pesan tidak ditemukan.	Message not found.
+Tidak bisa melaporkan pesan sendiri.	You cannot report your own message.
+https://server-anda.contoh.id	https://your-server.example.com

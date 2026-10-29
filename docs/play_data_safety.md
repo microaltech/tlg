@@ -39,6 +39,23 @@ resmi Google untuk SDK AdMob, yang biasanya mencakup:
 - Ganti `REWARDED_UNIT_ID` di `scripts/core/ads.gd` dengan ID unit dari konsol
   AdMob. ID bawaan adalah ID uji resmi Google.
 
+## Bila mode online (server sosial) diaktifkan di rilis
+
+Isi formulir Data Safety dengan data berikut (dikumpulkan, dibagikan ke pemain lain
+di dalam game, tidak dijual, terenkripsi saat dikirim lewat HTTPS, bisa dihapus atas
+permintaan):
+
+| Kategori Play Console | Data | Tujuan |
+|---|---|---|
+| Info pribadi → Nama | Nama Tuan (nama tampilan) | Fungsi aplikasi, papan peringkat |
+| Pesan → Pesan dalam aplikasi lainnya | Chat aliansi | Fungsi aplikasi |
+| Aktivitas aplikasi → Konten buatan pengguna lainnya | Profil game (kekuatan, tahap, aliansi) | Fungsi aplikasi |
+| ID perangkat atau lainnya | ID perangkat acak buatan game | Akun tanpa login |
+
+Chat dengan pemain sungguhan termasuk konten buatan pengguna (UGC). Game sudah
+menyediakan tombol Laporkan dan Blokir di tiap pesan pemain lain; pastikan laporan
+ditinjau secara berkala (lihat `server/README.md`).
+
 ## Isian lain di App content
 
 | Bagian | Isian yang disarankan |

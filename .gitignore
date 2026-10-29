@@ -6,3 +6,4 @@
 /plugins/tlg_notify_android/.gradle/
 *.keystore
 *.jks
+/server/data/

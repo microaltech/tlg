@@ -32,9 +32,19 @@ crash) ke clipboard. Anda sendiri yang memutuskan apakah akan mengirimkannya.
 
 ## Pemain lain, chat, dan peringkat
 
-Anggota aliansi, lawan arena, perang guild, chat, dan papan peringkat adalah
-simulasi yang berjalan di perangkat Anda. Pesan yang Anda ketik di chat aliansi
-disimpan di save lokal dan tidak dikirim ke siapa pun.
+Secara bawaan, anggota aliansi, lawan arena, perang guild, chat, dan papan
+peringkat adalah simulasi yang berjalan di perangkat Anda. Pesan yang Anda ketik
+di chat aliansi disimpan di save lokal dan tidak dikirim ke siapa pun.
+
+**Mode online (opsional).** Bila Anda mengisi alamat server di Pengaturan → Server
+Online, game mengirim ke server itu: ID perangkat acak buatan game (bukan ID iklan
+atau nomor perangkat), nama Tuan, kostum dan bingkai profil, aliansi, kekuatan,
+tahap kampanye, rekor menara, prestise, pesan chat aliansi, serta hasil arena
+online. Data ini dipakai untuk papan peringkat, chat, dan arena bersama pemain lain,
+dan dapat dilihat pemain lain (nama, kostum, kekuatan, pesan chat). Server
+dikelola oleh [NAMA PENGEMBANG]; data disimpan selama akun aktif dan dapat dihapus
+atas permintaan ke [EMAIL KONTAK]. Mengosongkan alamat server menghentikan semua
+pengiriman.
 
 ## Pembelian dalam aplikasi
 
@@ -61,6 +71,9 @@ lokal oleh sistem Android. Notifikasi tidak memakai server push. Matikan kapan
 saja di **Pengaturan → Notifikasi** atau di pengaturan Android.
 
 ## Izin aplikasi
+
+- `INTERNET`: untuk iklan, pembelian, Google Play Games, dan mode online. Game tidak
+  mengirim apa pun ke server sosial bila alamat server tidak diisi.
 
 - `POST_NOTIFICATIONS` (Android 13+): untuk menampilkan pengingat. Hanya diminta
   bila build menyertakan plugin notifikasi.

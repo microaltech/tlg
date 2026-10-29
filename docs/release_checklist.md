@@ -16,6 +16,9 @@
       "Pembelian dalam aplikasi" di README).
 - [ ] (Opsional) Build plugin notifikasi `plugins/tlg_notify_android`, lalu uji
       di HP Android 13+.
+- [ ] (Opsional) Mode online: hosting `server/` dengan HTTPS, jadwalkan peninjauan
+      laporan chat, isi Data Safety bagian mode online, lalu beri tahu pemain alamat
+      servernya.
 - [ ] Buat juga produk IAP `costume_raja` (sekali beli, Rp49.000).
 - [ ] Buat juga produk IAP `season_pass`, `offer_promote`, dan `offer_rescue`
       (semuanya consumable).

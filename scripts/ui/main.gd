@@ -119,6 +119,10 @@ var _codex_overlay: Control
 var _wheel_overlay: Control
 var _wheel_box: VBoxContainer
 var _wheel_spinning := false
+var _lb_online := false  ## papan peringkat menampilkan pemain sungguhan dari server
+var _lb_online_data := {}  ## {cat, top, me, players}
+var _online_opps: Array = []  ## lawan arena sungguhan terakhir dari server
+var _online_fighting := false
 var _wheel_rot := -PI / 8.0  ## sudut roda terakhir; awalnya segmen pertama tepat di bawah penunjuk
 var _codex_box: VBoxContainer
 var _codex_tab := "counselors"
@@ -207,6 +211,7 @@ func _ready() -> void:
 			return
 		_confirm("Ganti progres sekarang dengan save dari Google Play?", "Pulihkan",
 			func(): _show(Game.import_code(data))))
+	Online.status_changed.connect(_queue_rebuild)
 	model.cosmetic_unlocked.connect(func(id):
 		if _startup_prompted:
 			Audio.play("reveal_sr")
@@ -1865,7 +1870,66 @@ func _build_arena(box: VBoxContainer) -> void:
 			_build_arena_opponents(box, now)
 
 
+## Lawan arena sungguhan dari server (hanya saat online).
+func _build_arena_online(box: VBoxContainer, now: float) -> void:
+	var inner := _inner_box(box)
+	_label(inner, "Lawan online (pemain sungguhan)", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	var tickets: int = model.arena_tickets_left(now)
+	var find := _button(inner, "Cari lawan online", func():
+		Online.fetch_opponents(func(opps: Array, _rating: int):
+			_online_opps = opps
+			if opps.is_empty():
+				_show({"ok": false, "msg": tr("Belum ada pemain lain di server.")})
+			_queue_rebuild())
+		return null, true, "tab_arena", "GreenButton")
+	find.custom_minimum_size.y = 60
+	for o in _online_opps:
+		var opp: Dictionary = o
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		inner.add_child(row)
+		var portrait := str(opp.get("portrait", "lord"))
+		if not ResourceLoader.exists("res://assets/portraits/%s.svg" % portrait):
+			portrait = "lord"
+		row.add_child(_tex(Art.portrait(portrait), 64))
+		var col := _col(row)
+		var n := _label(col, str(opp["name"]), "CardLabel")
+		n.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		n.add_theme_font_override("font", UI.font_bold)
+		var chance: float = model.arena_win_chance(int(opp["power"]))
+		_label(col, "Kekuatan %s · poin %d · peluang %d%%" % [_num(int(opp["power"])), int(opp["rating"]),
+			roundi(chance * 100)], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+		var b := _button(row, "Tantang", func():
+			if _online_fighting:
+				return null
+			_online_fighting = true
+			var my_power: int = model.combat_power()
+			Online.arena_fight(str(opp["id"]), func(r: Dictionary):
+				_online_fighting = false
+				if r.has("error"):
+					_show({"ok": false, "msg": tr(str(r["error"]))})
+					return
+				var win: bool = r["win"]
+				var res: Dictionary = model.arena_online_result(win, str(opp["name"]), int(r["delta"]), Game.now())
+				if not res["ok"]:
+					_show(res)
+					return
+				_online_opps.erase(opp)
+				var ratio := float(opp["power"]) / maxi(1, my_power)
+				var plan: Dictionary = model.duel_plan(1.0, 1.0, clampf(1.0 - 0.6 * ratio, 0.15, 0.95) if win else 0.0,
+					0.0 if win else clampf(1.0 - 0.6 / maxf(ratio, 0.01), 0.1, 0.9), int(opp["power"]))
+				_play_duel(plan, {"title": tr("Arena Online"), "me_name": model.me_name(), "them_name": str(opp["name"]),
+					"me_total": my_power, "them_total": int(opp["power"]), "units": ["power", "power"],
+					"me_portrait": model.lord_portrait(), "them_portrait": portrait, "me_weapon": "keris",
+					"them_weapon": "tombak", "win": win, "bg": "arena", "detail": res["msg"]}))
+			return null, tickets > 0, "ticket", "GoldButton", false, "attack")
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		b.custom_minimum_size.x = 130
+
+
 func _build_arena_opponents(box: VBoxContainer, now: float) -> void:
+	if Online.is_online():
+		_build_arena_online(box, now)
 	var tickets: int = model.arena_tickets_left(now)
 	var bar := HBoxContainer.new()
 	bar.add_theme_constant_override("separation", 8)
@@ -2679,6 +2743,9 @@ func _hit_fx(target: Control, dmg: int) -> void:
 
 func _build_alliance_chat(box: VBoxContainer, now: float) -> void:
 	var panel := _inner_box(box)
+	if Online.is_online():
+		_label(panel, "Online: pesan Anda dibaca pemain sungguhan di aliansi ini.", "SmallLabel") \
+			.add_theme_color_override("font_color", UI.GREEN.darkened(0.3))
 	_chat_scroll = ScrollContainer.new()
 	# Tinggi disesuaikan agar tombol pesan cepat dan kolom ketik terlihat tanpa menggulir halaman.
 	_chat_scroll.custom_minimum_size.y = 400
@@ -2734,7 +2801,10 @@ func _build_alliance_chat(box: VBoxContainer, now: float) -> void:
 
 
 func _send_chat(text: String) -> void:
-	var r: Dictionary = model.chat_send(text, Game.now())
+	# Online: pesan dikirim ke server dan pemain sungguhan yang membalas, bukan NPC.
+	var r: Dictionary = model.chat_send(text, Game.now(), not Online.is_online())
+	if r["ok"] and Online.is_online():
+		Online.send_chat(text)
 	if not r["ok"]:
 		Audio.play("error")
 		_show(r)
@@ -2800,6 +2870,33 @@ func _chat_bubble(m: Dictionary) -> Control:
 	text.custom_minimum_size.x = mini(460, maxi(60, m["text"].length() * 13))
 	bubble.add_child(text)
 	col.add_child(bubble)
+	if m.has("remote") and not me:
+		# Pesan pemain sungguhan: laporkan ke pengelola server atau blokir pengirimnya.
+		var tools := HBoxContainer.new()
+		tools.add_theme_constant_override("separation", 6)
+		col.add_child(tools)
+		var msg_id: int = int(m["remote"])
+		var player_id: String = str(m.get("player", ""))
+		var who: String = str(m.get("from", "?"))
+		for action in [["Laporkan", "report"], ["Blokir", "block"]]:
+			var kind: String = action[1]
+			var b := Button.new()
+			b.text = action[0]
+			b.flat = true
+			b.add_theme_font_size_override("font_size", 15)
+			b.add_theme_color_override("font_color", Color("8a5a3a"))
+			b.pressed.connect(func():
+				if kind == "report":
+					_confirm(tr("Laporkan pesan dari %s ke pengelola server?") % who, "Laporkan", func():
+						Online.report_message(msg_id, func(ok: bool):
+							_show({"ok": ok, "msg": tr("Pesan dilaporkan. Terima kasih.") if ok
+								else tr("Gagal melaporkan pesan.")})))
+				else:
+					_confirm(tr("Blokir %s? Pesannya tidak akan tampil lagi di perangkat ini.") % who, "Blokir", func():
+						Online.block_player(player_id)
+						_show({"ok": true, "msg": tr("%s diblokir.") % who})
+						_fill_chat_list(Game.now())))
+			tools.add_child(b)
 	if me:
 		row.add_child(col)
 		row.add_child(avatar)
@@ -4487,6 +4584,12 @@ func _fill_leaderboard() -> void:
 	if _lb_cat == "alliance":
 		_fill_lb_alliances(now)
 		return
+	if Online.is_online() and _lb_cat in ONLINE_BOARDS:
+		_segment_tabs(_lb_box, [["sim", "Seluruh negeri"], ["online", "Pemain online"]],
+			"online" if _lb_online else "sim", func(key): _lb_online = key == "online", 18)
+		if _lb_online:
+			_fill_lb_online()
+			return
 	var def: Dictionary = Data.leaderboard_def(_lb_cat)
 	var mine: Dictionary = model.lb_rank(_lb_cat, now)
 	var me := _inner_box(_lb_box)
@@ -4513,6 +4616,36 @@ func _fill_leaderboard() -> void:
 	var rows: Array = model.lb_top(_lb_cat, now)
 	for i in rows.size():
 		_lb_row(i + 1, rows[i]["avatar"], "%s %s" % [rows[i]["tag"], rows[i]["name"]], _num(rows[i]["value"]), rows[i]["me"])
+
+
+## Kategori papan peringkat yang juga ada di server.
+const ONLINE_BOARDS := ["power", "stage", "tower", "prestige"]
+
+
+func _fill_lb_online() -> void:
+	var cat := _lb_cat
+	if _lb_online_data.get("cat", "") != cat:
+		_label(_lb_box, "Memuat peringkat online...", "CardLabel")
+		Online.fetch_leaderboard(cat, func(top: Array, me: Dictionary, players: int):
+			_lb_online_data = {"cat": cat, "top": top, "me": me, "players": players}
+			if is_instance_valid(_lb_overlay):
+				_fill_leaderboard())
+		return
+	var data := _lb_online_data
+	_lb_online_data = {}  # muat ulang saat panel dibuka/diganti lagi
+	if data["top"].is_empty():
+		_label(_lb_box, "Belum ada data dari server.", "CardLabel")
+		return
+	var me := _inner_box(_lb_box)
+	me.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))
+	_label(me, "Peringkat online Anda: #%s dari %s pemain" % [_num_dots(int(data["me"].get("rank", 0))),
+		_num_dots(int(data["players"]))], "CardTitle").add_theme_font_size_override("font_size", 26)
+	var my_id := str(Online.player.get("id", ""))
+	for p in data["top"]:
+		var portrait := str(p.get("portrait", "lord"))
+		if not ResourceLoader.exists("res://assets/portraits/%s.svg" % portrait):
+			portrait = "lord"
+		_lb_row(int(p["rank"]), portrait, str(p["name"]), _num(int(p["value"])), str(p["id"]) == my_id)
 
 
 static func _percent(p: float) -> String:
@@ -5120,6 +5253,8 @@ func _show_settings() -> void:
 	_setting_toggle(device, "Lewati tayangan perang", "skip_battles",
 		"Langsung tampilkan hasil perang tanpa animasi. Hasil pertempuran tetap sama.")
 
+	_build_online_section(box)
+
 	var data := _inner_box(box)
 	_label(data, "Data", "CardLabel").add_theme_font_override("font", UI.font_bold)
 	var data_row := HBoxContainer.new()
@@ -5171,6 +5306,52 @@ func _show_settings() -> void:
 
 
 ## Cadangan save: kode yang bisa disalin/ditempel, dan Google Play Games bila tersedia.
+## Pengaturan server sosial: alamat server, status, dan tombol sambung/putus.
+func _build_online_section(box: VBoxContainer) -> void:
+	var sec := _inner_box(box)
+	_label(sec, "Server Online", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	_label(sec, "Isi alamat server untuk chat aliansi, peringkat, dan arena dengan pemain sungguhan. "
+		+ "Kosongkan untuk bermain offline.", "SmallLabel").add_theme_color_override("font_color", UI.INK)
+	var status := _label(sec, "", "SmallLabel")
+	var refresh := func():
+		if not is_instance_valid(status):
+			return
+		match Online.status:
+			Online.Status.ONLINE:
+				status.text = tr("Tersambung sebagai %s") % str(Online.player.get("name", ""))
+				status.add_theme_color_override("font_color", UI.GREEN.darkened(0.3))
+			Online.Status.CONNECTING:
+				status.text = tr("Menyambungkan...")
+				status.add_theme_color_override("font_color", UI.INK)
+			Online.Status.ERROR:
+				status.text = tr("Gagal: %s") % tr(Online.error)
+				status.add_theme_color_override("font_color", UI.RED)
+			_:
+				status.text = tr("Offline")
+				status.add_theme_color_override("font_color", UI.INK)
+	refresh.call()
+	Online.status_changed.connect(refresh)
+	sec.tree_exiting.connect(func(): Online.status_changed.disconnect(refresh))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	sec.add_child(row)
+	var url := LineEdit.new()
+	url.text = Settings.server_url
+	url.placeholder_text = "https://server-anda.contoh.id"
+	url.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	url.custom_minimum_size.y = 60
+	row.add_child(url)
+	var go := _button(row, "Sambungkan", func():
+		Online.set_server(url.text)
+		return null, true, "", "GreenButton")
+	go.custom_minimum_size.x = 170
+	if Settings.server_url != "":
+		_button(sec, "Putuskan (main offline)", func():
+			Online.set_server("")
+			url.text = ""
+			return null)
+
+
 func _build_backup_section(box: VBoxContainer, close: Callable) -> void:
 	var backup := _inner_box(box)
 	_label(backup, "Cadangan Save", "CardLabel").add_theme_font_override("font", UI.font_bold)

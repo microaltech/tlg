@@ -1,5 +1,11 @@
 # Rancangan Server Online
 
+> **Status:** tahap pertama sudah diimplementasikan di `server/` (Node.js + SQLite):
+> akun perangkat, profil, papan peringkat, chat aliansi dengan lapor/blokir, dan arena
+> melawan pemain sungguhan (hasil dihitung server). Klien: autoload `Online`
+> (`scripts/core/online.gd`). Ekonomi, aliansi dinamis, bos, dan perang di bawah ini
+> masih rencana; Nakama tetap rekomendasi bila fitur-fitur itu dipindahkan ke server.
+
 Saat ini Top Lord Like berjalan sepenuhnya offline. Aliansi, chat, arena, perang
 guild, bos, dan peringkat adalah simulasi NPC yang deterministik di
 `game_model.gd`. Dokumen ini merancang cara menggantinya dengan server sungguhan

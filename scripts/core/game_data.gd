@@ -1355,6 +1355,9 @@ const PRIVACY_SECTIONS := [
 		+ "atau server dan tidak mengirim data ini ke mana pun."},
 	{"title": "Pemain lain", "text": "Anggota aliansi, lawan arena, chat, dan papan peringkat adalah simulasi "
 		+ "di perangkat Anda. Pesan chat yang Anda ketik tidak dikirim ke siapa pun."},
+	{"title": "Mode online", "text": "Bila Anda mengisi alamat server di Pengaturan, nama Tuan, kostum, aliansi, "
+		+ "kekuatan, tahap, dan pesan chat aliansi dikirim ke server itu dan dapat dilihat pemain lain. "
+		+ "Kosongkan alamat server untuk berhenti."},
 	{"title": "Pembelian dalam aplikasi", "text": "Pembayaran diproses oleh Google Play. Game hanya menerima "
 		+ "konfirmasi pembelian (ID produk dan token), tidak pernah data kartu atau rekening Anda."},
 	{"title": "Iklan berhadiah", "text": "Iklan hanya diputar bila Anda menekan tombol Iklan. Versi dengan "

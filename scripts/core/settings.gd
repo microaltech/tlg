@@ -15,6 +15,7 @@ var language := "auto"  ## "auto" (ikuti bahasa perangkat), "id", atau "en"
 var analytics := true  ## statistik bermain lokal (tidak dikirim ke mana pun)
 var battle_speed := 1  ## kecepatan tayangan perang: 1 atau 2
 var skip_battles := false  ## lewati tayangan perang, langsung tampilkan hasil
+var server_url := ""  ## alamat server sosial (kosong = mode offline)
 
 
 func _ready() -> void:
@@ -31,6 +32,7 @@ func _ready() -> void:
 		language = str(cfg.get_value("device", "language", "auto"))
 		battle_speed = 2 if int(cfg.get_value("battle", "speed", 1)) == 2 else 1
 		skip_battles = bool(cfg.get_value("battle", "skip", false))
+		server_url = str(cfg.get_value("online", "url", ""))
 	_apply_power()
 
 
@@ -52,6 +54,7 @@ func save() -> void:
 	cfg.set_value("device", "language", language)
 	cfg.set_value("battle", "speed", battle_speed)
 	cfg.set_value("battle", "skip", skip_battles)
+	cfg.set_value("online", "url", server_url)
 	cfg.save(PATH)
 
 

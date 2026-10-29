@@ -27,7 +27,7 @@ func _init() -> void:
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
 		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass", "test_offers", "test_achievements", "test_save_code",
-		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses", "test_story_choices", "test_duel_plan", "test_silat", "test_territory", "test_court", "test_tales", "test_codex", "test_wheel",
+		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses", "test_story_choices", "test_duel_plan", "test_silat", "test_territory", "test_court", "test_tales", "test_codex", "test_wheel", "test_chat_remote",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -2273,3 +2273,30 @@ func test_wheel() -> void:
 	var m2 := Model.new()
 	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
 	check(var_to_str(m2.wheel) == var_to_str(m.wheel), "simpan/muat roda")
+
+
+func test_chat_remote() -> void:
+	var m := fresh()
+	check(m.chat_add_remote([{"id": 1, "text": "x"}]) == 0, "tanpa aliansi chat online diabaikan")
+	m.stage = Data.ALLIANCE_UNLOCK_STAGE
+	m.join_alliance("garuda", 1000.0)
+	var msgs := [
+		{"id": 5, "player": "p1", "name": "Ana", "portrait": "ratna", "text": "Halo goblok", "t": 1_000_000, "me": false},
+		{"id": 6, "player": "me", "name": "Saya", "portrait": "lord", "text": "pesan sendiri", "t": 1_001_000, "me": true},
+		{"id": 7, "player": "p2", "name": "Budi", "portrait": "tidak_ada", "text": "Hai", "t": 1_002_000},
+	]
+	check(m.chat_add_remote(msgs) == 2 and m.chat_remote_after() == 7, "pesan pemain lain masuk, pesan sendiri dilewati")
+	check(m.chat_add_remote(msgs) == 0, "tidak tergandakan")
+	var remote: Array = m._chat()["msgs"].filter(func(x): return x.has("remote"))
+	check(remote[0]["text"] == "Halo ******" and remote[0]["role"] == "Pemain", "filter kata pada pesan online")
+	check(remote[1]["avatar"] == "arya", "potret tak dikenal diganti")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(var_to_str(m2._chat()) == var_to_str(m._chat()), "simpan/muat chat online")
+	m.chat_hide_player("p1")
+	check(not m._chat()["msgs"].any(func(x): return x.get("player", "") == "p1"), "blokir menghapus pesan pemain")
+	var before: int = m._chat()["msgs"].size()
+	check(m.chat_send("halo semua", 5000.0, false)["ok"], "kirim tanpa balasan NPC")
+	m.chat_messages(5000.0 + 30.0)
+	check(m._chat()["msgs"].filter(func(x): return x.get("me", false)).size() == 1, "pesan sendiri tercatat")
+	check(m._chat()["msgs"].size() >= before + 1, "pesan tersimpan")

@@ -1018,7 +1018,8 @@ func join_alliance(id: String, now: float) -> Dictionary:
 	alliance = {
 		"id": id, "join_day": today, "last_day": today, "exp": int(def["exp"]), "jasa": 0, "jasa_total": 0,
 		"donations": {"day": today, "count": 0}, "shop": {"day": today, "bought": {}},
-		"boss": {}, "log": [], "chat": {"msgs": [], "slot": int(now / Data.CHAT_SLOT_SECONDS), "read_t": now, "sent_t": 0.0},
+		"boss": {}, "log": [], "chat": {"msgs": [], "slot": int(now / Data.CHAT_SLOT_SECONDS), "read_t": now, "sent_t": 0.0,
+			"remote_after": 0},
 	}
 	_ensure_boss(now)
 	ensure_war(now)
@@ -1347,7 +1348,7 @@ func claim_boss(now: float) -> Dictionary:
 
 func _chat() -> Dictionary:
 	if not alliance.has("chat"):
-		alliance["chat"] = {"msgs": [], "slot": 0, "read_t": 0.0, "sent_t": 0.0}
+		alliance["chat"] = {"msgs": [], "slot": 0, "read_t": 0.0, "sent_t": 0.0, "remote_after": 0}
 	return alliance["chat"]
 
 
@@ -1391,7 +1392,44 @@ static func chat_filter(text: String) -> String:
 	return out
 
 
-func chat_send(text: String, now: float) -> Dictionary:
+## Pesan dari server sosial (pemain sungguhan). Pesan sendiri sudah ditampilkan saat
+## dikirim, jadi dilewati; pesan yang sudah ada (id "remote") tidak digandakan.
+## messages: [{id, name, portrait, text, t (ms), me}]. Mengembalikan jumlah pesan baru.
+func chat_add_remote(messages: Array) -> int:
+	if alliance.is_empty():
+		return 0
+	var c := _chat()
+	var added := 0
+	for m in messages:
+		var id := int(m.get("id", 0))
+		c["remote_after"] = maxi(int(c.get("remote_after", 0)), id)
+		if m.get("me", false) or c["msgs"].any(func(x): return int(x.get("remote", -1)) == id):
+			continue
+		var portrait := str(m.get("portrait", "arya"))
+		if not ResourceLoader.exists("res://assets/portraits/%s.svg" % portrait):
+			portrait = "arya"
+		_chat_add({"t": float(m.get("t", 0)) / 1000.0, "from": str(m.get("name", "?")), "role": "Pemain",
+			"avatar": portrait, "text": chat_filter(str(m.get("text", ""))), "remote": id,
+			"player": str(m.get("player", ""))})
+		added += 1
+	if added > 0:
+		changed.emit()
+	return added
+
+
+## Buang pesan pemain yang diblokir dari chat yang tersimpan.
+func chat_hide_player(player_id: String) -> void:
+	if alliance.is_empty():
+		return
+	_chat()["msgs"] = _chat()["msgs"].filter(func(x): return str(x.get("player", "")) != player_id)
+	changed.emit()
+
+
+func chat_remote_after() -> int:
+	return int(_chat().get("remote_after", 0)) if not alliance.is_empty() else 0
+
+
+func chat_send(text: String, now: float, npc_replies := true) -> Dictionary:
 	if alliance.is_empty():
 		return _fail("Bergabunglah dengan aliansi untuk chat.")
 	var clean := text.strip_edges()
@@ -1405,6 +1443,8 @@ func chat_send(text: String, now: float) -> Dictionary:
 	clean = chat_filter(clean)
 	_chat_add({"t": now, "me": true, "from": "Anda", "text": clean})
 	_chat()["read_t"] = now
+	if not npc_replies:
+		return _ok("")
 	# 1-2 anggota membalas sesuai isi pesan.
 	var category := "default"
 	var lower := clean.to_lower()
@@ -1859,6 +1899,28 @@ func arena_fight(index: int, now: float) -> Dictionary:
 	result.merge({"win": win, "delta": delta, "opponent": opp, "rounds": rounds,
 		"coins": int(reward.get("coins", 0))})
 	return result
+
+
+## Hasil pertarungan arena melawan pemain sungguhan (dihitung server). Memakai tiket
+## dan memberi hadiah koin/perak seperti arena biasa; poin arena online disimpan server.
+func arena_online_result(win: bool, opponent_name: String, delta: int, now: float) -> Dictionary:
+	if not arena_unlocked():
+		return _fail("Menangkan Tahap %d untuk membuka Arena." % Data.ARENA_UNLOCK_STAGE)
+	ensure_arena(now)
+	if arena_tickets_left(now) <= 0:
+		return _fail("Tiket arena habis. Beli tiket atau kembali besok.")
+	arena["tickets_used"] = int(arena["tickets_used"]) + 1
+	var reward: Dictionary = Data.ARENA_WIN if win else Data.ARENA_LOSS
+	arena["coins"] = int(arena["coins"]) + int(reward.get("coins", 0))
+	silver += int(reward.get("silver", 0))
+	_track("arena")
+	if win:
+		_track("arena_win")
+	_arena_log(("Anda menang melawan %s (online, %+d poin)." if win else "Anda kalah melawan %s (online, %+d poin).") % [
+		opponent_name, delta])
+	changed.emit()
+	return _ok(("Menang melawan %s! %+d poin online, +%d koin arena." if win
+		else "Kalah melawan %s. %+d poin online, +%d koin arena.") % [opponent_name, delta, reward.get("coins", 0)])
 
 
 ## Persentase HP kedua pihak di awal dan tiap akhir ronde (3 ronde), sesuai hasil.
@@ -4998,12 +5060,14 @@ func _load_alliance(src: Dictionary) -> Dictionary:
 		out["log"].append(str(line))
 	var chat: Dictionary = src.get("chat", {})
 	out["chat"] = {"msgs": [], "slot": int(chat.get("slot", 0)), "read_t": float(chat.get("read_t", 0.0)),
-		"sent_t": float(chat.get("sent_t", 0.0))}
+		"sent_t": float(chat.get("sent_t", 0.0)), "remote_after": int(chat.get("remote_after", 0))}
 	for m in chat.get("msgs", []):
 		var msg := {"t": float(m.get("t", 0.0)), "text": str(m.get("text", ""))}
-		for k in ["from", "role", "avatar"]:
+		for k in ["from", "role", "avatar", "player"]:
 			if m.has(k):
 				msg[k] = str(m[k])
+		if m.has("remote"):
+			msg["remote"] = int(m["remote"])
 		for k in ["me", "system"]:
 			if m.get(k, false):
 				msg[k] = true

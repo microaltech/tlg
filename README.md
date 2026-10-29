@@ -117,6 +117,11 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
 - **Roda Keberuntungan** — di menu Kota: 1 putaran gratis per hari, tiket putaran
   dari iklan berhadiah (maks 3/hari), dan putaran dengan 30 emas (maks 5/hari).
   8 hadiah dengan peluang tertera, dari sumber daya sampai Batu Bintang (2%).
+- **Mode online (opsional)** — server sosial kecil di `server/` (Node.js + SQLite,
+  tanpa dependensi luar). Isi alamat server di Pengaturan → Server Online untuk
+  chat aliansi dengan pemain sungguhan, papan peringkat "Pemain online", dan lawan
+  Arena dari pemain lain (hasil dihitung server). Tanpa alamat server, game tetap
+  sepenuhnya offline. Lihat `server/README.md` untuk hosting dan batasannya.
 - **Festival musiman** — Pesta Tahun Baru (28 Des–7 Jan), Berkah Ramadan &
   Lebaran (awal Ramadan sampai sepekan setelah Idulfitri, tanggal per tahun di
   `FESTIVALS`), Pesta Kemerdekaan (10–24 Agu), Semangat Sumpah Pemuda (24 Okt–2 Nov),

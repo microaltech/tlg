@@ -1149,6 +1149,90 @@ const COURT_CASES := [
 ]
 
 
+## Kisah pribadi penasihat: tiga bagian yang terbuka sesuai level dan bintang penasihat
+## (TALE_REQS). Bagian 1–2 memberi hadiah; menamatkan bagian 3 membuka skill kedua.
+const TALE_REQS := [{"level": 10, "stars": 0}, {"level": 30, "stars": 1}, {"level": 60, "stars": 2}]
+const TALE_REWARDS := [{"gold": 50}, {"items": {"star_stone": 1}}, {}]
+const TALES := {
+	"arya": {"skill2": {"name": "Sumpah Prajurit", "effect": "battle", "value": 0.05}, "parts": [
+		{"title": "Anak Pandai Besi", "text": "Arya tumbuh di bengkel ayahnya, menempa tombak untuk para prajurit. Ia bersumpah suatu hari akan memakainya sendiri."},
+		{"title": "Luka Pertama", "text": "Dalam penyerbuan begal, Arya melindungi seorang anak dan mendapat luka di bahu. Sejak itu ia tak pernah mundur."},
+		{"title": "Panglima Rakyat", "text": "Kini Arya melatih para pemuda desa. \"Tombak hanya setajam hati yang memegangnya,\" katanya."}]},
+	"sekar": {"skill2": {"name": "Catatan Teliti", "effect": "train_cost", "value": 0.05}, "parts": [
+		{"title": "Gadis Penyalin Lontar", "text": "Sekar kecil menyalin lontar di pura desa. Ia hafal setiap angka panen sejak sepuluh tahun lalu."},
+		{"title": "Bendahara Muda", "text": "Ketika kas desa nyaris kosong, Sekar menemukan pajak yang diselewengkan dan mengembalikannya kepada rakyat."},
+		{"title": "Pena yang Adil", "text": "Kini setiap keping perak negeri tercatat rapi. Rakyat percaya, karena Sekar tak pernah salah hitung."}]},
+	"bayu": {"skill2": {"name": "Benih Unggul", "effect": "yield_grain", "value": 0.05}, "parts": [
+		{"title": "Anak Petani", "text": "Bayu belajar membaca musim dari kakeknya: kapan hujan datang, kapan padi harus disemai."},
+		{"title": "Kemarau Besar", "text": "Saat kemarau panjang, Bayu menggali saluran dari mata air gunung bersama warga. Desa selamat dari kelaparan."},
+		{"title": "Lumbung Penuh", "text": "Benih unggul yang Bayu kembangkan kini ditanam di seluruh negeri. Lumbung tak pernah kosong lagi."}]},
+	"ratna": {"skill2": {"name": "Senyum Kencana", "effect": "visit", "value": 0.05}, "parts": [
+		{"title": "Penari Keraton", "text": "Ratna menari di keraton sejak belia. Gerakannya membuat para tamu agung terpana."},
+		{"title": "Tarian Perdamaian", "text": "Di tengah pertikaian dua adipati, Ratna menari hingga amarah mereka luruh. Perang pun urung terjadi."},
+		{"title": "Bunga Istana", "text": "Kini Ratna mengajar tari kepada putri-putri istana, menjaga keindahan dan keharmonisan negeri."}]},
+	"gajah": {"skill2": {"name": "Tameng Negeri", "effect": "combat", "value": 0.04}, "parts": [
+		{"title": "Pengawal Gerbang", "text": "Gajah Mandala dulunya penjaga gerbang yang tak pernah tidur saat bertugas. Tak seorang pun lolos darinya."},
+		{"title": "Benteng Terakhir", "text": "Ketika gerbang kota diserbu, Gajah bertahan seorang diri hingga bala bantuan tiba. Tiga hari tiga malam."},
+		{"title": "Sumpah Setia", "text": "\"Selama aku berdiri, negeri ini tak akan jatuh,\" ujar Gajah. Para prajurit menjulukinya Benteng Hidup."}]},
+	"dewi": {"skill2": {"name": "Lidah Emas", "effect": "yield_silver", "value": 0.05}, "parts": [
+		{"title": "Putri Duta", "text": "Dewi adalah putri seorang duta. Ia fasih berbicara dalam lima bahasa sejak usia belasan."},
+		{"title": "Perjanjian Sungai", "text": "Dewi merundingkan pembagian air sungai antara tiga kerajaan. Semuanya pulang dengan senyum."},
+		{"title": "Suara Negeri", "text": "Kini para raja tetangga lebih dulu bertanya: \"Apakah Dewi Prameswari ikut hadir?\""}]},
+	"satria": {"skill2": {"name": "Semangat Ksatria", "effect": "prestige", "value": 0.06}, "parts": [
+		{"title": "Putra Mahkota yang Hilang", "text": "Satria dibesarkan di padepokan tanpa tahu asal-usulnya. Hanya sebilah keris tua menjadi petunjuk."},
+		{"title": "Rahasia Keris", "text": "Keris itu ternyata pusaka kerajaan yang runtuh. Satria memilih tidak menuntut takhta, melainkan mengabdi."},
+		{"title": "Ksatria Sejati", "text": "\"Darah bangsawan tak berarti tanpa pengabdian,\" kata Satria. Pasukan mengikutinya ke mana pun."}]},
+	"lintang": {"skill2": {"name": "Mata Elang", "effect": "combat", "value": 0.03}, "parts": [
+		{"title": "Pemburu Rimba", "text": "Lintang belajar memanah di hutan, berburu rusa untuk keluarganya sejak usia tujuh tahun."},
+		{"title": "Panah di Malam Hari", "text": "Dalam gelap, Lintang memanah obor musuh dari jarak seratus langkah. Serangan malam pun gagal total."},
+		{"title": "Bintang Penunjuk", "text": "Para pemanah muda kini berguru padanya. \"Bidik dengan hati yang tenang,\" pesannya."}]},
+	"danu": {"skill2": {"name": "Pasar Ramai", "effect": "yield_silver", "value": 0.04}, "parts": [
+		{"title": "Anak Saudagar", "text": "Danu ikut kapal dagang ayahnya ke berbagai bandar. Ia paham harga rempah lebih baik dari siapa pun."},
+		{"title": "Kapal Karam", "text": "Kapal keluarganya karam. Danu memulai lagi dari nol, berdagang garam di pasar kecil."},
+		{"title": "Bendahara Negeri", "text": "Kini Danu mengatur kas negeri seperti mengatur kapal: tak ada yang terbuang, tak ada yang bocor."}]},
+	"wening": {"skill2": {"name": "Siasat Halus", "effect": "battle", "value": 0.04}, "parts": [
+		{"title": "Pemain Dakon", "text": "Wening tak pernah kalah bermain dakon. Ia selalu memikirkan sepuluh langkah ke depan."},
+		{"title": "Peta Rahasia", "text": "Wening menebak rencana musuh dari jejak kaki kuda dan menyiapkan jebakan di lembah. Musuh menyerah tanpa perang."},
+		{"title": "Ahli Siasat", "text": "Para panglima kini meminta nasihat Wening sebelum setiap pertempuran."}]},
+	"bagas": {"skill2": {"name": "Tinju Besi", "effect": "combat", "value": 0.04}, "parts": [
+		{"title": "Kuli Pelabuhan", "text": "Bagas memanggul karung di pelabuhan sejak kecil. Tangannya sekuat palu."},
+		{"title": "Juara Gelanggang", "text": "Bagas memenangi adu kekuatan di pasar malam dan diangkat menjadi prajurit oleh seorang bangsawan."},
+		{"title": "Pelindung Lemah", "text": "Kekuatannya kini hanya untuk melindungi mereka yang tak mampu membela diri."}]},
+	"kedaton": {"skill2": {"name": "Wibawa Ratu", "effect": "yield_all", "value": 0.04}, "parts": [
+		{"title": "Ratu Muda", "text": "Sekar Kedaton naik takhta pada usia enam belas tahun, ketika ayahnya wafat mendadak."},
+		{"title": "Istana yang Retak", "text": "Para menteri berebut kuasa. Ratu menyatukan mereka dengan keadilan dan ketegasan."},
+		{"title": "Ratu yang Dicintai", "text": "Rakyat menyebutnya Ibu Negeri. Kini ia memilih mendampingi Tuan demi Nusantara yang bersatu."}]},
+	"resi": {"skill2": {"name": "Pencerahan", "effect": "train_cost", "value": 0.06}, "parts": [
+		{"title": "Pertapa Gunung", "text": "Resi Darma bertapa puluhan tahun di lereng gunung, mempelajari kitab-kitab kuno."},
+		{"title": "Murid Seribu", "text": "Para pencari ilmu datang dari segala penjuru. Resi mengajar mereka tanpa meminta apa pun."},
+		{"title": "Turun Gunung", "text": "\"Ilmu yang disimpan sendiri akan membusuk,\" kata Resi, lalu turun gunung untuk membimbing negeri."}]},
+	"rangga": {"skill2": {"name": "Amarah Tuban", "effect": "combat", "value": 0.05}, "parts": [
+		{"title": "Putra Tuban", "text": "Rangga Lawe tumbuh di Tuban, terkenal pemberani dan berterus terang tanpa takut kepada siapa pun."},
+		{"title": "Kuda Hitam", "text": "Dengan kuda hitamnya, Rangga menerobos barisan musuh dan merebut panji mereka."},
+		{"title": "Belajar Sabar", "text": "Tuan mengajarinya bahwa keberanian perlu kebijaksanaan. Kini amarah Rangga hanya untuk musuh negeri."}]},
+	"sora": {"skill2": {"name": "Sahabat Setia", "effect": "yield_soldiers", "value": 0.05}, "parts": [
+		{"title": "Paman Rangga", "text": "Lembu Sora adalah paman Rangga Lawe, prajurit tua yang tenang dan disegani."},
+		{"title": "Pembela Sahabat", "text": "Sora selalu membela kawannya walau harus menanggung akibatnya sendiri."},
+		{"title": "Barak yang Ramai", "text": "Para pemuda berdatangan ingin berlatih di bawah Sora. Barak tak pernah sepi."}]},
+	"tantular": {"skill2": {"name": "Bhinneka Tunggal Ika", "effect": "yield_all", "value": 0.05}, "parts": [
+		{"title": "Pujangga Istana", "text": "Mpu Tantular menulis syair-syair indah di istana, merenungkan perbedaan dan persatuan."},
+		{"title": "Kakawin Sutasoma", "text": "Dalam kakawinnya ia menulis: berbeda-beda tetapi tetap satu jua. Kalimat itu menggetarkan seluruh negeri."},
+		{"title": "Warisan Abadi", "text": "\"Semboyan ini milik Nusantara,\" kata Tantular. Rakyat dari berbagai suku bekerja bahu-membahu."}]},
+	"kusuma": {"skill2": {"name": "Tangan Dingin", "effect": "yield_grain", "value": 0.04}, "parts": [
+		{"title": "Juru Kunci Lumbung", "text": "Kusuma menjaga lumbung desa dan hafal isi setiap karungnya."},
+		{"title": "Tikus dan Wereng", "text": "Saat hama menyerang, Kusuma menemukan cara alami mengusirnya dengan tanaman serai."},
+		{"title": "Ratu Padi", "text": "Rakyat menjulukinya Ratu Padi. Di tangannya, setiap benih tumbuh subur."}]},
+	"jaka": {"skill2": {"name": "Penakluk Banteng", "effect": "battle", "value": 0.05}, "parts": [
+		{"title": "Pemuda Pengging", "text": "Jaka Tingkir adalah pemuda desa yang gemar berguru kepada para empu dan pertapa."},
+		{"title": "Banteng Mengamuk", "text": "Seekor banteng mengamuk di alun-alun. Jaka menaklukkannya dengan tangan kosong di hadapan raja."},
+		{"title": "Jalan Takdir", "text": "Raja mengangkatnya menjadi prajurit pilihan. Jaka bersumpah menjaga negeri dengan segenap jiwa."}]},
+	"nawang": {"skill2": {"name": "Selendang Kayangan", "effect": "prestige", "value": 0.05}, "parts": [
+		{"title": "Bidadari Telaga", "text": "Nawang Wulan turun dari kayangan untuk mandi di telaga, hingga selendangnya hilang."},
+		{"title": "Hidup di Bumi", "text": "Tanpa selendang, Nawang belajar hidup sebagai manusia: menanak nasi, menenun, dan menolong sesama."},
+		{"title": "Pilihan Sang Bidadari", "text": "Saat selendangnya ditemukan, Nawang memilih tinggal lebih lama untuk membantu negeri yang ia cintai."}]},
+}
+
+
 ## Festival musiman bertema hari besar Indonesia. Tanggal tetap memakai "start"/"end"
 ## [bulan, tanggal] tiap tahun (boleh melewati tahun baru); hari raya yang mengikuti
 ## kalender Hijriah memakai "dates" per tahun: [[bln, tgl mulai], [bln, tgl akhir]].

@@ -142,6 +142,9 @@ func _prepare_save(m: Model) -> void:
 	m.start_build("istana", now)
 	m.buy_cosmetic("costume_batik")
 	m.story["choices"] = {"begal": "ampuni"}
+	m.counselors["arya"]["level"] = 60
+	m.counselors["arya"]["stars"] = 2
+	m.read_tale("arya")
 	m.ensure_court(now)
 	m.judge_case(m.court["cases"][0], 0, now)
 	m.judge_case(m.court["cases"][1], 1, now)
@@ -185,6 +188,9 @@ func _walk_ui() -> void:
 		"_show_story", "_show_settings", "_show_privacy", "_show_help", "_show_equipment", "_show_tower",
 		"_show_pass", "_show_achievements", "_show_offers", "_show_promotion", "_show_expeditions", "_show_stable",
 		"_show_profile", "_show_silat", "_show_map"]
+	main._show_tale("arya")
+	await _snap("tale")
+	await _close_modals()
 	if not Game.model.festival.is_empty():
 		panels.append("_show_festival")
 	for f in panels:

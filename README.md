@@ -108,6 +108,9 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   12 jenis (sengketa sawah, pedagang curang, gagal panen, pencuri lapar, dan lain-lain).
   Tiap keputusan memberi atau mengambil sumber daya, prestise, dan kesetiaan rakyat
   (0–100). Kesetiaan mengubah semua hasil urusan hingga ±10%.
+- **Kisah pribadi penasihat** — tiap 19 penasihat punya kisah tiga bagian (tombol
+  Kisah di kartu penasihat). Bagian terbuka di level 10, level 30 + 1 bintang, dan
+  level 60 + 2 bintang; hadiah emas, Batu Bintang, lalu skill kedua penasihat itu.
 - **Festival musiman** — Pesta Tahun Baru (28 Des–7 Jan), Berkah Ramadan &
   Lebaran (awal Ramadan sampai sepekan setelah Idulfitri, tanggal per tahun di
   `FESTIVALS`), Pesta Kemerdekaan (10–24 Agu), Semangat Sumpah Pemuda (24 Okt–2 Nov),

@@ -129,6 +129,8 @@ var silat := {}
 var territory := {}
 ## Sidang Istana: {day, cases: [id], done: {id: indeks pilihan}, loyalty}.
 var court := {}
+## Kisah pribadi penasihat: {id penasihat: jumlah bagian yang sudah dibaca (0..3)}.
+var tales := {}
 var rng := RandomNumberGenerator.new()
 
 
@@ -142,6 +144,7 @@ func new_game(now: float) -> void:
 	silat = {}
 	territory = {"owned": ["mataram"], "collect_t": now}
 	court = {"day": -1, "cases": [], "done": {}, "loyalty": 50}
+	tales = {}
 	buildings = {"levels": {"istana": 1, "pasar": 0, "lumbung": 0, "barak": 0}, "job": {}}
 	cosmetics = {"owned": ["frame_kayu", "costume_lord"], "frame": "frame_kayu", "costume": "costume_lord"}
 	equipment = []
@@ -343,6 +346,9 @@ func skill_bonus(effect: String) -> float:
 	for b in bonds_active():
 		if b["effect"] == effect:
 			total += float(b["value"])
+	for id in tales:
+		if skill2_active(id) and Data.TALES[id]["skill2"]["effect"] == effect:
+			total += float(Data.TALES[id]["skill2"]["value"])
 	return minf(total, Data.SKILL_CAP)
 
 
@@ -3463,6 +3469,54 @@ func assign_horse(id: String, counselor_id: String) -> Dictionary:
 	return _ok("%s kini menunggangi %s." % [Data.counselor_def(counselor_id)["name"], Data.HORSES[id]["name"]])
 
 
+# --- Kisah pribadi penasihat --------------------------------------------------------
+
+func tale_read(id: String) -> int:
+	return int(tales.get(id, 0))
+
+
+func skill2_active(id: String) -> bool:
+	return counselors.has(id) and Data.TALES.has(id) and tale_read(id) >= Data.TALE_REQS.size()
+
+
+## Bagian kisah berikutnya bisa dibaca bila level & bintang penasihat mencukupi.
+func tale_can_read(id: String) -> bool:
+	if not counselors.has(id) or not Data.TALES.has(id):
+		return false
+	var part := tale_read(id)
+	if part >= Data.TALE_REQS.size():
+		return false
+	var req: Dictionary = Data.TALE_REQS[part]
+	return int(counselors[id]["level"]) >= int(req["level"]) and int(counselors[id].get("stars", 0)) >= int(req["stars"])
+
+
+func tales_ready_count() -> int:
+	return counselors.keys().filter(func(id): return tale_can_read(id)).size()
+
+
+func read_tale(id: String) -> Dictionary:
+	if not counselors.has(id) or not Data.TALES.has(id):
+		return _fail("Penasihat belum direkrut.")
+	var part := tale_read(id)
+	if part >= Data.TALE_REQS.size():
+		return _fail("Kisah ini sudah tamat.")
+	if not tale_can_read(id):
+		var req: Dictionary = Data.TALE_REQS[part]
+		return _fail("Butuh level %d dan %d bintang." % [req["level"], req["stars"]])
+	tales[id] = part + 1
+	var text := _give_rewards(Data.TALE_REWARDS[part])
+	_track("tale")
+	var def: Dictionary = Data.TALES[id]
+	var result: Dictionary
+	if skill2_active(id):
+		result = _ok("Kisah %s tamat! Skill kedua terbuka: %s." % [Data.counselor_def(id)["name"], def["skill2"]["name"]])
+	else:
+		result = _ok("Bagian %d kisah %s: %s." % [part + 1, Data.counselor_def(id)["name"], text])
+	result["part"] = part
+	changed.emit()
+	return result
+
+
 # --- Sidang Istana -----------------------------------------------------------------
 
 func court_unlocked() -> bool:
@@ -4419,6 +4473,7 @@ func to_dict() -> Dictionary:
 		"silat": silat,
 		"territory": territory,
 		"court": court,
+		"tales": tales,
 		"cosmetics": cosmetics,
 	}
 
@@ -4472,6 +4527,10 @@ func from_dict(d: Dictionary, now: float) -> void:
 			r["equip"] = str(src_r["equip"])
 		expeditions.append({"dest": str(e["dest"]), "counselor": str(e["counselor"]),
 			"end_t": float(e.get("end_t", now)), "reward": r})
+	var src_tales: Dictionary = d.get("tales", {})
+	for id in src_tales:
+		if Data.TALES.has(str(id)):
+			tales[str(id)] = clampi(int(src_tales[id]), 0, Data.TALE_REQS.size())
 	var src_court: Dictionary = d.get("court", {})
 	if not src_court.is_empty():
 		court = {"day": int(src_court.get("day", -1)), "cases": [], "done": {},

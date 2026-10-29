@@ -114,6 +114,9 @@ var _avatar_key := ""  ## kostum+bingkai yang sedang tampil di avatar header
 var _profile_overlay: Control
 var _silat_overlay: Control
 var _map_overlay: Control
+var _tale_overlay: Control
+var _tale_box: VBoxContainer
+var _tale_id := ""
 var _map_box: VBoxContainer
 var _map_pick := ""  ## wilayah yang dipilih di peta
 var _silat_box: VBoxContainer
@@ -662,6 +665,8 @@ func _rebuild() -> void:
 		_fill_silat()
 	if is_instance_valid(_map_overlay):
 		_fill_map()
+	if is_instance_valid(_tale_overlay):
+		_fill_tale()
 	_update_avatar()
 	if is_instance_valid(_pass_overlay):
 		_fill_pass()
@@ -1021,6 +1026,12 @@ func _build_counselors(box: VBoxContainer) -> void:
 				gear.append("%s +%d" % [Data.equip_def(e["id"])["name"], int(e["level"]) - 1])
 		if not gear.is_empty():
 			_label(col, "Pusaka: %s" % ", ".join(gear), "SmallLabel").add_theme_color_override("font_color", UI.GOLD_DARK)
+		if model.skill2_active(id):
+			var sk2: Dictionary = Data.TALES[id]["skill2"]
+			var l2 := _label(col, "%s: %s" % [sk2["name"], Data.SKILL_EFFECT_NAMES[sk2["effect"]] % roundi(
+				float(sk2["value"]) * 100)], "SmallLabel")
+			l2.add_theme_color_override("font_color", Color("6c3483"))
+			l2.add_theme_font_override("font", UI.font_bold)
 		var mount: String = model.mount_of(id)
 		if mount != "":
 			_label(col, "Tunggangan: %s (+%d%% atribut)" % [Data.HORSES[mount]["name"], roundi(model.mount_pct(id) * 100)],
@@ -1037,8 +1048,19 @@ func _build_counselors(box: VBoxContainer) -> void:
 			l.add_theme_color_override("font_color", UI.ATTR_COLORS[key])
 			l.add_theme_font_override("font", UI.font_bold)
 		var cost: int = model.upgrade_cost(id)
-		var train := _button(col, "Latih  %s" % _num(cost), func(): return model.upgrade_counselor(id),
+		var brow := HBoxContainer.new()
+		brow.add_theme_constant_override("separation", 8)
+		col.add_child(brow)
+		var train := _button(brow, "Latih  %s" % _num(cost), func(): return model.upgrade_counselor(id),
 			model.silver >= cost and lv < cap, "silver", "", false, "upgrade")
+		train.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		if Data.TALES.has(id):
+			var tid: String = id
+			var can_read: bool = model.tale_can_read(id)
+			var tale := _button(brow, "Kisah %d/%d" % [model.tale_read(id), Data.TALE_REQS.size()], func():
+				_show_tale(tid)
+				return null, true, "", "GoldButton" if can_read else "GreenButton")
+			tale.custom_minimum_size.x = 150
 		if id == model.counselors.keys()[0]:
 			_first_upgrade_button = train
 
@@ -4106,6 +4128,63 @@ func _fill_horse_riders() -> void:
 			return r, cur != hid, "", "GreenButton", false, "upgrade")
 		b.custom_minimum_size = Vector2(120, 56)
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+
+# --- Kisah penasihat ------------------------------------------------------------
+
+func _show_tale(id: String) -> void:
+	if is_instance_valid(_tale_overlay):
+		return
+	_tale_id = id
+	var p := _open_panel("Kisah %s" % Data.counselor_def(id)["name"], "item_scroll", _close_tale)
+	_tale_overlay = p["overlay"]
+	_tale_box = p["content"]
+	p["subtitle"].text = "Tamatkan ketiga bagian untuk membuka skill kedua."
+	_fill_tale()
+
+
+func _close_tale() -> void:
+	if is_instance_valid(_tale_overlay):
+		Audio.play("click")
+		_tale_overlay.queue_free()
+	_tale_overlay = null
+
+
+func _fill_tale() -> void:
+	_clear(_tale_box)
+	var id := _tale_id
+	var def: Dictionary = Data.TALES[id]
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 12)
+	_inner_box(_tale_box).add_child(head)
+	head.add_child(_portrait_frame(id, 120))
+	var hcol := _col(head)
+	var sk2: Dictionary = def["skill2"]
+	_label(hcol, "Skill kedua: %s" % sk2["name"], "CardTitle").add_theme_font_size_override("font_size", 24)
+	_label(hcol, Data.SKILL_EFFECT_NAMES[sk2["effect"]] % roundi(float(sk2["value"]) * 100), "CardLabel") \
+		.add_theme_color_override("font_color", Color("6c3483"))
+	_label(hcol, "Aktif!" if model.skill2_active(id) else "Terbuka setelah kisah tamat", "SmallLabel") \
+		.add_theme_color_override("font_color", UI.GREEN.darkened(0.3) if model.skill2_active(id) else UI.INK)
+	var read: int = model.tale_read(id)
+	for i in def["parts"].size():
+		var part: Dictionary = def["parts"][i]
+		var box := _inner_box(_tale_box)
+		if i < read:
+			_label(box, "Bagian %d · %s" % [i + 1, part["title"]], "CardLabel").add_theme_font_override("font", UI.font_bold)
+			var t := _label(box, part["text"], "CardLabel")
+			t.add_theme_font_size_override("font_size", 22)
+		elif i == read:
+			var req: Dictionary = Data.TALE_REQS[i]
+			_label(box, "Bagian %d · %s" % [i + 1, part["title"]], "CardLabel").add_theme_font_override("font", UI.font_bold)
+			var reward: String = _reward_text(Data.TALE_REWARDS[i]) if i < Data.TALE_REQS.size() - 1 \
+				else "skill kedua %s" % sk2["name"]
+			_label(box, "Syarat: level %d, %d bintang · Hadiah: %s" % [req["level"], req["stars"], reward], "SmallLabel") \
+				.add_theme_color_override("font_color", UI.INK)
+			var ok: bool = model.tale_can_read(id)
+			_button(box, "Baca Bagian %d" % (i + 1), func(): return model.read_tale(id), ok, "item_scroll",
+				"GoldButton" if ok else "", false, "reveal_sr")
+		else:
+			_label(box, "Bagian %d · ???" % (i + 1), "CardLabel").add_theme_color_override("font_color", Color("8a7a6a"))
 
 
 # --- Leaderboard global -----------------------------------------------------

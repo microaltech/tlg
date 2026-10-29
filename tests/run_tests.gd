@@ -27,7 +27,7 @@ func _init() -> void:
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
 		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass", "test_offers", "test_achievements", "test_save_code",
-		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses", "test_story_choices", "test_duel_plan", "test_silat", "test_territory", "test_court",
+		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses", "test_story_choices", "test_duel_plan", "test_silat", "test_territory", "test_court", "test_tales",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -2176,3 +2176,35 @@ func test_court() -> void:
 	for cc in Data.COURT_CASES:
 		check(cc["options"].size() == 2 and ResourceLoader.exists("res://assets/portraits/%s.svg" % cc["portrait"]),
 			"perkara %s punya 2 pilihan dan potret" % cc["id"])
+
+
+func test_tales() -> void:
+	var m := fresh()
+	for c in Data.COUNSELORS:
+		var t: Dictionary = Data.TALES.get(c["id"], {})
+		check(t.size() > 0 and t["parts"].size() == Data.TALE_REQS.size()
+			and Data.SKILL_EFFECT_NAMES.has(t["skill2"]["effect"]), "kisah %s lengkap" % c["id"])
+	check(not m.tale_can_read("arya") and not m.read_tale("arya")["ok"], "bagian 1 butuh level 10")
+	check(not m.read_tale("gajah")["ok"], "penasihat belum dimiliki")
+	m.counselors["arya"]["level"] = 10
+	var gold := m.gold
+	check(m.tales_ready_count() == 1 and m.read_tale("arya")["ok"] and m.gold == gold + 50, "baca bagian 1")
+	m.counselors["arya"]["level"] = 30
+	check(not m.tale_can_read("arya"), "bagian 2 butuh 1 bintang")
+	m.counselors["arya"]["stars"] = 2
+	m.counselors["arya"]["level"] = 60
+	var stones := m.item_count("star_stone")
+	check(m.read_tale("arya")["ok"] and m.item_count("star_stone") == stones + 1, "baca bagian 2")
+	var battle := m.skill_bonus("battle")
+	check(not m.skill2_active("arya"), "skill kedua belum aktif")
+	var r := m.read_tale("arya")
+	check(r["ok"] and m.skill2_active("arya") and "Sumpah Prajurit" in r["msg"], "kisah tamat, skill kedua aktif")
+	check(is_equal_approx(m.skill_bonus("battle"), battle + 0.05), "skill kedua menambah bonus")
+	check(not m.read_tale("arya")["ok"], "kisah sudah tamat")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(var_to_str(m2.tales) == var_to_str(m.tales) and m2.skill2_active("arya"), "simpan/muat kisah")
+	var bad := m.to_dict()
+	bad["tales"] = {"arya": 99, "palsu": 2}
+	m2.from_dict(bad, 1000.0)
+	check(m2.tales == {"arya": Data.TALE_REQS.size()}, "data kisah rusak dijepit")

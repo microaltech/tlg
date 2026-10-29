@@ -163,6 +163,11 @@ func session(now: float) -> void:
 				if r_i < riders.size():
 					m.assign_horse(id, riders[r_i])
 
+	# Kisah penasihat: baca semua bagian yang sudah terbuka.
+	for id in m.counselors:
+		while m.tale_can_read(id):
+			m.read_tale(id)
+
 	# Sidang: pilih yang menaikkan kesetiaan bila kesetiaan < 80, selain itu yang paling menguntungkan perak.
 	if m.court_unlocked():
 		m.ensure_court(now)

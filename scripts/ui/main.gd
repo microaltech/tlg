@@ -1525,6 +1525,7 @@ func _badge(parent: Control, pos: Vector2) -> Dictionary:
 func _open_panel(title: String, icon_name: String, on_close: Callable, top := 0.06,
 		bottom := 0.94) -> Dictionary:
 	Telemetry.mark("panel: " + title)
+	RenderingServer.frame_post_draw.connect(func(): Telemetry.mark("tergambar: " + title), CONNECT_ONE_SHOT)
 	var overlay := Control.new()
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	overlay.add_to_group("modal")
@@ -5646,7 +5647,9 @@ func _show_login() -> void:
 	_login_box = p["content"]
 	_login_subtitle = p["subtitle"]
 	_fill_login()
+	Telemetry.mark("login: kalender terisi")
 	_tick()
+	Telemetry.mark("login: siap")
 
 
 func _close_login() -> void:
@@ -5695,9 +5698,6 @@ func _login_cell(i: int, claimed: bool, is_today: bool) -> Control:
 	var bg := Color("fff3c8") if is_today else (Color("e2cfa6") if claimed else Color(1, 1, 1, 0.45))
 	var style := UI.box(bg, UI.GOLD if is_today else UI.GOLD_DARK, 4 if is_today else 2, 12)
 	style.set_content_margin_all(8)
-	if is_today:
-		style.shadow_color = Color(UI.GOLD, 0.8)
-		style.shadow_size = 10
 	var cell := PanelContainer.new()
 	cell.add_theme_stylebox_override("panel", style)
 	cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -5733,10 +5733,6 @@ func _login_cell(i: int, claimed: bool, is_today: bool) -> Control:
 	reward.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	reward.add_theme_color_override("font_color", UI.INK)
 	reward.add_theme_font_size_override("font_size", 16)
-	if is_today:
-		var glow := cell.create_tween().set_loops()
-		glow.tween_property(cell, "self_modulate", Color(1.12, 1.08, 0.9), 0.5)
-		glow.tween_property(cell, "self_modulate", Color.WHITE, 0.5)
 	return cell
 
 

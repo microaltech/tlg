@@ -24,7 +24,7 @@ const SKIP_CONSTS := ["NPC_NAMES", "CHILD_NAMES", "ARENA_AVATARS", "ITEM_ORDER",
 	"LB_ALLIANCE_WORDS", "REWARD_KEYS", "ATTRS", "PRISON_CONFESS_ITEMS", "BANQUET_GIFT_ITEMS", "CHAT_BANNED",
 	"CHAT_KEYWORDS", "NPC_TITLES"]
 ## Literal kode yang bukan teks tampilan.
-const SKIP_LINE := "push_warning|push_error|print\\(|printerr|assert|\\.connect\\(|has_signal|\\.bus =|mark\\("
+const SKIP_LINE := "push_warning|push_error|print\\(|printerr|assert|\\.connect\\(|has_signal|\\.bus =|mark\\(|_beat = "
 ## Nama teknis atau teks yang sengaja tidak diterjemahkan.
 const THEME_NAMES := ["Rp", "--- jejak ---", "Content-Type: application/json", "Authorization: Bearer", "AdMob", "Top Lord Like", "GodotPlayGameServices", "ProgressBar", "Button", "ScrollContainer", "LineEdit", "Label", "GodotGooglePlayBilling", "TlgNotify", "Android", "--- log ---","CardLabel", "CardTitle", "TitleLabel", "SmallLabel", "BigLabel", "GoldButton",
 	"GreenButton", "NavButton", "DarkPanel", "Chip", "Toast", "Music", "SFX", "Master"]

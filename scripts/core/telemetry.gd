@@ -16,6 +16,10 @@ const LOCK_PATH := "user://session.lock"
 ## Ditulis langsung ke file agar tetap ada walau game ditutup paksa sistem.
 const TRAIL_PATH := "user://trail.txt"
 const TRAIL_KEEP := 40
+## Setelah tiap kejadian, detak (jumlah frame logika & frame tergambar) ditulis
+## tiap detik selama BEAT_SECONDS. Bila game membeku, detak terakhir menunjukkan
+## apakah logika game yang berhenti atau hanya penggambaran (GPU).
+const BEAT_SECONDS := 20.0
 const LOG_DIR := "user://logs"
 const MAX_CRASHES := 5
 const LOG_TAIL_LINES := 60
@@ -32,6 +36,9 @@ var crashed_last_time := false
 var _trail: Array = []
 var _session_start := 0.0
 var _save_timer := 0.0
+var _beat_left := 0.0
+var _beat_timer := 0.0
+var _beat := ""
 
 
 func _ready() -> void:
@@ -54,6 +61,14 @@ func _process(delta: float) -> void:
 	if _save_timer >= SAVE_SECONDS:
 		_save_timer = 0.0
 		_flush()
+	if _beat_left > 0.0:
+		_beat_left -= delta
+		_beat_timer += delta
+		if _beat_timer >= 1.0:
+			_beat_timer = 0.0
+			_beat = "%s detak: logika %d · gambar %d · %d fps" % [Time.get_time_string_from_system(),
+				Engine.get_process_frames(), Engine.get_frames_drawn(), Engine.get_frames_per_second()]
+			_write_trail()
 
 
 func _exit_tree() -> void:
@@ -73,12 +88,22 @@ func _notification(what: int) -> void:
 ## Catat satu kejadian ke jejak (file kecil, ditulis ulang tiap kali).
 func mark(event: String) -> void:
 	var line := "%s %s" % [Time.get_time_string_from_system(), event]
+	if _beat != "":
+		_trail.append(_beat)  # detak terakhir sebelum kejadian ini
+		_beat = ""
 	_trail.append(line)
 	if _trail.size() > TRAIL_KEEP:
 		_trail = _trail.slice(-TRAIL_KEEP)
+	_beat_left = BEAT_SECONDS
+	_beat_timer = 0.0
+	_write_trail()
+
+
+func _write_trail() -> void:
 	var f := FileAccess.open(TRAIL_PATH, FileAccess.WRITE)
 	if f:
-		f.store_string("\n".join(_trail))
+		f.store_string("\n".join(_trail + ([_beat] if _beat != "" else [])))
+		f.flush()
 
 
 func _start_session() -> void:

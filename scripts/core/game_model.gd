@@ -131,6 +131,8 @@ var territory := {}
 var court := {}
 ## Kisah pribadi penasihat: {id penasihat: jumlah bagian yang sudah dibaca (0..3)}.
 var tales := {}
+## Ensiklopedia: equip (id pusaka yang pernah dimiliki), claimed (kategori lengkap yang sudah diklaim).
+var codex := {}
 var rng := RandomNumberGenerator.new()
 
 
@@ -145,6 +147,7 @@ func new_game(now: float) -> void:
 	territory = {"owned": ["mataram"], "collect_t": now}
 	court = {"day": -1, "cases": [], "done": {}, "loyalty": 50}
 	tales = {}
+	codex = {"equip": [], "claimed": []}
 	buildings = {"levels": {"istana": 1, "pasar": 0, "lumbung": 0, "barak": 0}, "job": {}}
 	cosmetics = {"owned": ["frame_kayu", "costume_lord"], "frame": "frame_kayu", "costume": "costume_lord"}
 	equipment = []
@@ -349,6 +352,9 @@ func skill_bonus(effect: String) -> float:
 	for id in tales:
 		if skill2_active(id) and Data.TALES[id]["skill2"]["effect"] == effect:
 			total += float(Data.TALES[id]["skill2"]["value"])
+	for cat in Data.CODEX:
+		if cat["effect"] == effect and codex.get("claimed", []).has(cat["id"]):
+			total += float(cat["value"])
 	return minf(total, Data.SKILL_CAP)
 
 
@@ -3008,6 +3014,8 @@ func add_equipment(id: String) -> Dictionary:
 	if Data.equip_def(id).is_empty() or equipment.size() >= Data.EQUIP_CAPACITY:
 		return {}
 	_equip_uid += 1
+	if not codex["equip"].has(id):
+		codex["equip"].append(id)
 	var eq := {"uid": _equip_uid, "id": id, "level": 1, "owner": ""}
 	equipment.append(eq)
 	changed.emit()
@@ -3467,6 +3475,64 @@ func assign_horse(id: String, counselor_id: String) -> Dictionary:
 	if counselor_id == "":
 		return _ok("%s kembali ke kandang." % Data.HORSES[id]["name"])
 	return _ok("%s kini menunggangi %s." % [Data.counselor_def(counselor_id)["name"], Data.HORSES[id]["name"]])
+
+
+# --- Ensiklopedia -------------------------------------------------------------------
+
+## Semua entri suatu kategori: [{id, name, icon/portrait, found}].
+func codex_entries(cat: String) -> Array:
+	var out := []
+	match cat:
+		"counselors":
+			for c in Data.COUNSELORS:
+				out.append({"id": c["id"], "name": c["name"], "portrait": c["id"], "found": counselors.has(c["id"])})
+		"beauties":
+			for b in Data.BEAUTIES:
+				out.append({"id": b["id"], "name": b["name"], "portrait": b["id"], "found": beauties.has(b["id"])})
+		"horses":
+			for id in Data.HORSE_ORDER:
+				out.append({"id": id, "name": Data.HORSES[id]["name"], "icon": "horse_" + id, "found": horses.has(id)})
+		"equipment":
+			for id in Data.EQUIPMENT:
+				var e: Dictionary = Data.EQUIPMENT[id]
+				out.append({"id": id, "name": e["name"], "icon": Data.EQUIP_SLOTS[e["slot"]]["icon"],
+					"found": codex["equip"].has(id)})
+		"regions":
+			for r in Data.REGIONS:
+				out.append({"id": r["id"], "name": r["name"], "icon": "map", "found": region_owned(r["id"])})
+	return out
+
+
+func codex_progress(cat: String) -> Array:
+	var entries := codex_entries(cat)
+	return [entries.filter(func(e): return e["found"]).size(), entries.size()]
+
+
+func codex_can_claim(cat: String) -> bool:
+	var p := codex_progress(cat)
+	return p[0] >= p[1] and not codex["claimed"].has(cat)
+
+
+func codex_claimable_count() -> int:
+	return Data.CODEX.filter(func(c): return codex_can_claim(c["id"])).size()
+
+
+func claim_codex(cat: String) -> Dictionary:
+	var def := {}
+	for c in Data.CODEX:
+		if c["id"] == cat:
+			def = c
+	if def.is_empty():
+		return _fail("Kategori tidak dikenal.")
+	if codex["claimed"].has(cat):
+		return _fail("Hadiah koleksi ini sudah diambil.")
+	if not codex_can_claim(cat):
+		return _fail("Koleksi %s belum lengkap." % def["name"])
+	codex["claimed"].append(cat)
+	gold += int(def["gold"])
+	_track("codex")
+	changed.emit()
+	return _ok("Koleksi %s lengkap! +%d emas dan bonus permanen." % [def["name"], def["gold"]])
 
 
 # --- Kisah pribadi penasihat --------------------------------------------------------
@@ -4474,6 +4540,7 @@ func to_dict() -> Dictionary:
 		"territory": territory,
 		"court": court,
 		"tales": tales,
+		"codex": codex,
 		"cosmetics": cosmetics,
 	}
 
@@ -4527,6 +4594,17 @@ func from_dict(d: Dictionary, now: float) -> void:
 			r["equip"] = str(src_r["equip"])
 		expeditions.append({"dest": str(e["dest"]), "counselor": str(e["counselor"]),
 			"end_t": float(e.get("end_t", now)), "reward": r})
+	var src_codex: Dictionary = d.get("codex", {})
+	for id in src_codex.get("equip", []):
+		if Data.EQUIPMENT.has(str(id)) and not codex["equip"].has(str(id)):
+			codex["equip"].append(str(id))
+	for e in d.get("equipment", []):
+		# Save lama: pusaka yang masih dimiliki tercatat di ensiklopedia.
+		if e is Dictionary and Data.EQUIPMENT.has(str(e.get("id", ""))) and not codex["equip"].has(str(e["id"])):
+			codex["equip"].append(str(e["id"]))
+	for c in src_codex.get("claimed", []):
+		if Data.CODEX.any(func(x): return x["id"] == str(c)) and not codex["claimed"].has(str(c)):
+			codex["claimed"].append(str(c))
 	var src_tales: Dictionary = d.get("tales", {})
 	for id in src_tales:
 		if Data.TALES.has(str(id)):

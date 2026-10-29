@@ -188,6 +188,11 @@ func _walk_ui() -> void:
 		"_show_story", "_show_settings", "_show_privacy", "_show_help", "_show_equipment", "_show_tower",
 		"_show_pass", "_show_achievements", "_show_offers", "_show_promotion", "_show_expeditions", "_show_stable",
 		"_show_profile", "_show_silat", "_show_map"]
+	for c in Data.CODEX:
+		main._codex_tab = c["id"]
+		main._show_codex()
+		await _snap("codex/" + c["id"])
+		await _close_modals()
 	main._show_tale("arya")
 	await _snap("tale")
 	await _close_modals()

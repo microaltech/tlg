@@ -27,7 +27,7 @@ func _init() -> void:
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
 		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass", "test_offers", "test_achievements", "test_save_code",
-		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses", "test_story_choices", "test_duel_plan", "test_silat", "test_territory", "test_court", "test_tales",
+		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses", "test_story_choices", "test_duel_plan", "test_silat", "test_territory", "test_court", "test_tales", "test_codex",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -2208,3 +2208,36 @@ func test_tales() -> void:
 	bad["tales"] = {"arya": 99, "palsu": 2}
 	m2.from_dict(bad, 1000.0)
 	check(m2.tales == {"arya": Data.TALE_REQS.size()}, "data kisah rusak dijepit")
+
+
+func test_codex() -> void:
+	var m := fresh()
+	check(m.codex_progress("counselors") == [2, Data.COUNSELORS.size()], "2 penasihat awal tercatat")
+	check(m.codex_progress("regions")[0] == 1, "ibu kota tercatat")
+	check(not m.claim_codex("counselors")["ok"] and not m.claim_codex("palsu")["ok"], "koleksi belum lengkap")
+	var uid: int = m.add_equipment("keris_besi")["uid"]
+	m.salvage_equipment(uid)
+	check(m.codex["equip"].has("keris_besi") and m.codex_progress("equipment")[0] == 1, "pusaka tercatat walau dilebur")
+	m.stage = Data.HORSE_UNLOCK_STAGE
+	m.silver = 1 << 40
+	m.gold = 100000
+	for id in Data.HORSE_ORDER:
+		m.buy_horse(id)
+	check(m.codex_can_claim("horses") and m.codex_claimable_count() == 1, "koleksi kuda lengkap")
+	var combat := m.skill_bonus("combat")
+	var gold := m.gold
+	check(m.claim_codex("horses")["ok"] and m.gold == gold + 200, "klaim hadiah koleksi")
+	check(is_equal_approx(m.skill_bonus("combat"), minf(combat + 0.03, Data.SKILL_CAP)), "bonus permanen koleksi")
+	check(not m.claim_codex("horses")["ok"], "klaim sekali")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(var_to_str(m2.codex) == var_to_str(m.codex), "simpan/muat ensiklopedia")
+	var old := m.to_dict()
+	old.erase("codex")
+	old["equipment"] = [{"uid": 1, "id": "kitab_negara", "level": 1, "owner": ""}]
+	m2.from_dict(old, 1000.0)
+	check(m2.codex["equip"] == ["kitab_negara"], "save lama: pusaka dimiliki masuk ensiklopedia")
+	for c in Data.CODEX:
+		check(m.codex_entries(c["id"]).size() > 0 and Data.SKILL_EFFECT_NAMES.has(c["effect"]), "kategori %s valid" % c["id"])
+	for b in Data.BEAUTIES:
+		check(Data.BEAUTY_LORE.has(b["id"]), "cerita selir %s" % b["id"])

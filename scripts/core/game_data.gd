@@ -1233,6 +1233,26 @@ const TALES := {
 }
 
 
+## Ensiklopedia Nusantara: kategori koleksi. Melengkapi satu kategori membuka hadiah
+## emas dan bonus permanen ("effect" seperti skill, ikut batas SKILL_CAP).
+const CODEX := [
+	{"id": "counselors", "name": "Penasihat", "icon": "tab_counselor", "effect": "yield_all", "value": 0.03, "gold": 300},
+	{"id": "beauties", "name": "Selir", "icon": "heart", "effect": "visit", "value": 0.05, "gold": 200},
+	{"id": "horses", "name": "Kuda", "icon": "stable", "effect": "combat", "value": 0.03, "gold": 200},
+	{"id": "equipment", "name": "Pusaka", "icon": "eq_weapon", "effect": "prestige", "value": 0.03, "gold": 300},
+	{"id": "regions", "name": "Wilayah", "icon": "map", "effect": "yield_all", "value": 0.02, "gold": 300},
+]
+## Cerita singkat selir untuk ensiklopedia.
+const BEAUTY_LORE := {
+	"melati": "Gadis desa berhati lembut yang pertama kali menyambut Tuan.",
+	"kenanga": "Putri saudagar kain, pandai menenun songket.",
+	"anggrek": "Penyanyi tembang dari pesisir utara yang suaranya merdu.",
+	"cempaka": "Putri bangsawan yang gemar membaca kitab sastra.",
+	"kemuning": "Peracik jamu istana yang menguasai ratusan resep.",
+	"kantil": "Penari topeng misterius dari tanah seberang.",
+}
+
+
 ## Festival musiman bertema hari besar Indonesia. Tanggal tetap memakai "start"/"end"
 ## [bulan, tanggal] tiap tahun (boleh melewati tahun baru); hari raya yang mengikuti
 ## kalender Hijriah memakai "dates" per tahun: [[bln, tgl mulai], [bln, tgl akhir]].

@@ -115,6 +115,9 @@ var _profile_overlay: Control
 var _silat_overlay: Control
 var _map_overlay: Control
 var _tale_overlay: Control
+var _codex_overlay: Control
+var _codex_box: VBoxContainer
+var _codex_tab := "counselors"
 var _tale_box: VBoxContainer
 var _tale_id := ""
 var _map_box: VBoxContainer
@@ -667,6 +670,8 @@ func _rebuild() -> void:
 		_fill_map()
 	if is_instance_valid(_tale_overlay):
 		_fill_tale()
+	if is_instance_valid(_codex_overlay):
+		_fill_codex()
 	_update_avatar()
 	if is_instance_valid(_pass_overlay):
 		_fill_pass()
@@ -1000,6 +1005,7 @@ func _build_counselors(box: VBoxContainer) -> void:
 		l.add_theme_font_override("font", UI.font_bold)
 	_build_expedition_card(box)
 	_build_stable_card(box)
+	_build_codex_card(box)
 	_build_bonds(box)
 
 	for id in model.counselors:
@@ -4128,6 +4134,115 @@ func _fill_horse_riders() -> void:
 			return r, cur != hid, "", "GreenButton", false, "upgrade")
 		b.custom_minimum_size = Vector2(120, 56)
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+
+# --- Ensiklopedia ------------------------------------------------------------------
+
+func _build_codex_card(box: VBoxContainer) -> void:
+	var card := _card(box)
+	card.add_child(_tex(Art.icon("codex"), 84))
+	var col := _col(card)
+	_label(col, "Ensiklopedia Nusantara", "CardTitle")
+	var found := 0
+	var total := 0
+	for c in Data.CODEX:
+		var p: Array = model.codex_progress(c["id"])
+		found += p[0]
+		total += p[1]
+	_label(col, "Koleksi %d / %d" % [found, total], "CardLabel")
+	_bar(col, found, total, Color("8e44ad"))
+	var n: int = model.codex_claimable_count()
+	var b := _button(card, "Klaim (%d)" % n if n > 0 else "Buka", func():
+		_show_codex()
+		return null, true, "", "GoldButton" if n > 0 else "GreenButton")
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.custom_minimum_size.x = 150
+
+
+func _show_codex() -> void:
+	if is_instance_valid(_codex_overlay):
+		return
+	var p := _open_panel("Ensiklopedia Nusantara", "codex", _close_codex)
+	_codex_overlay = p["overlay"]
+	_codex_box = p["content"]
+	p["subtitle"].text = "Lengkapi tiap koleksi untuk hadiah emas dan bonus permanen."
+	_fill_codex()
+
+
+func _close_codex() -> void:
+	if is_instance_valid(_codex_overlay):
+		Audio.play("click")
+		_codex_overlay.queue_free()
+	_codex_overlay = null
+
+
+func _codex_lore(cat: String, id: String) -> String:
+	match cat:
+		"counselors":
+			return Data.TALES[id]["parts"][0]["text"] if Data.TALES.has(id) else ""
+		"beauties":
+			return Data.BEAUTY_LORE.get(id, "")
+		"horses":
+			return Data.HORSES[id]["desc"]
+		"equipment":
+			var e: Dictionary = Data.EQUIPMENT[id]
+			var parts := []
+			for k in e["attrs"]:
+				parts.append("%s +%d" % [Data.ATTR_NAMES[k], e["attrs"][k]])
+			return "%s · %s" % [Data.EQUIP_SLOTS[e["slot"]]["name"], ", ".join(parts)]
+		"regions":
+			return model.region_def(id)["desc"]
+	return ""
+
+
+func _fill_codex() -> void:
+	_clear(_codex_box)
+	var tabs := []
+	for c in Data.CODEX:
+		var p: Array = model.codex_progress(c["id"])
+		tabs.append([c["id"], "%s %d/%d" % [c["name"], p[0], p[1]]])
+	_segment_tabs(_codex_box, tabs, _codex_tab, func(key):
+		_codex_tab = key
+		_fill_codex.call_deferred(), 16)
+	var def: Dictionary = {}
+	for c in Data.CODEX:
+		if c["id"] == _codex_tab:
+			def = c
+	var head := _inner_box(_codex_box)
+	var p: Array = model.codex_progress(def["id"])
+	_label(head, "Bonus koleksi lengkap: %s, +%d emas" % [Data.SKILL_EFFECT_NAMES[def["effect"]] % roundi(
+		float(def["value"]) * 100), def["gold"]], "CardLabel").add_theme_font_override("font", UI.font_bold)
+	_bar(head, p[0], p[1], Color("8e44ad"))
+	if model.codex["claimed"].has(def["id"]):
+		_label(head, "Bonus aktif!", "SmallLabel").add_theme_color_override("font_color", UI.GREEN.darkened(0.3))
+	else:
+		var cid: String = def["id"]
+		_button(head, "Klaim hadiah koleksi", func(): return model.claim_codex(cid), model.codex_can_claim(cid),
+			"chest", "GoldButton", false, "reveal_ssr")
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
+	_codex_box.add_child(grid)
+	for e in model.codex_entries(def["id"]):
+		var cell := _inner_box(grid)
+		cell.get_parent().size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		cell.add_child(row)
+		var pic := _tex(Art.portrait(e["portrait"]) if e.has("portrait") else Art.icon(e["icon"]), 64)
+		if not e["found"]:
+			pic.self_modulate = Color(0.1, 0.07, 0.05)
+		row.add_child(pic)
+		var col := _col(row)
+		var n := _label(col, e["name"] if e["found"] else "???", "CardLabel")
+		n.add_theme_font_override("font", UI.font_bold)
+		n.add_theme_font_size_override("font_size", 20)
+		if e["found"]:
+			var lore := _label(col, _codex_lore(def["id"], e["id"]), "SmallLabel")
+			lore.add_theme_font_size_override("font_size", 15)
+			lore.add_theme_color_override("font_color", UI.INK)
+			lore.max_lines_visible = 4
 
 
 # --- Kisah penasihat ------------------------------------------------------------

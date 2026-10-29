@@ -1121,6 +1121,17 @@ ICONS["court"] = icon_doc(
     '<path d="M8 54 Q20 64 32 54 Z" fill="#e8c070" stroke="#7a4b1f" stroke-width="2"/>'
     '<path d="M64 54 Q76 64 88 54 Z" fill="#e8c070" stroke="#7a4b1f" stroke-width="2"/>')
 
+# Ensiklopedia: kitab terbuka bersampul ungu.
+ICONS["codex"] = icon_doc(
+    '<path d="M48 22 Q30 12 10 16 L10 78 Q30 74 48 84 Q66 74 86 78 L86 16 Q66 12 48 22 Z" fill="#6c3483" '
+    'stroke="#3a1a4a" stroke-width="3" stroke-linejoin="round"/>'
+    '<path d="M48 26 Q32 18 16 21 L16 72 Q32 70 48 78 Z" fill="#f4e4c1"/>'
+    '<path d="M48 26 Q64 18 80 21 L80 72 Q64 70 48 78 Z" fill="#fff6e0"/>'
+    + "".join('<path d="M22 %d Q34 %d 42 %d" stroke="#a8742c" stroke-width="2" fill="none"/>' % (y, y - 3, y + 2)
+              for y in (34, 44, 54, 64))
+    + '<circle cx="64" cy="44" r="10" fill="#e8c070" stroke="#a8742c" stroke-width="2"/>'
+      '<path d="M64 36 L66 42 L72 44 L66 46 L64 52 L62 46 L56 44 L62 42 Z" fill="#fff6d8"/>')
+
 # Pusaka: keris berlekuk, lontar, dan kalung.
 ICONS["eq_weapon"] = icon_doc(
     '<path d="M50 8 Q58 18 50 28 Q42 38 50 48 Q58 58 50 66 L46 66 Q38 58 46 48 Q54 38 46 28 Q38 18 46 8 Z" '

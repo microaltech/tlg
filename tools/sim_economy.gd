@@ -163,6 +163,9 @@ func session(now: float) -> void:
 				if r_i < riders.size():
 					m.assign_horse(id, riders[r_i])
 
+	for c in Data.CODEX:
+		if m.codex_can_claim(c["id"]):
+			m.claim_codex(c["id"])
 	# Kisah penasihat: baca semua bagian yang sudah terbuka.
 	for id in m.counselors:
 		while m.tale_can_read(id):

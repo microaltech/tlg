@@ -94,3 +94,27 @@ Sumber emas tambahan sekitar +30%: menara, Tiket Musim, dan pencapaian sekitar
 4,1 ribu dalam 30 hari (sebagian sekali-jalan), ditambah iklan 1,8 ribu. Semua
 19 penasihat terkumpul dalam 30 hari. Bila koleksi dirasa terlalu cepat,
 turunkan `ACHIEVEMENT_GOLD` atau emas di `AD_REWARDS`.
+
+## Penyeimbangan setelah bangunan, ekspedisi, dan kuda
+
+Bangunan kota (bonus hasil urusan), ekspedisi (sumber daya, item, dan pusaka),
+dan kuda tunggangan (bonus atribut 4–12%) mempercepat kampanye. Bot kini juga
+membangun, mengirim ekspedisi, membeli kuda perak, memberi pakan, dan
+menunggangkan kuda ke penasihat terkuat. Formasi tetap Seimbang.
+
+| Ukuran (4 sesi/hari, 30 hari, seed 1–3) | Sebelum | Fitur baru, ambang lama | Ambang baru |
+|---|---|---|---|
+| Tahap di hari ke-30 | 71–73 | 75–76 | 75–76 |
+| Menteri tercapai | hari ke-21 | hari ke-15 sampai 18 | hari ke-18 sampai 22 |
+| Bangunan di hari ke-30 | – | semua level 8 | semua level 8 |
+
+Hasil ekspedisi sempat dua kali lebih besar dan memajukan Menteri ke hari ke-15;
+pengali `yields` di `EXPEDITIONS` sudah dipangkas setengahnya. Ambang jabatan:
+
+| Jabatan | Lama | Baru |
+|---|---|---|
+| Menteri | 16.000 | 17.500 |
+| Perdana Menteri | 35.000 | 40.000 |
+
+Ambang 19.000 juga dicoba, tetapi Menteri mundur ke hari ke-22 sampai 30 karena
+pengali jabatan ikut tertahan, jadi dipilih 17.500.

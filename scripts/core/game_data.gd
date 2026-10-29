@@ -16,8 +16,8 @@ const RANKS := [
 	{"name": "Camat", "prestige": 300, "max_charges": 4, "mult": 1.25, "level_cap": 40, "child_seats": 3},
 	{"name": "Bupati", "prestige": 1500, "max_charges": 5, "mult": 1.5, "level_cap": 60, "child_seats": 4},
 	{"name": "Gubernur", "prestige": 6000, "max_charges": 6, "mult": 2.0, "level_cap": 80, "child_seats": 5},
-	{"name": "Menteri", "prestige": 16000, "max_charges": 7, "mult": 2.5, "level_cap": 100, "child_seats": 6},
-	{"name": "Perdana Menteri", "prestige": 35000, "max_charges": 8, "mult": 3.0, "level_cap": 150, "child_seats": 8},
+	{"name": "Menteri", "prestige": 17500, "max_charges": 7, "mult": 2.5, "level_cap": 100, "child_seats": 6},
+	{"name": "Perdana Menteri", "prestige": 40000, "max_charges": 8, "mult": 3.0, "level_cap": 150, "child_seats": 8},
 ]
 
 ## Kelangkaan penasihat untuk gacha. rate = peluang per tarikan.
@@ -960,6 +960,29 @@ const EXPEDITIONS := [
 		"desc": "Mencari pusaka sakti di lereng gunung berapi.", "yields": {"silver": 3.0},
 		"gold": [15, 30], "items": [["scroll_train", 1.0], ["star_stone", 0.25], ["equip", 0.35]]},
 ]
+
+
+## Kuda tunggangan: koleksi kuda Nusantara (masing-masing satu). Kuda yang ditunggangi
+## penasihat menambah semua atributnya sebesar pct + PER_LEVEL tiap level di atas 1.
+## Naik level dengan pakan (pangan). Dibeli dengan perak ("silver") atau emas ("gold").
+const HORSE_UNLOCK_STAGE := 12
+const HORSE_MAX_LEVEL := 10
+const HORSE_PCT_PER_LEVEL := 0.01
+const HORSE_FEED_BASE := 6000  ## pangan untuk naik ke level 2; berlipat HORSE_FEED_GROWTH per level
+const HORSE_FEED_GROWTH := 1.8
+const HORSES := {
+	"kuda_jawa": {"name": "Kuda Jawa", "rarity": "r", "pct": 0.04, "silver": 30000, "coat": "#8a5a3a",
+		"mane": "#2a1a10", "desc": "Kuda pekerja yang tangguh dari tanah Jawa."},
+	"kuda_gayo": {"name": "Kuda Gayo", "rarity": "r", "pct": 0.04, "silver": 45000, "coat": "#5a3a2a",
+		"mane": "#1a0e08", "desc": "Kuda gunung dari dataran tinggi Gayo, kuat menanjak."},
+	"kuda_sandel": {"name": "Kuda Sandel", "rarity": "sr", "pct": 0.07, "gold": 300, "coat": "#efe3c8",
+		"mane": "#c9a77a", "desc": "Kuda pacu Sumba yang lincah dan tahan lama."},
+	"kuda_bima": {"name": "Kuda Bima", "rarity": "sr", "pct": 0.07, "gold": 400, "coat": "#2a2a30",
+		"mane": "#101014", "desc": "Kuda perang Bima, berani menerjang barisan musuh."},
+	"kuda_sembrani": {"name": "Kuda Sembrani", "rarity": "ssr", "pct": 0.12, "gold": 1500, "coat": "#ffffff",
+		"mane": "#e8c070", "wings": true, "desc": "Kuda bersayap dalam legenda, melesat di atas awan."},
+}
+const HORSE_ORDER := ["kuda_jawa", "kuda_gayo", "kuda_sandel", "kuda_bima", "kuda_sembrani"]
 
 
 ## Festival musiman bertema hari besar Indonesia. Tanggal tetap memakai "start"/"end"

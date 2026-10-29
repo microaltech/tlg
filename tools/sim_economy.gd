@@ -40,7 +40,7 @@ func run(days: int, sessions: int, seed_value: int) -> void:
 	m.new_game(start)
 	m.skip_tutorial()
 	stats = {"gold_src": {}, "births": 0, "gold_in": 0, "gold_gacha": 0, "pulls": 0, "fails": 0, "wins": 0, "level_capped": 0}
-	print("hari | tahap | jabatan          | kekuatan | penasihat | perak    | pangan   | prajurit | emas  | rekrut | anak | aliansi | arena")
+	print("hari | tahap | jabatan          | prestise | kekuatan | penasihat | perak    | pangan   | prajurit | emas  | rekrut | anak | aliansi | arena")
 	var hours: Array = SESSION_HOURS.get(sessions, SESSION_HOURS[4])
 	var rank_day := {}
 	var stage_at := {}
@@ -142,6 +142,25 @@ func session(now: float) -> void:
 				break
 			free.sort_custom(func(a, b): return m.expedition_mult(dest, a) > m.expedition_mult(dest, b))
 			m.send_expedition(dest["id"], free[0], now)
+
+	# Kuda: beli kuda perak bila perak berlimpah, pakan bila pangan berlimpah, tunggangi penasihat terkuat.
+	if m.horse_unlocked():
+		for id in Data.HORSE_ORDER:
+			var hd: Dictionary = Data.HORSES[id]
+			if not m.horses.has(id) and hd.has("silver") and m.silver >= int(hd["silver"]) * 3:
+				m.buy_horse(id)
+		for id in m.horses:
+			if int(m.horses[id]["level"]) < Data.HORSE_MAX_LEVEL and m.grain >= m.feed_cost(id) * 4:
+				m.feed_horse(id)
+		var riders: Array = m.counselors.keys()
+		riders.sort_custom(func(a, b): return m.attr(a, "str") > m.attr(b, "str"))
+		var r_i := 0
+		for id in m.horses:
+			if m.horses[id]["rider"] == "" and r_i < riders.size():
+				while r_i < riders.size() and m.mount_of(riders[r_i]) != "":
+					r_i += 1
+				if r_i < riders.size():
+					m.assign_horse(id, riders[r_i])
 
 	# Bangunan: bangun yang termurah bila perak masih cukup untuk 2x biayanya.
 	if m.build_job().is_empty():
@@ -262,8 +281,8 @@ func session(now: float) -> void:
 
 
 func row(day: int) -> void:
-	print("%4d | %5d | %-16s | %8d | %9d | %8d | %8d | %8d | %5d | %6d | %4d | %7s | %5s" % [
-		day, m.stage, m.rank_info()["name"], m.combat_power(), m.counselors.size(), m.silver, m.grain,
+	print("%4d | %5d | %-16s | %8d | %8d | %9d | %8d | %8d | %8d | %5d | %6d | %4d | %7s | %5s" % [
+		day, m.stage, m.rank_info()["name"], m.prestige, m.combat_power(), m.counselors.size(), m.silver, m.grain,
 		m.soldiers, m.gold, stats["pulls"], m.children.size(),
 		("Lv.%d" % m.alliance_level()) if not m.alliance.is_empty() else "-",
 		str(m.arena.get("rating", "-")) if not m.arena.is_empty() else "-"])

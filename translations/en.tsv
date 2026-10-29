@@ -1210,3 +1210,37 @@ Semua rombongan sedang berangkat. Tunggu sampai ada yang kembali.	All parties ar
 %s %s · hasil x%.1f	%s %s · spoils x%.1f
 Perkiraan: %s	Estimate: %s
 Semua penasihat sedang dalam ekspedisi.	All advisors are on expeditions.
+Kuda Jawa	Javanese Horse
+Kuda pekerja yang tangguh dari tanah Jawa.	A sturdy working horse from the land of Java.
+Kuda Gayo	Gayo Horse
+Kuda gunung dari dataran tinggi Gayo, kuat menanjak.	A mountain horse from the Gayo highlands, strong on steep slopes.
+Kuda Sandel	Sandalwood Horse
+Kuda pacu Sumba yang lincah dan tahan lama.	A nimble, tireless racing horse from Sumba.
+Kuda Bima	Bima Horse
+Kuda perang Bima, berani menerjang barisan musuh.	A Bima warhorse that boldly charges enemy lines.
+Kuda Sembrani	Sembrani Steed
+Kuda bersayap dalam legenda, melesat di atas awan.	The winged horse of legend that soars above the clouds.
+Menangkan Tahap %d untuk membuka Kandang Kuda.	Win Stage %d to unlock the Stable.
+Kuda tidak dikenal.	Unknown horse.
+%s sudah ada di kandang.	%s is already in the stable.
+%s bergabung ke kandang!	%s joined the stable!
+Kuda belum dimiliki.	You don't own this horse yet.
+%s naik ke level %d: atribut penunggang +%d%%.	%s reached level %d: rider attributes +%d%%.
+%s kembali ke kandang.	%s returned to the stable.
+%s kini menunggangi %s.	%s now rides the %s.
+Tunggangan: %s (+%d%% atribut)	Mount: %s (+%d%% attributes)
+Kandang Kuda	Stable
+Kuda %d / %d · %d ditunggangi	Horses %d / %d · %d ridden
+Kuda menambah semua atribut penunggangnya. Beri pakan agar makin kuat.	Horses boost all of their rider's attributes. Feed them to make them stronger.
+Atribut penunggang +%d%%	Rider attributes +%d%%
+Lv %d / %d · atribut +%d%% · %s	Lv %d / %d · attributes +%d%% · %s
+penunggang: %s	rider: %s
+belum ditunggangi	no rider yet
+Pakan %s	Feed %s
+Ganti	Change
+Tunggangi	Ride
+%s: pilih penunggang	%s: choose a rider
+Turunkan penunggang	Dismount rider
+Atribut total %s · %s	Total attributes %s · %s
+menunggangi %s	riding the %s
+tanpa kuda	no horse

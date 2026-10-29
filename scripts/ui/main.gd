@@ -104,6 +104,9 @@ var _exp_overlay: Control
 var _exp_box: VBoxContainer
 var _exp_pick := ""  ## tujuan ekspedisi yang sedang menunggu pilihan penasihat
 var _exp_timers: Array = []  ## [{label, bar, index, total}]
+var _stable_overlay: Control
+var _stable_box: VBoxContainer
+var _horse_pick := ""  ## kuda yang sedang menunggu pilihan penunggang
 var _build_timer := {}  ## {label, bar, rush, total} untuk pembangunan yang berjalan
 var _fest_box: VBoxContainer
 var _tower_box: VBoxContainer
@@ -635,6 +638,8 @@ func _rebuild() -> void:
 		_fill_festival()
 	if is_instance_valid(_exp_overlay):
 		_fill_expeditions()
+	if is_instance_valid(_stable_overlay):
+		_fill_stable()
 	if is_instance_valid(_pass_overlay):
 		_fill_pass()
 	if is_instance_valid(_offer_overlay):
@@ -966,6 +971,7 @@ func _build_counselors(box: VBoxContainer) -> void:
 		l.add_theme_color_override("font_color", UI.ATTR_COLORS[key])
 		l.add_theme_font_override("font", UI.font_bold)
 	_build_expedition_card(box)
+	_build_stable_card(box)
 	_build_bonds(box)
 
 	for id in model.counselors:
@@ -992,6 +998,10 @@ func _build_counselors(box: VBoxContainer) -> void:
 				gear.append("%s +%d" % [Data.equip_def(e["id"])["name"], int(e["level"]) - 1])
 		if not gear.is_empty():
 			_label(col, "Pusaka: %s" % ", ".join(gear), "SmallLabel").add_theme_color_override("font_color", UI.GOLD_DARK)
+		var mount: String = model.mount_of(id)
+		if mount != "":
+			_label(col, "Tunggangan: %s (+%d%% atribut)" % [Data.HORSES[mount]["name"], roundi(model.mount_pct(id) * 100)],
+				"SmallLabel").add_theme_color_override("font_color", Color("7a4a24"))
 		var lv: int = model.counselors[id]["level"]
 		var cap: int = model.rank_info()["level_cap"]
 		_label(col, "Level %d / %d" % [lv, cap], "CardLabel")
@@ -3463,6 +3473,140 @@ func _fill_expedition_targets() -> void:
 			var r: Dictionary = model.send_expedition(did, cid, Game.now())
 			_exp_pick = ""
 			return r, true, "", "GreenButton", false, "upgrade")
+		b.custom_minimum_size = Vector2(120, 56)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+
+# --- Kandang kuda ---------------------------------------------------------------
+
+func _build_stable_card(box: VBoxContainer) -> void:
+	var card := _card(box)
+	card.add_child(_tex(Art.icon("stable"), 84))
+	var col := _col(card)
+	_label(col, "Kandang Kuda", "CardTitle")
+	if not model.horse_unlocked():
+		_label(col, "Terbuka setelah menang Tahap %d." % Data.HORSE_UNLOCK_STAGE, "CardLabel")
+		return
+	var riding: int = model.horses.values().filter(func(h): return h["rider"] != "").size()
+	_label(col, "Kuda %d / %d · %d ditunggangi" % [model.horses.size(), Data.HORSES.size(), riding], "CardLabel")
+	var b := _button(card, "Buka", func():
+		_show_stable()
+		return null, true, "", "GreenButton")
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.custom_minimum_size.x = 150
+
+
+func _show_stable() -> void:
+	if is_instance_valid(_stable_overlay):
+		return
+	var p := _open_panel("Kandang Kuda", "stable", _close_stable)
+	_stable_overlay = p["overlay"]
+	_stable_box = p["content"]
+	p["subtitle"].text = "Kuda menambah semua atribut penunggangnya. Beri pakan agar makin kuat."
+	_horse_pick = ""
+	_fill_stable()
+
+
+func _close_stable() -> void:
+	if is_instance_valid(_stable_overlay):
+		Audio.play("click")
+		_stable_overlay.queue_free()
+	_stable_overlay = null
+	_horse_pick = ""
+
+
+func _fill_stable() -> void:
+	_clear(_stable_box)
+	if _horse_pick != "":
+		_fill_horse_riders()
+		return
+	for id in Data.HORSE_ORDER:
+		var def: Dictionary = Data.HORSES[id]
+		var owned: bool = model.horses.has(id)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		_inner_box(_stable_box).add_child(row)
+		var pic := _tex(Art.icon("horse_" + id), 84)
+		if not owned:
+			pic.self_modulate = Color(0.55, 0.5, 0.45)
+		row.add_child(pic)
+		var col := _col(row)
+		var head := HBoxContainer.new()
+		head.add_theme_constant_override("separation", 8)
+		col.add_child(head)
+		_label(head, def["name"], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		_rarity_tag(head, def["rarity"])
+		_label(col, def["desc"], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+		var hid: String = id
+		if not owned:
+			_label(col, "Atribut penunggang +%d%%" % roundi(float(def["pct"]) * 100), "SmallLabel") \
+				.add_theme_color_override("font_color", UI.GREEN.darkened(0.3))
+			var use_silver: bool = def.has("silver")
+			var price: int = def["silver"] if use_silver else def["gold"]
+			var ok: bool = model.horse_unlocked() and (model.silver if use_silver else model.gold) >= price
+			var b := _button(row, _num(price), func(): return model.buy_horse(hid), ok,
+				"silver" if use_silver else "gold", "GoldButton" if ok else "", false, "upgrade")
+			b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			b.custom_minimum_size.x = 150
+			continue
+		var h: Dictionary = model.horses[id]
+		var rider: String = h["rider"]
+		_label(col, "Lv %d / %d · atribut +%d%% · %s" % [h["level"], Data.HORSE_MAX_LEVEL, roundi(model.horse_pct(id) * 100),
+			"penunggang: %s" % Data.counselor_def(rider)["name"] if rider != "" else "belum ditunggangi"], "SmallLabel") \
+			.add_theme_color_override("font_color", UI.GREEN.darkened(0.3))
+		var btns := VBoxContainer.new()
+		btns.add_theme_constant_override("separation", 6)
+		btns.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(btns)
+		var maxed: bool = int(h["level"]) >= Data.HORSE_MAX_LEVEL
+		var cost: int = 0 if maxed else model.feed_cost(id)
+		var feed := _button(btns, "Maks" if maxed else "Pakan %s" % _num(cost), func(): return model.feed_horse(hid),
+			not maxed and model.grain >= cost, "grain", "", false, "grain")
+		feed.custom_minimum_size = Vector2(180, 56)
+		var ride := _button(btns, "Ganti" if rider != "" else "Tunggangi", func():
+			_horse_pick = hid
+			_fill_stable()
+			return null, true, "", "GreenButton")
+		ride.custom_minimum_size = Vector2(180, 56)
+
+
+## Pilih penunggang untuk _horse_pick, urut dari penasihat dengan atribut total terbesar.
+func _fill_horse_riders() -> void:
+	var def: Dictionary = Data.HORSES[_horse_pick]
+	var head := HBoxContainer.new()
+	_stable_box.add_child(head)
+	_button(head, "Kembali", func():
+		_horse_pick = ""
+		_fill_stable()
+		return null).custom_minimum_size = Vector2(150, 56)
+	var title := _label(head, "%s: pilih penunggang" % def["name"], "CardLabel")
+	title.add_theme_font_override("font", UI.font_bold)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var hid: String = _horse_pick
+	if model.horses[hid]["rider"] != "":
+		_button(_stable_box, "Turunkan penunggang", func():
+			var r: Dictionary = model.assign_horse(hid, "")
+			_horse_pick = ""
+			return r)
+	var ids: Array = model.counselors.keys()
+	var total := func(id): return Data.ATTRS.reduce(func(acc, k): return acc + model.attr(id, k), 0)
+	ids.sort_custom(func(a, b): return total.call(a) > total.call(b))
+	for id in ids:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		_inner_box(_stable_box).add_child(row)
+		row.add_child(_tex(Art.portrait(id), 64))
+		var col := _col(row)
+		_label(col, Data.counselor_def(id)["name"], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		var cur: String = model.mount_of(id)
+		_label(col, "Atribut total %s · %s" % [_num(total.call(id)),
+			"menunggangi %s" % Data.HORSES[cur]["name"] if cur != "" else "tanpa kuda"], "SmallLabel") \
+			.add_theme_color_override("font_color", UI.INK)
+		var cid: String = id
+		var b := _button(row, "Pilih", func():
+			var r: Dictionary = model.assign_horse(hid, cid)
+			_horse_pick = ""
+			return r, cur != hid, "", "GreenButton", false, "upgrade")
 		b.custom_minimum_size = Vector2(120, 56)
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 

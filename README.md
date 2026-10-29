@@ -105,6 +105,10 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   (8 jam). Hadiah ditentukan saat berangkat dan makin besar bila atribut penasihat
   cocok dengan tujuan. 2 rombongan sekaligus (3 sejak Gubernur), dengan notifikasi
   saat kembali.
+- **Kuda tunggangan** — dari Tahap 12, Kandang Kuda di halaman Penasihat: Kuda
+  Jawa dan Gayo (perak), Sandel dan Bima (emas), serta Kuda Sembrani bersayap.
+  Kuda yang ditunggangi menambah semua atribut penunggangnya 4–12% (+1% per level,
+  maks level 10); naik level dengan pakan (pangan).
 - **Kampanye** — tahap tanpa batas yang dibuat prosedural. Kekuatan total
   menentukan berapa prajurit yang gugur. Menang memberi perak, prestise & emas serta
   membuka penasihat/selir baru.

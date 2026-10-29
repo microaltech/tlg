@@ -1029,6 +1029,46 @@ ICONS["exp_gunung"] = icon_doc(
     '<path d="M48 30 Q40 16 46 6 Q50 18 56 12 Q58 22 48 30 Z" fill="#9a9aa0" opacity="0.8"/>'
     '<path d="M44 50 Q46 62 40 74 M52 50 Q52 64 58 76" stroke="#e67e22" stroke-width="3" fill="none"/>')
 
+# Kuda tunggangan: kuda berdiri menghadap kanan, warna per jenis.
+def horse(coat, mane, wings=False, saddle="#a8322d"):
+    d = shade(coat, -0.25)
+    b = '<circle cx="48" cy="48" r="44" fill="#f4e4c1"/>'
+    if wings:
+        b += ('<path d="M40 44 Q20 10 4 18 Q18 22 14 30 Q24 30 22 38 Q30 36 34 46 Z" fill="#fff6d8" '
+              'stroke="#c9963f" stroke-width="2" stroke-linejoin="round"/>')
+    # kaki
+    for x, off in [(28, 0), (36, 2), (60, 0), (68, 2)]:
+        b += '<path d="M%d 58 L%d 84" stroke="%s" stroke-width="6" stroke-linecap="round"/>' % (x, x + off, d)
+        b += '<rect x="%d" y="82" width="8" height="5" rx="2" fill="#3b2416"/>' % (x + off - 4)
+    # badan, leher, kepala
+    b += '<ellipse cx="48" cy="54" rx="28" ry="14" fill="%s" stroke="%s" stroke-width="2"/>' % (coat, d)
+    b += '<path d="M64 50 L76 22 L86 26 L78 54 Z" fill="%s" stroke="%s" stroke-width="2" stroke-linejoin="round"/>' % (coat, d)
+    b += '<path d="M74 18 Q86 14 92 26 L90 32 Q84 30 80 30 Z" fill="%s" stroke="%s" stroke-width="2" stroke-linejoin="round"/>' % (coat, d)
+    b += '<path d="M76 18 L76 10 L80 16 Z" fill="%s"/>' % coat
+    b += '<circle cx="82" cy="22" r="1.8" fill="#1a0e08"/>'
+    # surai & ekor
+    b += '<path d="M76 16 Q66 26 64 46 Q70 36 74 30 Q70 40 70 48 Q76 34 80 24 Z" fill="%s"/>' % mane
+    b += '<path d="M20 50 Q8 56 10 76 Q14 66 22 60 Z" fill="%s"/>' % mane
+    # pelana
+    b += '<path d="M38 42 Q48 38 58 42 L56 54 L40 54 Z" fill="%s" stroke="#5e1810" stroke-width="2"/>' % saddle
+    b += '<path d="M48 54 L48 64" stroke="#3b2416" stroke-width="2"/><rect x="45" y="63" width="6" height="4" fill="%s"/>' % GOLD
+    if wings:
+        b += ('<path d="M44 44 Q30 4 12 8 Q26 14 22 22 Q34 22 32 30 Q40 28 42 40 Z" fill="#ffffff" '
+              'stroke="#c9963f" stroke-width="2" stroke-linejoin="round"/>')
+    return icon_doc(b)
+
+
+HORSE_SPECS = {
+    "kuda_jawa": ("#8a5a3a", "#2a1a10", False),
+    "kuda_gayo": ("#5a3a2a", "#1a0e08", False),
+    "kuda_sandel": ("#efe3c8", "#c9a77a", False),
+    "kuda_bima": ("#2a2a30", "#101014", False),
+    "kuda_sembrani": ("#ffffff", "#e8c070", True),
+}
+for _hid, (_coat, _mane, _wings) in HORSE_SPECS.items():
+    ICONS["horse_" + _hid] = horse(_coat, _mane, _wings)
+ICONS["stable"] = horse("#8a5a3a", "#2a1a10")
+
 # Pusaka: keris berlekuk, lontar, dan kalung.
 ICONS["eq_weapon"] = icon_doc(
     '<path d="M50 8 Q58 18 50 28 Q42 38 50 48 Q58 58 50 66 L46 66 Q38 58 46 48 Q54 38 46 28 Q38 18 46 8 Z" '

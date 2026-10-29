@@ -119,6 +119,8 @@ var cosmetics := {}
 var buildings := {}
 ## Ekspedisi berjalan: [{dest, counselor, end_t, reward}].
 var expeditions: Array = []
+## Kuda yang dimiliki: {id: {level, rider}}.
+var horses := {}
 var rng := RandomNumberGenerator.new()
 
 
@@ -128,6 +130,7 @@ func new_game(now: float) -> void:
 	formation = "balanced"
 	festival = {}
 	expeditions = []
+	horses = {}
 	buildings = {"levels": {"istana": 1, "pasar": 0, "lumbung": 0, "barak": 0}, "job": {}}
 	cosmetics = {"owned": ["frame_kayu", "costume_lord"], "frame": "frame_kayu", "costume": "costume_lord"}
 	equipment = []
@@ -281,7 +284,8 @@ func attr(id: String, key: String) -> int:
 	var def := Data.counselor_def(id)
 	var st: Dictionary = counselors[id]
 	var mult := 1.0 + Data.STAR_BONUS * int(st.get("stars", 0))
-	return int(int(def[key]) * int(st["level"]) * mult) + int(st["bonus"].get(key, 0)) + equipment_bonus(id, key)
+	var base := int(int(def[key]) * int(st["level"]) * mult)
+	return base + int(base * mount_pct(id)) + int(st["bonus"].get(key, 0)) + equipment_bonus(id, key)
 
 
 func total_attr(key: String) -> int:
@@ -3220,6 +3224,92 @@ func claim_all_expeditions(now: float) -> Dictionary:
 	return _ok(" ".join(msgs))
 
 
+# --- Kuda tunggangan ----------------------------------------------------------
+
+func horse_unlocked() -> bool:
+	return stage >= Data.HORSE_UNLOCK_STAGE
+
+
+func horse_pct(id: String) -> float:
+	if not horses.has(id):
+		return 0.0
+	return float(Data.HORSES[id]["pct"]) + Data.HORSE_PCT_PER_LEVEL * (int(horses[id]["level"]) - 1)
+
+
+## Kuda yang ditunggangi penasihat ("" bila tidak ada).
+func mount_of(counselor_id: String) -> String:
+	for id in horses:
+		if horses[id]["rider"] == counselor_id:
+			return id
+	return ""
+
+
+func mount_pct(counselor_id: String) -> float:
+	var h := mount_of(counselor_id)
+	return horse_pct(h) if h != "" else 0.0
+
+
+func buy_horse(id: String) -> Dictionary:
+	if not horse_unlocked():
+		return _fail("Menangkan Tahap %d untuk membuka Kandang Kuda." % Data.HORSE_UNLOCK_STAGE)
+	var def: Dictionary = Data.HORSES.get(id, {})
+	if def.is_empty():
+		return _fail("Kuda tidak dikenal.")
+	if horses.has(id):
+		return _fail("%s sudah ada di kandang." % def["name"])
+	if def.has("silver"):
+		if silver < int(def["silver"]):
+			return _fail("Perak tidak cukup (butuh %d)." % def["silver"])
+		silver -= int(def["silver"])
+	else:
+		if gold < int(def["gold"]):
+			return _fail("Emas tidak cukup (butuh %d)." % def["gold"])
+		gold -= int(def["gold"])
+	horses[id] = {"level": 1, "rider": ""}
+	_track("horse")
+	changed.emit()
+	return _ok("%s bergabung ke kandang!" % def["name"])
+
+
+func feed_cost(id: String) -> int:
+	return int(Data.HORSE_FEED_BASE * pow(Data.HORSE_FEED_GROWTH, int(horses[id]["level"]) - 1))
+
+
+func feed_horse(id: String) -> Dictionary:
+	if not horses.has(id):
+		return _fail("Kuda belum dimiliki.")
+	var h: Dictionary = horses[id]
+	if int(h["level"]) >= Data.HORSE_MAX_LEVEL:
+		return _fail("%s sudah mencapai level tertinggi." % Data.HORSES[id]["name"])
+	var cost := feed_cost(id)
+	if grain < cost:
+		return _fail("Pangan tidak cukup (butuh %d)." % cost)
+	grain -= cost
+	h["level"] = int(h["level"]) + 1
+	_track("horse_feed")
+	changed.emit()
+	return _ok("%s naik ke level %d: atribut penunggang +%d%%." % [Data.HORSES[id]["name"], h["level"],
+		roundi(horse_pct(id) * 100)])
+
+
+## Pasang kuda ke penasihat (kosong = turunkan penunggang). Penasihat yang sudah
+## berkuda berganti ke kuda ini.
+func assign_horse(id: String, counselor_id: String) -> Dictionary:
+	if not horses.has(id):
+		return _fail("Kuda belum dimiliki.")
+	if counselor_id != "" and not counselors.has(counselor_id):
+		return _fail("Penasihat belum direkrut.")
+	if counselor_id != "":
+		var old := mount_of(counselor_id)
+		if old != "":
+			horses[old]["rider"] = ""
+	horses[id]["rider"] = counselor_id
+	changed.emit()
+	if counselor_id == "":
+		return _ok("%s kembali ke kandang." % Data.HORSES[id]["name"])
+	return _ok("%s kini menunggangi %s." % [Data.counselor_def(counselor_id)["name"], Data.HORSES[id]["name"]])
+
+
 # --- Festival musiman ---------------------------------------------------------
 
 ## Unix time tengah malam waktu lokal pemain untuk tanggal tertentu.
@@ -3832,6 +3922,7 @@ func to_dict() -> Dictionary:
 		"festival": festival,
 		"buildings": buildings,
 		"expeditions": expeditions,
+		"horses": horses,
 		"cosmetics": cosmetics,
 	}
 
@@ -4074,6 +4165,14 @@ func from_dict(d: Dictionary, now: float) -> void:
 		for id in src_tut.get("intros", []):
 			intros.append(str(id))
 		tutorial = {"step": int(src_tut.get("step", 0)), "done": bool(src_tut.get("done", false)), "intros": intros}
+	var src_horses: Dictionary = d.get("horses", {})
+	for id in src_horses:
+		if not Data.HORSES.has(id) or not (src_horses[id] is Dictionary):
+			continue
+		var rider := str(src_horses[id].get("rider", ""))
+		if not counselors.has(rider) or mount_of(rider) != "":
+			rider = ""
+		horses[str(id)] = {"level": clampi(int(src_horses[id].get("level", 1)), 1, Data.HORSE_MAX_LEVEL), "rider": rider}
 	_unlock_content()
 	sync(now)
 	changed.emit()

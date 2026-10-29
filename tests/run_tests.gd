@@ -27,7 +27,7 @@ func _init() -> void:
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
 		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass", "test_offers", "test_achievements", "test_save_code",
-		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions",
+		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1911,3 +1911,49 @@ func test_expeditions() -> void:
 		{"dest": "merapi", "counselor": "arya", "end_t": 5.0, "reward": {"gold": 3, "items": {"palsu": 1}, "equip": "palsu"}}]
 	m2.from_dict(bad, t)
 	check(m2.expeditions.size() == 1 and m2.expeditions[0]["reward"] == {"gold": 3, "items": {}}, "data rusak dibersihkan")
+
+
+func test_horses() -> void:
+	var m := fresh()
+	m.silver = 1000000
+	m.gold = 5000
+	m.grain = 10000000
+	check(not m.buy_horse("kuda_jawa")["ok"], "kandang terkunci di awal")
+	m.stage = Data.HORSE_UNLOCK_STAGE
+	check(not m.buy_horse("unicorn")["ok"], "kuda tak dikenal")
+	var silver := m.silver
+	check(m.buy_horse("kuda_jawa")["ok"] and m.silver == silver - 30000, "beli kuda dengan perak")
+	check(not m.buy_horse("kuda_jawa")["ok"], "tiap kuda hanya satu")
+	var gold := m.gold
+	check(m.buy_horse("kuda_sembrani")["ok"] and m.gold == gold - 1500, "beli kuda legenda dengan emas")
+	m.counselors["arya"]["level"] = 50
+	var before := m.attr("arya", "str")
+	var power := m.power()
+	check(m.assign_horse("kuda_jawa", "arya")["ok"] and m.mount_of("arya") == "kuda_jawa", "tunggangi kuda")
+	check(m.attr("arya", "str") > before and m.power() > power, "kuda menambah atribut")
+	check(is_equal_approx(m.mount_pct("arya"), 0.04), "bonus kuda langka 4%")
+	check(m.assign_horse("kuda_sembrani", "arya")["ok"] and m.horses["kuda_jawa"]["rider"] == ""
+		and m.mount_of("arya") == "kuda_sembrani", "ganti kuda: yang lama kembali ke kandang")
+	check(m.assign_horse("kuda_jawa", "sekar")["ok"], "kuda lain untuk penasihat lain")
+	var grain := m.grain
+	var cost := m.feed_cost("kuda_sembrani")
+	check(m.feed_horse("kuda_sembrani")["ok"] and m.grain == grain - cost and m.horses["kuda_sembrani"]["level"] == 2,
+		"beri pakan naik level")
+	check(is_equal_approx(m.horse_pct("kuda_sembrani"), 0.13), "bonus naik 1% per level")
+	check(m.feed_cost("kuda_sembrani") > cost, "pakan makin mahal")
+	for i in 20:
+		m.feed_horse("kuda_sembrani")
+	check(m.horses["kuda_sembrani"]["level"] == Data.HORSE_MAX_LEVEL and not m.feed_horse("kuda_sembrani")["ok"],
+		"level maksimal")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(var_to_str(m2.horses) == var_to_str(m.horses) and m2.attr("arya", "str") == m.attr("arya", "str"),
+		"simpan/muat kuda")
+	check(m.assign_horse("kuda_jawa", "")["ok"] and m.mount_of("sekar") == "", "turunkan penunggang")
+	var bad := m.to_dict()
+	bad["horses"] = {"kuda_jawa": {"level": 99, "rider": "arya"}, "kuda_sembrani": {"level": 3, "rider": "arya"},
+		"palsu": {"level": 1}}
+	m2.from_dict(bad, 1000.0)
+	check(m2.horses.size() == 2 and m2.horses["kuda_jawa"]["level"] == Data.HORSE_MAX_LEVEL
+		and [m2.horses["kuda_jawa"]["rider"], m2.horses["kuda_sembrani"]["rider"]].count("arya") == 1,
+		"data rusak: satu penasihat satu kuda")

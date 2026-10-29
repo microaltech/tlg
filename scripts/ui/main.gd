@@ -5429,9 +5429,12 @@ func _build_palace(box: VBoxContainer) -> void:
 	_clear(box)
 	var now: float = Game.now()
 	_segment_tabs(box, [["selir", "Selir"], ["anak", "Anak (%d)" % model.children.size()],
-		["penjara", "Penjara (%d)" % model.prison["prisoners"].size()], ["perjamuan", "Perjamuan"]],
-		_palace_tab, func(key): _palace_tab = key, 20)
+		["penjara", "Penjara (%d)" % model.prison["prisoners"].size()], ["perjamuan", "Perjamuan"],
+		["sidang", "Sidang (%d)" % model.court_pending(now) if model.court_pending(now) > 0 else "Sidang"]],
+		_palace_tab, func(key): _palace_tab = key, 18)
 	match _palace_tab:
+		"sidang":
+			_build_court(box, now)
 		"anak":
 			_build_children(box, now)
 		"penjara":
@@ -5440,6 +5443,57 @@ func _build_palace(box: VBoxContainer) -> void:
 			_build_banquet(box, now)
 		_:
 			_build_consorts(box)
+
+
+## Sidang Istana: kesetiaan rakyat dan perkara hari ini.
+func _build_court(box: VBoxContainer, now: float) -> void:
+	var head := _card(box)
+	head.add_child(_tex(Art.icon("court"), 92))
+	var hcol := _col(head)
+	_label(hcol, "Sidang Istana", "CardTitle")
+	if not model.court_unlocked():
+		_label(hcol, "Terbuka setelah menang Tahap %d." % Data.COURT_UNLOCK_STAGE, "CardLabel")
+		return
+	model.ensure_court(now)
+	var loyalty: int = model.court["loyalty"]
+	_label(hcol, "Kesetiaan rakyat %d / 100" % loyalty, "CardLabel")
+	_bar(hcol, loyalty, 100, UI.GREEN if loyalty >= 50 else UI.RED)
+	_label(hcol, "Semua hasil urusan %+d%%" % roundi(model.loyalty_bonus() * 100), "SmallLabel") \
+		.add_theme_color_override("font_color", UI.GREEN.darkened(0.3) if loyalty >= 50 else UI.RED)
+	_label(box, "Perkara baru datang setiap hari. Keputusan yang adil menaikkan kesetiaan rakyat; "
+		+ "keputusan yang menguntungkan kas kadang membuat rakyat kecewa.", "SmallLabel")
+	for id in model.court["cases"]:
+		var c: Dictionary = model.court_case_def(id)
+		var card := _card(box)
+		var left := VBoxContainer.new()
+		card.add_child(left)
+		left.add_child(_tex(Art.portrait(c["portrait"]), 96))
+		var col := _col(card)
+		_label(col, c["who"], "CardTitle").add_theme_font_size_override("font_size", 24)
+		_label(col, "\"%s\"" % tr(c["text"]), "CardLabel")
+		var done: int = model.court["done"].get(id, -1)
+		for i in c["options"].size():
+			var o: Dictionary = c["options"][i]
+			var effects := []
+			var ys: Dictionary = model.court_option_yields(o)
+			for k in ys:
+				if ys[k] != 0:
+					effects.append("%+d %s" % [ys[k], Data.REWARD_NAMES[k]])
+			if int(o.get("prestige", 0)) != 0:
+				effects.append("%+d prestise" % o["prestige"])
+			if int(o.get("loyalty", 0)) != 0:
+				effects.append("kesetiaan %+d" % o["loyalty"])
+			var cid: String = id
+			var idx: int = i
+			var label: String = o["text"] + ("\n" + ", ".join(effects) if not effects.is_empty() else "")
+			var b := _button(col, label, func(): return model.judge_case(cid, idx, Game.now()), done < 0,
+				"", "GoldButton" if done < 0 else ("GreenButton" if done == i else ""), false, "promote")
+			b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			b.custom_minimum_size.y = 84
+			b.add_theme_font_size_override("font_size", 20)
+		if done >= 0:
+			_label(col, "Sudah diputuskan: %s." % tr(c["options"][done]["text"]), "SmallLabel") \
+				.add_theme_color_override("font_color", UI.GREEN.darkened(0.3))
 
 
 func _build_consorts(box: VBoxContainer) -> void:

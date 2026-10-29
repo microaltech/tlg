@@ -127,6 +127,8 @@ var horses := {}
 var silat := {}
 ## Peta Nusantara: owned (id wilayah), collect_t (waktu upeti terakhir diambil).
 var territory := {}
+## Sidang Istana: {day, cases: [id], done: {id: indeks pilihan}, loyalty}.
+var court := {}
 var rng := RandomNumberGenerator.new()
 
 
@@ -139,6 +141,7 @@ func new_game(now: float) -> void:
 	horses = {}
 	silat = {}
 	territory = {"owned": ["mataram"], "collect_t": now}
+	court = {"day": -1, "cases": [], "done": {}, "loyalty": 50}
 	buildings = {"levels": {"istana": 1, "pasar": 0, "lumbung": 0, "barak": 0}, "job": {}}
 	cosmetics = {"owned": ["frame_kayu", "costume_lord"], "frame": "frame_kayu", "costume": "costume_lord"}
 	equipment = []
@@ -505,7 +508,7 @@ func affair_yield(kind: String) -> int:
 		* (1.0 + event_bonus("yield_" + kind) + alliance_bonus() + vip_perk("yield"))
 		* (1.0 + skill_bonus("yield_" + kind) + skill_bonus("yield_all") + officials_bonus() + honor_bonus()
 			+ building_bonus("yield_" + kind) + building_bonus("yield_all")
-			+ story_bonus("yield_" + kind) + story_bonus("yield_all")))
+			+ story_bonus("yield_" + kind) + story_bonus("yield_all") + loyalty_bonus()))
 
 
 func do_affair(kind: String, now: float) -> Dictionary:
@@ -3460,6 +3463,89 @@ func assign_horse(id: String, counselor_id: String) -> Dictionary:
 	return _ok("%s kini menunggangi %s." % [Data.counselor_def(counselor_id)["name"], Data.HORSES[id]["name"]])
 
 
+# --- Sidang Istana -----------------------------------------------------------------
+
+func court_unlocked() -> bool:
+	return stage >= Data.COURT_UNLOCK_STAGE
+
+
+func loyalty_bonus() -> float:
+	return (int(court.get("loyalty", 50)) - 50) * Data.COURT_LOYALTY_BONUS
+
+
+func court_case_def(id: String) -> Dictionary:
+	for c in Data.COURT_CASES:
+		if c["id"] == id:
+			return c
+	return {}
+
+
+## Perkara hari ini dipilih dari tanggal, jadi stabil walau game dibuka ulang.
+func ensure_court(now: float) -> void:
+	var day := day_index(now)
+	if int(court.get("day", -1)) == day:
+		return
+	var r := _seeded(["court", day])
+	var pool: Array = Data.COURT_CASES.map(func(c): return c["id"])
+	for i in range(pool.size() - 1, 0, -1):
+		var j := r.randi_range(0, i)
+		var tmp = pool[i]
+		pool[i] = pool[j]
+		pool[j] = tmp
+	court["day"] = day
+	court["cases"] = pool.slice(0, Data.COURT_PER_DAY)
+	court["done"] = {}
+
+
+func court_pending(now: float) -> int:
+	if not court_unlocked():
+		return 0
+	ensure_court(now)
+	return court["cases"].size() - court["done"].size()
+
+
+## Sumber daya nyata sebuah pilihan saat ini (negatif dibatasi stok yang ada).
+func court_option_yields(option: Dictionary) -> Dictionary:
+	var out := {}
+	for k in option.get("yields", {}):
+		var amount := int(affair_yield(k) * float(option["yields"][k]))
+		out[k] = maxi(amount, -int(get(k)))
+	return out
+
+
+func judge_case(id: String, option_index: int, now: float) -> Dictionary:
+	if not court_unlocked():
+		return _fail("Menangkan Tahap %d untuk membuka Sidang Istana." % Data.COURT_UNLOCK_STAGE)
+	ensure_court(now)
+	if not court["cases"].has(id):
+		return _fail("Perkara ini tidak ada dalam sidang hari ini.")
+	if court["done"].has(id):
+		return _fail("Perkara ini sudah diputuskan.")
+	var c := court_case_def(id)
+	if option_index < 0 or option_index >= c["options"].size():
+		return _fail("Pilihan tidak dikenal.")
+	var o: Dictionary = c["options"][option_index]
+	var parts := []
+	var ys := court_option_yields(o)
+	for k in ys:
+		set(k, int(get(k)) + int(ys[k]))
+		if ys[k] != 0:
+			parts.append("%+d %s" % [ys[k], Data.REWARD_NAMES[k]])
+	var pr := int(o.get("prestige", 0))
+	if pr != 0:
+		prestige += pr
+		parts.append("%+d prestise" % pr)
+	var loy := int(o.get("loyalty", 0))
+	if loy != 0:
+		court["loyalty"] = clampi(int(court["loyalty"]) + loy, 0, 100)
+		parts.append("kesetiaan %+d" % loy)
+	court["done"][id] = option_index
+	_track("court")
+	changed.emit()
+	# Kalimat keputusan dan daftar akibat dipisah agar masing-masing diterjemahkan.
+	return _ok("Keputusan: %s." % o["text"] + (" " + ", ".join(parts) if not parts.is_empty() else ""))
+
+
 # --- Peta Nusantara -----------------------------------------------------------------
 
 func region_def(id: String) -> Dictionary:
@@ -4332,6 +4418,7 @@ func to_dict() -> Dictionary:
 		"horses": horses,
 		"silat": silat,
 		"territory": territory,
+		"court": court,
 		"cosmetics": cosmetics,
 	}
 
@@ -4385,6 +4472,16 @@ func from_dict(d: Dictionary, now: float) -> void:
 			r["equip"] = str(src_r["equip"])
 		expeditions.append({"dest": str(e["dest"]), "counselor": str(e["counselor"]),
 			"end_t": float(e.get("end_t", now)), "reward": r})
+	var src_court: Dictionary = d.get("court", {})
+	if not src_court.is_empty():
+		court = {"day": int(src_court.get("day", -1)), "cases": [], "done": {},
+			"loyalty": clampi(int(src_court.get("loyalty", 50)), 0, 100)}
+		for id in src_court.get("cases", []):
+			if not court_case_def(str(id)).is_empty():
+				court["cases"].append(str(id))
+		for id in src_court.get("done", {}):
+			if court["cases"].has(str(id)):
+				court["done"][str(id)] = int(src_court["done"][id])
 	var src_terr: Dictionary = d.get("territory", {})
 	if not src_terr.is_empty():
 		territory = {"owned": [], "collect_t": float(src_terr.get("collect_t", now))}

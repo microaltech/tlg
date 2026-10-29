@@ -142,6 +142,9 @@ func _prepare_save(m: Model) -> void:
 	m.start_build("istana", now)
 	m.buy_cosmetic("costume_batik")
 	m.story["choices"] = {"begal": "ampuni"}
+	m.ensure_court(now)
+	m.judge_case(m.court["cases"][0], 0, now)
+	m.judge_case(m.court["cases"][1], 1, now)
 	m.silat_join("arya", now)
 	m.silat_fight(now)
 	m.sync(now)
@@ -164,7 +167,7 @@ func _snap(where: String) -> void:
 func _walk_ui() -> void:
 	await _close_modals()
 	var subtabs := {
-		"palace": ["_palace_tab", ["selir", "anak", "penjara", "perjamuan"]],
+		"palace": ["_palace_tab", ["selir", "anak", "penjara", "perjamuan", "sidang"]],
 		"alliance": ["_alliance_tab", ["markas", "bos", "perang", "chat", "toko", "anggota"]],
 		"arena": ["_arena_tab", ["lawan", "peringkat", "toko", "catatan"]],
 	}

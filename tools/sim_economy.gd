@@ -163,6 +163,16 @@ func session(now: float) -> void:
 				if r_i < riders.size():
 					m.assign_horse(id, riders[r_i])
 
+	# Sidang: pilih yang menaikkan kesetiaan bila kesetiaan < 80, selain itu yang paling menguntungkan perak.
+	if m.court_unlocked():
+		m.ensure_court(now)
+		for id in m.court["cases"]:
+			var c: Dictionary = m.court_case_def(id)
+			var pick := 0
+			if int(c["options"][1].get("loyalty", 0)) > int(c["options"][0].get("loyalty", 0)) == (int(m.court["loyalty"]) < 80):
+				pick = 1
+			m.judge_case(id, pick, now)
+
 	# Peta: ambil upeti, serang wilayah berikutnya bila peluang >= 60% dan prajurit cukup (sisakan cadangan).
 	m.collect_tribute(now)
 	var nr := m.next_region()

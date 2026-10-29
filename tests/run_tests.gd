@@ -27,7 +27,7 @@ func _init() -> void:
 		"test_lb_rank", "test_lb_top", "test_lb_alliances_reward", "test_items_use", "test_items_sources",
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
 		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass", "test_offers", "test_achievements", "test_save_code",
-		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses", "test_story_choices", "test_duel_plan", "test_silat", "test_territory",
+		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses", "test_story_choices", "test_duel_plan", "test_silat", "test_territory", "test_court",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -2136,3 +2136,43 @@ func test_territory() -> void:
 	check(m2.territory["owned"] == ["mataram", "bali"], "wilayah rusak dibersihkan, ibu kota tetap")
 	for reg in Data.REGIONS:
 		check(reg["kind"] in ["silver", "grain", "soldiers"], "jenis upeti %s valid" % reg["id"])
+
+
+func test_court() -> void:
+	var m := fresh()
+	var t := 1000.0
+	check(m.court_pending(t) == 0 and not m.judge_case("sawah", 0, t)["ok"], "sidang terkunci di awal")
+	m.stage = Data.COURT_UNLOCK_STAGE
+	check(m.court_pending(t) == Data.COURT_PER_DAY, "3 perkara hari ini")
+	var cases: Array = m.court["cases"].duplicate()
+	m.ensure_court(t + 60.0)
+	check(m.court["cases"] == cases, "perkara stabil dalam sehari")
+	var id: String = cases[0]
+	var c := m.court_case_def(id)
+	check(not m.judge_case("tidak_ada", 0, t)["ok"] and not m.judge_case(id, 5, t)["ok"], "perkara/pilihan tak dikenal")
+	var loyalty: int = m.court["loyalty"]
+	var o: Dictionary = c["options"][0]
+	var ys := m.court_option_yields(o)
+	var before := {}
+	for k in ys:
+		before[k] = int(m.get(k))
+	check(m.judge_case(id, 0, t)["ok"] and not m.judge_case(id, 1, t)["ok"], "putuskan sekali")
+	check(m.court["loyalty"] == clampi(loyalty + int(o.get("loyalty", 0)), 0, 100), "kesetiaan berubah")
+	for k in ys:
+		check(int(m.get(k)) == before[k] + ys[k], "akibat %s" % k)
+	check(m.court_pending(t) == Data.COURT_PER_DAY - 1, "sisa perkara")
+	m.court["loyalty"] = 100
+	var high := m.affair_yield("silver")
+	m.court["loyalty"] = 0
+	check(m.affair_yield("silver") < high and is_equal_approx(m.loyalty_bonus(), -0.1), "kesetiaan memengaruhi hasil urusan")
+	m.silver = 0
+	var neg := m.court_option_yields({"yields": {"silver": -5.0}})
+	check(neg["silver"] == 0, "biaya tidak membuat sumber daya minus")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
+	check(var_to_str(m2.court) == var_to_str(m.court), "simpan/muat sidang")
+	m.ensure_court(t + 86400.0)
+	check(m.court["done"].is_empty() and m.court_pending(t + 86400.0) == Data.COURT_PER_DAY, "perkara baru besok")
+	for cc in Data.COURT_CASES:
+		check(cc["options"].size() == 2 and ResourceLoader.exists("res://assets/portraits/%s.svg" % cc["portrait"]),
+			"perkara %s punya 2 pilihan dan potret" % cc["id"])

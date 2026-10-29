@@ -1111,6 +1111,16 @@ ICONS["map"] = icon_doc(
     '<path d="M24 66 Q40 50 60 40 Q70 34 76 26" stroke="#c0392b" stroke-width="2.5" fill="none" stroke-dasharray="4 3"/>'
     '<path d="M74 28 L74 12 M74 12 L84 16 L74 20" stroke="#3b2416" stroke-width="2.5" fill="#c0392b"/>')
 
+# Sidang Istana: timbangan keadilan emas.
+ICONS["court"] = icon_doc(
+    '<circle cx="48" cy="48" r="42" fill="#f4e4c1" stroke="#a8742c" stroke-width="3"/>'
+    '<path d="M48 18 L48 76 M34 80 L62 80" stroke="#7a4b1f" stroke-width="5" stroke-linecap="round"/>'
+    '<path d="M20 30 L76 30" stroke="#a8742c" stroke-width="4" stroke-linecap="round"/>'
+    '<circle cx="48" cy="18" r="5" fill="#e8c070" stroke="#7a4b1f" stroke-width="2"/>'
+    '<path d="M20 30 L10 54 M20 30 L30 54 M76 30 L66 54 M76 30 L86 54" stroke="#7a4b1f" stroke-width="2"/>'
+    '<path d="M8 54 Q20 64 32 54 Z" fill="#e8c070" stroke="#7a4b1f" stroke-width="2"/>'
+    '<path d="M64 54 Q76 64 88 54 Z" fill="#e8c070" stroke="#7a4b1f" stroke-width="2"/>')
+
 # Pusaka: keris berlekuk, lontar, dan kalung.
 ICONS["eq_weapon"] = icon_doc(
     '<path d="M50 8 Q58 18 50 28 Q42 38 50 48 Q58 58 50 66 L46 66 Q38 58 46 48 Q54 38 46 28 Q38 18 46 8 Z" '

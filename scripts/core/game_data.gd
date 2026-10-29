@@ -1090,6 +1090,65 @@ const REGIONS := [
 ]
 
 
+## Sidang Istana: tiap hari COURT_PER_DAY perkara dari rakyat. Tiap pilihan memberi
+## sumber daya ("yields": {jenis: kali hasil urusan}, boleh negatif), prestise, dan
+## perubahan kesetiaan rakyat (0–100, awal 50). Kesetiaan mengubah semua hasil urusan
+## sebesar (kesetiaan - 50) x COURT_LOYALTY_BONUS.
+const COURT_UNLOCK_STAGE := 5
+const COURT_PER_DAY := 3
+const COURT_LOYALTY_BONUS := 0.002
+const COURT_CASES := [
+	{"id": "sawah", "who": "Dua petani", "portrait": "bayu",
+		"text": "Tuan, kami berselisih soal batas sawah warisan. Mohon keadilan!", "options": [
+		{"text": "Bagi sawah sama rata", "loyalty": 4},
+		{"text": "Menangkan yang membayar upeti", "yields": {"silver": 2.0}, "loyalty": -5}]},
+	{"id": "timbangan", "who": "Warga pasar", "portrait": "sekar",
+		"text": "Seorang saudagar ketahuan mengurangi timbangan beras. Apa hukumannya?", "options": [
+		{"text": "Denda berat masuk kas", "yields": {"silver": 3.0}, "loyalty": 2},
+		{"text": "Usir dari pasar", "loyalty": 5, "prestige": 10}]},
+	{"id": "paceklik", "who": "Kepala desa", "portrait": "bayu",
+		"text": "Desa kami gagal panen. Rakyat kelaparan, Tuan.", "options": [
+		{"text": "Bagikan pangan lumbung", "yields": {"grain": -3.0}, "loyalty": 8},
+		{"text": "Pajak tetap ditagih", "yields": {"silver": 1.0}, "loyalty": -8}]},
+	{"id": "pencuri", "who": "Pengawal", "portrait": "arya",
+		"text": "Pencuri ayam tertangkap. Katanya ia mencuri karena lapar.", "options": [
+		{"text": "Ampuni dan beri pekerjaan", "yields": {"soldiers": 0.5}, "loyalty": 5},
+		{"text": "Hukum di depan umum", "prestige": 20, "loyalty": -3}]},
+	{"id": "janda", "who": "Janda prajurit", "portrait": "melati",
+		"text": "Suami saya gugur membela negeri. Saya tak sanggup membayar pajak tahun ini.", "options": [
+		{"text": "Bebaskan pajaknya", "yields": {"silver": -1.0}, "loyalty": 6},
+		{"text": "Pajak tetap berlaku", "yields": {"silver": 1.0}, "loyalty": -6}]},
+	{"id": "pemuda", "who": "Pemuda desa", "portrait": "lintang",
+		"text": "Kami ingin menjadi prajurit dan membela negeri, Tuan!", "options": [
+		{"text": "Terima semuanya", "yields": {"soldiers": 2.0, "grain": -1.0}},
+		{"text": "Suruh kembali bertani", "yields": {"grain": 2.0}, "loyalty": 1}]},
+	{"id": "dukun", "who": "Dukun hujan", "portrait": "resi",
+		"text": "Kemarau panjang! Hamba bisa memanggil hujan, asal ada sesajen yang pantas.", "options": [
+		{"text": "Bayar sesajen ritual", "yields": {"silver": -1.0, "grain": 3.0}},
+		{"text": "Gali saluran irigasi saja", "yields": {"silver": -2.0, "grain": 4.0}, "loyalty": 2}]},
+	{"id": "bangsawan", "who": "Rakyat jelata", "portrait": "danu",
+		"text": "Seorang bangsawan merampas tanah kami dengan paksa!", "options": [
+		{"text": "Kembalikan tanah rakyat", "loyalty": 8, "prestige": 5},
+		{"text": "Terima hadiah sang bangsawan", "yields": {"silver": 3.0}, "loyalty": -8}]},
+	{"id": "pesta", "who": "Tetua desa", "portrait": "resi",
+		"text": "Desa ingin mengadakan pesta panen. Bolehkah kas negeri membantu?", "options": [
+		{"text": "Danai pesta panen", "yields": {"silver": -1.0}, "loyalty": 6},
+		{"text": "Tolak dengan halus", "loyalty": -2}]},
+	{"id": "jembatan", "who": "Saudagar", "portrait": "wening",
+		"text": "Jembatan menuju pasar runtuh. Dagangan tak bisa lewat.", "options": [
+		{"text": "Perbaiki dengan kas negeri", "yields": {"silver": -2.0}, "loyalty": 5, "prestige": 10},
+		{"text": "Warga gotong royong sendiri", "loyalty": -2, "prestige": 5}]},
+	{"id": "telik", "who": "Telik sandi", "portrait": "gajah",
+		"text": "Seorang pendatang asing dicurigai sebagai mata-mata musuh.", "options": [
+		{"text": "Penjarakan dan interogasi", "prestige": 15, "loyalty": -1},
+		{"text": "Lepaskan dengan pengawasan", "loyalty": 3}]},
+	{"id": "rempah", "who": "Saudagar rempah", "portrait": "danu",
+		"text": "Hamba menawarkan kontrak rempah: perak untuk Tuan, pangan untuk kapal hamba.", "options": [
+		{"text": "Terima kontrak", "yields": {"silver": 2.5, "grain": -1.0}},
+		{"text": "Tolak, utamakan rakyat", "loyalty": 2, "prestige": 5}]},
+]
+
+
 ## Festival musiman bertema hari besar Indonesia. Tanggal tetap memakai "start"/"end"
 ## [bulan, tanggal] tiap tahun (boleh melewati tahun baru); hari raya yang mengikuti
 ## kalender Hijriah memakai "dates" per tahun: [[bln, tgl mulai], [bln, tgl akhir]].

@@ -104,6 +104,10 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   Samudra Pasai, Nusa Tenggara, Gowa, Ternate) yang ditaklukkan berurutan lewat
   tayangan perang. Butuh tahap kampanye dan prajurit; peluang dari kekuatan tempur
   melawan garnisun. Tiap wilayah mengirim upeti per jam (maks 12 jam terkumpul).
+- **Sidang Istana** — dari Tahap 5, tab Sidang di Istana: tiap hari 3 perkara dari
+  12 jenis (sengketa sawah, pedagang curang, gagal panen, pencuri lapar, dan lain-lain).
+  Tiap keputusan memberi atau mengambil sumber daya, prestise, dan kesetiaan rakyat
+  (0–100). Kesetiaan mengubah semua hasil urusan hingga ±10%.
 - **Festival musiman** — Pesta Tahun Baru (28 Des–7 Jan), Berkah Ramadan &
   Lebaran (awal Ramadan sampai sepekan setelah Idulfitri, tanggal per tahun di
   `FESTIVALS`), Pesta Kemerdekaan (10–24 Agu), Semangat Sumpah Pemuda (24 Okt–2 Nov),

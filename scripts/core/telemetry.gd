@@ -12,6 +12,10 @@ extends Node
 const STATS_PATH := "user://analytics.json"
 const CRASH_PATH := "user://crash_reports.json"
 const LOCK_PATH := "user://session.lock"
+## Jejak singkat kejadian terakhir (siklus hidup aplikasi, panel, tombol penting).
+## Ditulis langsung ke file agar tetap ada walau game ditutup paksa sistem.
+const TRAIL_PATH := "user://trail.txt"
+const TRAIL_KEEP := 40
 const LOG_DIR := "user://logs"
 const MAX_CRASHES := 5
 const LOG_TAIL_LINES := 60
@@ -23,6 +27,9 @@ const SAVE_SECONDS := 60.0
 
 var stats := {}
 var crashes: Array = []
+## True bila sesi sebelumnya berhenti tidak normal (dicatat saat game dibuka ini).
+var crashed_last_time := false
+var _trail: Array = []
 var _session_start := 0.0
 var _save_timer := 0.0
 
@@ -30,8 +37,13 @@ var _save_timer := 0.0
 func _ready() -> void:
 	stats = _read_json(STATS_PATH, {})
 	crashes = _read_json(CRASH_PATH, [])
+	if FileAccess.file_exists(TRAIL_PATH):
+		_trail = Array(FileAccess.get_file_as_string(TRAIL_PATH).split("\n", false))
 	if FileAccess.file_exists(LOCK_PATH):
 		_record_crash(FileAccess.get_file_as_string(LOCK_PATH))
+		crashed_last_time = true
+	_trail = []
+	mark("mulai %s · %s · %s" % [_version(), OS.get_model_name(), RenderingServer.get_video_adapter_name()])
 	_prune_logs()
 	_start_session()
 	Game.model.tracked.connect(_on_tracked)
@@ -51,9 +63,22 @@ func _exit_tree() -> void:
 func _notification(what: int) -> void:
 	match what:
 		NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_WM_CLOSE_REQUEST:
+			mark("jeda")
 			_end_session()
 		NOTIFICATION_APPLICATION_RESUMED:
+			mark("lanjut")
 			_start_session()
+
+
+## Catat satu kejadian ke jejak (file kecil, ditulis ulang tiap kali).
+func mark(event: String) -> void:
+	var line := "%s %s" % [Time.get_time_string_from_system(), event]
+	_trail.append(line)
+	if _trail.size() > TRAIL_KEEP:
+		_trail = _trail.slice(-TRAIL_KEEP)
+	var f := FileAccess.open(TRAIL_PATH, FileAccess.WRITE)
+	if f:
+		f.store_string("\n".join(_trail))
 
 
 func _start_session() -> void:
@@ -108,6 +133,7 @@ func _record_crash(lock_text: String) -> void:
 		"t": started,
 		"version": str(info.get("version", "?")) if info is Dictionary else "?",
 		"log": _previous_log_tail(),
+		"trail": "\n".join(_trail),
 	})
 	while crashes.size() > MAX_CRASHES:
 		crashes.pop_front()
@@ -163,7 +189,10 @@ func problem_report() -> String:
 		lines.append("Crash terakhir: sesi mulai %s (versi %s), total %d crash tercatat" % [
 			Time.get_datetime_string_from_unix_time(int(c["t"]), true), c["version"], crashes.size()])
 	lines = lines.map(func(line): return tr(line))
+	lines.append("Perangkat grafis: %s" % RenderingServer.get_video_adapter_name())
 	if not crashes.is_empty():
+		lines.append("--- jejak ---")
+		lines.append(str(crashes[-1].get("trail", "")))
 		lines.append("--- log ---")
 		lines.append(str(crashes[-1]["log"]))
 	return "\n".join(lines)

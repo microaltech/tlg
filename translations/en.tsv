@@ -1687,3 +1687,7 @@ Tidak bisa melaporkan pesan sendiri.	You cannot report your own message.
 https://server-anda.contoh.id	https://your-server.example.com
 Keluar dari game? Progres sudah tersimpan.	Exit the game? Your progress is saved.
 Keluar Game	Exit Game
+Maaf, game sempat berhenti	Sorry, the game stopped unexpectedly
+Progres terakhir sudah tersimpan.	Your latest progress has been saved.
+Game tertutup secara tidak normal pada sesi sebelumnya. Bantu kami memperbaikinya: salin laporan lalu kirimkan ke pengembang (mis. lewat WhatsApp atau email).	The game closed unexpectedly last time. Help us fix it: copy the report and send it to the developer (e.g. via WhatsApp or email).
+Perangkat grafis: %s	Graphics device: %s

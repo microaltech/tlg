@@ -50,6 +50,7 @@ func _check_return() -> void:
 	var report: Dictionary = model.away_report(_away_snap, now())
 	_away_snap = {}
 	if not report.is_empty():
+		Telemetry.mark("ringkasan kembali")
 		away = report
 		returned.emit()
 

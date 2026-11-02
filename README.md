@@ -117,10 +117,32 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
 - **Roda Keberuntungan** — di menu Kota: 1 putaran gratis per hari, tiket putaran
   dari iklan berhadiah (maks 3/hari), dan putaran dengan 30 emas (maks 5/hari).
   8 hadiah dengan peluang tertera, dari sumber daya sampai Batu Bintang (2%).
+- **Urusan Kerajaan** — kartu di menu Kota yang membuka:
+  - **Perburuan** (Tahap 8): 3 kali sehari, pilih penasihat dan medan (rusa, celeng,
+    harimau). Peluang dari Kekuatan + separuh Karisma; tayangan panah singkat.
+  - **Pasar Malam** (Tahap 4): 6 dagangan acak tiap 4 jam (perak, emas, atau
+    prestise), tawar sekali per barang (berhasil -25%, gagal +15%).
+  - **Kebijakan & Bencana** (Tahap 5): 5 kebijakan kota (bonus hasil vs. kesetiaan
+    harian) dan bencana acak tiap 12 jam yang menurunkan hasil sampai ditangani.
+  - **Kebun Keraton** (Tahap 6): 4 petak, 6 tanaman (pangan, perak, Pil Keakraban,
+    prestise, emas).
+  - **Perpustakaan Keraton** (Tahap 12): 6 riset bertingkat untuk bonus permanen.
+  - **Armada Laut** (2 wilayah): 3 kapal berdagang ke wilayah Peta Nusantara;
+    bajak laut bisa menyerang (tayangan perang di laut).
+  - **Besan**: anak dewasa dilamar putra-putri wangsa bangsawan (calon berganti
+    harian); tiap besan mengirim perak setiap hari.
+  - **Teman** dan **Perang Wilayah** (mode online).
+- **Gelar lanjutan** — Adipati, Sultan, dan Maharaja setelah Perdana Menteri, dengan
+  syarat wilayah, riset, kapal, dan besan, serta bingkai profil khusus.
+- **Mode malam & ukuran tampilan** — di Pengaturan → Perangkat.
+- **Panduan per fitur** — tombol "?" di kepala panel fitur.
+- **Ringkasan harian** — notifikasi pukul 19.00 berisi urusan yang sudah siap.
 - **Mode online (opsional)** — server sosial kecil di `server/` (Node.js + SQLite,
   tanpa dependensi luar). Isi alamat server di Pengaturan → Server Online untuk
-  chat aliansi dengan pemain sungguhan, papan peringkat "Pemain online", dan lawan
-  Arena dari pemain lain (hasil dihitung server). Tanpa alamat server, game tetap
+  chat aliansi dengan pemain sungguhan, papan peringkat "Pemain online", lawan
+  Arena dari pemain lain (hasil dihitung server), teman & hadiah harian, kunjungan
+  kota, Raja Hari Ini (titah bonus untuk semua pemain), dan Perang Wilayah Aliansi
+  mingguan. Tanpa alamat server, game tetap
   sepenuhnya offline. Lihat `server/README.md` untuk hosting dan batasannya.
 - **Festival musiman** — Pesta Tahun Baru (28 Des–7 Jan), Berkah Ramadan &
   Lebaran (awal Ramadan sampai sepekan setelah Idulfitri, tanggal per tahun di

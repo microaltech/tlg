@@ -12,6 +12,32 @@ untuk fitur sosial dengan pemain sungguhan:
   `reports` untuk ditinjau) dan **memblokir** pemain (pesannya disembunyikan di HP).
 - **Arena**: lawan sungguhan dengan poin terdekat. Menang/kalah dan perubahan poin
   (Elo) dihitung server; maks. 20 serangan per 24 jam.
+- **Teman & hadiah**: tambah teman dengan kode 8 karakter (dua arah, maks. 50),
+  kirim satu hadiah per teman per hari, terima maks. 10 hadiah per hari, dan
+  kunjungi kota teman (ringkasan jabatan, bangunan, kapal, besan; angka dibatasi).
+- **Raja Hari Ini**: pemain berkekuatan tertinggi yang aktif 3 hari terakhir,
+  dikunci saat permintaan pertama hari itu (UTC). Raja memilih satu titah dari
+  daftar tetap (tanpa teks bebas) yang memberi bonus kecil untuk semua pemain.
+- **Perang Wilayah Aliansi**: tiap minggu (mulai Senin UTC) aliansi memperebutkan
+  6 wilayah. Tiap pemain menyerang maks. 3 kali per hari; poin = akar kekuatan x
+  0,8–1,2. Aliansi dengan poin terbanyak menguasai wilayah; hadiah minggu lalu
+  diambil di game.
+
+### Endpoint
+
+| Metode | Jalur | Keterangan |
+|---|---|---|
+| POST | `/v1/auth/device` | Tukar ID perangkat dengan token |
+| POST | `/v1/profile` | Kirim profil (termasuk ringkasan `city`) |
+| GET | `/v1/leaderboard?cat=` | Papan peringkat |
+| GET/POST | `/v1/chat`, `/v1/chat/report` | Chat aliansi dan laporan |
+| GET/POST | `/v1/arena/opponents`, `/v1/arena/fight` | Arena |
+| GET | `/v1/friends` | Kode sendiri, daftar teman, kotak masuk hadiah |
+| POST | `/v1/friends/add`, `/v1/friends/remove` | Tambah (dengan `code`) / hapus teman |
+| POST | `/v1/gift`, `/v1/gifts/claim` | Kirim hadiah / ambil hadiah masuk |
+| GET | `/v1/player?id=` | Kunjungi kota pemain |
+| GET/POST | `/v1/king`, `/v1/king/decree` | Raja Hari Ini dan titahnya |
+| GET/POST | `/v1/guildwar`, `/v1/guildwar/attack` | Perang Wilayah Aliansi |
 
 ## Menjalankan
 
@@ -48,7 +74,8 @@ Data hanya satu file SQLite (`DB_PATH`); cadangkan file itu secara berkala.
   dilaporkan. Untuk rilis kompetitif, logika ekonomi perlu pindah ke server
   (lihat `docs/server_design.md`).
 - Aliansi masih tiga aliansi tetap (Garuda, Teratai, Macan); perang dan bos aliansi
-  tetap simulasi di perangkat.
+  di game tetap simulasi di perangkat. Perang Wilayah memakai kekuatan yang
+  dilaporkan klien, dan hadiahnya diambil di perangkat.
 - Moderasi chat masih dasar (filter kata, lapor, blokir). Belum ada panel admin;
   tinjau tabel `reports` langsung di SQLite, mis.
   `sqlite3 tlg.db "SELECT c.name, c.text, COUNT(*) FROM reports r JOIN chat c ON c.id = r.message GROUP BY r.message"`.

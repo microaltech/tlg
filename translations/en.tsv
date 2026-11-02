@@ -1674,7 +1674,7 @@ Batas serangan harian.	Daily attack limit reached.
 Token tidak valid.	Invalid token.
 Kesalahan server.	Server error.
 Mode online	Online mode
-Bila Anda mengisi alamat server di Pengaturan, nama Tuan, kostum, aliansi, kekuatan, tahap, dan pesan chat aliansi dikirim ke server itu dan dapat dilihat pemain lain. Kosongkan alamat server untuk berhenti.	If you enter a server address in Settings, your Lord name, costume, alliance, power, stage, and alliance chat messages are sent to that server and can be seen by other players. Clear the server address to stop.
+Bila Anda mengisi alamat server di Pengaturan, nama Tuan, kostum, aliansi, kekuatan, tahap, ringkasan kota, teman, hadiah, dan pesan chat aliansi dikirim ke server itu dan dapat dilihat pemain lain. Kosongkan alamat server untuk berhenti.	If you enter a server address in Settings, your Lord name, costume, alliance, power, stage, city summary, friends, gifts, and alliance chat messages are sent to that server and can be seen by other players. Clear the server address to stop.
 Laporkan	Report
 Blokir	Block
 Laporkan pesan dari %s ke pengelola server?	Report this message from %s to the server operator?
@@ -1695,3 +1695,318 @@ sudah diambil	already claimed
 hari ini	today
 Kalender login teks	Text login calendar
 Tampilkan hadiah login sebagai daftar teks. Nyala otomatis bila kalender bergambar membuat game berhenti.	Show login rewards as a text list. Turns on automatically if the picture calendar made the game stop.
+Sultan	Sultan
+Maharaja	Maharaja
+Wilayah dikuasai	Regions held
+Total level riset	Total research levels
+Kapal armada	Fleet ships
+Keluarga besan	In-law families
+Bingkai Adipati	Duke Frame
+Bingkai Sultan	Sultan Frame
+Bingkai Maharaja	Maharaja Frame
+Bingkai Raja Hari Ini	King of the Day Frame
+Padang Rusa	Deer Meadow
+Rusa	Deer
+Rawa Celeng	Boar Marsh
+Babi Hutan	Wild Boar
+Hutan Harimau	Tiger Forest
+Harimau	Tiger
+Wangsa Rajasa	House of Rajasa
+Wangsa Sanjaya	House of Sanjaya
+Wangsa Syailendra	House of Syailendra
+Wangsa Isyana	House of Isyana
+Wangsa Warmadewa	House of Warmadewa
+Wangsa Girindra	House of Girindra
+Pemerintahan Seimbang	Balanced Rule
+Tanpa bonus maupun beban.	No bonus and no burden.
+Pajak Tinggi	High Taxes
+Perak +15%, pangan -5%, kesetiaan -2/hari.	Silver +15%, food -5%, loyalty -2/day.
+Lumbung Rakyat	People's Granary
+Pangan +15%, perak -5%, kesetiaan +1/hari.	Food +15%, silver -5%, loyalty +1/day.
+Wajib Militer	Conscription
+Prajurit +15%, perak -5%, kesetiaan -1/hari.	Soldiers +15%, silver -5%, loyalty -1/day.
+Keringanan Rakyat	Relief for the People
+Semua hasil -5%, kesetiaan +3/hari, bencana lebih jarang.	All yields -5%, loyalty +3/day, fewer disasters.
+Banjir	Flood
+Sungai meluap dan merendam sawah.	The river overflows and floods the rice fields.
+Bangun tanggul	Build a levee
+Bagikan pangan ke pengungsi	Share food with the refugees
+Biarkan surut sendiri	Let it recede on its own
+Gagal Panen	Crop Failure
+Hama wereng menyerang padi.	Planthoppers attack the rice.
+Beli benih unggul	Buy better seeds
+Kerahkan prajurit membasmi hama	Send soldiers to clear the pests
+Naikkan harga beras	Raise the price of rice
+Wabah	Plague
+Penyakit menyebar di barak dan kampung.	Sickness spreads through the barracks and villages.
+Datangkan tabib	Summon healers
+Karantina kampung	Quarantine the villages
+Abaikan kabar	Ignore the reports
+Kebakaran Pasar	Market Fire
+Api melalap kios-kios pasar.	Fire sweeps through the market stalls.
+Bangun ulang pasar	Rebuild the market
+Kerahkan prajurit memadamkan api	Send soldiers to fight the fire
+Pungut pajak pembangunan	Levy a rebuilding tax
+Gempa Bumi	Earthquake
+Tanah berguncang, rumah-rumah retak.	The ground shakes and houses crack.
+Bantu rakyat membangun rumah	Help the people rebuild their homes
+Doa bersama di candi	Hold prayers at the temple
+Utamakan istana dulu	Repair the palace first
+Ilmu Pertanian	Agriculture
+Hasil pangan +4% per level.	Food yield +4% per level.
+Ilmu Perniagaan	Commerce
+Hasil perak +4% per level.	Silver yield +4% per level.
+Ilmu Kemiliteran	Military Science
+Hasil prajurit +4% per level.	Soldier yield +4% per level.
+Siasat Perang	War Tactics
+Kekuatan tempur +3% per level.	Combat power +3% per level.
+Arsitektur	Architecture
+Waktu pembangunan -6% per level.	Construction time -6% per level.
+Ilmu Pelayaran	Seafaring
+Muatan armada +8% per level, risiko bajak laut ikut turun.	Fleet cargo +8% per level, and pirate risk falls too.
+Lancang	Lancang
+Jung Jawa	Javanese Junk
+Pinisi	Pinisi
+Jahe	Ginger
+Kunyit	Turmeric
+Cengkeh	Clove
+Pucuk Teh	Tea Shoots
+Pala	Nutmeg
+Titah Pasar Ramai	Decree of Busy Markets
+Semua pemain: perak +5% hari ini.	All players: silver +5% today.
+Titah Panen Raya	Decree of Great Harvest
+Semua pemain: pangan +5% hari ini.	All players: food +5% today.
+Titah Bela Negara	Decree of Defense
+Semua pemain: prajurit +5% hari ini.	All players: soldiers +5% today.
+Titah Berkah	Decree of Blessing
+Semua pemain: semua hasil +3% hari ini.	All players: all yields +3% today.
+Selat Sunda	Sunda Strait
+Teluk Bone	Gulf of Bone
+Laut Banda	Banda Sea
+Tanah Karo	Karo Highlands
+Lembah Baliem	Baliem Valley
+Danau Toba	Lake Toba
+Pilih penasihat dan medan buruan. Peluang berhasil naik dengan Kekuatan dan Karisma penasihat (kuda ikut membantu).	Choose an advisor and a hunting ground. The chance of success rises with the advisor's Strength and Charisma (horses help too).
+Tiga kali berburu per hari. Buruan besar memberi prestise dan kadang Batu Bintang.	Three hunts per day. Big game gives prestige and sometimes a Star Stone.
+Anak yang sudah dewasa bisa dilamar putra-putri wangsa bangsawan.	Grown children can receive proposals from the sons and daughters of noble houses.
+Calon berbakat tinggi memberi bonus atribut lebih besar tapi maharnya mahal. Setiap besan mengirim perak tiap hari.	Highly talented matches give a bigger attribute bonus but cost a larger dowry. Every in-law family sends silver each day.
+Dagangan berganti tiap 4 jam. Tawar sekali per barang: berhasil lebih murah, gagal lebih mahal.	Goods change every 4 hours. Haggle once per item: success makes it cheaper, failure makes it pricier.
+Barang dibayar dengan perak, emas, atau prestise.	Goods are paid for with silver, gold, or prestige.
+Kebijakan kota memberi bonus hasil tetapi mengubah kesetiaan rakyat setiap hari.	City policies give yield bonuses but change the people's loyalty every day.
+Bencana menurunkan hasil sampai Tuan menanganinya. Kesetiaan tinggi menambah semua hasil.	Disasters lower yields until you deal with them. High loyalty raises all yields.
+Riset memberi bonus permanen. Hanya satu riset berjalan sekaligus; percepat dengan emas.	Research gives permanent bonuses. Only one study runs at a time; speed it up with gold.
+Beberapa riset butuh riset lain lebih dulu.	Some research requires other research first.
+Beli kapal lalu kirim berdagang ke wilayah yang sudah Tuan kuasai di Peta Nusantara.	Buy ships and send them to trade with regions you hold on the Nusantara Map.
+Bajak laut bisa menyerang; kapal dengan penjaga kuat dan riset Pelayaran lebih aman.	Pirates may attack; ships with strong guards and Seafaring research are safer.
+Tanam bibit di petak kosong, lalu panen setelah matang.	Plant seeds in empty plots, then harvest when they are ripe.
+Melati menghasilkan Pil Keakraban, Cengkeh menghasilkan prestise, Pala menghasilkan emas.	Jasmine gives Intimacy Pills, Clove gives prestige, Nutmeg gives gold.
+Bagikan kode Tuan agar teman bisa menambahkan Tuan. Kirim satu hadiah per teman setiap hari.	Share your code so friends can add you. Send one gift per friend every day.
+Kunjungi kota teman untuk melihat jabatan, kekuatan, dan bangunannya.	Visit a friend's city to see their rank, power, and buildings.
+Setiap minggu aliansi memperebutkan wilayah. Serang hingga 3 kali sehari; poin mengikuti kekuatan Tuan.	Every week alliances fight over territories. Attack up to 3 times a day; points follow your power.
+Aliansi dengan poin terbanyak di sebuah wilayah menguasainya. Ambil hadiah minggu lalu di panel ini.	The alliance with the most points in a territory holds it. Claim last week's reward in this panel.
+Pemain dengan kekuatan tertinggi di server menjadi Raja Hari Ini.	The player with the highest power on the server becomes King of the Day.
+Raja memilih satu titah yang memberi bonus kecil untuk semua pemain hari itu.	The king chooses one decree that gives a small bonus to all players that day.
+Ambil hadiah setiap hari tanpa terputus. Bila terlewat sehari, kalender dimulai lagi dari Hari 1.	Claim a reward every day without a break. If you miss a day, the calendar starts again from Day 1.
+Satu putaran gratis setiap hari. Tonton iklan untuk tiket putaran, atau putar dengan emas.	One free spin every day. Watch an ad for a spin ticket, or spin with gold.
+Taklukkan wilayah berurutan untuk mendapat upeti setiap jam. Ambil upeti sebelum gudangnya penuh.	Conquer regions in order to earn tribute every hour. Collect it before the storehouse is full.
+Setiap hari rakyat membawa perkara. Keputusan Tuan mengubah sumber daya dan kesetiaan rakyat.	Every day the people bring cases. Your verdicts change resources and the people's loyalty.
+Kirim penasihat ke tujuan selama beberapa jam. Atribut yang cocok memberi hasil lebih besar.	Send advisors to a destination for a few hours. A matching attribute gives a bigger haul.
+Kuda menambah atribut penunggangnya. Beri makan untuk menaikkan levelnya.	Horses boost their rider's attributes. Feed them to raise their level.
+Naiki lantai demi lantai melawan penjaga yang makin kuat. Hadiah lantai hanya sekali.	Climb floor by floor against ever stronger guardians. Floor rewards are given only once.
+Daftarkan jagoan sekali seminggu. Pertandingan berlangsung otomatis setiap hari.	Enter a champion once a week. Matches are fought automatically every day.
+Kumpulkan semua tokoh, kuda, pusaka, dan wilayah untuk bonus permanen.	Collect every character, horse, heirloom, and region for permanent bonuses.
+Syarat gelar %s belum terpenuhi.	The requirements for the title of %s are not met yet.
+hadiah login	login reward
+putaran roda	wheel spin
+panen kebun	garden harvest
+kapal dagang	trade ships
+Ringkasan Kerajaan	Kingdom Summary
+Siap untuk Tuan: %s.	Ready for you: %s.
+Menangkan Tahap %d untuk membuka Perburuan.	Win Stage %d to unlock Hunting.
+Medan buruan tidak dikenal.	Unknown hunting ground.
+Jatah berburu hari ini habis. Kembali besok.	No hunts left today. Come back tomorrow.
+%s berhasil memburu %s! %s.	%s hunted down the %s! %s.
+%s gagal, %s lolos ke hutan. Hasil hiburan: %s.	%s missed, the %s escaped into the forest. Consolation: %s.
+Calon tidak ditemukan.	Match not found.
+Belum ada penasihat.	No advisors yet.
+Perak tidak cukup untuk mahar (butuh %d).	Not enough silver for the dowry (need %d).
+%s menikah dengan %s dari %s! %s +%d %s, +%d prestise.	%s married %s of the %s! %s +%d %s, +%d prestige.
+Belum ada kiriman besan hari ini.	No gifts from in-laws yet today.
+Belum punya besan.	No in-laws yet.
+Kiriman dari %d keluarga besan: +%d perak.	Gifts from %d in-law families: +%d silver.
+Menangkan Tahap %d untuk membuka Pasar Malam.	Win Stage %d to unlock the Night Market.
+Batas ganti dagangan hari ini sudah habis.	No more market refreshes today.
+Pedagang baru menggelar dagangannya.	New traders lay out their goods.
+Dagangan tidak ditemukan.	Item not found.
+Dagangan ini sudah terjual.	This item is already sold.
+Membeli %s seharga %d %s.	Bought %s for %d %s.
+Pedagang tidak mau ditawar lagi.	The trader won't haggle any more.
+Tawaran diterima! Harga turun menjadi %d.	Offer accepted! The price drops to %d.
+Pedagang tersinggung, harga naik menjadi %d.	The trader is offended; the price rises to %d.
+Menangkan Tahap %d untuk menetapkan kebijakan.	Win Stage %d to set policies.
+Kebijakan tidak dikenal.	Unknown policy.
+Kebijakan ini sudah berlaku.	This policy is already in effect.
+Kebijakan baru bisa diganti dalam %d jam.	The policy can be changed again in %d hours.
+Kebijakan baru berlaku: %s.	New policy in effect: %s.
+Tidak ada bencana saat ini.	There is no disaster right now.
+%s ditangani: %s.	%s handled: %s.
+Menangkan Tahap %d untuk membuka Perpustakaan Keraton.	Win Stage %d to unlock the Royal Library.
+Riset tidak dikenal.	Unknown research.
+Masih ada riset yang berjalan.	Another study is still in progress.
+Riset ini sudah tuntas.	This research is complete.
+Selesaikan riset prasyarat lebih dulu.	Finish the required research first.
+Para pujangga mulai meneliti %s.	The scholars begin studying %s.
+Tidak ada riset yang berjalan.	No research in progress.
+Kuasai %d wilayah di Peta Nusantara untuk membuka Armada Laut.	Hold %d regions on the Nusantara Map to unlock the Sea Fleet.
+Kapal tidak dikenal.	Unknown ship.
+Kapal ini sudah dimiliki.	You already own this ship.
+%s bergabung dengan armada Tuan!	The %s joins your fleet!
+Kapal belum dimiliki.	You don't own this ship yet.
+Kapal masih berlayar.	The ship is still at sea.
+Tujuan harus wilayah yang sudah dikuasai.	The destination must be a region you hold.
+%s berlayar ke %s.	The %s sets sail for %s.
+Kapal tidak sedang berlayar.	The ship is not at sea.
+Kapal belum kembali.	The ship has not returned yet.
+%s mengalahkan bajak laut dan pulang membawa %d perak, +10 prestise.	The %s beat the pirates and brought home %d silver, +10 prestige.
+Bajak laut merampas separuh muatan %s. Sisa %d perak.	Pirates seized half the cargo of the %s. %d silver remains.
+%s pulang dengan selamat membawa %d perak.	The %s came home safely with %d silver.
+Menangkan Tahap %d untuk membuka Kebun Keraton.	Win Stage %d to unlock the Royal Garden.
+Petak tidak ditemukan.	Plot not found.
+Bibit tidak dikenal.	Unknown seed.
+Petak ini sudah ditanami.	This plot is already planted.
+%s ditanam. Panen dalam %d jam.	%s planted. Harvest in %d hours.
+Belum ada tanaman yang siap dipanen.	Nothing is ready to harvest yet.
+Panen %d petak: %s.	Harvested %d plots: %s.
+Batas hadiah teman hari ini sudah tercapai.	You've reached today's limit of friend gifts.
+%d hadiah teman diterima: +%d perak.	%d friend gifts received: +%d silver.
+Hadiah perang minggu itu sudah diambil.	That week's war reward was already claimed.
+Aliansi Tuan tidak menguasai wilayah minggu lalu.	Your alliance held no territory last week.
+Hadiah Perang Wilayah (%d wilayah): %s.	Territory War reward (%d territories): %s.
+Panduan singkat	Quick guide
+Mode malam	Night mode
+Tema gelap yang nyaman di mata saat bermain malam hari.	A dark theme that is easy on the eyes at night.
+Ukuran tampilan	Display size
+Kecil	Small
+Normal	Normal
+Besar	Large
+Cari Jodoh	Find a Match
+Belum ada hadiah dari teman.	No gifts from friends yet.
+Raja Hari Ini: %s	King of the Day: %s
+Raja belum bertitah hari ini.	The king has not issued a decree today.
+Bencana: %s	Disaster: %s
+Tangani	Handle
+Urusan Kerajaan	Kingdom Affairs
+Perburuan	Hunting
+Kebijakan	Policy
+Kebun	Garden
+Perpustakaan	Library
+Armada	Fleet
+Besan	In-laws
+Teman	Friends
+Perang Wilayah	Territory War
+%d wilayah	%d regions
+Semua hasil	All yields
+Sisa berburu hari ini: %d / %d	Hunts left today: %d / %d
+Pilih pemburu	Choose a hunter
+%s · Skor buruan %d (Kekuatan + separuh Karisma)	%s · Hunt score %d (Strength + half Charisma)
+Buruan: %s · Peluang %d%%	Game: %s · Chance %d%%
+peluang %s	chance of %s
+Berburu	Hunt
+Dagangan berganti dalam %s	Goods change in %s
+(sudah ditawar)	(haggled)
+Terjual	Sold
+Tawar	Haggle
+Ganti Dagangan · %d emas (sisa %d)	New Goods · %d gold (%d left)
+Kebijakan & Bencana	Policy & Disasters
+Kesetiaan rakyat %d/100 · bonus hasil %+d%%	People's loyalty %d/100 · yield bonus %+d%%
+Negeri aman. Belum ada bencana di periode ini.	The land is at peace. No disaster this period.
+berakhir dalam %s	ends in %s
+Biaya: %s	Cost: %s
+Kebijakan Kota	City Policy
+Kebijakan bisa diganti lagi dalam %s.	The policy can be changed again in %s.
+Berlaku	Active
+Terapkan	Apply
+Kebun Keraton	Royal Garden
+Tanam bibit, panen setelah matang.	Plant seeds, harvest when ripe.
+Pilih bibit	Choose a seed
+%s: bibit %s perak · %d jam · hasil %s	%s: seed %s silver · %d hours · yields %s
+Petak %d · kosong	Plot %d · empty
+Tanam %s	Plant %s
+Siap panen!	Ready to harvest!
+Matang dalam %s	Ripe in %s
+Panen Semua	Harvest All
+Perpustakaan Keraton	Royal Library
+Total level riset: %d	Total research levels: %d
+Meneliti %s ke level %d	Studying %s to level %d
+Percepat · %d emas	Speed up · %d gold
+%s · Lv %d/%d	%s · Lv %d/%d
+Tuntas	Complete
+%s Lv %d	%s Lv %d
+Butuh: %s	Requires: %s
+Teliti	Study
+Armada Laut	Sea Fleet
+%d kapal · %d rute dagang	%d ships · %d trade routes
+Muatan x%.1f · Penjaga %.1f · %d jam · risiko bajak laut %d%%	Cargo x%.1f · Guard %.1f · %d hours · pirate risk %d%%
+Harga: %s	Price: %s
+Berlayar ke %s · muatan %s perak	Sailing to %s · cargo %s silver
+Bongkar	Unload
+Kuasai wilayah lain di Peta Nusantara untuk membuka rute dagang.	Conquer more regions on the Nusantara Map to open trade routes.
+Tujuan: %s · %s perak ▸	Destination: %s · %s silver ▸
+Berlayar	Set Sail
+Kapal sudah berlabuh!	The ship has docked!
+Tiba dalam %s	Arrives in %s
+Serangan Bajak Laut	Pirate Attack
+Bajak Laut	Pirates
+Pernikahan Antar-Kerajaan	Royal Marriages
+%d keluarga besan	%d in-law families
+Kiriman harian besan: %s perak	Daily in-law gifts: %s silver
+Terima Kiriman	Receive Gifts
+Anak yang siap menikah	Children ready to marry
+Bakat %d/5	Talent %d/5
+Belum ada anak dewasa. Didik anak di Istana sampai level %d.	No grown children yet. Raise a child in the Palace to level %d.
+Keluarga Besan	In-law Families
+%s — %s (%s)	%s — %s (%s)
+Anak ini sudah menikah atau belum dewasa.	This child is already married or not yet grown.
+Lamaran untuk %s (bakat %d/5)	Proposals for %s (talent %d/5)
+Calon berganti setiap hari. Bonus atribut diberikan kepada penasihat terkuat di atribut itu.	Matches change daily. The attribute bonus goes to the advisor strongest in that attribute.
+Bakat %d/5 · +%d %s · mahar %s perak	Talent %d/5 · +%d %s · dowry %s silver
+Lamar	Propose
+Fitur ini butuh server. Isi alamat server di Pengaturan.	This feature needs a server. Enter a server address in Settings.
+Memuat...	Loading...
+Kode Tuan: %s · %d teman	Your code: %s · %d friends
+Tambah teman dengan kode	Add a friend by code
+Kode 8 karakter	8-character code
+Tambah	Add
+%s kini teman Tuan.	%s is now your friend.
+Salin Kode Saya	Copy My Code
+Kode disalin. Bagikan ke teman Tuan.	Code copied. Share it with your friends.
+Terima Hadiah Teman (%d)	Receive Friend Gifts (%d)
+Kekuatan %s · Tahap %d	Power %s · Stage %d
+Terkirim	Sent
+Kirim Hadiah	Send Gift
+Hadiah terkirim.	Gift sent.
+Kunjungan Kota	City Visit
+Pemain tidak ditemukan.	Player not found.
+Tahap kampanye %d	Campaign stage %d
+Prestise %s	Prestige %s
+Penasihat %d · Wilayah %d	Advisors %d · Regions %d
+Kapal %d · Besan %d	Ships %d · In-laws %d
+%s · Lv %d	%s · Lv %d
+Belum dikuasai	Unclaimed
+Aliansi Tuan: %s · serangan tersisa %d · berakhir dalam %s	Your alliance: %s · %d attacks left · ends in %s
+Minggu lalu aliansi Tuan menguasai %d wilayah!	Last week your alliance held %d territories!
+Ambil Hadiah Perang	Claim War Reward
+Bergabunglah dengan aliansi untuk ikut berperang.	Join an alliance to take part in the war.
+Penguasa: %s	Held by: %s
+Serangan berhasil: +%d poin untuk aliansi.	Attack landed: +%d points for your alliance.
+Raja Hari Ini	King of the Day
+Belum ada raja hari ini.	There is no king today yet.
+Pemain terkuat di server hari ini	The strongest player on the server today
+Tuan adalah Raja Hari Ini! Pilih satu titah untuk semua pemain:	You are King of the Day! Choose one decree for all players:
+Titahkan	Decree
+Titah diumumkan ke seluruh negeri!	The decree is proclaimed across the land!
+BURUAN DIDAPAT!	GAME CAUGHT!
+BURUAN LOLOS...	THE GAME ESCAPED...
+Kesetiaan rakyat	People's loyalty
+perburuan	hunting
+riset	research

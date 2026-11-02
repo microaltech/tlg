@@ -140,3 +140,90 @@ test("chat: laporkan pesan, disembunyikan setelah 3 laporan", async () => {
 			"pesan tersembunyi tidak dikirim lagi");
 	} finally { server.close(); }
 });
+
+test("teman, hadiah harian, dan kunjungan kota", async () => {
+	const { server, call, tick } = await start();
+	try {
+		const a = await login(call, "teman-a", "Arya");
+		const b = await login(call, "teman-b", "Bayu");
+		await call("POST", "/v1/profile", { power: 500, city: { rank: 3, buildings: { istana: 4, pasar: 99999 },
+			ships: 2, evil: "<script>" } }, b.token);
+		const fb = await call("GET", "/v1/friends", null, b.token);
+		assert.equal(fb.data.code.length, 8);
+		assert.equal((await call("POST", "/v1/friends/add", { code: "zz" }, a.token)).status, 400);
+		assert.equal((await call("POST", "/v1/friends/add", { code: a.player.code }, a.token)).status, 400,
+			"tidak bisa berteman dengan diri sendiri");
+		const add = await call("POST", "/v1/friends/add", { code: fb.data.code.toLowerCase() }, a.token);
+		assert.equal(add.status, 200);
+		assert.equal(add.data.friend.name, "Bayu");
+		assert.equal((await call("GET", "/v1/friends", null, b.token)).data.friends.length, 1, "pertemanan dua arah");
+		assert.equal((await call("POST", "/v1/gift", { to: b.player.id }, a.token)).status, 200);
+		assert.equal((await call("POST", "/v1/gift", { to: b.player.id }, a.token)).status, 429, "sekali per hari");
+		assert.equal((await call("POST", "/v1/gift", { to: "orang-asing" }, a.token)).status, 404);
+		const inbox = await call("GET", "/v1/friends", null, b.token);
+		assert.equal(inbox.data.inbox.length, 1);
+		const claim = await call("POST", "/v1/gifts/claim", null, b.token);
+		assert.deepEqual(claim.data, { claimed: 1, names: ["Arya"] });
+		assert.equal((await call("POST", "/v1/gifts/claim", null, b.token)).data.claimed, 0);
+		tick(86400000);
+		assert.equal((await call("POST", "/v1/gift", { to: b.player.id }, a.token)).status, 200, "hari baru, kirim lagi");
+		const visit = await call("GET", `/v1/player?id=${b.player.id}`, null, a.token);
+		assert.equal(visit.data.city.buildings.istana, 4);
+		assert.equal(visit.data.city.buildings.pasar, 99, "angka kota dibatasi");
+		assert.equal(visit.data.city.evil, undefined, "kunci asing dibuang");
+		assert.equal(visit.data.friend, true);
+		await call("POST", "/v1/friends/remove", { id: b.player.id }, a.token);
+		assert.equal((await call("GET", "/v1/friends", null, b.token)).data.friends.length, 0);
+	} finally { server.close(); }
+});
+
+test("Raja Hari Ini dan titahnya", async () => {
+	const { server, call, tick } = await start();
+	try {
+		const a = await login(call, "raja-a", "Wira");
+		const b = await login(call, "raja-b", "Sekar");
+		await call("POST", "/v1/profile", { power: 900 }, a.token);
+		await call("POST", "/v1/profile", { power: 300 }, b.token);
+		const k = await call("GET", "/v1/king", null, b.token);
+		assert.equal(k.data.king.name, "Wira");
+		assert.equal(k.data.me, false);
+		assert.equal((await call("POST", "/v1/king/decree", { decree: "perak" }, b.token)).status, 403);
+		assert.equal((await call("POST", "/v1/king/decree", { decree: "bebas" }, a.token)).status, 400);
+		assert.equal((await call("POST", "/v1/king/decree", { decree: "perak" }, a.token)).status, 200);
+		assert.equal((await call("POST", "/v1/king/decree", { decree: "pangan" }, a.token)).status, 400, "sekali sehari");
+		await call("POST", "/v1/profile", { power: 5000 }, b.token);
+		assert.equal((await call("GET", "/v1/king", null, b.token)).data.king.name, "Wira", "raja dikunci sepanjang hari");
+		tick(86400000);
+		const next = await call("GET", "/v1/king", null, b.token);
+		assert.equal(next.data.king.name, "Sekar");
+		assert.equal(next.data.decree, null);
+	} finally { server.close(); }
+});
+
+test("Perang Wilayah Aliansi", async () => {
+	const { server, call, tick } = await start();
+	try {
+		const a = await login(call, "gw-a", "Arya");
+		const b = await login(call, "gw-b", "Bayu");
+		const c = await login(call, "gw-c", "Citra");
+		assert.equal((await call("POST", "/v1/guildwar/attack", { territory: 0 }, c.token)).status, 400, "butuh aliansi");
+		await call("POST", "/v1/profile", { power: 10000, alliance: "garuda" }, a.token);
+		await call("POST", "/v1/profile", { power: 2500, alliance: "macan" }, b.token);
+		assert.equal((await call("POST", "/v1/guildwar/attack", { territory: 99 }, a.token)).status, 404);
+		const hit = await call("POST", "/v1/guildwar/attack", { territory: 0 }, a.token);
+		assert.equal(hit.data.points, 100, "akar 10000 x 1,0");
+		await call("POST", "/v1/guildwar/attack", { territory: 0 }, b.token);
+		await call("POST", "/v1/guildwar/attack", { territory: 1 }, b.token);
+		await call("POST", "/v1/guildwar/attack", { territory: 2 }, b.token);
+		assert.equal((await call("POST", "/v1/guildwar/attack", { territory: 2 }, b.token)).status, 429, "3 kali sehari");
+		const board = await call("GET", "/v1/guildwar", null, a.token);
+		assert.equal(board.data.territories[0].owner, "garuda");
+		assert.equal(board.data.territories[1].owner, "macan");
+		assert.equal(board.data.attacks_left, 2);
+		tick(7 * 86400000);
+		const after = await call("GET", "/v1/guildwar", null, b.token);
+		assert.equal(after.data.last_won, 2, "macan menang 2 wilayah minggu lalu");
+		assert.equal(after.data.attacks_left, 3);
+		assert.equal(after.data.territories[0].owner, null, "minggu baru dimulai kosong");
+	} finally { server.close(); }
+});

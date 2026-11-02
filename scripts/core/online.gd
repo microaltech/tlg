@@ -10,13 +10,18 @@ extends Node
 ## Semua permintaan memakai HTTPRequest dan callback; kegagalan jaringan hanya
 ## mengubah status, tidak pernah menghentikan game.
 
+const Data := preload("res://scripts/core/game_data.gd")
+
 signal status_changed
+## Info Raja Hari Ini berubah (lihat `king`).
+signal king_changed
 
 enum Status { OFFLINE, CONNECTING, ONLINE, ERROR }
 
 const CFG_PATH := "user://online.cfg"
 const PROFILE_SECONDS := 30.0
 const CHAT_SECONDS := 6.0
+const KING_SECONDS := 300.0
 const TIMEOUT := 10.0
 
 var status := Status.OFFLINE
@@ -27,6 +32,9 @@ var _device_id := ""
 var _profile_timer := 0.0
 var _chat_timer := 0.0
 var _chat_busy := false
+var _king_timer := 0.0
+## {"king": {...}, "decree": String|null, "me": bool, "decrees": [...]} dari /v1/king; kosong bila belum ada.
+var king := {}
 ## ID pemain yang diblokir: pesannya tidak ditampilkan (disimpan di online.cfg).
 var blocked: Array = []
 
@@ -89,6 +97,10 @@ func _process(delta: float) -> void:
 		return
 	_profile_timer += delta
 	_chat_timer += delta
+	_king_timer += delta
+	if _king_timer >= KING_SECONDS:
+		_king_timer = 0.0
+		poll_king()
 	if _profile_timer >= PROFILE_SECONDS:
 		_profile_timer = 0.0
 		push_profile()
@@ -101,7 +113,10 @@ func _process(delta: float) -> void:
 static func profile_payload(m) -> Dictionary:
 	return {"name": m.me_name(), "portrait": m.lord_portrait(), "frame": str(m.cosmetics.get("frame", "")),
 		"alliance": str(m.alliance.get("id", "")) if not m.alliance.is_empty() else "",
-		"power": m.combat_power(), "stage": m.stage, "tower": int(m.tower.get("best", 0)), "prestige": m.prestige}
+		"power": m.combat_power(), "stage": m.stage, "tower": int(m.tower.get("best", 0)), "prestige": m.prestige,
+		"city": {"rank": m.rank, "buildings": m.buildings["levels"].duplicate(), "kin": m.kin_count(),
+			"ships": m.ships_owned().size(), "regions": m.territory.get("owned", []).size(),
+			"counselors": m.counselors.size()}}
 
 
 func push_profile() -> void:
@@ -162,6 +177,86 @@ func fetch_opponents(callback: Callable) -> void:
 ## callback(result: Dictionary) — {win, delta, rating, opponent} atau {error}.
 func arena_fight(opponent_id: String, callback: Callable) -> void:
 	_request(HTTPClient.METHOD_POST, "/v1/arena/fight", {"opponent_id": opponent_id}, func(code: int, data: Dictionary):
+		if code != 200:
+			data = {"error": data.get("error", "Server tidak menjawab.")}
+		callback.call(data))
+
+
+## Raja Hari Ini: titahnya berlaku sebagai bonus kecil untuk semua pemain.
+func poll_king() -> void:
+	_request(HTTPClient.METHOD_GET, "/v1/king", {}, func(code: int, data: Dictionary):
+		if code != 200:
+			return
+		king = data if data.get("king") != null else {}
+		apply_king())
+
+
+func apply_king() -> void:
+	var decree := str(king.get("decree", "")) if not king.is_empty() and king.get("decree") != null else ""
+	Game.model.king_effects = Data.KING_DECREES[decree]["effects"].duplicate() if Data.KING_DECREES.has(decree) else {}
+	if bool(king.get("me", false)):
+		Game.model.unlock_cosmetic("frame_raja_hari_ini")
+	king_changed.emit()
+
+
+func set_decree(decree: String, callback: Callable) -> void:
+	_request(HTTPClient.METHOD_POST, "/v1/king/decree", {"decree": decree}, func(code: int, data: Dictionary):
+		if code == 200:
+			poll_king()
+		callback.call(code == 200, str(data.get("error", ""))))
+
+
+## callback(data: Dictionary) — {code, friends, inbox} atau {} bila gagal.
+func fetch_friends(callback: Callable) -> void:
+	_request(HTTPClient.METHOD_GET, "/v1/friends", {}, func(code: int, data: Dictionary):
+		callback.call(data if code == 200 else {}))
+
+
+## callback(ok: bool, message: String)
+func add_friend(code_text: String, callback: Callable) -> void:
+	_request(HTTPClient.METHOD_POST, "/v1/friends/add", {"code": code_text.strip_edges()}, func(code: int, data: Dictionary):
+		callback.call(code == 200, str(data.get("error", "")) if code != 200 else str(data["friend"].get("name", ""))))
+
+
+func remove_friend(player_id: String, callback: Callable) -> void:
+	_request(HTTPClient.METHOD_POST, "/v1/friends/remove", {"id": player_id}, func(code: int, _data: Dictionary):
+		callback.call(code == 200))
+
+
+func send_gift(player_id: String, callback: Callable) -> void:
+	_request(HTTPClient.METHOD_POST, "/v1/gift", {"to": player_id}, func(code: int, data: Dictionary):
+		callback.call(code == 200, str(data.get("error", ""))))
+
+
+## Klaim hadiah di server lalu berikan hadiahnya di game. callback(result: Dictionary).
+func claim_gifts(callback: Callable) -> void:
+	var left: int = Game.model.friend_gifts_left(Game.now())
+	if left <= 0:
+		callback.call({"ok": false, "msg": "Batas hadiah teman hari ini sudah tercapai."})
+		return
+	_request(HTTPClient.METHOD_POST, "/v1/gifts/claim", {}, func(code: int, data: Dictionary):
+		if code != 200:
+			callback.call({"ok": false, "msg": str(data.get("error", "Server tidak menjawab."))})
+		elif int(data.get("claimed", 0)) <= 0:
+			callback.call({"ok": false, "msg": "Belum ada hadiah dari teman."})
+		else:
+			callback.call(Game.model.receive_friend_gifts(int(data["claimed"]), Game.now())))
+
+
+## callback(data: Dictionary) — {player, city, friend} atau {} bila gagal.
+func visit_player(player_id: String, callback: Callable) -> void:
+	_request(HTTPClient.METHOD_GET, "/v1/player?id=%s" % player_id.uri_encode(), {}, func(code: int, data: Dictionary):
+		callback.call(data if code == 200 else {}))
+
+
+func fetch_guildwar(callback: Callable) -> void:
+	_request(HTTPClient.METHOD_GET, "/v1/guildwar", {}, func(code: int, data: Dictionary):
+		callback.call(data if code == 200 else {}))
+
+
+## callback(data: Dictionary) — {points, territory} atau {error}.
+func guildwar_attack(territory: int, callback: Callable) -> void:
+	_request(HTTPClient.METHOD_POST, "/v1/guildwar/attack", {"territory": territory}, func(code: int, data: Dictionary):
 		if code != 200:
 			data = {"error": data.get("error", "Server tidak menjawab.")}
 		callback.call(data))

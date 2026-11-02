@@ -9,6 +9,7 @@ const TutorialLayer := preload("res://scripts/ui/tutorial_layer.gd")
 const BattleView := preload("res://scripts/ui/battle_view.gd")
 const DuelView := preload("res://scripts/ui/duel_view.gd")
 const LoginGrid := preload("res://scripts/ui/login_grid.gd")
+const RealmUI := preload("res://scripts/ui/realm_ui.gd")
 
 const PAGES := [
 	{"key": "city", "title": "Kota", "icon": "tab_city", "bg": "city"},
@@ -49,6 +50,9 @@ var _login_box: VBoxContainer
 var _login_subtitle: Label
 var _login_next_label: Label
 var _login_prompted_day := -1
+var _realm_ui  ## RealmUI: panel fitur kerajaan (scripts/ui/realm_ui.gd)
+var _display := []  ## [mode malam, skala] saat UI dibangun
+var _reloading := false
 var _startup_prompted := false  ## true setelah prompt awal (ringkasan/login) pertama kali dicoba.
 var _event_overlay: Control
 var _event_box: VBoxContainer
@@ -157,6 +161,9 @@ const SCROLL_DEADZONE := 20
 
 func _ready() -> void:
 	model = Game.model
+	_realm_ui = RealmUI.new(self)
+	UI.apply_palette(Settings.dark_mode)
+	get_tree().root.content_scale_factor = Settings.ui_scale
 	# Agar layar bisa digeser walau jari mulai di atas kartu/tombol: kontrol bawaan
 	# Godot "menelan" sentuhan (MOUSE_FILTER_STOP) sehingga ScrollContainer tidak
 	# pernah menerimanya. Setiap kontrol baru diubah meneruskan sentuhan ke induknya.
@@ -214,7 +221,14 @@ func _ready() -> void:
 			return
 		_confirm("Ganti progres sekarang dengan save dari Google Play?", "Pulihkan",
 			func(): _show(Game.import_code(data))))
-	Online.status_changed.connect(_queue_rebuild)
+	Online.status_changed.connect(func():
+		if Online.is_online():
+			_realm_ui._load_friends()
+			_realm_ui._load_guildwar()
+		_queue_rebuild())
+	Online.king_changed.connect(_queue_rebuild)
+	_display = [Settings.dark_mode, Settings.ui_scale]
+	Settings.changed.connect(_on_display_settings)
 	model.cosmetic_unlocked.connect(func(id):
 		if _startup_prompted:
 			Audio.play("reveal_sr")
@@ -462,6 +476,8 @@ func _build_nav() -> Control:
 		var l := _label(v, p["title"], "SmallLabel")
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		l.autowrap_mode = TextServer.AUTOWRAP_OFF  # satu baris; di layar sempit dipotong
+		l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		b.add_child(v)
 		var key: String = p["key"]
 		b.pressed.connect(func():
@@ -690,6 +706,7 @@ func _rebuild() -> void:
 			_build_page_content(k)
 		else:
 			_dirty_pages[k] = true
+	_realm_ui.refresh()
 	if is_instance_valid(_mission_overlay):
 		_fill_missions()
 	if is_instance_valid(_login_overlay):
@@ -744,6 +761,7 @@ func _rebuild() -> void:
 
 func _tick() -> void:
 	var now: float = Game.now()
+	_realm_ui.tick()
 	model.sync(now)
 	model.check_achievements()
 	# Paket terbatas baru tampil sekali, setelah panel lain (mis. perayaan naik
@@ -901,6 +919,7 @@ func _build_city(box: VBoxContainer) -> void:
 	_clear(box)
 	box.add_child(_event_banner())
 	_build_festival_card(box)
+	_realm_ui.build_city_cards(box)
 	_build_wheel_card(box)
 	_build_offer_cards(box)
 	_build_pass_card(box)
@@ -939,6 +958,12 @@ func _build_city(box: VBoxContainer) -> void:
 	else:
 		_label(col, "Berikutnya %s · prestise %d/%d" % [nxt["name"], model.prestige, nxt["prestige"]], "CardLabel")
 		_bar(col, model.prestige, nxt["prestige"])
+		for req in model.rank_reqs(model.rank + 1):
+			var ok: bool = req["have"] >= req["need"]
+			var rl := _label(col, "%s %s: %d/%d" % ["✔" if ok else "✘", tr(Data.RANK_REQ_NAMES[req["key"]]),
+				req["have"], req["need"]], "SmallLabel")
+			rl.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+			rl.add_theme_color_override("font_color", UI.GREEN.darkened(0.2) if ok else UI.RED)
 		var promote := _button(col, "Naik Jabatan", func():
 			var r: Dictionary = model.promote()
 			if r["ok"]:
@@ -1557,6 +1582,16 @@ func _open_panel(title: String, icon_name: String, on_close: Callable, top := 0.
 	var titles := _col(head)
 	_label(titles, title, "CardTitle").add_theme_font_size_override("font_size", 32)
 	var subtitle := _label(titles, "", "CardLabel")
+	if Data.FEATURE_HELP.has(title) and icon_name != "help":
+		var help := Button.new()
+		help.text = "?"
+		help.theme_type_variation = "GoldButton"
+		help.custom_minimum_size = Vector2(64, 64)
+		help.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		help.pressed.connect(func():
+			Audio.play("click")
+			_show_feature_help(title))
+		head.add_child(help)
 	var close := Button.new()
 	close.text = "Tutup"
 	close.custom_minimum_size = Vector2(130, 64)
@@ -1580,6 +1615,28 @@ func _open_panel(title: String, icon_name: String, on_close: Callable, top := 0.
 	tw.tween_property(overlay, "modulate:a", 1.0, 0.15)
 	tw.tween_property(panel, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	return {"overlay": overlay, "content": content, "subtitle": subtitle, "panel_box": v, "close": close}
+
+
+## Palet & skala dipakai saat UI dibangun: muat ulang adegan utama bila berubah.
+func _on_display_settings() -> void:
+	if _reloading or _display == [Settings.dark_mode, Settings.ui_scale]:
+		return
+	_reloading = true
+	Game.save_game()
+	get_tree().reload_current_scene.call_deferred()
+
+
+## Panduan singkat sebuah fitur (tombol "?" di kepala panel).
+func _show_feature_help(title: String) -> void:
+	var holder := {}
+	var p := _open_panel(title, "help", func():
+		Audio.play("click")
+		if is_instance_valid(holder.get("overlay")):
+			holder["overlay"].queue_free(), 0.25, 0.7)
+	holder["overlay"] = p["overlay"]
+	p["subtitle"].text = "Panduan singkat"
+	for line in Data.FEATURE_HELP[title]:
+		_label(p["content"], line, "CardLabel")
 
 
 func _show_missions() -> void:
@@ -1675,7 +1732,7 @@ func _fill_missions() -> void:
 ## Kotak bergaris di dalam panel perkamen.
 func _inner_box(parent: Node) -> VBoxContainer:
 	var p := PanelContainer.new()
-	var st := UI.box(Color(1, 1, 1, 0.35), UI.GOLD_DARK, 2, 12)
+	var st := UI.box(UI.INNER_BG, UI.GOLD_DARK, 2, 12)
 	st.set_content_margin_all(12)
 	p.add_theme_stylebox_override("panel", st)
 	parent.add_child(p)
@@ -2054,7 +2111,7 @@ func _build_arena_board(box: VBoxContainer) -> void:
 		var rank: int = i + 1 if i < 10 else board["rank"]
 		var inner := _inner_box(box)
 		if e["me"]:
-			inner.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))
+			inner.get_parent().add_theme_stylebox_override("panel", UI.box(UI.HIGHLIGHT_BG, UI.GOLD, 3, 12))
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)
 		inner.add_child(row)
@@ -2678,7 +2735,7 @@ func _build_alliance_war(box: VBoxContainer, now: float) -> void:
 	if not model.war_reward.is_empty():
 		var wr: Dictionary = model.war_reward
 		var rbox := _inner_box(box)
-		rbox.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))
+		rbox.get_parent().add_theme_stylebox_override("panel", UI.box(UI.HIGHLIGHT_BG, UI.GOLD, 3, 12))
 		var head := _label(rbox, ("MENANG" if wr["win"] else "KALAH") + " melawan %s" % wr["enemy"], "CardTitle")
 		head.add_theme_color_override("font_color", UI.GREEN.darkened(0.2) if wr["win"] else UI.RED)
 		_label(rbox, "Skor %d - %d · jasa perang Anda %d" % [wr["ours"], wr["theirs"], wr["merit"]], "CardLabel")
@@ -2844,8 +2901,8 @@ func _build_alliance_chat(box: VBoxContainer, now: float) -> void:
 	_chat_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_chat_input.custom_minimum_size.y = 64
 	_chat_input.text = _chat_draft
-	_chat_input.add_theme_stylebox_override("normal", UI.box(Color("fffaf0"), UI.GOLD_DARK, 2, 12))
-	_chat_input.add_theme_stylebox_override("focus", UI.box(Color("fffaf0"), UI.GOLD, 3, 12))
+	_chat_input.add_theme_stylebox_override("normal", UI.box(UI.INPUT_BG, UI.GOLD_DARK, 2, 12))
+	_chat_input.add_theme_stylebox_override("focus", UI.box(UI.INPUT_BG, UI.GOLD, 3, 12))
 	_chat_input.add_theme_color_override("font_color", UI.INK)
 	_chat_input.add_theme_color_override("font_placeholder_color", Color("9a8670"))
 	_chat_input.text_changed.connect(func(t): _chat_draft = t)
@@ -2924,7 +2981,7 @@ func _chat_bubble(m: Dictionary) -> Control:
 	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT if me else HORIZONTAL_ALIGNMENT_LEFT
 	col.add_child(head)
 	var bubble := PanelContainer.new()
-	var st := UI.box(Color("f7d98a") if me else Color("fffaf0"), UI.GOLD_DARK, 1, 14)
+	var st := UI.box(UI.HIGHLIGHT_BG if me else UI.INPUT_BG, UI.GOLD_DARK, 1, 14)
 	st.set_content_margin_all(10)
 	bubble.add_theme_stylebox_override("panel", st)
 	bubble.size_flags_horizontal = Control.SIZE_SHRINK_END if me else Control.SIZE_SHRINK_BEGIN
@@ -3003,7 +3060,7 @@ func _build_alliance_members(box: VBoxContainer, now: float) -> void:
 		var inner := _inner_box(box)
 		inner.add_child(row)
 		if m["me"]:
-			inner.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))
+			inner.get_parent().add_theme_stylebox_override("panel", UI.box(UI.HIGHLIGHT_BG, UI.GOLD, 3, 12))
 		var rank := _label(row, "#%d" % (i + 1), "CardTitle")
 		rank.custom_minimum_size.x = 64
 		var col := _col(row)
@@ -3099,7 +3156,7 @@ func _fill_story() -> void:
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var all_claimed: bool = model.story["claimed"].size() == quests.size()
 	var reward := _inner_box(_story_box)
-	reward.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))
+	reward.get_parent().add_theme_stylebox_override("panel", UI.box(UI.HIGHLIGHT_BG, UI.GOLD, 3, 12))
 	_label(reward, "Hadiah tamat bab: " + _reward_text(def["reward"]), "CardLabel").add_theme_font_override("font", UI.font_bold)
 	var choice: Dictionary = model.story_choice_pending()
 	if not choice.is_empty():
@@ -3485,7 +3542,7 @@ func _build_offer_cards(box: VBoxContainer) -> void:
 	for o in model.active_offers(now):
 		var def: Dictionary = Data.iap_def(o["id"])
 		var card := _card(box)
-		card.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fde2c4"), UI.RED, 3, 14))
+		card.get_parent().add_theme_stylebox_override("panel", UI.box(UI.ALERT_BG, UI.RED, 3, 14))
 		card.add_child(_tex(Art.icon(def["icon"]), 84))
 		var col := _col(card)
 		_label(col, "PENAWARAN TERBATAS", "SmallLabel").add_theme_color_override("font_color", UI.RED)
@@ -3578,7 +3635,8 @@ func _build_festival_card(box: VBoxContainer) -> void:
 		return
 	var def: Dictionary = model.festival_def()
 	var card := _card(box)
-	var style := UI.box(Color(def["color"]).lightened(0.55), Color(def["color"]), 3, 14)
+	var style := UI.box(Color(def["color"]).darkened(0.55) if UI.dark else Color(def["color"]).lightened(0.55),
+		Color(def["color"]), 3, 14)
 	style.content_margin_left = 14
 	style.content_margin_right = 14
 	style.content_margin_top = 10
@@ -3757,7 +3815,7 @@ func _fill_pass() -> void:
 		var reached: bool = t <= model.pass_tier()
 		var box := _inner_box(_pass_box)
 		if reached:
-			box.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 2, 12))
+			box.get_parent().add_theme_stylebox_override("panel", UI.box(UI.HIGHLIGHT_BG, UI.GOLD, 2, 12))
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 8)
 		box.add_child(row)
@@ -4640,7 +4698,7 @@ func _fill_leaderboard() -> void:
 	var reward: Dictionary = model.leaderboard.get("reward", {})
 	if not reward.is_empty():
 		var rb := _inner_box(_lb_box)
-		rb.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))
+		rb.get_parent().add_theme_stylebox_override("panel", UI.box(UI.HIGHLIGHT_BG, UI.GOLD, 3, 12))
 		_label(rb, "Hadiah peringkat minggu lalu: %s (#%s)" % [reward["tier"], _num_dots(reward["rank"])], "CardLabel") \
 			.add_theme_font_override("font", UI.font_bold)
 		_button(rb, "Klaim +%d Emas" % reward["gold"], func(): return model.claim_lb_reward(), true, "gold",
@@ -4658,7 +4716,7 @@ func _fill_leaderboard() -> void:
 	var def: Dictionary = Data.leaderboard_def(_lb_cat)
 	var mine: Dictionary = model.lb_rank(_lb_cat, now)
 	var me := _inner_box(_lb_box)
-	me.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))
+	me.get_parent().add_theme_stylebox_override("panel", UI.box(UI.HIGHLIGHT_BG, UI.GOLD, 3, 12))
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
 	me.add_child(row)
@@ -4702,7 +4760,7 @@ func _fill_lb_online() -> void:
 		_label(_lb_box, "Belum ada data dari server.", "CardLabel")
 		return
 	var me := _inner_box(_lb_box)
-	me.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))
+	me.get_parent().add_theme_stylebox_override("panel", UI.box(UI.HIGHLIGHT_BG, UI.GOLD, 3, 12))
 	_label(me, "Peringkat online Anda: #%s dari %s pemain" % [_num_dots(int(data["me"].get("rank", 0))),
 		_num_dots(int(data["players"]))], "CardTitle").add_theme_font_size_override("font_size", 26)
 	var my_id := str(Online.player.get("id", ""))
@@ -4720,7 +4778,7 @@ static func _percent(p: float) -> String:
 func _lb_row(rank: int, avatar: String, name: String, value: String, me: bool, is_icon := false) -> void:
 	var inner := _inner_box(_lb_box)
 	if me:
-		inner.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))
+		inner.get_parent().add_theme_stylebox_override("panel", UI.box(UI.HIGHLIGHT_BG, UI.GOLD, 3, 12))
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	inner.add_child(row)
@@ -4736,7 +4794,7 @@ func _lb_row(rank: int, avatar: String, name: String, value: String, me: bool, i
 	n.clip_text = true
 	var v := _label(row, value, "CardLabel")
 	v.add_theme_font_override("font", UI.font_bold)
-	v.add_theme_color_override("font_color", Color("5e2a12"))
+	v.add_theme_color_override("font_color", UI.CARD_TITLE)
 
 
 func _fill_lb_alliances(now: float) -> void:
@@ -5027,7 +5085,7 @@ func _fill_vip() -> void:
 
 	var pack: Dictionary = def["pack"]
 	var pbox := _inner_box(_vip_box)
-	pbox.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))
+	pbox.get_parent().add_theme_stylebox_override("panel", UI.box(UI.HIGHLIGHT_BG, UI.GOLD, 3, 12))
 	var prow := HBoxContainer.new()
 	prow.add_theme_constant_override("separation", 12)
 	pbox.add_child(prow)
@@ -5089,7 +5147,7 @@ func _fill_store() -> void:
 			continue  # Tiket Musim & paket terbatas dibeli dari panelnya sendiri
 		var box := _inner_box(_store_box)
 		if def["type"] != "gold":
-			box.get_parent().add_theme_stylebox_override("panel", UI.box(Color("fff3c8"), UI.GOLD, 3, 12))
+			box.get_parent().add_theme_stylebox_override("panel", UI.box(UI.HIGHLIGHT_BG, UI.GOLD, 3, 12))
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 12)
 		box.add_child(row)
@@ -5260,8 +5318,8 @@ func _show_settings() -> void:
 	name_edit.max_length = model.NAME_MAX
 	name_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_edit.custom_minimum_size.y = 64
-	name_edit.add_theme_stylebox_override("normal", UI.box(Color("fffaf0"), UI.GOLD_DARK, 2, 12))
-	name_edit.add_theme_stylebox_override("focus", UI.box(Color("fffaf0"), UI.GOLD, 3, 12))
+	name_edit.add_theme_stylebox_override("normal", UI.box(UI.INPUT_BG, UI.GOLD_DARK, 2, 12))
+	name_edit.add_theme_stylebox_override("focus", UI.box(UI.INPUT_BG, UI.GOLD, 3, 12))
 	name_edit.add_theme_color_override("font_color", UI.INK)
 	name_edit.add_theme_color_override("font_placeholder_color", Color("9a8670"))
 	row.add_child(name_edit)
@@ -5315,6 +5373,23 @@ func _show_settings() -> void:
 	if not Notifier.available():
 		notif_desc += " (Hanya di Android dengan plugin TlgNotify.)"
 	_setting_toggle(device, "Notifikasi", "notifications", notif_desc)
+	_setting_toggle(device, "Mode malam", "dark_mode", "Tema gelap yang nyaman di mata saat bermain malam hari.")
+	_label(device, "Ukuran tampilan", "CardLabel")
+	var scale_row := HBoxContainer.new()
+	scale_row.add_theme_constant_override("separation", 8)
+	device.add_child(scale_row)
+	for opt in [["Kecil", 0.9], ["Normal", 1.0], ["Besar", 1.1]]:
+		var sb := Button.new()
+		sb.text = opt[0]
+		sb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		sb.custom_minimum_size.y = 64
+		sb.theme_type_variation = "GoldButton" if is_equal_approx(Settings.ui_scale, opt[1]) else ""
+		sb.add_theme_font_size_override("font_size", 22)
+		var value: float = opt[1]
+		sb.pressed.connect(func():
+			Audio.play("click")
+			Settings.set_value("ui_scale", value))
+		scale_row.add_child(sb)
 	_setting_toggle(device, "Kalender login teks", "simple_login",
 		"Tampilkan hadiah login sebagai daftar teks. Nyala otomatis bila kalender bergambar membuat game berhenti.")
 	_setting_toggle(device, "Lewati tayangan perang", "skip_battles",
@@ -5436,8 +5511,8 @@ func _build_backup_section(box: VBoxContainer, close: Callable) -> void:
 	input.placeholder_text = "Tempel kode cadangan di sini"
 	input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	input.custom_minimum_size.y = 64
-	input.add_theme_stylebox_override("normal", UI.box(Color("fffaf0"), UI.GOLD_DARK, 2, 12))
-	input.add_theme_stylebox_override("focus", UI.box(Color("fffaf0"), UI.GOLD, 3, 12))
+	input.add_theme_stylebox_override("normal", UI.box(UI.INPUT_BG, UI.GOLD_DARK, 2, 12))
+	input.add_theme_stylebox_override("focus", UI.box(UI.INPUT_BG, UI.GOLD, 3, 12))
 	input.add_theme_color_override("font_color", UI.INK)
 	input.add_theme_color_override("font_placeholder_color", Color("9a8670"))
 	row.add_child(input)
@@ -5505,7 +5580,7 @@ func _volume_slider(parent: Node, title: String, key: String) -> void:
 	slider.step = 5
 	slider.value = Settings.get(key)
 	slider.custom_minimum_size.y = 56
-	var track := UI.box(Color("d8c49a"), UI.GOLD_DARK, 2, 8)
+	var track := UI.box(UI.TRACK_BG, UI.GOLD_DARK, 2, 8)
 	track.content_margin_top = 6
 	track.content_margin_bottom = 6
 	slider.add_theme_stylebox_override("slider", track)
@@ -6112,8 +6187,9 @@ func _build_children(box: VBoxContainer, now: float) -> void:
 			var row := HBoxContainer.new()
 			row.add_theme_constant_override("separation", 8)
 			col.add_child(row)
-			var marry := _button(row, "Nikahkan", func(): return model.marry_child(i), true, "heart", "GoldButton",
-				false, "birth")
+			var marry := _button(row, "Cari Jodoh", func():
+				_realm_ui.show_marriage(i)
+				return null, true, "ring", "GoldButton")
 			marry.add_theme_font_size_override("font_size", 22)
 			marry.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			var can_exam: bool = model.exam_available(i, now) and model.silver >= model.exam_cost(i) \

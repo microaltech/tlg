@@ -28,6 +28,8 @@ func _init() -> void:
 		"test_skills", "test_bonds", "test_prison", "test_exam_officials", "test_banquet",
 		"test_story", "test_away_report", "test_lord_name", "test_notification_plan", "test_soldiers_eat_grain", "test_pattern_translation", "test_do_all", "test_rateup", "test_equipment", "test_tower", "test_honor", "test_ads", "test_pass", "test_offers", "test_achievements", "test_save_code",
 		"test_formation", "test_battle_plan", "test_festival_calendar", "test_festival_flow", "test_cosmetics", "test_buildings", "test_expeditions", "test_horses", "test_story_choices", "test_duel_plan", "test_silat", "test_territory", "test_court", "test_tales", "test_codex", "test_wheel", "test_chat_remote", "test_translation_list_with_numbers",
+		"test_hunt", "test_noble_marriage", "test_night_market", "test_policy_disaster", "test_research",
+		"test_fleet", "test_garden", "test_rank_reqs", "test_online_rewards", "test_realm_save", "test_summary_notification",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -144,6 +146,7 @@ func test_save_roundtrip() -> void:
 	m.do_affair("grain", 1000.0)
 	m.children.append({"name": "Adi", "gender": "m", "mother": "melati", "talent": 3, "level": 4})
 	m.counselors["arya"]["bonus"]["str"] = 30
+	m.sync(1000.0)  # bencana periode ini digulir saat sinkron, sama seperti saat dimuat
 	var json := JSON.stringify(m.to_dict())
 	var m2 := Model.new()
 	m2.from_dict(JSON.parse_string(json), 1000.0)
@@ -228,6 +231,7 @@ func test_gold_sources() -> void:
 	m.gold += Data.GACHA_COST_10
 	m.recruit(10, 1000.0)
 	m.counselors["arya"]["stars"] = 3
+	m.sync(1000.0)
 	var m2 := Model.new()
 	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
 	check(var_to_str(m2.to_dict()) == var_to_str(m.to_dict()), "simpan/muat data gacha")
@@ -1673,6 +1677,7 @@ func test_save_code() -> void:
 		m.fight_stage()
 	m.set_lord_name("Wira")
 	m.add_equipment("keris_nagasasra")
+	m.sync(1000.0)
 	var code := Model.encode_save(m.to_dict())
 	check(code.begins_with(Model.SAVE_CODE_PREFIX) and code.length() < JSON.stringify(m.to_dict()).length(),
 		"kode cadangan lebih pendek dari JSON (%d karakter)" % code.length())
@@ -2315,3 +2320,282 @@ func test_translation_list_with_numbers() -> void:
 	var src := "Urusan terisi kembali: Tarik Pajak +6 (penuh), Kelola Sawah +6 (penuh), Rekrut Prajurit +6 (penuh), Energi kunjungan +6 (penuh)."
 	check(t.translate_text(src) == "Affairs refilled: Collect Taxes +6 (full), Manage Farms +6 (full), Recruit Troops +6 (full), Visit energy +6 (full).",
 		"daftar 4 item dengan angka diterjemahkan utuh")
+
+
+
+func _realm_model() -> Model:
+	var m := fresh()
+	m.stage = 30
+	m.silver = 50000000
+	m.grain = 50000000
+	m.soldiers = 50000000
+	m.gold = 100000
+	m.prestige = 0
+	return m
+
+
+func test_hunt() -> void:
+	var m := fresh()
+	var t := 1000.0
+	check(not m.go_hunt("arya", "rusa", t)["ok"], "perburuan terkunci di awal")
+	m = _realm_model()
+	var id: String = m.counselors.keys()[0]
+	check(not m.go_hunt("bukan", "rusa", t)["ok"] and not m.go_hunt(id, "naga", t)["ok"], "penasihat & medan divalidasi")
+	check(m.hunt_difficulty("rusa") < m.hunt_difficulty("harimau"), "harimau lebih sulit dari rusa")
+	m.counselors[id]["level"] = 30
+	check(m.hunt_chance(id, "rusa") > m.hunt_chance(id, "harimau"), "peluang harimau lebih kecil")
+	m.counselors[id]["level"] = 400
+	check(m.hunt_chance(id, "harimau") >= 0.9, "penasihat kuat hampir pasti berhasil")
+	var before := m.silver
+	var r: Dictionary = m.go_hunt(id, "babi", t)
+	check(r["ok"] and r.has("plan") and int(r["plan"]["shots"]) >= 1, "berburu menghasilkan naskah tayangan")
+	check(m.silver > before, "hasil buruan masuk")
+	check(r["plan"]["hit"] == r["win"], "naskah mengikuti hasil")
+	m.go_hunt(id, "rusa", t)
+	m.go_hunt(id, "rusa", t)
+	check(m.hunts_left(t) == 0 and not m.go_hunt(id, "rusa", t)["ok"], "jatah harian habis")
+	check(m.hunts_left(t + 86400.0) == Data.HUNT_PER_DAY, "jatah pulih besok")
+	m.counselors[id]["level"] = 1
+	var fails := 0
+	for i in 30:
+		m.realm["hunt"]["used"] = 0
+		if not m.go_hunt(id, "harimau", t)["win"]:
+			fails += 1
+	check(fails > 0, "penasihat lemah bisa gagal berburu")
+
+
+func test_noble_marriage() -> void:
+	var m := _realm_model()
+	var t := 1000.0
+	m.children.append({"name": "Adi", "gender": "m", "mother": "melati", "talent": 3, "level": 4})
+	check(m.marriage_candidates(0, t).is_empty() and not m.marry_noble(0, 0, t)["ok"], "anak belum dewasa")
+	m.children[0]["level"] = Data.CHILD_MAX_LEVEL
+	var c: Array = m.marriage_candidates(0, t)
+	check(c.size() == Data.MARRIAGE_CANDIDATES, "tiga calon")
+	check(var_to_str(c) == var_to_str(m.marriage_candidates(0, t)), "calon stabil sepanjang hari")
+	check(c.all(func(x): return Data.CHILD_NAMES["f"].has(x["name"])), "calon berlawanan jenis")
+	var power := m.power()
+	var silver := m.silver
+	var r: Dictionary = m.marry_noble(0, 1, t)
+	check(r["ok"] and m.children.is_empty() and m.kin_count() == 1, "pernikahan menambah besan")
+	check(m.silver == silver - int(c[1]["dowry"]) and m.power() > power, "mahar dibayar, atribut naik")
+	check(m.kin_gift_ready(t) and m.claim_kin_gifts(t)["ok"] and not m.kin_gift_ready(t), "kiriman besan sekali sehari")
+	check(m.kin_gift_ready(t + 86400.0), "kiriman besan esok hari")
+	m.children.append({"name": "Sri", "gender": "f", "mother": "melati", "talent": 5, "level": Data.CHILD_MAX_LEVEL})
+	m.silver = 0
+	check(not m.marry_noble(0, 0, t)["ok"], "mahar harus cukup")
+
+
+func test_night_market() -> void:
+	var m := _realm_model()
+	var t := 1000.0
+	var slots: Array = m.market_slots(t)
+	check(slots.size() == Data.MARKET_SLOTS, "enam dagangan")
+	var pools := {}
+	for sl in slots:
+		pools[sl["pool"]] = true
+	check(pools.size() == Data.MARKET_SLOTS, "dagangan tidak kembar")
+	check(var_to_str(m.market_slots(t + 60.0)) == var_to_str(slots), "dagangan tetap dalam satu periode")
+	var i := 0
+	var def: Dictionary = Data.MARKET_POOL[int(slots[i]["pool"])]
+	var have: int = m._currency_have(def["cur"])
+	var price: int = slots[i]["price"]
+	var items: int = m.item_count(def["item"])
+	check(m.market_buy(i, t)["ok"] and m.item_count(def["item"]) == items + 1, "membeli dagangan")
+	check(m._currency_have(def["cur"]) == have - price, "harga terpotong")
+	check(not m.market_buy(i, t)["ok"], "dagangan terjual hanya sekali")
+	var old: int = slots[1]["price"]
+	var h: Dictionary = m.market_haggle(1, t)
+	check(h["ok"] and slots[1]["price"] != old, "tawar mengubah harga")
+	check(not m.market_haggle(1, t)["ok"], "tawar hanya sekali")
+	var gold := m.gold
+	check(m.refresh_market(t)["ok"] and m.gold == gold - Data.MARKET_REFRESH_GOLD, "ganti dagangan dengan emas")
+	for k in Data.MARKET_REFRESH_LIMIT - 1:
+		m.refresh_market(t)
+	check(not m.refresh_market(t)["ok"], "batas ganti dagangan harian")
+	check(m.market_seconds_left(t) <= Data.MARKET_HOURS * 3600, "hitung mundur periode")
+	var later: Array = m.market_slots(t + Data.MARKET_HOURS * 3600.0)
+	check(later.all(func(sl): return not sl["bought"]), "periode baru, dagangan baru")
+
+
+func test_policy_disaster() -> void:
+	var m := _realm_model()
+	var t := 1000.0
+	var base := m.affair_yield("silver")
+	check(m.set_policy("pajak_tinggi", t)["ok"], "menetapkan kebijakan")
+	check(m.affair_yield("silver") > base, "pajak tinggi menaikkan perak")
+	check(not m.set_policy("lumbung_rakyat", t + 60.0)["ok"], "kebijakan punya jeda ganti")
+	check(m.set_policy("lumbung_rakyat", t + Data.POLICY_COOLDOWN)["ok"], "ganti setelah jeda")
+	m.court["loyalty"] = 50
+	m.realm["loyalty_day"] = m.day_index(t)
+	m.sync(t + 2 * 86400.0)
+	check(int(m.court["loyalty"]) == 52, "kesetiaan berubah per hari mengikuti kebijakan")
+	# Bencana: cari periode yang memunculkan bencana.
+	var found := -1.0
+	for k in 40:
+		var at := t + k * Data.DISASTER_HOURS * 3600.0
+		m.ensure_disaster(at)
+		if not m.disaster_active().is_empty():
+			found = at
+			break
+	check(found >= 0.0, "bencana muncul dalam beberapa periode")
+	var d: Dictionary = m.disaster_active()
+	var key: String = d["effects"].keys()[0]
+	var kind := key.trim_prefix("yield_")
+	var hurt := m.affair_yield(kind if kind != "all" else "silver")
+	var loy := int(m.court["loyalty"])
+	var r: Dictionary = m.resolve_disaster(0, found)
+	check(r["ok"] and m.disaster_active().is_empty(), "bencana ditangani")
+	check(m.affair_yield(kind if kind != "all" else "silver") > hurt, "hasil pulih setelah bencana ditangani")
+	check(int(m.court["loyalty"]) == clampi(loy + int(d["options"][0]["loyalty"]), 0, 100), "kesetiaan dari pilihan")
+	check(not m.resolve_disaster(0, found)["ok"], "tidak bisa menangani dua kali")
+
+
+func test_research() -> void:
+	var m := _realm_model()
+	var t := 1000.0
+	check(not m.start_research("siasat", t)["ok"], "riset butuh prasyarat")
+	m.realm["disaster"] = {"period": m.disaster_period(t), "id": "", "resolved": false}
+	var base := m.affair_yield("grain")
+	check(m.start_research("pertanian", t)["ok"], "mulai riset")
+	check(not m.start_research("perniagaan", t)["ok"], "satu riset sekaligus")
+	m.sync(t + m.research_seconds("pertanian") - 10.0)
+	check(m.research_level("pertanian") == 0, "riset belum selesai")
+	m.sync(t + m.research_seconds("pertanian") + 1.0)
+	check(m.research_level("pertanian") == 1 and m.affair_yield("grain") > base, "riset selesai memberi bonus")
+	t += 99999.0
+	check(m.start_research("kemiliteran", t)["ok"], "riset berikutnya")
+	var gold := m.gold
+	var cost := m.research_rush_cost(t)
+	check(m.rush_research(t)["ok"] and m.gold == gold - cost and m.research_level("kemiliteran") == 1, "percepat riset")
+	m.start_research("kemiliteran", t)
+	m.rush_research(t)
+	var power := m.combat_power()
+	check(m.start_research("siasat", t)["ok"], "prasyarat terpenuhi")
+	m.rush_research(t)
+	check(m.combat_power() > power, "siasat menaikkan kekuatan tempur")
+	var bt := m.build_seconds("pasar")
+	m.realm["research"]["levels"]["arsitektur"] = 5
+	check(m.build_seconds("pasar") < bt, "arsitektur mempercepat pembangunan")
+
+
+func test_fleet() -> void:
+	var m := _realm_model()
+	var t := 1000.0
+	check(not m.buy_ship("lancang")["ok"], "armada butuh wilayah")
+	m.territory["owned"].append("pasundan")
+	var silver := m.silver
+	check(m.buy_ship("lancang")["ok"] and m.silver == silver - 30000, "beli kapal")
+	check(not m.buy_ship("lancang")["ok"], "kapal tidak bisa dibeli dua kali")
+	check(not m.send_ship("lancang", "mataram", t)["ok"], "ibu kota bukan rute dagang")
+	check(m.send_ship("lancang", "pasundan", t)["ok"], "kapal berlayar")
+	check(not m.send_ship("lancang", "pasundan", t)["ok"] and not m.claim_voyage("lancang", t + 60.0)["ok"],
+		"kapal masih di laut")
+	var cargo := int(m.voyage("lancang")["cargo"])
+	silver = m.silver
+	var r: Dictionary = m.claim_voyage("lancang", t + 2 * 3600.0)
+	check(r["ok"] and m.silver > silver, "muatan dibongkar")
+	if r["pirates"]:
+		check(r.has("plan"), "serangan bajak laut punya tayangan")
+	else:
+		check(m.silver == silver + cargo, "tanpa bajak laut muatan utuh")
+	var attacked := 0
+	for i in 60:
+		m.send_ship("lancang", "pasundan", t)
+		if m.claim_voyage("lancang", t + 99999.0)["pirates"]:
+			attacked += 1
+	check(attacked > 3 and attacked < 40, "bajak laut kadang menyerang (%d/60)" % attacked)
+	check(m.pirate_chance("pinisi") < m.pirate_chance("lancang"), "kapal kuat lebih aman")
+
+
+func test_garden() -> void:
+	var m := _realm_model()
+	var t := 1000.0
+	check(not m.plant_seed(0, "bukan", t)["ok"] and not m.plant_seed(9, "jahe", t)["ok"], "bibit & petak divalidasi")
+	check(m.plant_seed(0, "melati", t)["ok"] and not m.plant_seed(0, "jahe", t)["ok"], "satu tanaman per petak")
+	check(m.plant_seed(1, "pala", t)["ok"], "tanam pala")
+	check(m.garden_ready_count(t) == 0 and not m.harvest_all(t)["ok"], "belum matang")
+	var pills := m.item_count("pill_intimacy")
+	check(m.garden_ready_count(t + 10 * 3600.0) == 1, "melati matang dulu")
+	check(m.harvest_all(t + 10 * 3600.0)["ok"] and m.item_count("pill_intimacy") == pills + 1, "panen melati")
+	var gold := m.gold
+	m.harvest_all(t + 24 * 3600.0)
+	check(m.gold == gold + int(Data.PLANTS["pala"]["gold"]), "panen pala memberi emas")
+	check(m.realm["garden"].all(func(p): return p.is_empty()), "petak kosong lagi setelah panen")
+
+
+func test_rank_reqs() -> void:
+	var m := _realm_model()
+	m.rank = 5
+	m.prestige = Data.RANKS[6]["prestige"]
+	check(not m.can_promote() and not m.promote()["ok"], "Adipati butuh syarat tambahan")
+	check(m.rank_reqs(6).size() == 2, "dua syarat Adipati")
+	for r in ["pasundan", "majapahit", "sriwijaya"]:
+		m.territory["owned"].append(r)
+	m.realm["research"]["levels"] = {"pertanian": 3, "perniagaan": 3}
+	check(m.can_promote() and m.promote()["ok"] and m.rank_info()["name"] == "Adipati", "naik menjadi Adipati")
+	m.sync(1000.0)
+	check(m.owns_cosmetic("frame_adipati"), "bingkai Adipati terbuka")
+	check(m.rank_info()["level_cap"] > Data.RANKS[5]["level_cap"], "batas level naik")
+
+
+func test_online_rewards() -> void:
+	var m := _realm_model()
+	var t := 1000.0
+	var silver := m.silver
+	var r: Dictionary = m.receive_friend_gifts(4, t)
+	check(r["ok"] and r["taken"] == 4 and m.silver > silver, "hadiah teman diterima")
+	r = m.receive_friend_gifts(50, t)
+	check(r["taken"] == Data.FRIEND_GIFT_DAILY - 4, "hadiah teman dibatasi per hari")
+	check(not m.receive_friend_gifts(1, t)["ok"] and m.receive_friend_gifts(1, t + 86400.0)["ok"], "batas pulih besok")
+	var gold := m.gold
+	check(not m.claim_guildwar(10, 0)["ok"], "tanpa wilayah tanpa hadiah")
+	check(m.claim_guildwar(10, 2)["ok"] and m.gold == gold + 2 * int(Data.GUILDWAR_REWARD["gold"]), "hadiah perang wilayah")
+	check(not m.claim_guildwar(10, 2)["ok"] and not m.claim_guildwar(9, 2)["ok"], "hadiah perang sekali per minggu")
+	var base := m.affair_yield("silver")
+	m.king_effects = Data.KING_DECREES["perak"]["effects"]
+	check(m.affair_yield("silver") > base, "titah raja menambah hasil")
+	m.king_effects = {}
+	check(m.to_dict().get("realm", {}).has("gifts") and not m.to_dict().has("king_effects"), "titah raja tidak disimpan")
+
+
+func test_realm_save() -> void:
+	var m := _realm_model()
+	var t := 1000.0
+	m.territory["owned"].append("pasundan")
+	m.buy_ship("jung")
+	m.send_ship("jung", "pasundan", t)
+	m.plant_seed(2, "kunyit", t)
+	m.start_research("perniagaan", t)
+	m.set_policy("wajib_militer", t)
+	m.market_slots(t)
+	m.market_haggle(0, t)
+	m.children.append({"name": "Adi", "gender": "m", "mother": "melati", "talent": 3, "level": Data.CHILD_MAX_LEVEL})
+	m.marry_noble(m.children.size() - 1, 0, t)
+	m.go_hunt(m.counselors.keys()[0], "rusa", t)
+	m.sync(t)
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
+	check(var_to_str(m2.to_dict()["realm"]) == var_to_str(m.to_dict()["realm"]), "simpan/muat kerajaan identik")
+	var bad := m.to_dict()
+	bad["realm"] = {"policy": "palsu", "research": {"levels": {"pertanian": 99, "x": 3}}, "fleet": {"ships": ["kapal_x"]},
+		"garden": [{"plant": "ganja"}], "hunt": {"used": 99}, "kin": "rusak"}
+	m2.from_dict(bad, t)
+	check(m2.realm["policy"] == "seimbang" and m2.research_level("pertanian") == Data.RESEARCH_MAX_LEVEL
+		and not m2.realm["research"]["levels"].has("x"), "save rusak divalidasi")
+	check(m2.ships_owned().is_empty() and m2.realm["garden"][0].is_empty() and int(m2.realm["hunt"]["used"]) <= Data.HUNT_PER_DAY
+		and m2.kin_count() == 0, "data asing dibuang")
+	var old := m.to_dict()
+	old.erase("realm")
+	m2.from_dict(old, t)
+	check(m2.realm["policy"] == "seimbang" and m2.realm["garden"].size() == Data.GARDEN_PLOTS, "save lama tanpa kerajaan")
+
+
+func test_summary_notification() -> void:
+	var m := _realm_model()
+	var plan: Array = m.notification_plan(1000.0)
+	var summary: Array = plan.filter(func(n): return n["id"] == 8)
+	check(summary.size() == 1, "ringkasan harian dijadwalkan")
+	var s: Dictionary = summary[0]
+	check(int(s["delay"]) > 0 and int(s["delay"]) <= 86400 + 60, "ringkasan dalam 24 jam")
+	check(str(s["text"]).contains("hadiah login"), "ringkasan menyebut hadiah login")

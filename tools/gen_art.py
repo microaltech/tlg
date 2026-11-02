@@ -1631,6 +1631,191 @@ def pattern_kawung():
     return svg_doc(s, s, b, s, s)
 
 
+# --- Ikon fitur kerajaan (batch 4) ---------------------------------------------
+
+ICONS["hunt"] = icon_doc(
+    '<path d="M24 10 Q78 48 24 86" stroke="#7a4b1f" stroke-width="6" fill="none" stroke-linecap="round"/>'
+    '<path d="M24 10 L24 86" stroke="#e9d6b0" stroke-width="2"/>'
+    '<path d="M14 48 L84 48" stroke="#5e3a12" stroke-width="4"/>'
+    '<path d="M84 48 L72 40 L74 48 L72 56 Z" fill="#c9d1da" stroke="#5d6670" stroke-width="2"/>'
+    '<path d="M14 48 L6 42 M14 48 L6 54 M20 48 L12 42 M20 48 L12 54" stroke="#c0392b" stroke-width="3"/>')
+
+ICONS["ring"] = icon_doc(
+    '<circle cx="48" cy="60" r="26" fill="none" stroke="#e8c070" stroke-width="9"/>'
+    '<circle cx="48" cy="60" r="26" fill="none" stroke="#a8742c" stroke-width="2"/>'
+    '<path d="M34 30 L48 12 L62 30 L48 40 Z" fill="#8fd9f0" stroke="#2e6f9e" stroke-width="3"/>'
+    '<path d="M40 24 L48 16" stroke="#fff" stroke-width="2"/>'
+    '<path d="M70 14 Q76 8 80 14 Q84 20 76 26 L70 30 L64 26 Q56 20 60 14 Q64 8 70 14 Z" fill="#c2457a"/>')
+
+ICONS["market"] = icon_doc(
+    '<path d="M10 34 L48 10 L86 34 Z" fill="#c0392b" stroke="#6b1a12" stroke-width="3"/>'
+    + "".join('<path d="M%d 34 Q%d 44 %d 34" fill="%s"/>' % (x, x + 8, x + 16, c)
+              for x, c in [(10, "#e8c070"), (26, "#c0392b"), (42, "#e8c070"), (58, "#c0392b"), (74, "#e8c070")])
+    + '<rect x="16" y="44" width="64" height="40" fill="#8e5a2a" stroke="#4a2c10" stroke-width="3"/>'
+      '<rect x="22" y="56" width="52" height="10" fill="#d9b77a"/>'
+      '<circle cx="30" cy="54" r="5" fill="#f2c14e"/><circle cx="44" cy="54" r="5" fill="#8bc34a"/>'
+      '<circle cx="58" cy="54" r="5" fill="#e06050"/>'
+      '<path d="M76 14 L76 24" stroke="#4a2c10" stroke-width="2"/>'
+      '<rect x="70" y="24" width="12" height="16" rx="5" fill="#f4a030" stroke="#7a4b1f" stroke-width="2"/>')
+
+ICONS["disaster"] = icon_doc(
+    '<rect x="18" y="20" width="40" height="34" fill="#d9b98a" stroke="#4a2c10" stroke-width="3"/>'
+    '<path d="M12 24 L38 4 L64 24 Z" fill="#6b2e1e" stroke="#3b1a10" stroke-width="3"/>'
+    '<path d="M4 56 Q16 44 28 56 T52 56 T76 56 T100 56 L100 96 L-4 96 Z" fill="#2e86c1" opacity="0.9"/>'
+    '<path d="M4 70 Q16 60 28 70 T52 70 T76 70 T100 70" stroke="#a8d8f0" stroke-width="4" fill="none"/>'
+    '<path d="M72 10 L82 10 L76 26 L86 26 L68 48 L72 30 L64 30 Z" fill="#f2c14e" stroke="#9a6a12" stroke-width="2"/>')
+
+ICONS["policy"] = icon_doc(
+    '<rect x="20" y="14" width="56" height="70" fill="#f4e4c1" stroke="#7a4b1f" stroke-width="3"/>'
+    '<rect x="14" y="8" width="68" height="10" rx="5" fill="#a8742c" stroke="#5e3a12" stroke-width="2"/>'
+    '<rect x="14" y="80" width="68" height="10" rx="5" fill="#a8742c" stroke="#5e3a12" stroke-width="2"/>'
+    '<path d="M30 30 L66 30 M30 40 L66 40 M30 50 L54 50" stroke="#a8742c" stroke-width="3"/>'
+    '<circle cx="60" cy="66" r="11" fill="#c0392b" stroke="#6b1a12" stroke-width="2"/>'
+    '<path d="M54 66 L60 60 L66 66 L60 72 Z" fill="#e8c070"/>')
+
+ICONS["research"] = icon_doc(
+    '<path d="M48 22 Q30 12 10 16 L10 80 Q30 76 48 86 Z" fill="#f4e4c1" stroke="#7a4b1f" stroke-width="3"/>'
+    '<path d="M48 22 Q66 12 86 16 L86 80 Q66 76 48 86 Z" fill="#e9d6b0" stroke="#7a4b1f" stroke-width="3"/>'
+    '<path d="M18 32 Q30 30 40 34 M18 44 Q30 42 40 46 M18 56 Q30 54 40 58" stroke="#a8742c" stroke-width="2.5" fill="none"/>'
+    '<path d="M56 34 Q66 30 78 32 M56 46 Q66 42 78 44" stroke="#a8742c" stroke-width="2.5" fill="none"/>'
+    '<circle cx="68" cy="62" r="9" fill="#f2c14e" stroke="#9a6a12" stroke-width="2"/>'
+    '<path d="M68 48 L68 52 M68 72 L68 76 M54 62 L58 62 M78 62 L82 62" stroke="#f2c14e" stroke-width="3"/>')
+
+
+def ship_icon(sail, hull="#8e5a2a"):
+    return icon_doc(
+        '<path d="M4 76 Q24 70 48 76 T92 76 L92 96 L4 96 Z" fill="#2e86c1"/>'
+        '<path d="M10 62 L86 62 L74 80 L22 80 Z" fill="%s" stroke="#4a2c10" stroke-width="3"/>'
+        '<path d="M40 62 L40 8 M60 62 L60 20" stroke="#4a2c10" stroke-width="4"/>'
+        '<path d="M42 10 L74 52 L42 56 Z" fill="%s" stroke="#5e3a12" stroke-width="2"/>'
+        '<path d="M38 14 L14 54 L38 56 Z" fill="%s" stroke="#5e3a12" stroke-width="2"/>'
+        '<path d="M40 8 L52 4 L40 0 Z" fill="#c0392b"/>' % (hull, sail, shade(sail, -0.12)))
+
+
+ICONS["ship"] = ship_icon("#f4e4c1")
+ICONS["ship_lancang"] = ship_icon("#d9b77a", "#a8582a")
+ICONS["ship_jung"] = ship_icon("#c0392b", "#6b4a2a")
+ICONS["ship_pinisi"] = ship_icon("#fffaf0", "#5e3a12")
+ICONS["pirate"] = icon_doc(
+    '<path d="M18 44 Q18 12 48 12 Q78 12 78 44 Q78 60 66 64 L66 76 L30 76 L30 64 Q18 60 18 44 Z" fill="#e9e4dc" stroke="#3b2416" stroke-width="3"/>'
+    '<circle cx="36" cy="42" r="8" fill="#3b2416"/><circle cx="60" cy="42" r="8" fill="#3b2416"/>'
+    '<path d="M44 56 L48 50 L52 56 Z" fill="#3b2416"/>'
+    '<path d="M36 76 L36 68 M48 76 L48 68 M60 76 L60 68" stroke="#3b2416" stroke-width="3"/>'
+    '<path d="M10 86 L86 70 M10 70 L86 86" stroke="#e9e4dc" stroke-width="7" stroke-linecap="round"/>')
+
+
+def plant_icon(petal, center="#f2c14e", leaf="#4f9a4a", root=None):
+    body = ('<path d="M20 70 L76 70 L68 92 L28 92 Z" fill="#b5651d" stroke="#5e3a12" stroke-width="3"/>'
+            '<rect x="16" y="64" width="64" height="10" rx="3" fill="#c97a35" stroke="#5e3a12" stroke-width="3"/>'
+            '<path d="M48 64 L48 34" stroke="%s" stroke-width="4"/>'
+            '<path d="M48 54 Q30 50 26 38 Q42 38 48 50 Z" fill="%s"/>'
+            '<path d="M48 48 Q66 44 70 32 Q54 32 48 44 Z" fill="%s"/>' % (leaf, leaf, shade(leaf, 0.1)))
+    if root:
+        body += '<ellipse cx="48" cy="64" rx="14" ry="6" fill="%s" stroke="#5e3a12" stroke-width="2"/>' % root
+    body += "".join('<circle cx="%.1f" cy="%.1f" r="9" fill="%s"/>' % (
+        48 + 11 * math.cos(math.radians(a)), 24 + 11 * math.sin(math.radians(a)), petal) for a in range(0, 360, 72))
+    body += '<circle cx="48" cy="24" r="7" fill="%s"/>' % center
+    return icon_doc(body)
+
+
+ICONS["garden"] = plant_icon("#f4a6c0")
+ICONS["plant_melati"] = plant_icon("#ffffff", "#f2e08a")
+ICONS["plant_jahe"] = plant_icon("#e8c070", "#c97a35", root="#d9a55a")
+ICONS["plant_kunyit"] = plant_icon("#f2c14e", "#e08a2a", root="#f0a030")
+ICONS["plant_cengkeh"] = plant_icon("#c0392b", "#6b1a12")
+ICONS["plant_pala"] = plant_icon("#e9d6b0", "#8e5a2a")
+ICONS["plant_teh"] = plant_icon("#8bc34a", "#4f9a4a", leaf="#2f6a2a")
+
+ICONS["friends"] = icon_doc(
+    '<circle cx="32" cy="32" r="14" fill="#e0b48a" stroke="#5e3a12" stroke-width="3"/>'
+    '<path d="M8 82 Q8 52 32 52 Q56 52 56 82 Z" fill="#2e86c1" stroke="#1a4a6e" stroke-width="3"/>'
+    '<circle cx="64" cy="36" r="14" fill="#c99a6a" stroke="#5e3a12" stroke-width="3"/>'
+    '<path d="M40 86 Q40 56 64 56 Q88 56 88 86 Z" fill="#c0392b" stroke="#6b1a12" stroke-width="3"/>')
+
+ICONS["gift"] = icon_doc(
+    '<rect x="14" y="40" width="68" height="48" fill="#c0392b" stroke="#6b1a12" stroke-width="3"/>'
+    '<rect x="10" y="28" width="76" height="16" fill="#d9534f" stroke="#6b1a12" stroke-width="3"/>'
+    '<rect x="42" y="28" width="12" height="60" fill="#e8c070"/>'
+    '<path d="M48 28 Q30 4 22 16 Q18 26 48 28 Q78 26 74 16 Q66 4 48 28 Z" fill="#e8c070" stroke="#a8742c" stroke-width="3"/>')
+
+ICONS["crown"] = icon_doc(
+    '<path d="M10 76 L14 28 L32 50 L48 18 L64 50 L82 28 L86 76 Z" fill="#f2c14e" stroke="#9a6a12" stroke-width="3"/>'
+    '<rect x="10" y="72" width="76" height="14" rx="3" fill="#e8c070" stroke="#9a6a12" stroke-width="3"/>'
+    '<circle cx="48" cy="58" r="7" fill="#c0392b"/><circle cx="28" cy="62" r="5" fill="#2e86c1"/>'
+    '<circle cx="68" cy="62" r="5" fill="#27ae60"/>'
+    + "".join('<circle cx="%d" cy="%d" r="5" fill="#fff6d8"/>' % (x, y) for x, y in [(14, 26), (48, 16), (82, 26)]))
+
+ICONS["war_flag"] = icon_doc(
+    '<path d="M20 92 L20 6" stroke="#5e3a12" stroke-width="6"/>'
+    '<path d="M22 8 Q50 0 62 12 Q74 22 88 14 L88 52 Q74 60 62 50 Q50 40 22 48 Z" fill="#c0392b" stroke="#6b1a12" stroke-width="3"/>'
+    '<path d="M44 18 L48 28 L58 30 L50 36 L52 46 L44 40 L36 46 L38 36 L30 30 L40 28 Z" fill="#e8c070"/>')
+
+ICONS["theme"] = icon_doc(
+    '<circle cx="48" cy="48" r="34" fill="#f2c14e" stroke="#9a6a12" stroke-width="3"/>'
+    '<path d="M48 14 A34 34 0 0 0 48 82 A22 22 0 0 1 48 14 Z" fill="#2c3e50"/>')
+
+
+def animal_icon(kind):
+    if kind == "rusa":
+        return icon_doc(
+            '<path d="M30 30 L22 8 M22 16 L12 12 M26 20 L18 22 M66 30 L74 8 M74 16 L84 12 M70 20 L78 22" stroke="#7a4b1f" stroke-width="4" stroke-linecap="round"/>'
+            '<path d="M28 34 Q48 22 68 34 Q74 60 56 84 L40 84 Q22 60 28 34 Z" fill="#b5651d" stroke="#5e3a12" stroke-width="3"/>'
+            '<ellipse cx="48" cy="76" rx="11" ry="8" fill="#e9d6b0"/><circle cx="48" cy="72" r="4" fill="#3b2416"/>'
+            '<circle cx="38" cy="48" r="4" fill="#3b2416"/><circle cx="58" cy="48" r="4" fill="#3b2416"/>')
+    if kind == "babi":
+        return icon_doc(
+            '<path d="M22 30 L16 12 L34 24 Z M74 30 L80 12 L62 24 Z" fill="#4a3a36"/>'
+            '<path d="M16 50 Q16 22 48 22 Q80 22 80 50 Q80 82 48 84 Q16 82 16 50 Z" fill="#5d4a44" stroke="#2a1e1c" stroke-width="3"/>'
+            '<ellipse cx="48" cy="64" rx="16" ry="11" fill="#8a7068" stroke="#2a1e1c" stroke-width="2"/>'
+            '<circle cx="42" cy="64" r="3" fill="#2a1e1c"/><circle cx="54" cy="64" r="3" fill="#2a1e1c"/>'
+            '<path d="M30 70 Q26 60 30 54 M66 70 Q70 60 66 54" stroke="#fffaf0" stroke-width="4" fill="none"/>'
+            '<circle cx="36" cy="44" r="4" fill="#e06050"/><circle cx="60" cy="44" r="4" fill="#e06050"/>')
+    return icon_doc(
+        '<circle cx="24" cy="24" r="10" fill="#e08a2a" stroke="#3b2416" stroke-width="3"/>'
+        '<circle cx="72" cy="24" r="10" fill="#e08a2a" stroke="#3b2416" stroke-width="3"/>'
+        '<path d="M14 50 Q14 18 48 18 Q82 18 82 50 Q82 84 48 86 Q14 84 14 50 Z" fill="#e08a2a" stroke="#3b2416" stroke-width="3"/>'
+        '<path d="M48 18 L48 32 M30 22 L34 34 M66 22 L62 34 M14 46 L26 48 M82 46 L70 48 M16 60 L28 58 M80 60 L68 58" stroke="#3b2416" stroke-width="4"/>'
+        '<ellipse cx="48" cy="66" rx="16" ry="12" fill="#fffaf0"/>'
+        '<path d="M42 58 L54 58 L48 64 Z" fill="#3b2416"/>'
+        '<path d="M34 46 L44 48 M62 46 L52 48" stroke="#2e6a2e" stroke-width="5" stroke-linecap="round"/>')
+
+
+for _k in ("rusa", "babi", "harimau"):
+    ICONS["animal_" + _k] = animal_icon(_k)
+
+
+def bg_sea():
+    W, H = 720, 360
+    defs = ('<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">'
+            '<stop offset="0" stop-color="#1c3a6a"/><stop offset="0.6" stop-color="#5a8ac0"/>'
+            '<stop offset="1" stop-color="#f0c890"/></linearGradient>'
+            '<linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">'
+            '<stop offset="0" stop-color="#2a6a9a"/><stop offset="1" stop-color="#123a5a"/></linearGradient>')
+    b = '<rect width="%d" height="%d" fill="url(#sky)"/>' % (W, H)
+    b += '<circle cx="140" cy="150" r="40" fill="#fff1c4" opacity="0.85"/>'
+    b += mountains(W, 200, [("#3a5a7a", 50, 2.0)])
+    b += '<rect y="196" width="%d" height="%d" fill="url(#sea)"/>' % (W, H)
+    for y in range(214, 360, 22):
+        b += "".join('<path d="M%d %d q10 -6 20 0" stroke="#8ac0e0" stroke-width="2" fill="none" opacity="0.6"/>'
+                     % (x + (y * 7) % 40, y) for x in range(0, W, 70))
+    return svg_doc(W, H, b, 1080, 540, defs)
+
+
+def bg_forest():
+    W, H = 720, 360
+    defs = ('<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">'
+            '<stop offset="0" stop-color="#2f5a3a"/><stop offset="1" stop-color="#a8c87a"/></linearGradient>')
+    b = '<rect width="%d" height="%d" fill="url(#sky)"/>' % (W, H)
+    b += mountains(W, 220, [("#3a6a40", 80, 0.7), ("#2a5030", 60, 2.2)])
+    b += '<rect y="220" width="%d" height="%d" fill="#4a6a2a"/>' % (W, H)
+    for x, y, s in [(40, 230, 1.6), (130, 226, 1.2), (250, 232, 1.4), (420, 228, 1.1), (560, 232, 1.5), (680, 226, 1.3)]:
+        b += tree(x, y, s, "#2a5a2a")
+    b += '<rect y="300" width="%d" height="60" fill="#3a5220"/>' % W
+    for x in range(0, W, 46):
+        b += '<path d="M%d 300 l6 -14 l6 14 Z" fill="#5a7a30"/>' % x
+    return svg_doc(W, H, b, 1080, 540, defs)
+
+
 def main():
     for cid, spec in CHARACTERS.items():
         write("portraits/%s.svg" % cid, portrait(spec))
@@ -1644,6 +1829,8 @@ def main():
     write("bg/alliance.svg", bg_alliance())
     write("bg/arena.svg", bg_arena())
     write("bg/kawung.svg", pattern_kawung())
+    write("bg/sea.svg", bg_sea())
+    write("bg/forest.svg", bg_forest())
     write("buildings/plot.svg", bld_plot())
     write("buildings/scaffold.svg", scaffold())
     for name, fn in [("istana", bld_istana), ("pasar", bld_pasar), ("lumbung", bld_lumbung), ("barak", bld_barak)]:

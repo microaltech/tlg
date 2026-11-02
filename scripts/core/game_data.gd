@@ -16,9 +16,19 @@ const RANKS := [
 	{"name": "Camat", "prestige": 300, "max_charges": 4, "mult": 1.25, "level_cap": 40, "child_seats": 3},
 	{"name": "Bupati", "prestige": 1500, "max_charges": 5, "mult": 1.5, "level_cap": 60, "child_seats": 4},
 	{"name": "Gubernur", "prestige": 6000, "max_charges": 6, "mult": 2.0, "level_cap": 80, "child_seats": 5},
-	{"name": "Menteri", "prestige": 20000, "max_charges": 7, "mult": 2.5, "level_cap": 100, "child_seats": 6},
-	{"name": "Perdana Menteri", "prestige": 45000, "max_charges": 8, "mult": 3.0, "level_cap": 150, "child_seats": 8},
+	{"name": "Menteri", "prestige": 23000, "max_charges": 7, "mult": 2.5, "level_cap": 100, "child_seats": 6},
+	{"name": "Perdana Menteri", "prestige": 50000, "max_charges": 8, "mult": 3.0, "level_cap": 150, "child_seats": 8},
+	# Gelar kebangsawanan lanjutan: selain prestise, butuh syarat tambahan ("req").
+	{"name": "Adipati", "prestige": 100000, "max_charges": 9, "mult": 3.6, "level_cap": 200, "child_seats": 9,
+		"req": {"regions": 4, "research": 6}},
+	{"name": "Sultan", "prestige": 220000, "max_charges": 10, "mult": 4.3, "level_cap": 250, "child_seats": 10,
+		"req": {"regions": 6, "research": 14, "ships": 2}},
+	{"name": "Maharaja", "prestige": 450000, "max_charges": 11, "mult": 5.0, "level_cap": 300, "child_seats": 12,
+		"req": {"regions": 10, "research": 24, "ships": 3, "kin": 3}},
 ]
+## Nama syarat tambahan gelar lanjutan.
+const RANK_REQ_NAMES := {"regions": "Wilayah dikuasai", "research": "Total level riset", "ships": "Kapal armada",
+	"kin": "Keluarga besan"}
 
 ## Kelangkaan penasihat untuk gacha. rate = peluang per tarikan.
 const RARITIES := {
@@ -850,7 +860,8 @@ const HONOR_TITLES := [
 const STORY_SPEAKER_NAMES := {"lord": "Anda", "enemy_warlord": "Panglima Lalim"}
 
 const REWARD_KEYS := ["gold", "silver", "grain", "soldiers"]
-const REWARD_NAMES := {"gold": "emas", "silver": "perak", "grain": "pangan", "soldiers": "prajurit", "jasa": "jasa"}
+const REWARD_NAMES := {"gold": "emas", "silver": "perak", "grain": "pangan", "soldiers": "prajurit", "jasa": "jasa",
+	"prestige": "prestise"}
 
 
 static func counselor_def(id: String) -> Dictionary:
@@ -1338,6 +1349,11 @@ const COSMETICS := {
 		"unlock": "festival:pahlawan"},
 	"frame_silat": {"type": "frame", "name": "Bingkai Juara Silat", "colors": ["#8e1b1b", "#f4d03f"],
 		"unlock": "silat"},
+	"frame_adipati": {"type": "frame", "name": "Bingkai Adipati", "colors": ["#3a2a6a", "#c9d1da"], "unlock": "rank:6"},
+	"frame_sultan": {"type": "frame", "name": "Bingkai Sultan", "colors": ["#1f5a3a", "#f2c14e"], "unlock": "rank:7"},
+	"frame_maharaja": {"type": "frame", "name": "Bingkai Maharaja", "colors": ["#6b1a12", "#ffe08a"], "unlock": "rank:8"},
+	"frame_raja_hari_ini": {"type": "frame", "name": "Bingkai Raja Hari Ini", "colors": ["#2c3e50", "#ffd700"],
+		"unlock": "king"},
 	"costume_lord": {"type": "costume", "name": "Busana Bangsawan", "portrait": "lord", "unlock": "default"},
 	"costume_batik": {"type": "costume", "name": "Busana Batik", "portrait": "lord_batik", "gold": 400},
 	"costume_zirah": {"type": "costume", "name": "Zirah Senapati", "portrait": "lord_zirah", "unlock": "stage:50"},
@@ -1345,6 +1361,7 @@ const COSMETICS := {
 }
 const COSMETIC_ORDER := ["frame_kayu", "frame_emas", "frame_giok", "frame_menteri", "frame_vip", "frame_tahun_baru",
 	"frame_ramadan", "frame_merdeka", "frame_sumpah_pemuda", "frame_pahlawan", "frame_silat",
+	"frame_adipati", "frame_sultan", "frame_maharaja", "frame_raja_hari_ini",
 	"costume_lord", "costume_batik", "costume_zirah", "costume_raja"]
 
 
@@ -1356,8 +1373,8 @@ const PRIVACY_SECTIONS := [
 	{"title": "Pemain lain", "text": "Anggota aliansi, lawan arena, chat, dan papan peringkat adalah simulasi "
 		+ "di perangkat Anda. Pesan chat yang Anda ketik tidak dikirim ke siapa pun."},
 	{"title": "Mode online", "text": "Bila Anda mengisi alamat server di Pengaturan, nama Tuan, kostum, aliansi, "
-		+ "kekuatan, tahap, dan pesan chat aliansi dikirim ke server itu dan dapat dilihat pemain lain. "
-		+ "Kosongkan alamat server untuk berhenti."},
+		+ "kekuatan, tahap, ringkasan kota, teman, hadiah, dan pesan chat aliansi dikirim ke server itu dan dapat "
+		+ "dilihat pemain lain. Kosongkan alamat server untuk berhenti."},
 	{"title": "Pembelian dalam aplikasi", "text": "Pembayaran diproses oleh Google Play. Game hanya menerima "
 		+ "konfirmasi pembelian (ID produk dan token), tidak pernah data kartu atau rekening Anda."},
 	{"title": "Iklan berhadiah", "text": "Iklan hanya diputar bila Anda menekan tombol Iklan. Versi dengan "
@@ -1369,3 +1386,216 @@ const PRIVACY_SECTIONS := [
 	{"title": "Menghapus data", "text": "Hapus Statistik menghapus statistik bermain. Mulai Ulang menghapus "
 		+ "progres. Menghapus aplikasi menghapus semua data game dari perangkat."},
 ]
+
+
+# --- Fitur kerajaan (batch 4) ----------------------------------------------------
+# Hasil sumber daya ditulis sebagai kelipatan hasil satu urusan saat ini
+# ("yields"), sehingga tetap seimbang dari awal sampai akhir game.
+
+## Perburuan: kirim penasihat berburu (HUNT_PER_DAY kali sehari). Peluang berhasil
+## dari kekuatan + karisma penasihat dibanding kesulitan medan (naik mengikuti tahap).
+const HUNT_UNLOCK_STAGE := 8
+const HUNT_PER_DAY := 3
+const HUNT_GROUNDS := [
+	{"id": "rusa", "name": "Padang Rusa", "animal": "Rusa", "icon": "animal_rusa", "diff": 0.6,
+		"yields": {"grain": 2.0, "silver": 0.5}, "prestige": 3, "drop": "", "drop_chance": 0.0},
+	{"id": "babi", "name": "Rawa Celeng", "animal": "Babi Hutan", "icon": "animal_babi", "diff": 1.0,
+		"yields": {"grain": 1.5, "silver": 1.5}, "prestige": 6, "drop": "pill_intimacy", "drop_chance": 0.25},
+	{"id": "harimau", "name": "Hutan Harimau", "animal": "Harimau", "icon": "animal_harimau", "diff": 1.6,
+		"yields": {"silver": 2.5, "soldiers": 1.0}, "prestige": 12, "drop": "star_stone", "drop_chance": 0.12},
+]
+const HUNT_FAIL_SHARE := 0.2  ## hasil hiburan bila buruan lolos
+
+## Pernikahan antar-kerajaan: anak dewasa dilamar putra/putri wangsa bangsawan.
+## Bonus atribut = (bakat anak + bakat calon) x MARRIAGE_BONUS; besan mengirim
+## hadiah perak harian (KIN_GIFT x hasil urusan perak, maks. KIN_MAX besan).
+const NOBLE_HOUSES := [
+	{"id": "rajasa", "name": "Wangsa Rajasa", "attr": "str"},
+	{"id": "sanjaya", "name": "Wangsa Sanjaya", "attr": "int"},
+	{"id": "syailendra", "name": "Wangsa Syailendra", "attr": "pol"},
+	{"id": "isyana", "name": "Wangsa Isyana", "attr": "cha"},
+	{"id": "warmadewa", "name": "Wangsa Warmadewa", "attr": "pol"},
+	{"id": "girindra", "name": "Wangsa Girindra", "attr": "str"},
+]
+const MARRIAGE_CANDIDATES := 3
+const MARRIAGE_BONUS := 25
+const MARRIAGE_DOWRY := 0.6  ## mahar = bakat calon x hasil urusan perak x nilai ini
+const KIN_GIFT := 0.25
+const KIN_MAX := 10
+
+## Pasar Malam: 6 dagangan acak, berganti tiap MARKET_HOURS jam. Tawar sekali per
+## dagangan: berhasil potong 25%, gagal naik 15%.
+const MARKET_UNLOCK_STAGE := 4
+const MARKET_SLOTS := 6
+const MARKET_HOURS := 4
+const MARKET_REFRESH_GOLD := 20
+const MARKET_REFRESH_LIMIT := 3
+const MARKET_HAGGLE_CHANCE := 0.5
+const MARKET_HAGGLE_OFF := 0.25
+const MARKET_HAGGLE_UP := 0.15
+## cur: mata uang; price perak dikali pengali jabatan.
+const MARKET_POOL := [
+	{"item": "scroll_train", "cur": "silver", "price": 6000},
+	{"item": "scroll_train", "cur": "prestige", "price": 120},
+	{"item": "star_stone", "cur": "gold", "price": 120},
+	{"item": "pill_intimacy", "cur": "silver", "price": 5000},
+	{"item": "energy_tea", "cur": "prestige", "price": 150},
+	{"item": "energy_tea", "cur": "gold", "price": 40},
+	{"item": "recruit_ticket", "cur": "gold", "price": 85},
+	{"item": "silver_box", "cur": "prestige", "price": 180},
+	{"item": "grain_box", "cur": "silver", "price": 4000},
+	{"item": "troop_writ", "cur": "silver", "price": 6000},
+	{"item": "troop_writ", "cur": "prestige", "price": 140},
+]
+const MARKET_CUR_NAMES := {"silver": "perak", "gold": "emas", "prestige": "prestise"}
+
+## Kebijakan kota: satu kebijakan aktif; efek berupa bonus hasil dan perubahan
+## kesetiaan rakyat (Sidang Istana) per hari. Ganti paling cepat tiap POLICY_COOLDOWN.
+const POLICY_UNLOCK_STAGE := 5
+const POLICY_COOLDOWN := 12 * 3600
+const POLICIES := {
+	"seimbang": {"name": "Pemerintahan Seimbang", "desc": "Tanpa bonus maupun beban.", "effects": {}, "loyalty_day": 0},
+	"pajak_tinggi": {"name": "Pajak Tinggi", "desc": "Perak +15%, pangan -5%, kesetiaan -2/hari.",
+		"effects": {"yield_silver": 0.15, "yield_grain": -0.05}, "loyalty_day": -2},
+	"lumbung_rakyat": {"name": "Lumbung Rakyat", "desc": "Pangan +15%, perak -5%, kesetiaan +1/hari.",
+		"effects": {"yield_grain": 0.15, "yield_silver": -0.05}, "loyalty_day": 1},
+	"wajib_militer": {"name": "Wajib Militer", "desc": "Prajurit +15%, perak -5%, kesetiaan -1/hari.",
+		"effects": {"yield_soldiers": 0.15, "yield_silver": -0.05}, "loyalty_day": -1},
+	"keringanan": {"name": "Keringanan Rakyat", "desc": "Semua hasil -5%, kesetiaan +3/hari, bencana lebih jarang.",
+		"effects": {"yield_all": -0.05}, "loyalty_day": 3, "disaster_chance": -0.2},
+}
+const POLICY_ORDER := ["seimbang", "pajak_tinggi", "lumbung_rakyat", "wajib_militer", "keringanan"]
+
+## Bencana: tiap DISASTER_HOURS jam ada peluang DISASTER_CHANCE muncul bencana yang
+## menurunkan hasil sampai ditangani atau periodenya berakhir.
+const DISASTER_HOURS := 12
+const DISASTER_CHANCE := 0.45
+const DISASTERS := [
+	{"id": "banjir", "name": "Banjir", "desc": "Sungai meluap dan merendam sawah.", "effects": {"yield_grain": -0.3},
+		"options": [
+			{"text": "Bangun tanggul", "cost": {"silver": 2.0}, "loyalty": 4, "prestige": 10},
+			{"text": "Bagikan pangan ke pengungsi", "cost": {"grain": 2.0}, "loyalty": 8, "prestige": 4},
+			{"text": "Biarkan surut sendiri", "cost": {}, "loyalty": -8, "prestige": 0}]},
+	{"id": "gagal_panen", "name": "Gagal Panen", "desc": "Hama wereng menyerang padi.", "effects": {"yield_grain": -0.25},
+		"options": [
+			{"text": "Beli benih unggul", "cost": {"silver": 1.5}, "loyalty": 5, "prestige": 8},
+			{"text": "Kerahkan prajurit membasmi hama", "cost": {"soldiers": 1.0}, "loyalty": 6, "prestige": 6},
+			{"text": "Naikkan harga beras", "cost": {}, "loyalty": -10, "prestige": 0, "gain": {"silver": 1.0}}]},
+	{"id": "wabah", "name": "Wabah", "desc": "Penyakit menyebar di barak dan kampung.", "effects": {"yield_soldiers": -0.3},
+		"options": [
+			{"text": "Datangkan tabib", "cost": {"silver": 2.0}, "loyalty": 6, "prestige": 10},
+			{"text": "Karantina kampung", "cost": {"grain": 1.0}, "loyalty": 2, "prestige": 6},
+			{"text": "Abaikan kabar", "cost": {}, "loyalty": -10, "prestige": 0}]},
+	{"id": "kebakaran", "name": "Kebakaran Pasar", "desc": "Api melalap kios-kios pasar.", "effects": {"yield_silver": -0.3},
+		"options": [
+			{"text": "Bangun ulang pasar", "cost": {"silver": 1.5}, "loyalty": 6, "prestige": 10},
+			{"text": "Kerahkan prajurit memadamkan api", "cost": {"soldiers": 0.8}, "loyalty": 5, "prestige": 8},
+			{"text": "Pungut pajak pembangunan", "cost": {}, "loyalty": -8, "prestige": 0, "gain": {"silver": 0.5}}]},
+	{"id": "gempa", "name": "Gempa Bumi", "desc": "Tanah berguncang, rumah-rumah retak.", "effects": {"yield_all": -0.15},
+		"options": [
+			{"text": "Bantu rakyat membangun rumah", "cost": {"silver": 2.5}, "loyalty": 8, "prestige": 14},
+			{"text": "Doa bersama di candi", "cost": {"grain": 1.0}, "loyalty": 4, "prestige": 6},
+			{"text": "Utamakan istana dulu", "cost": {"silver": 0.5}, "loyalty": -6, "prestige": 2}]},
+]
+
+## Perpustakaan Keraton (riset): satu riset berjalan sekaligus. Biaya perak dan
+## lama riset naik tiap level. "req" = riset lain dengan level minimal.
+const RESEARCH_UNLOCK_STAGE := 12
+const RESEARCH_MAX_LEVEL := 5
+const RESEARCH_COST := 15000  ## x pengali jabatan x (level+1)^2
+const RESEARCH_HOURS := 1.5  ## x (level+1)
+const RESEARCH_RUSH_SECONDS_PER_GOLD := 120
+const RESEARCH := {
+	"pertanian": {"name": "Ilmu Pertanian", "icon": "grain", "effect": "yield_grain", "per": 0.04, "req": {},
+		"desc": "Hasil pangan +4% per level."},
+	"perniagaan": {"name": "Ilmu Perniagaan", "icon": "silver", "effect": "yield_silver", "per": 0.04, "req": {},
+		"desc": "Hasil perak +4% per level."},
+	"kemiliteran": {"name": "Ilmu Kemiliteran", "icon": "soldiers", "effect": "yield_soldiers", "per": 0.04, "req": {},
+		"desc": "Hasil prajurit +4% per level."},
+	"siasat": {"name": "Siasat Perang", "icon": "power", "effect": "combat", "per": 0.03, "req": {"kemiliteran": 2},
+		"desc": "Kekuatan tempur +3% per level."},
+	"arsitektur": {"name": "Arsitektur", "icon": "bld_istana", "effect": "build_time", "per": 0.06,
+		"req": {"pertanian": 1, "perniagaan": 1}, "desc": "Waktu pembangunan -6% per level."},
+	"pelayaran": {"name": "Ilmu Pelayaran", "icon": "ship", "effect": "fleet", "per": 0.08, "req": {"perniagaan": 2},
+		"desc": "Muatan armada +8% per level, risiko bajak laut ikut turun."},
+}
+const RESEARCH_ORDER := ["pertanian", "perniagaan", "kemiliteran", "siasat", "arsitektur", "pelayaran"]
+
+## Armada Laut: kapal berdagang ke wilayah Peta Nusantara yang sudah dikuasai.
+## Muatan = hasil urusan perak x cargo x jam x pengali rute. Bajak laut bisa
+## menyerang; kalah berarti separuh muatan hilang.
+const FLEET_UNLOCK_REGIONS := 2
+const SHIPS := {
+	"lancang": {"name": "Lancang", "icon": "ship_lancang", "cost": {"silver": 30000}, "cargo": 0.4, "guard": 1.0, "hours": 2},
+	"jung": {"name": "Jung Jawa", "icon": "ship_jung", "cost": {"silver": 120000}, "cargo": 0.8, "guard": 1.6, "hours": 4},
+	"pinisi": {"name": "Pinisi", "icon": "ship_pinisi", "cost": {"gold": 400}, "cargo": 1.0, "guard": 2.4, "hours": 6},
+}
+const SHIP_ORDER := ["lancang", "jung", "pinisi"]
+const PIRATE_CHANCE := 0.3  ## dibagi kekuatan penjaga kapal
+const FLEET_ROUTE_BONUS := 0.05  ## per 10 tahap wilayah tujuan
+
+## Kebun Keraton: tanam bibit di petak, panen setelah matang.
+const GARDEN_UNLOCK_STAGE := 6
+const GARDEN_PLOTS := 4
+const PLANTS := {
+	"jahe": {"name": "Jahe", "icon": "plant_jahe", "seed": 0.3, "hours": 2, "yields": {"grain": 1.2}},
+	"kunyit": {"name": "Kunyit", "icon": "plant_kunyit", "seed": 0.4, "hours": 4, "yields": {"silver": 1.5}},
+	"melati": {"name": "Melati", "icon": "plant_melati", "seed": 0.5, "hours": 10, "items": {"pill_intimacy": 1}},
+	"cengkeh": {"name": "Cengkeh", "icon": "plant_cengkeh", "seed": 0.6, "hours": 8, "prestige": 10},
+	"teh": {"name": "Pucuk Teh", "icon": "plant_teh", "seed": 0.8, "hours": 12, "yields": {"silver": 3.0, "grain": 1.0}},
+	"pala": {"name": "Pala", "icon": "plant_pala", "seed": 1.0, "hours": 24, "gold": 5},
+}
+const PLANT_ORDER := ["jahe", "kunyit", "melati", "cengkeh", "teh", "pala"]
+
+## Online: hadiah teman (maks. FRIEND_GIFT_DAILY diterima per hari).
+const FRIEND_GIFT_DAILY := 10
+const FRIEND_GIFT := 0.5  ## x hasil urusan perak per hadiah
+
+## Raja Hari Ini: titah yang bisa dipilih pemain nomor 1 (berlaku untuk semua pemain hari itu).
+const KING_DECREES := {
+	"perak": {"name": "Titah Pasar Ramai", "desc": "Semua pemain: perak +5% hari ini.", "effects": {"yield_silver": 0.05}},
+	"pangan": {"name": "Titah Panen Raya", "desc": "Semua pemain: pangan +5% hari ini.", "effects": {"yield_grain": 0.05}},
+	"prajurit": {"name": "Titah Bela Negara", "desc": "Semua pemain: prajurit +5% hari ini.",
+		"effects": {"yield_soldiers": 0.05}},
+	"berkah": {"name": "Titah Berkah", "desc": "Semua pemain: semua hasil +3% hari ini.", "effects": {"yield_all": 0.03}},
+}
+
+## Perang Wilayah Aliansi (online): tiap minggu aliansi memperebutkan wilayah.
+## Hadiah per wilayah yang dimenangkan aliansi Tuan.
+const GUILDWAR_ATTACKS := 3
+const GUILDWAR_REWARD := {"gold": 40, "prestige": 150}
+const GUILDWAR_TERRITORIES := ["Selat Sunda", "Teluk Bone", "Laut Banda", "Tanah Karo", "Lembah Baliem",
+	"Danau Toba"]
+
+## Panduan singkat per panel (tombol "?" di kepala panel).
+const FEATURE_HELP := {
+	"Perburuan": ["Pilih penasihat dan medan buruan. Peluang berhasil naik dengan Kekuatan dan Karisma penasihat (kuda ikut membantu).",
+		"Tiga kali berburu per hari. Buruan besar memberi prestise dan kadang Batu Bintang."],
+	"Pernikahan Antar-Kerajaan": ["Anak yang sudah dewasa bisa dilamar putra-putri wangsa bangsawan.",
+		"Calon berbakat tinggi memberi bonus atribut lebih besar tapi maharnya mahal. Setiap besan mengirim perak tiap hari."],
+	"Pasar Malam": ["Dagangan berganti tiap 4 jam. Tawar sekali per barang: berhasil lebih murah, gagal lebih mahal.",
+		"Barang dibayar dengan perak, emas, atau prestise."],
+	"Kebijakan & Bencana": ["Kebijakan kota memberi bonus hasil tetapi mengubah kesetiaan rakyat setiap hari.",
+		"Bencana menurunkan hasil sampai Tuan menanganinya. Kesetiaan tinggi menambah semua hasil."],
+	"Perpustakaan Keraton": ["Riset memberi bonus permanen. Hanya satu riset berjalan sekaligus; percepat dengan emas.",
+		"Beberapa riset butuh riset lain lebih dulu."],
+	"Armada Laut": ["Beli kapal lalu kirim berdagang ke wilayah yang sudah Tuan kuasai di Peta Nusantara.",
+		"Bajak laut bisa menyerang; kapal dengan penjaga kuat dan riset Pelayaran lebih aman."],
+	"Kebun Keraton": ["Tanam bibit di petak kosong, lalu panen setelah matang.",
+		"Melati menghasilkan Pil Keakraban, Cengkeh menghasilkan prestise, Pala menghasilkan emas."],
+	"Teman": ["Bagikan kode Tuan agar teman bisa menambahkan Tuan. Kirim satu hadiah per teman setiap hari.",
+		"Kunjungi kota teman untuk melihat jabatan, kekuatan, dan bangunannya."],
+	"Perang Wilayah": ["Setiap minggu aliansi memperebutkan wilayah. Serang hingga 3 kali sehari; poin mengikuti kekuatan Tuan.",
+		"Aliansi dengan poin terbanyak di sebuah wilayah menguasainya. Ambil hadiah minggu lalu di panel ini."],
+	"Raja Hari Ini": ["Pemain dengan kekuatan tertinggi di server menjadi Raja Hari Ini.",
+		"Raja memilih satu titah yang memberi bonus kecil untuk semua pemain hari itu."],
+	"Hadiah Login Harian": ["Ambil hadiah setiap hari tanpa terputus. Bila terlewat sehari, kalender dimulai lagi dari Hari 1."],
+	"Roda Keberuntungan": ["Satu putaran gratis setiap hari. Tonton iklan untuk tiket putaran, atau putar dengan emas."],
+	"Peta Nusantara": ["Taklukkan wilayah berurutan untuk mendapat upeti setiap jam. Ambil upeti sebelum gudangnya penuh."],
+	"Sidang Istana": ["Setiap hari rakyat membawa perkara. Keputusan Tuan mengubah sumber daya dan kesetiaan rakyat."],
+	"Ekspedisi": ["Kirim penasihat ke tujuan selama beberapa jam. Atribut yang cocok memberi hasil lebih besar."],
+	"Kandang Kuda": ["Kuda menambah atribut penunggangnya. Beri makan untuk menaikkan levelnya."],
+	"Menara Ujian": ["Naiki lantai demi lantai melawan penjaga yang makin kuat. Hadiah lantai hanya sekali."],
+	"Turnamen Silat": ["Daftarkan jagoan sekali seminggu. Pertandingan berlangsung otomatis setiap hari."],
+	"Ensiklopedia Nusantara": ["Kumpulkan semua tokoh, kuda, pusaka, dan wilayah untuk bonus permanen."],
+}

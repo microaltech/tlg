@@ -147,3 +147,28 @@ sampai 18. Ambang disesuaikan:
 
 Hasilnya (seed 1–3), Menteri tercapai di hari ke-20 sampai 22, dan tahap di hari
 ke-30 adalah 76–77.
+
+## Fitur kerajaan: perburuan, kebun, bencana, riset, armada, besan
+
+Bot kini juga berburu tiga kali sehari, menanam di kebun, menangani bencana,
+meriset, berdagang lewat laut, dan menikahkan anak dengan wangsa bangsawan.
+Versi pertama memajukan Menteri ke hari ke-12 sampai 13. Selain prestise langsung
+(sekitar 3.100 dalam 30 hari), riset, muatan kapal, dan prajurit hasil buruan
+mempercepat kampanye sehingga prestise kampanye ikut naik.
+
+Penyesuaian:
+
+| Sumber | Lama | Baru |
+|---|---|---|
+| Prestise buruan (rusa/celeng/harimau) | 15 / 30 / 60 | 3 / 6 / 12 |
+| Prestise panen cengkeh | 40 | 10 |
+| Prestise pernikahan wangsa | 15 x (bakat anak + calon) | 20 x bakat anak (sama dengan pernikahan biasa) |
+| Prestise pilihan bencana | 10–35 | 4–14 |
+| Prestise menang lawan bajak laut | 20 | 10 |
+| Ambang Menteri | 20.000 | 23.000 |
+| Ambang Perdana Menteri | 45.000 | 50.000 |
+
+Hasilnya (seed 1–3, 4 sesi/hari), Menteri tercapai di hari ke-21 sampai 23 dan
+tahap di hari ke-30 adalah 78. Gelar lanjutan (Adipati 100.000, Sultan 220.000,
+Maharaja 450.000 prestise, ditambah syarat wilayah, riset, kapal, dan besan)
+ditujukan untuk pemain berbulan-bulan.

@@ -1,5 +1,6 @@
 // Server sosial Top Lord Like: akun perangkat, profil pemain, papan peringkat,
-// chat aliansi, dan arena melawan pemain sungguhan.
+// chat aliansi, arena melawan pemain sungguhan, teman & hadiah, Raja Hari Ini,
+// dan Perang Wilayah Aliansi mingguan.
 //
 // Tanpa dependensi luar: Node.js >= 22.13 (node:http + node:sqlite).
 //   node server/server.js                 # port 8080, data di server/data/tlg.db
@@ -28,6 +29,12 @@ const CHAT_KEEP = 200; // pesan per aliansi yang disimpan
 const ARENA_START = 1000;
 const REPORT_HIDE = 3; // laporan dari pemain berbeda sebelum pesan disembunyikan
 const ARENA_K = 32;
+const FRIENDS_MAX = 50;
+const GIFT_CLAIM_DAILY = 10;
+const DECREES = ["perak", "pangan", "prajurit", "berkah"];
+const GUILDWAR_ATTACKS = 3;
+const TERRITORIES = ["Selat Sunda", "Teluk Bone", "Laut Banda", "Tanah Karo", "Lembah Baliem", "Danau Toba"];
+const DAY_MS = 86400000;
 const BANNED = ["anjing", "bangsat", "babi", "kontol", "memek", "goblok", "tolol", "bajingan", "kampret", "asu",
 	"fuck", "shit", "bitch", "bastard", "asshole"];
 
@@ -52,7 +59,23 @@ function openDb(file) {
 		CREATE TABLE IF NOT EXISTS arena_log (
 			id INTEGER PRIMARY KEY AUTOINCREMENT, attacker TEXT NOT NULL, defender TEXT NOT NULL,
 			win INTEGER NOT NULL, delta INTEGER NOT NULL, t INTEGER NOT NULL);
+		CREATE TABLE IF NOT EXISTS friends (
+			a TEXT NOT NULL, b TEXT NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (a, b));
+		CREATE TABLE IF NOT EXISTS gifts (
+			id INTEGER PRIMARY KEY AUTOINCREMENT, sender TEXT NOT NULL, receiver TEXT NOT NULL,
+			day INTEGER NOT NULL, claimed INTEGER NOT NULL DEFAULT 0, UNIQUE (sender, receiver, day));
+		CREATE TABLE IF NOT EXISTS kings (
+			day INTEGER PRIMARY KEY, player TEXT NOT NULL, name TEXT NOT NULL, portrait TEXT NOT NULL,
+			frame TEXT NOT NULL, power INTEGER NOT NULL, decree TEXT);
+		CREATE TABLE IF NOT EXISTS guildwar (
+			week INTEGER NOT NULL, territory INTEGER NOT NULL, alliance TEXT NOT NULL, points INTEGER NOT NULL,
+			PRIMARY KEY (week, territory, alliance));
+		CREATE TABLE IF NOT EXISTS guildwar_attacks (
+			player TEXT NOT NULL, day INTEGER NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (player, day));
 	`);
+	// Kolom tambahan versi lebih baru (database lama di-upgrade di tempat).
+	const cols = db.prepare("PRAGMA table_info(players)").all().map((c) => c.name);
+	if (!cols.includes("city")) db.exec("ALTER TABLE players ADD COLUMN city TEXT NOT NULL DEFAULT '{}'");
 	return db;
 }
 
@@ -86,7 +109,7 @@ function createServer(opts = {}) {
 			VALUES (?, ?, ?, ?, ?, ?)`),
 		seen: db.prepare("UPDATE players SET seen = ? WHERE id = ?"),
 		profile: db.prepare(`UPDATE players SET name = ?, portrait = ?, frame = ?, alliance = ?, power = ?, stage = ?,
-			tower = ?, prestige = ?, seen = ? WHERE id = ?`),
+			tower = ?, prestige = ?, city = ?, seen = ? WHERE id = ?`),
 		rating: db.prepare("UPDATE players SET rating = ? WHERE id = ?"),
 		chatAdd: db.prepare("INSERT INTO chat (alliance, player, name, portrait, text, t) VALUES (?, ?, ?, ?, ?, ?)"),
 		chatSince: db.prepare(`SELECT id, player, name, portrait, text, t FROM chat
@@ -103,11 +126,73 @@ function createServer(opts = {}) {
 		logAdd: db.prepare("INSERT INTO arena_log (attacker, defender, win, delta, t) VALUES (?, ?, ?, ?, ?)"),
 		attacksToday: db.prepare("SELECT COUNT(*) AS n FROM arena_log WHERE attacker = ? AND t >= ?"),
 		count: db.prepare("SELECT COUNT(*) AS n FROM players"),
+		byPrefix: db.prepare("SELECT * FROM players WHERE id LIKE ? LIMIT 2"),
+		friendAdd: db.prepare("INSERT OR IGNORE INTO friends (a, b, t) VALUES (?, ?, ?)"),
+		friendDel: db.prepare("DELETE FROM friends WHERE (a = ? AND b = ?) OR (a = ? AND b = ?)"),
+		friendCount: db.prepare("SELECT COUNT(*) AS n FROM friends WHERE a = ?"),
+		friendList: db.prepare(`SELECT p.* FROM friends f JOIN players p ON p.id = f.b WHERE f.a = ? ORDER BY p.power DESC`),
+		isFriend: db.prepare("SELECT 1 AS x FROM friends WHERE a = ? AND b = ?"),
+		giftAdd: db.prepare("INSERT OR IGNORE INTO gifts (sender, receiver, day) VALUES (?, ?, ?)"),
+		giftsSentToday: db.prepare("SELECT receiver FROM gifts WHERE sender = ? AND day = ?"),
+		giftsInbox: db.prepare(`SELECT g.id, p.name FROM gifts g JOIN players p ON p.id = g.sender
+			WHERE g.receiver = ? AND g.claimed = 0 ORDER BY g.id LIMIT 50`),
+		giftsClaimedToday: db.prepare("SELECT COUNT(*) AS n FROM gifts WHERE receiver = ? AND claimed = ?"),
+		giftClaim: db.prepare("UPDATE gifts SET claimed = ? WHERE id = ?"),
+		king: db.prepare("SELECT * FROM kings WHERE day = ?"),
+		kingTop: db.prepare("SELECT * FROM players WHERE power > 0 AND seen >= ? ORDER BY power DESC, created ASC LIMIT 1"),
+		kingAdd: db.prepare("INSERT OR IGNORE INTO kings (day, player, name, portrait, frame, power) VALUES (?, ?, ?, ?, ?, ?)"),
+		kingDecree: db.prepare("UPDATE kings SET decree = ? WHERE day = ? AND decree IS NULL"),
+		gwPoints: db.prepare("SELECT territory, alliance, points FROM guildwar WHERE week = ?"),
+		gwAdd: db.prepare(`INSERT INTO guildwar (week, territory, alliance, points) VALUES (?, ?, ?, ?)
+			ON CONFLICT (week, territory, alliance) DO UPDATE SET points = points + excluded.points`),
+		gwUsed: db.prepare("SELECT n FROM guildwar_attacks WHERE player = ? AND day = ?"),
+		gwUse: db.prepare(`INSERT INTO guildwar_attacks (player, day, n) VALUES (?, ?, 1)
+			ON CONFLICT (player, day) DO UPDATE SET n = n + 1`),
 	};
+
+	const dayOf = (t) => Math.floor(t / DAY_MS);
+	// Minggu dimulai Senin (1 Jan 1970 = Kamis).
+	const weekOf = (t) => Math.floor((dayOf(t) + 3) / 7);
+	const friendCode = (p) => p.id.replace(/-/g, "").slice(0, 8).toUpperCase();
+
+	// Raja hari ini: pemain berkekuatan tertinggi yang aktif 3 hari terakhir, dikunci
+	// pada permintaan pertama hari itu.
+	function todayKing() {
+		const day = dayOf(now());
+		let k = q.king.get(day);
+		if (!k) {
+			const top = q.kingTop.get(now() - 3 * DAY_MS);
+			if (!top) return null;
+			q.kingAdd.run(day, top.id, top.name, top.portrait, top.frame, top.power);
+			k = q.king.get(day);
+		}
+		return k;
+	}
+
+	// Pemilik tiap wilayah pada minggu `week`: aliansi dengan poin terbanyak.
+	function guildwarBoard(week) {
+		const rows = q.gwPoints.all(week);
+		return TERRITORIES.map((name, i) => {
+			const points = {};
+			for (const r of rows) if (r.territory === i) points[r.alliance] = r.points;
+			let owner = null;
+			for (const a of ALLIANCES) if ((points[a] || 0) > (owner ? points[owner] : 0)) owner = a;
+			return { id: i, name, owner, points };
+		});
+	}
 
 	function publicPlayer(p) {
 		return { id: p.id, name: p.name, portrait: p.portrait, frame: p.frame, alliance: p.alliance,
-			power: p.power, stage: p.stage, tower: p.tower, prestige: p.prestige, rating: p.rating };
+			power: p.power, stage: p.stage, tower: p.tower, prestige: p.prestige, rating: p.rating, code: friendCode(p) };
+	}
+
+	// Ringkasan kota untuk kunjungan: hanya angka kecil yang aman ditampilkan.
+	function cleanCity(raw) {
+		const c = raw && typeof raw === "object" ? raw : {};
+		const out = { rank: clampInt(c.rank, 0, 20), buildings: {}, kin: clampInt(c.kin, 0, 999),
+			ships: clampInt(c.ships, 0, 10), regions: clampInt(c.regions, 0, 100), counselors: clampInt(c.counselors, 0, 999) };
+		for (const k of ["istana", "pasar", "lumbung", "barak"]) out.buildings[k] = clampInt(c.buildings?.[k], 0, 99);
+		return JSON.stringify(out);
 	}
 
 	function leaderboard(cat, me, limit) {
@@ -138,7 +223,8 @@ function createServer(opts = {}) {
 			const alliance = ALLIANCES.includes(body.alliance) ? body.alliance : null;
 			q.profile.run(cleanName(body.name ?? me.name), String(body.portrait || me.portrait).slice(0, 32),
 				String(body.frame || me.frame).slice(0, 32), alliance, clampInt(body.power, 0, 1e15),
-				clampInt(body.stage, 0, 1e6), clampInt(body.tower, 0, 1e6), clampInt(body.prestige, 0, 1e12), now(), me.id);
+				clampInt(body.stage, 0, 1e6), clampInt(body.tower, 0, 1e6), clampInt(body.prestige, 0, 1e12),
+				cleanCity(body.city), now(), me.id);
 			return [200, { player: publicPlayer(q.byId.get(me.id)) }];
 		},
 
@@ -192,7 +278,7 @@ function createServer(opts = {}) {
 				const j = Math.floor(random() * (i + 1));
 				[pool[i], pool[j]] = [pool[j], pool[i]];
 			}
-			return [200, { rating: me.rating, opponents: pool.slice(0, 3) }];
+			return [200, { rating: me.rating, opponents: pool.slice(0, 3).map((p) => ({ ...p, code: friendCode(p) })) }];
 		},
 
 		// (auth) Server menentukan menang/kalah dari kekuatan tersimpan dan mengubah
@@ -212,6 +298,109 @@ function createServer(opts = {}) {
 			return [200, { win, delta, rating: Math.max(0, me.rating + delta), opponent: publicPlayer(opp) }];
 		},
 	};
+
+	Object.assign(routes, {
+		// (auth) Daftar teman, hadiah yang sudah dikirim hari ini, dan kotak masuk hadiah.
+		"GET /v1/friends": (me) => {
+			const sent = new Set(q.giftsSentToday.all(me.id, dayOf(now())).map((r) => r.receiver));
+			const friends = q.friendList.all(me.id).map((p) => ({ ...publicPlayer(p), gift_sent: sent.has(p.id) }));
+			return [200, { code: friendCode(me), friends, inbox: q.giftsInbox.all(me.id) }];
+		},
+
+		// (auth) Tambah teman dengan kode 8 karakter; pertemanan berlaku dua arah.
+		"POST /v1/friends/add": (me, body) => {
+			const code = String(body.code || "").replace(/[^0-9a-f]/gi, "").toLowerCase();
+			if (code.length !== 8) return [400, { error: "Kode teman harus 8 karakter." }];
+			const found = q.byPrefix.all(code + "%").filter((p) => p.id.replace(/-/g, "").startsWith(code));
+			if (found.length !== 1) return [404, { error: "Pemain tidak ditemukan." }];
+			const other = found[0];
+			if (other.id === me.id) return [400, { error: "Itu kode Tuan sendiri." }];
+			if (q.friendCount.get(me.id).n >= FRIENDS_MAX) return [400, { error: "Daftar teman penuh." }];
+			q.friendAdd.run(me.id, other.id, now());
+			q.friendAdd.run(other.id, me.id, now());
+			return [200, { friend: publicPlayer(other) }];
+		},
+
+		"POST /v1/friends/remove": (me, body) => {
+			const id = String(body.id || "");
+			q.friendDel.run(me.id, id, id, me.id);
+			return [200, { removed: true }];
+		},
+
+		// (auth) Kirim satu hadiah per teman per hari.
+		"POST /v1/gift": (me, body) => {
+			const to = String(body.to || "");
+			if (!q.isFriend.get(me.id, to)) return [404, { error: "Bukan teman Tuan." }];
+			const r = q.giftAdd.run(me.id, to, dayOf(now()));
+			if (r.changes === 0) return [429, { error: "Hadiah untuk teman ini sudah dikirim hari ini." }];
+			return [200, { sent: true }];
+		},
+
+		// (auth) Ambil hadiah dari kotak masuk, maks. GIFT_CLAIM_DAILY per hari.
+		"POST /v1/gifts/claim": (me) => {
+			const stamp = dayOf(now()) + 1; // kolom claimed menyimpan hari klaim + 1
+			const left = GIFT_CLAIM_DAILY - q.giftsClaimedToday.get(me.id, stamp).n;
+			const take = q.giftsInbox.all(me.id).slice(0, Math.max(0, left));
+			for (const g of take) q.giftClaim.run(stamp, g.id);
+			return [200, { claimed: take.length, names: take.map((g) => g.name) }];
+		},
+
+		// (auth) Kunjungi kota pemain lain (?id=).
+		"GET /v1/player": (me, _body, params) => {
+			const p = q.byId.get(String(params.get("id") || ""));
+			if (!p) return [404, { error: "Pemain tidak ditemukan." }];
+			let city = {};
+			try {
+				city = JSON.parse(p.city || "{}");
+			} catch {
+				city = {};
+			}
+			return [200, { player: publicPlayer(p), city, friend: !!q.isFriend.get(me.id, p.id) }];
+		},
+
+		// (auth) Raja Hari Ini dan titahnya.
+		"GET /v1/king": (me) => {
+			const k = todayKing();
+			if (!k) return [200, { king: null }];
+			return [200, { king: { id: k.player, name: k.name, portrait: k.portrait, frame: k.frame, power: k.power },
+				decree: k.decree, me: k.player === me.id, decrees: DECREES }];
+		},
+
+		// (auth) Hanya raja hari ini; titah dipilih sekali dari daftar tetap (tanpa teks bebas).
+		"POST /v1/king/decree": (me, body) => {
+			const k = todayKing();
+			if (!k || k.player !== me.id) return [403, { error: "Hanya Raja Hari Ini yang bisa bertitah." }];
+			const decree = String(body.decree || "");
+			if (!DECREES.includes(decree)) return [400, { error: "Titah tidak dikenal." }];
+			if (k.decree) return [400, { error: "Titah hari ini sudah ditetapkan." }];
+			q.kingDecree.run(decree, dayOf(now()));
+			return [200, { decree }];
+		},
+
+		// (auth) Papan Perang Wilayah minggu ini, hasil minggu lalu, dan sisa serangan.
+		"GET /v1/guildwar": (me) => {
+			const week = weekOf(now());
+			const used = q.gwUsed.get(me.id, dayOf(now()))?.n || 0;
+			const last = guildwarBoard(week - 1);
+			return [200, { week, territories: guildwarBoard(week), attacks_left: Math.max(0, GUILDWAR_ATTACKS - used),
+				alliance: me.alliance, last_week: week - 1,
+				last_won: me.alliance ? last.filter((t) => t.owner === me.alliance).length : 0,
+				ends_in: (week + 1) * 7 * DAY_MS - 3 * DAY_MS - now() }];
+		},
+
+		// (auth) Serang wilayah: poin = akar kekuatan x acak 0,8–1,2.
+		"POST /v1/guildwar/attack": (me, body) => {
+			if (!me.alliance) return [400, { error: "Bergabunglah dengan aliansi dulu." }];
+			const t = clampInt(body.territory, -1, TERRITORIES.length);
+			if (t < 0 || t >= TERRITORIES.length) return [404, { error: "Wilayah tidak ditemukan." }];
+			const day = dayOf(now());
+			if ((q.gwUsed.get(me.id, day)?.n || 0) >= GUILDWAR_ATTACKS) return [429, { error: "Serangan hari ini habis." }];
+			const points = Math.max(1, Math.round(Math.sqrt(Math.max(1, me.power)) * (0.8 + 0.4 * random())));
+			q.gwUse.run(me.id, day);
+			q.gwAdd.run(weekOf(now()), t, me.alliance, points);
+			return [200, { points, territory: guildwarBoard(weekOf(now()))[t] }];
+		},
+	});
 
 	const handler = async (req, res) => {
 		const url = new URL(req.url, "http://x");

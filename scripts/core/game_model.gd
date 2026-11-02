@@ -135,6 +135,11 @@ var tales := {}
 var codex := {}
 ## Roda Keberuntungan: {day, free (gratis hari ini sudah dipakai), tickets, gold_spins}.
 var wheel := {}
+## Fitur kerajaan: perburuan, besan, pasar malam, kebijakan, bencana, riset, armada,
+## kebun, hadiah teman, dan hadiah perang wilayah (lihat bagian "Kerajaan").
+var realm := {}
+## Efek titah Raja Hari Ini dari server ({"yield_silver": 0.05}); tidak disimpan.
+var king_effects := {}
 var rng := RandomNumberGenerator.new()
 
 
@@ -151,6 +156,7 @@ func new_game(now: float) -> void:
 	tales = {}
 	codex = {"equip": [], "claimed": []}
 	wheel = {"day": -1, "free": false, "tickets": 0, "gold_spins": 0}
+	realm = _empty_realm(now)
 	buildings = {"levels": {"istana": 1, "pasar": 0, "lumbung": 0, "barak": 0}, "job": {}}
 	cosmetics = {"owned": ["frame_kayu", "costume_lord"], "frame": "frame_kayu", "costume": "costume_lord"}
 	equipment = []
@@ -223,11 +229,13 @@ func max_charges() -> int:
 
 func can_promote() -> bool:
 	var nxt := next_rank_info()
-	return not nxt.is_empty() and prestige >= int(nxt["prestige"])
+	return not nxt.is_empty() and prestige >= int(nxt["prestige"]) and rank_reqs_met(rank + 1)
 
 
 func promote() -> Dictionary:
 	if not can_promote():
+		if not next_rank_info().is_empty() and prestige >= int(next_rank_info()["prestige"]):
+			return _fail("Syarat gelar %s belum terpenuhi." % next_rank_info()["name"])
 		return _fail("Prestise belum cukup untuk naik jabatan.")
 	rank += 1
 	gold += Data.PROMOTE_GOLD
@@ -253,9 +261,10 @@ func sync(now: float) -> void:
 	ensure_leaderboard(now)
 	ensure_festival(now)
 	check_cosmetic_unlocks()
+	var realm_changed := _sync_realm(now)
 	var alliance_changed := _alliance_rollover(now)
 	alliance_changed = ensure_war(now) or alliance_changed
-	if ensure_arena(now) or alliance_changed or weekly_reset or daily_reset or built:
+	if ensure_arena(now) or alliance_changed or weekly_reset or daily_reset or built or realm_changed:
 		changed.emit()
 
 
@@ -364,7 +373,7 @@ func skill_bonus(effect: String) -> float:
 ## Kekuatan yang dipakai untuk pertarungan arena, bos aliansi, dan perang.
 func combat_power() -> int:
 	return int(power() * (1.0 + skill_bonus("combat")) * (1.0 + float(formation_def()["power"]))
-		* (1.0 + story_bonus("combat")))
+		* (1.0 + story_bonus("combat")) * (1.0 + kingdom_bonus("combat")))
 
 
 # --- Formasi & rencana pertempuran ---------------------------------------------
@@ -523,7 +532,8 @@ func affair_yield(kind: String) -> int:
 		* (1.0 + event_bonus("yield_" + kind) + alliance_bonus() + vip_perk("yield"))
 		* (1.0 + skill_bonus("yield_" + kind) + skill_bonus("yield_all") + officials_bonus() + honor_bonus()
 			+ building_bonus("yield_" + kind) + building_bonus("yield_all")
-			+ story_bonus("yield_" + kind) + story_bonus("yield_all") + loyalty_bonus()))
+			+ story_bonus("yield_" + kind) + story_bonus("yield_all") + loyalty_bonus()
+			+ kingdom_bonus("yield_" + kind) + kingdom_bonus("yield_all")))
 
 
 func do_affair(kind: String, now: float) -> Dictionary:
@@ -920,6 +930,9 @@ func _give_rewards(def: Dictionary) -> String:
 			continue
 		set(key, int(get(key)) + amount)
 		parts.append("+%d %s" % [amount, Data.REWARD_NAMES[key]])
+	if int(def.get("prestige", 0)) > 0:
+		prestige += int(def["prestige"])
+		parts.append("+%d prestise" % int(def["prestige"]))
 	var items: Dictionary = def.get("items", {})
 	for id in items:
 		add_item(id, int(items[id]))
@@ -3023,6 +3036,7 @@ func marry_child(index: int) -> Dictionary:
 
 const NOTIFY_LOGIN_HOUR := 9  ## jam lokal pengingat hadiah login esok hari
 const NOTIFY_IDLE_SECONDS := 2 * 86400  ## pengingat bila lama tidak bermain
+const NOTIFY_SUMMARY_HOUR := 19  ## jam lokal ringkasan harian
 
 
 ## Detik sampai charge `key` penuh; 0 bila sudah penuh.
@@ -3065,11 +3079,42 @@ func notification_plan(now: float) -> Array:
 	if back > 0:
 		plan.append({"id": 7, "delay": back, "title": "Rombongan ekspedisi kembali",
 			"text": "Penasihat Tuan pulang membawa hasil ekspedisi."})
+	var summary := _daily_summary_plan(now)
+	if not summary.is_empty():
+		plan.append(summary)
 	var build := build_eta(now)
 	if build > 0:
 		plan.append({"id": 6, "delay": build, "title": "Pembangunan selesai",
 			"text": "%s sudah selesai dibangun. Mulai pembangunan berikutnya, Tuan." % Data.BUILDINGS[build_job()["id"]]["name"]})
 	return plan
+
+
+## Ringkasan harian pukul NOTIFY_SUMMARY_HOUR: daftar urusan yang sudah siap saat itu.
+func _daily_summary_plan(now: float) -> Dictionary:
+	var local_s := fposmod(now + tz_bias, 86400.0)
+	var delay := int(NOTIFY_SUMMARY_HOUR * 3600 - local_s)
+	if delay <= 60:
+		delay += 86400
+	var at := now + delay
+	var ready := []
+	if login_can_claim(at):
+		ready.append("hadiah login")
+	if wheel_free_ready(at):
+		ready.append("putaran roda")
+	if garden_unlocked() and garden_ready_count(at) > 0:
+		ready.append("panen kebun")
+	for ship in ships_owned():
+		if not voyage(ship).is_empty() and voyage_eta(ship, at) <= 0:
+			ready.append("kapal dagang")
+			break
+	if research_unlocked() and not research_job().is_empty() and research_eta(at) <= 0:
+		ready.append("riset")
+	if hunt_unlocked() and (int(realm["hunt"]["day"]) != day_index(at) or hunts_left(at) > 0):
+		ready.append("perburuan")
+	if ready.is_empty():
+		return {}
+	return {"id": 8, "delay": delay, "title": "Ringkasan Kerajaan",
+		"text": "Siap untuk Tuan: %s." % ", ".join(ready)}
 
 
 # --- Pusaka (peralatan) ------------------------------------------------------
@@ -3264,7 +3309,8 @@ func building_cost(id: String) -> int:
 
 
 func build_seconds(id: String) -> int:
-	return int(Data.BUILD_SECONDS_BASE * pow(Data.BUILD_SECONDS_GROWTH, building_level(id)))
+	return int(Data.BUILD_SECONDS_BASE * pow(Data.BUILD_SECONDS_GROWTH, building_level(id))
+		* maxf(0.4, 1.0 - kingdom_bonus("build_time")))
 
 
 ## Total bonus suatu efek dari semua bangunan.
@@ -4257,8 +4303,8 @@ func check_cosmetic_unlocks() -> Array:
 			ok = vip_level() >= int(u.substr(4))
 		elif u.begins_with("stage:"):
 			ok = stage >= int(u.substr(6))
-		elif u == "silat":
-			ok = false  # hanya dari hadiah juara turnamen
+		elif u == "silat" or u == "king":
+			ok = false  # hanya dari hadiah juara turnamen / Raja Hari Ini
 		if ok and unlock_cosmetic(id):
 			got.append(id)
 	return got
@@ -4680,6 +4726,7 @@ func to_dict() -> Dictionary:
 		"tales": tales,
 		"codex": codex,
 		"wheel": wheel,
+		"realm": realm,
 		"cosmetics": cosmetics,
 	}
 
@@ -4737,6 +4784,7 @@ func from_dict(d: Dictionary, now: float) -> void:
 	if not src_wheel.is_empty():
 		wheel = {"day": int(src_wheel.get("day", -1)), "free": bool(src_wheel.get("free", false)),
 			"tickets": maxi(0, int(src_wheel.get("tickets", 0))), "gold_spins": maxi(0, int(src_wheel.get("gold_spins", 0)))}
+	_load_realm(d.get("realm", {}), now)
 	var src_codex: Dictionary = d.get("codex", {})
 	for id in src_codex.get("equip", []):
 		if Data.EQUIPMENT.has(str(id)) and not codex["equip"].has(str(id)):
@@ -5081,3 +5129,835 @@ func _ok(msg: String) -> Dictionary:
 
 func _fail(msg: String) -> Dictionary:
 	return {"ok": false, "msg": msg}
+
+
+# --- Kerajaan: state bersama -----------------------------------------------------
+
+func _empty_realm(now: float) -> Dictionary:
+	var plots := []
+	for i in Data.GARDEN_PLOTS:
+		plots.append({})
+	return {
+		"hunt": {"day": -1, "used": 0},
+		"kin": [],
+		"kin_day": -1,
+		"market": {"period": -1, "slots": [], "refresh_day": -1, "refreshes": 0},
+		"policy": "seimbang",
+		"policy_t": -1.0e12,
+		"loyalty_day": day_index(now),
+		"disaster": {"period": -1, "id": "", "resolved": false},
+		"research": {"levels": {}, "job": {}},
+		"fleet": {"ships": [], "voyages": {}},
+		"garden": plots,
+		"gifts": {"day": -1, "n": 0},
+		"guildwar_claimed": -1,
+	}
+
+
+## Muat state kerajaan dari save dengan validasi tiap bagian (save lama: kosong).
+func _load_realm(src, now: float) -> void:
+	realm = _empty_realm(now)
+	if not (src is Dictionary):
+		return
+	var h = src.get("hunt", {})
+	if h is Dictionary:
+		realm["hunt"] = {"day": int(h.get("day", -1)), "used": clampi(int(h.get("used", 0)), 0, Data.HUNT_PER_DAY)}
+	for k in src.get("kin", []):
+		if k is Dictionary and realm["kin"].size() < 50:
+			realm["kin"].append({"house": str(k.get("house", "")), "name": str(k.get("name", "")),
+				"child": str(k.get("child", "")), "day": int(k.get("day", 0))})
+	realm["kin_day"] = int(src.get("kin_day", -1))
+	var m = src.get("market", {})
+	if m is Dictionary:
+		var slots := []
+		for sl in m.get("slots", []):
+			if sl is Dictionary and int(sl.get("pool", -1)) >= 0 and int(sl.get("pool", -1)) < Data.MARKET_POOL.size():
+				slots.append({"pool": int(sl["pool"]), "price": maxi(1, int(sl.get("price", 1))),
+					"bought": bool(sl.get("bought", false)), "haggled": bool(sl.get("haggled", false))})
+		realm["market"] = {"period": int(m.get("period", -1)) if slots.size() == Data.MARKET_SLOTS else -1,
+			"slots": slots, "refresh_day": int(m.get("refresh_day", -1)), "refreshes": int(m.get("refreshes", 0))}
+	if Data.POLICIES.has(str(src.get("policy", ""))):
+		realm["policy"] = str(src["policy"])
+	realm["policy_t"] = float(src.get("policy_t", -1.0e12))
+	realm["loyalty_day"] = mini(int(src.get("loyalty_day", day_index(now))), day_index(now))
+	var dis = src.get("disaster", {})
+	if dis is Dictionary and (str(dis.get("id", "")) == "" or not disaster_def(str(dis.get("id", ""))).is_empty()):
+		realm["disaster"] = {"period": int(dis.get("period", -1)), "id": str(dis.get("id", "")),
+			"resolved": bool(dis.get("resolved", false))}
+	var rs = src.get("research", {})
+	if rs is Dictionary:
+		for id in rs.get("levels", {}):
+			if Data.RESEARCH.has(str(id)):
+				realm["research"]["levels"][str(id)] = clampi(int(rs["levels"][id]), 0, Data.RESEARCH_MAX_LEVEL)
+		var job = rs.get("job", {})
+		if job is Dictionary and Data.RESEARCH.has(str(job.get("id", ""))):
+			realm["research"]["job"] = {"id": str(job["id"]), "end_t": float(job.get("end_t", now))}
+	var fl = src.get("fleet", {})
+	if fl is Dictionary:
+		for id in fl.get("ships", []):
+			if Data.SHIPS.has(str(id)) and not realm["fleet"]["ships"].has(str(id)):
+				realm["fleet"]["ships"].append(str(id))
+		var voy = fl.get("voyages", {})
+		if voy is Dictionary:
+			for id in voy:
+				var v = voy[id]
+				if realm["fleet"]["ships"].has(str(id)) and v is Dictionary and not region_def(str(v.get("region", ""))).is_empty():
+					realm["fleet"]["voyages"][str(id)] = {"region": str(v["region"]), "end_t": float(v.get("end_t", now)),
+						"cargo": maxi(0, int(v.get("cargo", 0))), "seed": int(v.get("seed", 0))}
+	var g = src.get("garden", [])
+	if g is Array:
+		for i in mini(g.size(), Data.GARDEN_PLOTS):
+			var pl = g[i]
+			if pl is Dictionary and Data.PLANTS.has(str(pl.get("plant", ""))):
+				realm["garden"][i] = {"plant": str(pl["plant"]), "end_t": float(pl.get("end_t", now))}
+	var gf = src.get("gifts", {})
+	if gf is Dictionary:
+		realm["gifts"] = {"day": int(gf.get("day", -1)), "n": clampi(int(gf.get("n", 0)), 0, Data.FRIEND_GIFT_DAILY)}
+	realm["guildwar_claimed"] = int(src.get("guildwar_claimed", -1))
+
+
+## Dipanggil dari sync(): riset selesai, bencana baru, dan perubahan kesetiaan harian.
+func _sync_realm(now: float) -> bool:
+	var changed_any := finish_research(now)
+	changed_any = ensure_disaster(now) or changed_any
+	# Kesetiaan berubah sekali per hari mengikuti kebijakan aktif.
+	var today := day_index(now)
+	var last := int(realm["loyalty_day"])
+	if last < today:
+		var days := mini(today - last, 30)
+		var per := int(policy_def()["loyalty_day"])
+		if policy_unlocked() and per != 0:
+			court["loyalty"] = clampi(int(court.get("loyalty", 50)) + per * days, 0, 100)
+			changed_any = true
+		realm["loyalty_day"] = today
+	return changed_any
+
+
+## Total bonus kerajaan untuk suatu efek: riset, kebijakan, bencana aktif, titah raja.
+func kingdom_bonus(effect: String) -> float:
+	var total := research_bonus(effect)
+	total += float(policy_def()["effects"].get(effect, 0.0)) if policy_unlocked() else 0.0
+	total += float(disaster_active().get("effects", {}).get(effect, 0.0))
+	total += float(king_effects.get(effect, 0.0))
+	return total
+
+
+## Sumber daya nyata dari kelipatan hasil urusan ({"silver": 2.0} -> {"silver": 4800}).
+func _yields_of(mult: Dictionary, factor := 1.0) -> Dictionary:
+	var out := {}
+	for k in mult:
+		out[k] = int(affair_yield(k) * float(mult[k]) * factor)
+	return out
+
+
+# --- Perburuan --------------------------------------------------------------------
+
+func hunt_unlocked() -> bool:
+	return stage >= Data.HUNT_UNLOCK_STAGE
+
+
+func hunt_ground(id: String) -> Dictionary:
+	for g in Data.HUNT_GROUNDS:
+		if g["id"] == id:
+			return g
+	return {}
+
+
+func hunts_left(now: float) -> int:
+	var h: Dictionary = realm["hunt"]
+	if int(h["day"]) != day_index(now):
+		return Data.HUNT_PER_DAY
+	return maxi(0, Data.HUNT_PER_DAY - int(h["used"]))
+
+
+func hunt_score(counselor_id: String) -> int:
+	return attr(counselor_id, "str") + attr(counselor_id, "cha") / 2
+
+
+func hunt_difficulty(ground_id: String) -> int:
+	return int(float(hunt_ground(ground_id)["diff"]) * (60 + stage * 18))
+
+
+func hunt_chance(counselor_id: String, ground_id: String) -> float:
+	var score := float(hunt_score(counselor_id))
+	var diff := float(hunt_difficulty(ground_id))
+	return clampf(score / maxf(1.0, score + diff) * 1.15, 0.1, 0.95)
+
+
+func hunt_rewards(ground_id: String) -> Dictionary:
+	var g := hunt_ground(ground_id)
+	var out := _yields_of(g["yields"])
+	out["prestige"] = int(g["prestige"])
+	return out
+
+
+## Berburu. Hasil memuat "plan" untuk tayangan: {shots, hit, seed, animal, icon}.
+func go_hunt(counselor_id: String, ground_id: String, now: float) -> Dictionary:
+	if not hunt_unlocked():
+		return _fail("Menangkan Tahap %d untuk membuka Perburuan." % Data.HUNT_UNLOCK_STAGE)
+	var g := hunt_ground(ground_id)
+	if g.is_empty():
+		return _fail("Medan buruan tidak dikenal.")
+	if not counselors.has(counselor_id):
+		return _fail("Penasihat belum direkrut.")
+	if hunts_left(now) <= 0:
+		return _fail("Jatah berburu hari ini habis. Kembali besok.")
+	var h: Dictionary = realm["hunt"]
+	if int(h["day"]) != day_index(now):
+		h["day"] = day_index(now)
+		h["used"] = 0
+	h["used"] = int(h["used"]) + 1
+	var hit := rng.randf() < hunt_chance(counselor_id, ground_id)
+	var shots := rng.randi_range(1, 3) if hit else 3
+	var reward := hunt_rewards(ground_id)
+	if not hit:
+		reward = _yields_of(g["yields"], Data.HUNT_FAIL_SHARE)
+	if hit and str(g["drop"]) != "" and rng.randf() < float(g["drop_chance"]):
+		reward["items"] = {str(g["drop"]): 1}
+	var text := _give_rewards(reward)
+	_track("hunt")
+	changed.emit()
+	var who: String = Data.counselor_def(counselor_id)["name"]
+	var result := _ok(("%s berhasil memburu %s! %s." if hit else "%s gagal, %s lolos ke hutan. Hasil hiburan: %s.")
+		% [who, g["animal"], text])
+	result["win"] = hit
+	result["plan"] = {"shots": shots, "hit": hit, "seed": rng.randi(), "icon": g["icon"], "animal": g["animal"]}
+	return result
+
+
+# --- Pernikahan antar-kerajaan ------------------------------------------------------
+
+func child_adult(index: int) -> bool:
+	return index >= 0 and index < children.size() and int(children[index]["level"]) >= Data.CHILD_MAX_LEVEL
+
+
+## Calon pasangan hari ini untuk anak `index` (stabil sepanjang hari).
+func marriage_candidates(index: int, now: float) -> Array:
+	if not child_adult(index):
+		return []
+	var child: Dictionary = children[index]
+	var r := _seeded(["marry", day_index(now), child["name"], child.get("mother", ""), int(child["talent"]), index])
+	var gender := "f" if child["gender"] == "m" else "m"
+	var names: Array = Data.CHILD_NAMES[gender]
+	var out := []
+	for i in Data.MARRIAGE_CANDIDATES:
+		var house: Dictionary = Data.NOBLE_HOUSES[r.randi_range(0, Data.NOBLE_HOUSES.size() - 1)]
+		var roll := r.randf()
+		var talent := 5 if roll < 0.08 else (4 if roll < 0.25 else (3 if roll < 0.55 else 2))
+		out.append({"house": house["id"], "house_name": house["name"], "name": names[r.randi_range(0, names.size() - 1)],
+			"talent": talent, "attr": house["attr"], "bonus": (int(child["talent"]) + talent) * Data.MARRIAGE_BONUS,
+			"dowry": int(talent * affair_yield("silver") * Data.MARRIAGE_DOWRY)})
+	return out
+
+
+func marry_noble(index: int, candidate: int, now: float) -> Dictionary:
+	if index < 0 or index >= children.size():
+		return _fail("Anak tidak ditemukan.")
+	if not child_adult(index):
+		return _fail("%s belum dewasa." % children[index]["name"])
+	var cands := marriage_candidates(index, now)
+	if candidate < 0 or candidate >= cands.size():
+		return _fail("Calon tidak ditemukan.")
+	if counselors.is_empty():
+		return _fail("Belum ada penasihat.")
+	var c: Dictionary = cands[candidate]
+	if silver < int(c["dowry"]):
+		return _fail("Perak tidak cukup untuk mahar (butuh %d)." % c["dowry"])
+	silver -= int(c["dowry"])
+	var key: String = c["attr"]
+	var best := ""
+	for id in counselors:
+		if best == "" or attr(id, key) > attr(best, key):
+			best = id
+	var b: Dictionary = counselors[best]["bonus"]
+	b[key] = int(b.get(key, 0)) + int(c["bonus"])
+	var child: Dictionary = children[index]
+	children.remove_at(index)
+	married_count += 1
+	var gain := 20 * int(child["talent"])  # sama dengan pernikahan biasa
+	prestige += gain
+	realm["kin"].append({"house": c["house"], "name": c["name"], "child": child["name"], "day": day_index(now)})
+	_track("marry")
+	changed.emit()
+	return _ok("%s menikah dengan %s dari %s! %s +%d %s, +%d prestise." % [child["name"], c["name"], c["house_name"],
+		Data.counselor_def(best)["name"], c["bonus"], Data.ATTR_NAMES[key], gain])
+
+
+func kin_count() -> int:
+	return realm["kin"].size()
+
+
+func kin_gift_amount() -> int:
+	return int(affair_yield("silver") * Data.KIN_GIFT * mini(kin_count(), Data.KIN_MAX))
+
+
+func kin_gift_ready(now: float) -> bool:
+	return kin_count() > 0 and int(realm["kin_day"]) != day_index(now)
+
+
+func claim_kin_gifts(now: float) -> Dictionary:
+	if not kin_gift_ready(now):
+		return _fail("Belum ada kiriman besan hari ini." if kin_count() > 0 else "Belum punya besan.")
+	realm["kin_day"] = day_index(now)
+	var amount := kin_gift_amount()
+	silver += amount
+	changed.emit()
+	return _ok("Kiriman dari %d keluarga besan: +%d perak." % [kin_count(), amount])
+
+
+# --- Pasar Malam ------------------------------------------------------------------
+
+func market_unlocked() -> bool:
+	return stage >= Data.MARKET_UNLOCK_STAGE
+
+
+func market_period(now: float) -> int:
+	return int(floor((now + tz_bias) / (Data.MARKET_HOURS * 3600.0)))
+
+
+func market_seconds_left(now: float) -> int:
+	return int(ceil((market_period(now) + 1) * Data.MARKET_HOURS * 3600.0 - tz_bias - now))
+
+
+func _roll_market(period: int, salt: int) -> void:
+	var r := _seeded(["market", period, salt])
+	var slots := []
+	var pool := range(Data.MARKET_POOL.size())
+	for i in Data.MARKET_SLOTS:
+		var pick: int = pool.pop_at(r.randi_range(0, pool.size() - 1))
+		var def: Dictionary = Data.MARKET_POOL[pick]
+		var price := int(def["price"])
+		if def["cur"] == "silver":
+			price = int(price * float(rank_info()["mult"]))
+		slots.append({"pool": pick, "price": price, "bought": false, "haggled": false})
+	realm["market"]["period"] = period
+	realm["market"]["slots"] = slots
+
+
+func ensure_market(now: float) -> void:
+	if int(realm["market"]["period"]) != market_period(now):
+		_roll_market(market_period(now), 0)
+
+
+func market_slots(now: float) -> Array:
+	ensure_market(now)
+	return realm["market"]["slots"]
+
+
+func market_refreshes_left(now: float) -> int:
+	var m: Dictionary = realm["market"]
+	return Data.MARKET_REFRESH_LIMIT - (int(m["refreshes"]) if int(m["refresh_day"]) == day_index(now) else 0)
+
+
+func refresh_market(now: float) -> Dictionary:
+	if not market_unlocked():
+		return _fail("Menangkan Tahap %d untuk membuka Pasar Malam." % Data.MARKET_UNLOCK_STAGE)
+	if market_refreshes_left(now) <= 0:
+		return _fail("Batas ganti dagangan hari ini sudah habis.")
+	if gold < Data.MARKET_REFRESH_GOLD:
+		return _fail("Emas tidak cukup (butuh %d)." % Data.MARKET_REFRESH_GOLD)
+	gold -= Data.MARKET_REFRESH_GOLD
+	var m: Dictionary = realm["market"]
+	if int(m["refresh_day"]) != day_index(now):
+		m["refresh_day"] = day_index(now)
+		m["refreshes"] = 0
+	m["refreshes"] = int(m["refreshes"]) + 1
+	_roll_market(market_period(now), rng.randi())
+	changed.emit()
+	return _ok("Pedagang baru menggelar dagangannya.")
+
+
+func _currency_have(cur: String) -> int:
+	return int(get(cur))
+
+
+func market_buy(slot: int, now: float) -> Dictionary:
+	if not market_unlocked():
+		return _fail("Menangkan Tahap %d untuk membuka Pasar Malam." % Data.MARKET_UNLOCK_STAGE)
+	var slots := market_slots(now)
+	if slot < 0 or slot >= slots.size():
+		return _fail("Dagangan tidak ditemukan.")
+	var sl: Dictionary = slots[slot]
+	if sl["bought"]:
+		return _fail("Dagangan ini sudah terjual.")
+	var def: Dictionary = Data.MARKET_POOL[int(sl["pool"])]
+	var cur: String = def["cur"]
+	if _currency_have(cur) < int(sl["price"]):
+		return _fail("%s tidak cukup (butuh %d)." % [Data.MARKET_CUR_NAMES[cur].capitalize(), sl["price"]])
+	set(cur, _currency_have(cur) - int(sl["price"]))
+	sl["bought"] = true
+	add_item(def["item"])
+	_track("market")
+	changed.emit()
+	return _ok("Membeli %s seharga %d %s." % [Data.ITEMS[def["item"]]["name"], sl["price"], Data.MARKET_CUR_NAMES[cur]])
+
+
+func market_haggle(slot: int, now: float) -> Dictionary:
+	var slots := market_slots(now)
+	if slot < 0 or slot >= slots.size():
+		return _fail("Dagangan tidak ditemukan.")
+	var sl: Dictionary = slots[slot]
+	if sl["bought"] or sl["haggled"]:
+		return _fail("Pedagang tidak mau ditawar lagi.")
+	sl["haggled"] = true
+	var ok := rng.randf() < Data.MARKET_HAGGLE_CHANCE
+	var old := int(sl["price"])
+	sl["price"] = maxi(1, int(round(old * (1.0 - Data.MARKET_HAGGLE_OFF if ok else 1.0 + Data.MARKET_HAGGLE_UP))))
+	changed.emit()
+	var result := _ok("Tawaran diterima! Harga turun menjadi %d." % sl["price"] if ok
+		else "Pedagang tersinggung, harga naik menjadi %d." % sl["price"])
+	result["haggle_ok"] = ok
+	return result
+
+
+# --- Kebijakan & bencana -----------------------------------------------------------
+
+func policy_unlocked() -> bool:
+	return stage >= Data.POLICY_UNLOCK_STAGE
+
+
+func policy_def() -> Dictionary:
+	return Data.POLICIES.get(str(realm.get("policy", "seimbang")), Data.POLICIES["seimbang"])
+
+
+func policy_cooldown(now: float) -> int:
+	return maxi(0, int(ceil(float(realm["policy_t"]) + Data.POLICY_COOLDOWN - now)))
+
+
+func set_policy(id: String, now: float) -> Dictionary:
+	if not policy_unlocked():
+		return _fail("Menangkan Tahap %d untuk menetapkan kebijakan." % Data.POLICY_UNLOCK_STAGE)
+	if not Data.POLICIES.has(id):
+		return _fail("Kebijakan tidak dikenal.")
+	if id == realm["policy"]:
+		return _fail("Kebijakan ini sudah berlaku.")
+	if policy_cooldown(now) > 0:
+		return _fail("Kebijakan baru bisa diganti dalam %d jam." % ceili(policy_cooldown(now) / 3600.0))
+	realm["policy"] = id
+	realm["policy_t"] = now
+	_track("policy")
+	changed.emit()
+	return _ok("Kebijakan baru berlaku: %s." % Data.POLICIES[id]["name"])
+
+
+func disaster_def(id: String) -> Dictionary:
+	for d in Data.DISASTERS:
+		if d["id"] == id:
+			return d
+	return {}
+
+
+func disaster_period(now: float) -> int:
+	return int(floor((now + tz_bias) / (Data.DISASTER_HOURS * 3600.0)))
+
+
+## Gulirkan bencana untuk periode baru. Mengembalikan true bila keadaannya berubah.
+func ensure_disaster(now: float) -> bool:
+	if not policy_unlocked():
+		return false
+	var period := disaster_period(now)
+	var dis: Dictionary = realm["disaster"]
+	if int(dis["period"]) == period:
+		return false
+	var r := _seeded(["disaster", period])
+	var chance := Data.DISASTER_CHANCE + float(policy_def().get("disaster_chance", 0.0))
+	var id := ""
+	if r.randf() < chance:
+		id = Data.DISASTERS[r.randi_range(0, Data.DISASTERS.size() - 1)]["id"]
+	var had: bool = str(dis["id"]) != "" and not dis["resolved"]
+	realm["disaster"] = {"period": period, "id": id, "resolved": false}
+	return had or id != ""
+
+
+## Bencana yang sedang berlangsung (belum ditangani) atau {}.
+func disaster_active() -> Dictionary:
+	var dis: Dictionary = realm.get("disaster", {})
+	if dis.is_empty() or str(dis["id"]) == "" or dis["resolved"]:
+		return {}
+	return disaster_def(str(dis["id"]))
+
+
+func disaster_seconds_left(now: float) -> int:
+	return int(ceil((disaster_period(now) + 1) * Data.DISASTER_HOURS * 3600.0 - tz_bias - now))
+
+
+func disaster_option_cost(option: Dictionary) -> Dictionary:
+	return _yields_of(option.get("cost", {}))
+
+
+func resolve_disaster(option_index: int, now: float) -> Dictionary:
+	ensure_disaster(now)
+	var d := disaster_active()
+	if d.is_empty():
+		return _fail("Tidak ada bencana saat ini.")
+	if option_index < 0 or option_index >= d["options"].size():
+		return _fail("Pilihan tidak dikenal.")
+	var o: Dictionary = d["options"][option_index]
+	var cost := disaster_option_cost(o)
+	for k in cost:
+		if int(get(k)) < int(cost[k]):
+			return _fail("%s tidak cukup (butuh %d)." % [Data.REWARD_NAMES[k].capitalize(), cost[k]])
+	var parts := []
+	for k in cost:
+		set(k, int(get(k)) - int(cost[k]))
+		if int(cost[k]) > 0:
+			parts.append("-%d %s" % [cost[k], Data.REWARD_NAMES[k]])
+	var gain := _yields_of(o.get("gain", {}))
+	for k in gain:
+		set(k, int(get(k)) + int(gain[k]))
+		parts.append("+%d %s" % [gain[k], Data.REWARD_NAMES[k]])
+	if int(o.get("prestige", 0)) > 0:
+		prestige += int(o["prestige"])
+		parts.append("+%d prestise" % int(o["prestige"]))
+	var loy := int(o.get("loyalty", 0))
+	if loy != 0:
+		court["loyalty"] = clampi(int(court.get("loyalty", 50)) + loy, 0, 100)
+		parts.append("kesetiaan %+d" % loy)
+	realm["disaster"]["resolved"] = true
+	_track("disaster")
+	changed.emit()
+	return _ok("%s ditangani: %s." % [d["name"], o["text"]] + (" " + ", ".join(parts) if not parts.is_empty() else ""))
+
+
+# --- Perpustakaan Keraton (riset) --------------------------------------------------
+
+func research_unlocked() -> bool:
+	return stage >= Data.RESEARCH_UNLOCK_STAGE
+
+
+func research_level(id: String) -> int:
+	return int(realm["research"]["levels"].get(id, 0))
+
+
+func research_total() -> int:
+	var total := 0
+	for id in realm["research"]["levels"]:
+		total += int(realm["research"]["levels"][id])
+	return total
+
+
+func research_cost(id: String) -> int:
+	return int(Data.RESEARCH_COST * float(rank_info()["mult"]) * pow(research_level(id) + 1, 2))
+
+
+func research_seconds(id: String) -> int:
+	return int(Data.RESEARCH_HOURS * 3600 * (research_level(id) + 1))
+
+
+func research_req_ok(id: String) -> bool:
+	var req: Dictionary = Data.RESEARCH[id]["req"]
+	for k in req:
+		if research_level(k) < int(req[k]):
+			return false
+	return true
+
+
+func research_job() -> Dictionary:
+	return realm["research"]["job"]
+
+
+func research_eta(now: float) -> int:
+	var job := research_job()
+	return 0 if job.is_empty() else maxi(0, int(ceil(float(job["end_t"]) - now)))
+
+
+func research_bonus(effect: String) -> float:
+	var total := 0.0
+	for id in realm.get("research", {}).get("levels", {}):
+		if Data.RESEARCH[id]["effect"] == effect:
+			total += float(Data.RESEARCH[id]["per"]) * int(realm["research"]["levels"][id])
+	return total
+
+
+func start_research(id: String, now: float) -> Dictionary:
+	if not research_unlocked():
+		return _fail("Menangkan Tahap %d untuk membuka Perpustakaan Keraton." % Data.RESEARCH_UNLOCK_STAGE)
+	if not Data.RESEARCH.has(id):
+		return _fail("Riset tidak dikenal.")
+	finish_research(now)
+	if not research_job().is_empty():
+		return _fail("Masih ada riset yang berjalan.")
+	if research_level(id) >= Data.RESEARCH_MAX_LEVEL:
+		return _fail("Riset ini sudah tuntas.")
+	if not research_req_ok(id):
+		return _fail("Selesaikan riset prasyarat lebih dulu.")
+	var cost := research_cost(id)
+	if silver < cost:
+		return _fail("Perak tidak cukup (butuh %d)." % cost)
+	silver -= cost
+	realm["research"]["job"] = {"id": id, "end_t": now + research_seconds(id)}
+	_track("research")
+	changed.emit()
+	return _ok("Para pujangga mulai meneliti %s." % Data.RESEARCH[id]["name"])
+
+
+## Selesaikan riset yang waktunya sudah habis. True bila ada yang selesai.
+func finish_research(now: float) -> bool:
+	var job := research_job()
+	if job.is_empty() or now < float(job["end_t"]):
+		return false
+	var id: String = job["id"]
+	realm["research"]["levels"][id] = mini(Data.RESEARCH_MAX_LEVEL, research_level(id) + 1)
+	realm["research"]["job"] = {}
+	return true
+
+
+func research_rush_cost(now: float) -> int:
+	return ceili(research_eta(now) / float(Data.RESEARCH_RUSH_SECONDS_PER_GOLD))
+
+
+func rush_research(now: float) -> Dictionary:
+	if research_job().is_empty():
+		return _fail("Tidak ada riset yang berjalan.")
+	var cost := research_rush_cost(now)
+	if gold < cost:
+		return _fail("Emas tidak cukup (butuh %d)." % cost)
+	gold -= cost
+	var id: String = research_job()["id"]
+	realm["research"]["job"]["end_t"] = now
+	finish_research(now)
+	changed.emit()
+	return _ok("%s naik ke level %d." % [Data.RESEARCH[id]["name"], research_level(id)])
+
+
+# --- Armada Laut --------------------------------------------------------------------
+
+func fleet_unlocked() -> bool:
+	return territory.get("owned", []).size() >= Data.FLEET_UNLOCK_REGIONS
+
+
+func ships_owned() -> Array:
+	return realm["fleet"]["ships"]
+
+
+func buy_ship(id: String) -> Dictionary:
+	if not fleet_unlocked():
+		return _fail("Kuasai %d wilayah di Peta Nusantara untuk membuka Armada Laut." % Data.FLEET_UNLOCK_REGIONS)
+	if not Data.SHIPS.has(id):
+		return _fail("Kapal tidak dikenal.")
+	if ships_owned().has(id):
+		return _fail("Kapal ini sudah dimiliki.")
+	var cost: Dictionary = Data.SHIPS[id]["cost"]
+	for k in cost:
+		if int(get(k)) < int(cost[k]):
+			return _fail("%s tidak cukup (butuh %d)." % [Data.REWARD_NAMES[k].capitalize(), cost[k]])
+	for k in cost:
+		set(k, int(get(k)) - int(cost[k]))
+	ships_owned().append(id)
+	_track("ship")
+	changed.emit()
+	return _ok("%s bergabung dengan armada Tuan!" % Data.SHIPS[id]["name"])
+
+
+## Tujuan dagang: wilayah yang dikuasai selain ibu kota.
+func fleet_routes() -> Array:
+	return territory.get("owned", []).filter(func(id): return id != "mataram")
+
+
+func voyage_cargo(ship: String, region: String) -> int:
+	var s: Dictionary = Data.SHIPS[ship]
+	var route := 1.0 + Data.FLEET_ROUTE_BONUS * int(region_def(region)["stage"]) / 10.0
+	return int(affair_yield("silver") * float(s["cargo"]) * float(s["hours"]) * route * (1.0 + research_bonus("fleet")))
+
+
+func pirate_chance(ship: String) -> float:
+	return Data.PIRATE_CHANCE / float(Data.SHIPS[ship]["guard"]) / (1.0 + research_bonus("fleet"))
+
+
+func voyage(ship: String) -> Dictionary:
+	return realm["fleet"]["voyages"].get(ship, {})
+
+
+func voyage_eta(ship: String, now: float) -> int:
+	var v := voyage(ship)
+	return 0 if v.is_empty() else maxi(0, int(ceil(float(v["end_t"]) - now)))
+
+
+func send_ship(ship: String, region: String, now: float) -> Dictionary:
+	if not ships_owned().has(ship):
+		return _fail("Kapal belum dimiliki.")
+	if not voyage(ship).is_empty():
+		return _fail("Kapal masih berlayar.")
+	if not fleet_routes().has(region):
+		return _fail("Tujuan harus wilayah yang sudah dikuasai.")
+	realm["fleet"]["voyages"][ship] = {"region": region, "end_t": now + float(Data.SHIPS[ship]["hours"]) * 3600.0,
+		"cargo": voyage_cargo(ship, region), "seed": rng.randi()}
+	_track("voyage")
+	changed.emit()
+	return _ok("%s berlayar ke %s." % [Data.SHIPS[ship]["name"], region_def(region)["name"]])
+
+
+## Kapal pulang. Hasil: {pirates, win, plan (bila diserang)}.
+func claim_voyage(ship: String, now: float) -> Dictionary:
+	var v := voyage(ship)
+	if v.is_empty():
+		return _fail("Kapal tidak sedang berlayar.")
+	if now < float(v["end_t"]):
+		return _fail("Kapal belum kembali.")
+	realm["fleet"]["voyages"].erase(ship)
+	var r := RandomNumberGenerator.new()
+	r.seed = int(v["seed"])
+	var cargo := int(v["cargo"])
+	var pirates := r.randf() < pirate_chance(ship)
+	var win := true
+	var name: String = Data.SHIPS[ship]["name"]
+	var msg := ""
+	if pirates:
+		var guard := float(Data.SHIPS[ship]["guard"])
+		win = r.randf() < clampf(0.35 + 0.15 * guard + research_bonus("fleet"), 0.3, 0.9)
+		if win:
+			cargo = int(cargo * 1.2)
+			prestige += 10
+			msg = "%s mengalahkan bajak laut dan pulang membawa %d perak, +10 prestise." % [name, cargo]
+		else:
+			cargo = int(cargo * 0.5)
+			msg = "Bajak laut merampas separuh muatan %s. Sisa %d perak." % [name, cargo]
+	else:
+		msg = "%s pulang dengan selamat membawa %d perak." % [name, cargo]
+	silver += cargo
+	_track("earn_silver", cargo)
+	changed.emit()
+	var result := _ok(msg)
+	result["pirates"] = pirates
+	result["win"] = win
+	if pirates:
+		result["plan"] = battle_plan(r.randf_range(0.3, 0.7) if win else 0.0, 0.0 if win else r.randf_range(0.3, 0.7),
+			int(v["seed"]))
+	return result
+
+
+# --- Kebun Keraton ------------------------------------------------------------------
+
+func garden_unlocked() -> bool:
+	return stage >= Data.GARDEN_UNLOCK_STAGE
+
+
+func plant_seed_cost(plant: String) -> int:
+	return int(affair_yield("silver") * float(Data.PLANTS[plant]["seed"]))
+
+
+func plot_eta(index: int, now: float) -> int:
+	var pl: Dictionary = realm["garden"][index]
+	return 0 if pl.is_empty() else maxi(0, int(ceil(float(pl["end_t"]) - now)))
+
+
+func plant_reward(plant: String) -> Dictionary:
+	var def: Dictionary = Data.PLANTS[plant]
+	var out := _yields_of(def.get("yields", {}))
+	for k in ["gold", "prestige"]:
+		if def.has(k):
+			out[k] = int(def[k])
+	if def.has("items"):
+		out["items"] = def["items"].duplicate()
+	return out
+
+
+func plant_seed(index: int, plant: String, now: float) -> Dictionary:
+	if not garden_unlocked():
+		return _fail("Menangkan Tahap %d untuk membuka Kebun Keraton." % Data.GARDEN_UNLOCK_STAGE)
+	if index < 0 or index >= realm["garden"].size():
+		return _fail("Petak tidak ditemukan.")
+	if not Data.PLANTS.has(plant):
+		return _fail("Bibit tidak dikenal.")
+	if not realm["garden"][index].is_empty():
+		return _fail("Petak ini sudah ditanami.")
+	var cost := plant_seed_cost(plant)
+	if silver < cost:
+		return _fail("Perak tidak cukup (butuh %d)." % cost)
+	silver -= cost
+	realm["garden"][index] = {"plant": plant, "end_t": now + float(Data.PLANTS[plant]["hours"]) * 3600.0}
+	_track("plant")
+	changed.emit()
+	return _ok("%s ditanam. Panen dalam %d jam." % [Data.PLANTS[plant]["name"], Data.PLANTS[plant]["hours"]])
+
+
+func garden_ready_count(now: float) -> int:
+	var n := 0
+	for i in realm["garden"].size():
+		if not realm["garden"][i].is_empty() and plot_eta(i, now) <= 0:
+			n += 1
+	return n
+
+
+func harvest_all(now: float) -> Dictionary:
+	var parts := []
+	for i in realm["garden"].size():
+		var pl: Dictionary = realm["garden"][i]
+		if pl.is_empty() or plot_eta(i, now) > 0:
+			continue
+		realm["garden"][i] = {}
+		parts.append(_give_rewards(plant_reward(pl["plant"])))
+		_track("harvest")
+	if parts.is_empty():
+		return _fail("Belum ada tanaman yang siap dipanen.")
+	changed.emit()
+	return _ok("Panen %d petak: %s." % [parts.size(), ", ".join(parts)])
+
+
+# --- Syarat gelar lanjutan ----------------------------------------------------------
+
+func rank_req_value(key: String) -> int:
+	match key:
+		"regions":
+			return territory.get("owned", []).size()
+		"research":
+			return research_total()
+		"ships":
+			return ships_owned().size()
+		"kin":
+			return kin_count()
+	return 0
+
+
+## [{key, have, need}] untuk jabatan `rank_index`.
+func rank_reqs(rank_index: int) -> Array:
+	if rank_index < 0 or rank_index >= Data.RANKS.size():
+		return []
+	var out := []
+	var req: Dictionary = Data.RANKS[rank_index].get("req", {})
+	for k in req:
+		out.append({"key": k, "have": rank_req_value(k), "need": int(req[k])})
+	return out
+
+
+func rank_reqs_met(rank_index: int) -> bool:
+	return rank_reqs(rank_index).all(func(r): return r["have"] >= r["need"])
+
+
+# --- Hadiah fitur online --------------------------------------------------------------
+
+func friend_gifts_left(now: float) -> int:
+	var g: Dictionary = realm["gifts"]
+	return Data.FRIEND_GIFT_DAILY - (int(g["n"]) if int(g["day"]) == day_index(now) else 0)
+
+
+## Terima `count` hadiah teman dari server (dibatasi per hari). Mengembalikan jumlah yang diterima.
+func receive_friend_gifts(count: int, now: float) -> Dictionary:
+	var take := mini(count, friend_gifts_left(now))
+	if take <= 0:
+		return _fail("Batas hadiah teman hari ini sudah tercapai.")
+	var g: Dictionary = realm["gifts"]
+	if int(g["day"]) != day_index(now):
+		g["day"] = day_index(now)
+		g["n"] = 0
+	g["n"] = int(g["n"]) + take
+	var amount := int(affair_yield("silver") * Data.FRIEND_GIFT) * take
+	silver += amount
+	changed.emit()
+	var result := _ok("%d hadiah teman diterima: +%d perak." % [take, amount])
+	result["taken"] = take
+	return result
+
+
+func claim_guildwar(week: int, territories: int) -> Dictionary:
+	if week <= int(realm["guildwar_claimed"]):
+		return _fail("Hadiah perang minggu itu sudah diambil.")
+	if territories <= 0:
+		return _fail("Aliansi Tuan tidak menguasai wilayah minggu lalu.")
+	realm["guildwar_claimed"] = week
+	var reward := {}
+	for k in Data.GUILDWAR_REWARD:
+		reward[k] = int(Data.GUILDWAR_REWARD[k]) * territories
+	var text := _give_rewards(reward)
+	changed.emit()
+	return _ok("Hadiah Perang Wilayah (%d wilayah): %s." % [territories, text])

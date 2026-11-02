@@ -49,7 +49,7 @@ func _draw() -> void:
 func _draw_cell(r: Rect2, d: Dictionary, font: Font) -> void:
 	var today: bool = d["today"]
 	var claimed: bool = d["claimed"]
-	var bg := Color("fff3c8") if today else (Color("e2cfa6") if claimed else Color("efe3c6"))
+	var bg := UI.HIGHLIGHT_BG if today else (UI.TRACK_BG if claimed else UI.CARD_BG.blend(UI.INNER_BG))
 	draw_rect(r, bg)
 	draw_rect(r.grow(-1.0 if not today else -2.0), UI.GOLD if today else UI.GOLD_DARK, false, 4.0 if today else 2.0)
 

@@ -4,7 +4,16 @@ extends RefCounted
 const GOLD := Color("e8c070")
 const GOLD_DARK := Color("a8742c")
 const PARCHMENT := Color("f4e4c1")
-const INK := Color("3b2416")
+## Warna yang berubah di mode malam (lihat apply_palette); dipanggil sebelum build().
+static var INK := Color("3b2416")
+static var CARD_BG := PARCHMENT
+static var CARD_TITLE := Color("5e2a12")
+static var INNER_BG := Color(1, 1, 1, 0.35)
+static var HIGHLIGHT_BG := Color("fff3c8")
+static var INPUT_BG := Color("fffaf0")
+static var ALERT_BG := Color("fde2c4")
+static var TRACK_BG := Color("d8c49a")
+static var dark := false
 const RED := Color("a8322d")
 const GREEN := Color("4f9a4a")
 const ATTR_COLORS := {
@@ -17,6 +26,19 @@ const ATTR_COLORS := {
 static var font_body: Font = load("res://assets/fonts/Nunito-SemiBold.woff2")
 static var font_bold: Font = load("res://assets/fonts/Nunito-ExtraBold.woff2")
 static var font_title: Font = load("res://assets/fonts/Cinzel-Bold.woff2")
+
+
+## Palet terang (perkamen) atau gelap (mode malam).
+static func apply_palette(on: bool) -> void:
+	dark = on
+	INK = Color("efe0c0") if on else Color("3b2416")
+	CARD_BG = Color("2a1d14") if on else PARCHMENT
+	CARD_TITLE = GOLD if on else Color("5e2a12")
+	INNER_BG = Color(1, 1, 1, 0.07) if on else Color(1, 1, 1, 0.35)
+	HIGHLIGHT_BG = Color("4a3418") if on else Color("fff3c8")
+	INPUT_BG = Color("1e140c") if on else Color("fffaf0")
+	ALERT_BG = Color("4a1e16") if on else Color("fde2c4")
+	TRACK_BG = Color("4a3a2a") if on else Color("d8c49a")
 
 
 static func box(bg: Color, border := Color.TRANSPARENT, width := 0, radius := 12) -> StyleBoxFlat:
@@ -81,7 +103,7 @@ static func build() -> Theme:
 	t.set_type_variation("CardTitle", "Label")
 	t.set_font("font", "CardTitle", font_title)
 	t.set_font_size("font_size", "CardTitle", 27)
-	t.set_color("font_color", "CardTitle", Color("5e2a12"))
+	t.set_color("font_color", "CardTitle", CARD_TITLE)
 
 	t.set_type_variation("TitleLabel", "Label")
 	t.set_font("font", "TitleLabel", font_title)
@@ -117,7 +139,7 @@ static func build() -> Theme:
 	t.set_meta("nav_on", nav_on)
 	t.set_meta("nav_off", nav)
 
-	var card := box(PARCHMENT, GOLD_DARK, 3, 16)
+	var card := box(CARD_BG, GOLD_DARK, 3, 16)
 	card.shadow_color = Color(0, 0, 0, 0.45)
 	card.shadow_size = 6
 	card.shadow_offset = Vector2(0, 3)

@@ -19,6 +19,8 @@ var server_url := ""  ## alamat server sosial (kosong = mode offline)
 ## Kalender login versi teks; dinyalakan otomatis bila kalender bergambar
 ## pernah membuat game crash di perangkat ini.
 var simple_login := false
+var dark_mode := false  ## tema gelap
+var ui_scale := 1.0  ## ukuran tampilan: 0.9, 1.0, atau 1.1
 
 
 func _ready() -> void:
@@ -37,6 +39,8 @@ func _ready() -> void:
 		skip_battles = bool(cfg.get_value("battle", "skip", false))
 		server_url = str(cfg.get_value("online", "url", ""))
 		simple_login = bool(cfg.get_value("device", "simple_login_v2", false))
+		dark_mode = bool(cfg.get_value("device", "dark_mode", false))
+		ui_scale = clampf(float(cfg.get_value("device", "ui_scale", 1.0)), 0.9, 1.1)
 	_apply_power()
 
 
@@ -60,6 +64,8 @@ func save() -> void:
 	cfg.set_value("battle", "skip", skip_battles)
 	cfg.set_value("online", "url", server_url)
 	cfg.set_value("device", "simple_login_v2", simple_login)
+	cfg.set_value("device", "dark_mode", dark_mode)
+	cfg.set_value("device", "ui_scale", ui_scale)
 	cfg.save(PATH)
 
 

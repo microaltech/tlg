@@ -119,7 +119,20 @@ func session(now: float) -> void:
 			if m.exam_available(c, now) and m.silver >= m.exam_cost(c) and m.officials.size() < Data.OFFICIALS_MAX:
 				m.take_exam(c, now)
 			elif c < m.children.size() and int(m.children[c]["level"]) >= Data.CHILD_MAX_LEVEL:
-				m.marry_child(c)
+				# Lamar calon berbakat tertinggi yang maharnya terjangkau.
+				var best := -1
+				var cands: Array = m.marriage_candidates(c, now)
+				for k in cands.size():
+					if int(cands[k]["dowry"]) <= m.silver and (best < 0 or cands[k]["talent"] > cands[best]["talent"]):
+						best = k
+				if best >= 0:
+					m.marry_noble(c, best, now)
+				else:
+					m.marry_child(c)
+	if m.kin_gift_ready(now):
+		m.claim_kin_gifts(now)
+
+	_realm_session(now)
 
 	# Kampanye selama prajurit cukup (sisakan cadangan 10%).
 	g = m.gold
@@ -321,6 +334,43 @@ func session(now: float) -> void:
 			break
 		stats["gold_gacha"] += Data.GACHA_COST_10
 		stats["pulls"] += 10
+
+
+## Fitur kerajaan: bencana, berburu, kebun, riset, armada.
+func _realm_session(now: float) -> void:
+	var d: Dictionary = m.disaster_active()
+	if not d.is_empty():
+		for k in d["options"].size():
+			if int(d["options"][k]["loyalty"]) > 0 and m.resolve_disaster(k, now)["ok"]:
+				break
+	if m.hunt_unlocked() and not m.counselors.is_empty():
+		var best := ""
+		for id in m.counselors:
+			if best == "" or m.hunt_score(id) > m.hunt_score(best):
+				best = id
+		while m.hunts_left(now) > 0:
+			var g := "harimau" if m.hunt_chance(best, "harimau") > 0.6 else ("babi" if m.hunt_chance(best, "babi") > 0.5 else "rusa")
+			m.go_hunt(best, g, now)
+	if m.garden_unlocked():
+		m.harvest_all(now)
+		for k in m.realm["garden"].size():
+			m.plant_seed(k, ["cengkeh", "kunyit", "melati", "pala"][k], now)
+	if m.research_unlocked() and m.research_job().is_empty():
+		for id in Data.RESEARCH_ORDER:
+			if m.research_level(id) < Data.RESEARCH_MAX_LEVEL and m.research_req_ok(id) \
+					and m.silver >= m.research_cost(id) * 3 and m.start_research(id, now)["ok"]:
+				break
+	if m.fleet_unlocked():
+		for ship in Data.SHIP_ORDER:
+			if not m.ships_owned().has(ship) and Data.SHIPS[ship]["cost"].has("silver") \
+					and m.silver >= int(Data.SHIPS[ship]["cost"]["silver"]) * 3:
+				m.buy_ship(ship)
+		for ship in m.ships_owned():
+			if not m.voyage(ship).is_empty():
+				m.claim_voyage(ship, now)
+			var routes: Array = m.fleet_routes()
+			if m.voyage(ship).is_empty() and not routes.is_empty():
+				m.send_ship(ship, routes[-1], now)
 
 
 func row(day: int) -> void:

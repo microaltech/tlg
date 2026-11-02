@@ -63,6 +63,40 @@ func _ready() -> void:
 	check(fight.has("win") and fight.has("delta"), "pertarungan dihitung server")
 	if fight.has("win"):
 		check(m.arena_online_result(fight["win"], "Lawan", int(fight["delta"]), Game.now())["ok"], "hadiah arena lokal")
+	# Teman, hadiah, kunjungan kota.
+	Online.fetch_friends(func(d): got["friends"] = d)
+	await get_tree().create_timer(0.5).timeout
+	check(str(got.get("friends", {}).get("code", "")).length() == 8, "kode teman sendiri")
+	var opp_code := str(opps[0].get("code", "")) if not opps.is_empty() else ""
+	Online.add_friend(opp_code, func(ok, msg): got["add"] = [ok, msg])
+	await get_tree().create_timer(0.5).timeout
+	check(got.get("add", [false])[0] and got["add"][1] == "Lawan", "tambah teman dengan kode")
+	var opp_id := str(opps[0]["id"]) if not opps.is_empty() else "x"
+	Online.send_gift(opp_id, func(ok, _m): got["gift"] = ok)
+	Online.visit_player(opp_id, func(d): got["visit"] = d)
+	await get_tree().create_timer(0.5).timeout
+	check(got.get("gift", false), "kirim hadiah ke teman")
+	check(str(got.get("visit", {}).get("player", {}).get("name", "")) == "Lawan", "kunjungi kota teman")
+	# Raja Hari Ini: kekuatan Tuan dibuat lebih besar dari "Lawan" (300).
+	m.counselors[m.counselors.keys()[0]]["level"] = 200
+	Online.push_profile()
+	await get_tree().create_timer(0.4).timeout
+	Online.poll_king()
+	await get_tree().create_timer(0.5).timeout
+	check(bool(Online.king.get("me", false)), "Tuan menjadi Raja Hari Ini")
+	Online.set_decree("perak", func(ok, _m): got["decree"] = ok)
+	await get_tree().create_timer(0.8).timeout
+	check(got.get("decree", false) and m.king_effects.has("yield_silver"), "titah raja berlaku di game")
+	check(m.owns_cosmetic("frame_raja_hari_ini"), "bingkai Raja Hari Ini terbuka")
+	# Perang Wilayah.
+	Online.guildwar_attack(0, func(r): got["gw"] = r)
+	await get_tree().create_timer(0.5).timeout
+	check(int(got.get("gw", {}).get("points", 0)) > 0, "serang wilayah dapat poin")
+	Online.fetch_guildwar(func(d): got["board"] = d)
+	await get_tree().create_timer(0.5).timeout
+	var board: Dictionary = got.get("board", {})
+	check(int(board.get("attacks_left", -1)) == 2 and str(board["territories"][0]["owner"]) == "garuda",
+		"papan perang wilayah")
 	Online.set_server("http://127.0.0.1:1")
 	for i in 50:
 		await get_tree().create_timer(0.1).timeout

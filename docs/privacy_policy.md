@@ -39,9 +39,12 @@ di chat aliansi disimpan di save lokal dan tidak dikirim ke siapa pun.
 **Mode online (opsional).** Bila Anda mengisi alamat server di Pengaturan → Server
 Online, game mengirim ke server itu: ID perangkat acak buatan game (bukan ID iklan
 atau nomor perangkat), nama Tuan, kostum dan bingkai profil, aliansi, kekuatan,
-tahap kampanye, rekor menara, prestise, pesan chat aliansi, serta hasil arena
-online. Data ini dipakai untuk papan peringkat, chat, dan arena bersama pemain lain,
-dan dapat dilihat pemain lain (nama, kostum, kekuatan, pesan chat). Server
+tahap kampanye, rekor menara, prestise, ringkasan kota (jabatan, level bangunan,
+jumlah penasihat, wilayah, kapal, dan besan), pesan chat aliansi, daftar teman dan
+hadiah yang dikirim, titah bila Anda menjadi Raja Hari Ini, serangan Perang
+Wilayah, serta hasil arena online. Data ini dipakai untuk papan peringkat, chat,
+arena, teman, kunjungan kota, Raja Hari Ini, dan Perang Wilayah bersama pemain lain,
+dan dapat dilihat pemain lain (nama, kostum, kekuatan, ringkasan kota, pesan chat). Server
 dikelola oleh [NAMA PENGEMBANG]; data disimpan selama akun aktif dan dapat dihapus
 atas permintaan ke [EMAIL KONTAK]. Mengosongkan alamat server menghentikan semua
 pengiriman.

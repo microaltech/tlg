@@ -227,3 +227,58 @@ test("Perang Wilayah Aliansi", async () => {
 		assert.equal(after.data.territories[0].owner, null, "minggu baru dimulai kosong");
 	} finally { server.close(); }
 });
+
+test("Bos Dunia: kerusakan, batas harian, peringkat, hasil minggu lalu", async () => {
+	const { server, call, tick } = await start();
+	try {
+		const a = await login(call, "bos-a", "Arya");
+		const b = await login(call, "bos-b", "Bayu");
+		await call("POST", "/v1/profile", { power: 50000 }, a.token);
+		await call("POST", "/v1/profile", { power: 10000 }, b.token);
+		const info = await call("GET", "/v1/worldboss", null, a.token);
+		assert.equal(info.data.hp_max, 300000, "HP = 5x total kekuatan");
+		assert.equal(info.data.attacks_left, 3);
+		const hit = await call("POST", "/v1/worldboss/attack", null, a.token);
+		assert.equal(hit.data.damage, 50000);
+		await call("POST", "/v1/worldboss/attack", null, a.token);
+		await call("POST", "/v1/worldboss/attack", null, a.token);
+		assert.equal((await call("POST", "/v1/worldboss/attack", null, a.token)).status, 429, "3 kali sehari");
+		await call("POST", "/v1/worldboss/attack", null, b.token);
+		const mine = await call("GET", "/v1/worldboss", null, b.token);
+		assert.equal(mine.data.me.rank, 2);
+		assert.equal(mine.data.me.players, 2);
+		assert.equal(mine.data.top[0].name, "Arya");
+		assert.equal(mine.data.damage, 160000);
+		tick(86400000);
+		assert.equal((await call("POST", "/v1/worldboss/attack", null, a.token)).status, 200, "hari baru, serang lagi");
+		await call("POST", "/v1/worldboss/attack", null, a.token);
+		await call("POST", "/v1/worldboss/attack", null, a.token);
+		const won = await call("GET", "/v1/worldboss", null, a.token);
+		assert.equal(won.data.defeated, true, "bos tumbang");
+		tick(7 * 86400000);
+		const next = await call("GET", "/v1/worldboss", null, a.token);
+		assert.equal(next.data.damage, 0, "minggu baru, bos baru");
+		assert.deepEqual([next.data.last.rank, next.data.last.players, next.data.last.defeated], [1, 2, true]);
+	} finally { server.close(); }
+});
+
+test("kode hadiah: batas, kuota, kedaluwarsa, sekali per pemain", async () => {
+	const { server, call, tick } = await start();
+	const { addCode } = require("./server.js");
+	try {
+		addCode(server.db, "promo1", { gold: 99999, silver: 500, items: { star_stone: 50, rahasia: 1 }, hack: 1 }, 2,
+			1_700_000_000_000 + 86400000);
+		const users = [];
+		for (let i = 0; i < 3; i++) users.push(await login(call, `kode-${i}`, `Tuan ${i}`));
+		const r = await call("POST", "/v1/redeem", { code: " Promo1 " }, users[0].token);
+		assert.equal(r.status, 200);
+		assert.deepEqual(r.data.reward, { gold: 1000, silver: 500, items: { star_stone: 10 } }, "hadiah dibatasi");
+		assert.equal((await call("POST", "/v1/redeem", { code: "PROMO1" }, users[0].token)).status, 409, "sekali per pemain");
+		assert.equal((await call("POST", "/v1/redeem", { code: "PROMO1" }, users[1].token)).status, 200);
+		assert.equal((await call("POST", "/v1/redeem", { code: "PROMO1" }, users[2].token)).status, 410, "kuota habis");
+		assert.equal((await call("POST", "/v1/redeem", { code: "TIDAKADA" }, users[2].token)).status, 404);
+		addCode(server.db, "lama", { gold: 5 }, 10, 1_700_000_000_000 + 1000);
+		tick(5000);
+		assert.equal((await call("POST", "/v1/redeem", { code: "lama" }, users[2].token)).status, 404, "kedaluwarsa");
+	} finally { server.close(); }
+});

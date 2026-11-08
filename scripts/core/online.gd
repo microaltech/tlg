@@ -262,6 +262,34 @@ func guildwar_attack(territory: int, callback: Callable) -> void:
 		callback.call(data))
 
 
+## callback(data: Dictionary) — status Bos Dunia atau {} bila gagal.
+func fetch_world_boss(callback: Callable) -> void:
+	_request(HTTPClient.METHOD_GET, "/v1/worldboss", {}, func(code: int, data: Dictionary):
+		callback.call(data if code == 200 else {}))
+
+
+## callback(data: Dictionary) — {damage, hp_max, total, defeated, hp_before} atau {error}.
+func world_boss_attack(callback: Callable) -> void:
+	_request(HTTPClient.METHOD_POST, "/v1/worldboss/attack", {}, func(code: int, data: Dictionary):
+		if code != 200:
+			data = {"error": data.get("error", "Server tidak menjawab.")}
+		callback.call(data))
+
+
+## Tukar kode: kode bawaan dicoba di perangkat dulu, lalu ke server bila online.
+## callback(result: Dictionary) dengan "ok" dan "msg".
+func redeem(code: String, callback: Callable) -> void:
+	var local: Dictionary = Game.model.redeem_code(code)
+	if local["ok"] or not is_online() or local["msg"] == "Kode ini sudah dipakai.":
+		callback.call(local)
+		return
+	_request(HTTPClient.METHOD_POST, "/v1/redeem", {"code": Game.model.normalize_code(code)}, func(c: int, data: Dictionary):
+		if c == 200 and data.get("reward") is Dictionary:
+			callback.call(Game.model.redeem_server_reward(code, data["reward"]))
+		else:
+			callback.call({"ok": false, "msg": str(data.get("error", "Kode tidak dikenal atau sudah kedaluwarsa."))}))
+
+
 func _request(method: int, path: String, body: Dictionary, callback: Callable, auth := true) -> void:
 	if base_url() == "":
 		callback.call(0, {"error": "Mode offline."})

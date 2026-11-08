@@ -9,7 +9,8 @@ extends Control
 ## Pemakaian: var v := BattleView.new(); v.setup(plan, info); add_child(v)
 ## info: title, me_name, them_name, me_count, them_count, me_portrait,
 ##       them_portrait, win, detail, bg (nama latar), headline (pengganti
-##       MENANG!/KALAH...), units ([pihak kita, lawan]: "soldiers", "power", "hp").
+##       MENANG!/KALAH...), units ([pihak kita, lawan]: "soldiers", "power", "hp"),
+##       me_mix / them_mix (porsi [tombak, berkuda, panah]; tanpa ini semua bertombak).
 
 signal finished
 
@@ -232,6 +233,7 @@ func _spawn_units() -> void:
 	var rows := int(ceil(float(PER_SIDE) / COLS))
 	var dy := _field.size.y / (rows + 1)
 	for side in 2:
+		var kinds := _column_kinds(info.get("me_mix" if side == 0 else "them_mix", [1.0, 0.0, 0.0]))
 		for i in PER_SIDE:
 			var c := i % COLS
 			var r := i / COLS
@@ -241,7 +243,18 @@ func _spawn_units() -> void:
 			_units.append({
 				"side": side, "home": Vector2(x, _field.position.y + dy * (r + 1)),
 				"alive": true, "fall_t": 0.0, "seed": _rng.randf() * TAU, "col": c, "flag": i % (COLS * 3) == 0,
+				"kind": kinds[c],
 			})
+
+
+## Jenis pasukan per kolom: panah di belakang, berkuda di tengah, tombak di depan.
+func _column_kinds(mix: Array) -> Array:
+	var archers := int(round(float(mix[2]) * COLS))
+	var cavalry := int(round(float(mix[1]) * COLS))
+	var out := []
+	for c in COLS:
+		out.append("archer" if c < archers else ("cavalry" if c < archers + cavalry else "infantry"))
+	return out
 
 
 func _unit_pos(u: Dictionary) -> Vector2:
@@ -294,16 +307,34 @@ func _draw_unit(u: Dictionary) -> void:
 	var bob := sin(_time * 14.0 + float(u["seed"])) * (2.5 if moving else 0.8)
 	var stride := sin(_time * 14.0 + float(u["seed"])) * (5.0 if moving else 0.0)
 	var base := p + Vector2(0, bob * 0.3)
+	var kind := str(u.get("kind", "infantry"))
 	_canvas.draw_rect(Rect2(base + Vector2(-9, 1), Vector2(18, 4)), Color(0, 0, 0, 0.25))
-	# Kaki
-	_canvas.draw_line(base + Vector2(-2, -8), base + Vector2(-3 - stride * 0.6, 0), color.darkened(0.5), 3)
-	_canvas.draw_line(base + Vector2(2, -8), base + Vector2(3 + stride * 0.6, 0), color.darkened(0.5), 3)
+	if kind == "cavalry":
+		# Kuda: badan, kepala menghadap musuh, empat kaki berderap; penunggang di atasnya.
+		var horse := Color("7a5236") if side == 0 else Color("4a3a30")
+		_canvas.draw_line(base + Vector2(-8, -10), base + Vector2(-9 - stride, 0), horse.darkened(0.3), 3)
+		_canvas.draw_line(base + Vector2(8, -10), base + Vector2(9 + stride, 0), horse.darkened(0.3), 3)
+		_canvas.draw_rect(Rect2(base + Vector2(-12, -18), Vector2(24, 10)), horse)
+		_canvas.draw_line(base + Vector2(dir * 10, -16), base + Vector2(dir * 18, -26), horse, 6)
+		base += Vector2(0, -12)
+	else:
+		# Kaki
+		_canvas.draw_line(base + Vector2(-2, -8), base + Vector2(-3 - stride * 0.6, 0), color.darkened(0.5), 3)
+		_canvas.draw_line(base + Vector2(2, -8), base + Vector2(3 + stride * 0.6, 0), color.darkened(0.5), 3)
 	# Badan & kepala
 	var body := base + Vector2(0, -8 + bob)
 	_canvas.draw_rect(Rect2(body + Vector2(-6, -14), Vector2(12, 14)), color)
 	_canvas.draw_rect(Rect2(body + Vector2(-6, -4), Vector2(12, 3)), Color("e8c070"))
 	_canvas.draw_circle(body + Vector2(0, -19), 5.5, SKIN)
 	_canvas.draw_arc(body + Vector2(0, -19), 6, PI, TAU, 8, color.darkened(0.35), 3)
+	if kind == "archer":
+		# Busur di depan badan; tali ditarik bergantian.
+		var pull := 4.0 if sin(_time * 10.0 + float(u["seed"])) > 0 else 0.0
+		var bow := body + Vector2(dir * 9, -8)
+		_canvas.draw_arc(bow, 10, -PI / 2 if dir > 0 else PI / 2, PI / 2 if dir > 0 else PI * 1.5, 8, Color("7a4b1f"), 2)
+		_canvas.draw_line(bow + Vector2(0, -10), bow + Vector2(-dir * pull, 0), Color("e9d6b0"), 1)
+		_canvas.draw_line(bow + Vector2(-dir * pull, 0), bow + Vector2(0, 10), Color("e9d6b0"), 1)
+		return
 	# Tombak; menusuk saat bertemu di tengah
 	var thrust := 6.0 if _adv > 0.95 and sin(_time * 18.0 + float(u["seed"])) > 0 else 0.0
 	var hand := body + Vector2(dir * 7, -8)

@@ -14,4 +14,5 @@ TOKEN=$(curl -s -X POST "localhost:$PORT/v1/auth/device" -d '{"device_id":"pemai
 curl -s -X POST "localhost:$PORT/v1/profile" -H "Authorization: Bearer $TOKEN" \
 	-d '{"alliance":"garuda","power":300,"name":"Lawan"}' >/dev/null
 curl -s -X POST "localhost:$PORT/v1/chat" -H "Authorization: Bearer $TOKEN" -d '{"text":"Halo dari pemain lain"}' >/dev/null
+DB_PATH=$DB node server/admin.js add-code UJIKODE gold=10 items.batu_meteor=1 --max 5 --days 1 >/dev/null 2>&1
 "${GODOT:-godot}" --headless --path . res://tools/online_check.tscn -- "http://127.0.0.1:$PORT"

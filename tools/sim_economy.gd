@@ -136,6 +136,7 @@ func session(now: float) -> void:
 
 	# Kampanye selama prajurit cukup (sisakan cadangan 10%).
 	g = m.gold
+	m.set_army(m.best_army(m.stage))
 	while m.soldiers >= m.expected_losses() * 1.1:
 		var r := m.fight_stage()
 		stats["wins" if r["ok"] else "fails"] += 1
@@ -360,6 +361,7 @@ func _realm_session(now: float) -> void:
 			if m.research_level(id) < Data.RESEARCH_MAX_LEVEL and m.research_req_ok(id) \
 					and m.silver >= m.research_cost(id) * 3 and m.start_research(id, now)["ok"]:
 				break
+	_realm5_session(now)
 	if m.fleet_unlocked():
 		for ship in Data.SHIP_ORDER:
 			if not m.ships_owned().has(ship) and Data.SHIPS[ship]["cost"].has("silver") \
@@ -371,6 +373,55 @@ func _realm_session(now: float) -> void:
 			var routes: Array = m.fleet_routes()
 			if m.voyage(ship).is_empty() and not routes.is_empty():
 				m.send_ship(ship, routes[-1], now)
+
+
+## Batch 5: kuis, pacuan, candi, tempa, peliharaan, diplomasi.
+func _realm5_session(now: float) -> void:
+	var qs: Array = m.quiz_today(now)
+	for i in qs.size():
+		if m.quiz_answered(i, now) < 0:
+			m.answer_quiz(i, qs[i]["answer"] if m.rng.randf() < 0.7 else (int(qs[i]["answer"]) + 1) % 4, now)
+	if not m.horses.is_empty():
+		var best := ""
+		for id in m.horses:
+			if best == "" or m.horse_speed(id) > m.horse_speed(best):
+				best = id
+		while m.races_left(now) > 0:
+			m.go_race(best, now)
+	if m.candi_unlocked() and m.candi_free_left(now) > 0 and m.enter_candi(now)["ok"]:
+		while not m.candi_run().is_empty():
+			var doors: Array = m.candi_run()["doors"]
+			if int(m.candi_run()["hp"]) < 35 and not doors.has("mata_air") and not doors.has("boss"):
+				m.leave_candi()
+				break
+			var pick := 0
+			for k in doors.size():
+				if doors[k] in ["harta", "relik", "mata_air"]:
+					pick = k
+			m.candi_choose(pick)
+	while m.forge_unlocked() and m.item_count("besi_tempa") >= 3 and m.item_count("kayu_cendana") >= 2 \
+			and m.silver > m.forge_silver() * 5 and m.equipment.size() < Data.EQUIP_CAPACITY - 5:
+		m.forge(["weapon", "book", "charm"][m.rng.randi_range(0, 2)], m.item_count("batu_meteor") > 0)
+	if m.pet_unlocked():
+		if m.pet_level("kerbau") == 0 and m.silver > 200000:
+			m.adopt_pet("kerbau")
+		if m.pet_level("kerbau") > 0 and m.silver > m.pet_feed_cost("kerbau") * 10:
+			m.feed_pet("kerbau")
+	if m.diplo_unlocked():
+		if not m.threat().is_empty():
+			m.answer_threat(false, now)
+		while m.envoys_left(now) > 0:
+			var target := ""
+			for k in Data.KINGDOMS:
+				if not m.realm["diplo"]["ally"].has(k["id"]) and (target == "" or m.relation(k["id"]) > m.relation(target)):
+					target = k["id"]
+			if target == "" or m.silver < m.affair_yield("silver") * 6:
+				break
+			m.send_gift(target, now)
+			m.sign_pact(target, "trade")
+			m.sign_pact(target, "ally")
+		while m.spies_left(now) > 0:
+			m.send_spy("pagaruyung", "curi", now)
 
 
 func row(day: int) -> void:

@@ -35,6 +35,11 @@ const DECREES = ["perak", "pangan", "prajurit", "berkah"];
 const GUILDWAR_ATTACKS = 3;
 const TERRITORIES = ["Selat Sunda", "Teluk Bone", "Laut Banda", "Tanah Karo", "Lembah Baliem", "Danau Toba"];
 const DAY_MS = 86400000;
+const BOSS_ATTACKS = 3;
+const BOSS_HP_MIN = 200000;
+const CODE_LIMITS = { gold: 1000, silver: 10000000, grain: 10000000, soldiers: 10000000, prestige: 2000 };
+const CODE_ITEMS = ["scroll_train", "star_stone", "pill_intimacy", "recruit_ticket", "energy_tea", "silver_box",
+	"grain_box", "troop_writ", "besi_tempa", "kayu_cendana", "batu_meteor"];
 const BANNED = ["anjing", "bangsat", "babi", "kontol", "memek", "goblok", "tolol", "bajingan", "kampret", "asu",
 	"fuck", "shit", "bitch", "bastard", "asshole"];
 
@@ -72,6 +77,16 @@ function openDb(file) {
 			PRIMARY KEY (week, territory, alliance));
 		CREATE TABLE IF NOT EXISTS guildwar_attacks (
 			player TEXT NOT NULL, day INTEGER NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (player, day));
+		CREATE TABLE IF NOT EXISTS world_boss (
+			week INTEGER PRIMARY KEY, hp_max INTEGER NOT NULL, damage INTEGER NOT NULL DEFAULT 0);
+		CREATE TABLE IF NOT EXISTS world_boss_hits (
+			week INTEGER NOT NULL, player TEXT NOT NULL, damage INTEGER NOT NULL DEFAULT 0,
+			day INTEGER NOT NULL DEFAULT -1, n INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (week, player));
+		CREATE TABLE IF NOT EXISTS codes (
+			code TEXT PRIMARY KEY, reward TEXT NOT NULL, max_uses INTEGER NOT NULL, uses INTEGER NOT NULL DEFAULT 0,
+			expires INTEGER NOT NULL);
+		CREATE TABLE IF NOT EXISTS redemptions (
+			code TEXT NOT NULL, player TEXT NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (code, player));
 	`);
 	// Kolom tambahan versi lebih baru (database lama di-upgrade di tempat).
 	const cols = db.prepare("PRAGMA table_info(players)").all().map((c) => c.name);
@@ -87,6 +102,17 @@ function cleanName(raw) {
 function filterText(text) {
 	let out = text;
 	for (const w of BANNED) out = out.replace(new RegExp(w, "gi"), "*".repeat(w.length));
+	return out;
+}
+
+// Hadiah kode dibatasi: hanya sumber daya dan item yang dikenal, dengan batas jumlah.
+function cleanReward(raw) {
+	const out = {};
+	for (const [k, max] of Object.entries(CODE_LIMITS)) if (raw && raw[k] != null) out[k] = clampInt(raw[k], 0, max);
+	if (raw && raw.items && typeof raw.items === "object") {
+		out.items = {};
+		for (const id of CODE_ITEMS) if (raw.items[id] != null) out.items[id] = clampInt(raw.items[id], 0, 10);
+	}
 	return out;
 }
 
@@ -146,6 +172,21 @@ function createServer(opts = {}) {
 		gwAdd: db.prepare(`INSERT INTO guildwar (week, territory, alliance, points) VALUES (?, ?, ?, ?)
 			ON CONFLICT (week, territory, alliance) DO UPDATE SET points = points + excluded.points`),
 		gwUsed: db.prepare("SELECT n FROM guildwar_attacks WHERE player = ? AND day = ?"),
+		bossGet: db.prepare("SELECT * FROM world_boss WHERE week = ?"),
+		bossAdd: db.prepare("INSERT OR IGNORE INTO world_boss (week, hp_max) VALUES (?, ?)"),
+		bossHit: db.prepare("UPDATE world_boss SET damage = damage + ? WHERE week = ?"),
+		bossPower: db.prepare("SELECT COALESCE(SUM(power), 0) AS p FROM players WHERE seen >= ?"),
+		hitGet: db.prepare("SELECT * FROM world_boss_hits WHERE week = ? AND player = ?"),
+		hitAdd: db.prepare(`INSERT INTO world_boss_hits (week, player, damage, day, n) VALUES (?, ?, ?, ?, 1)
+			ON CONFLICT (week, player) DO UPDATE SET damage = damage + excluded.damage,
+			n = CASE WHEN day = excluded.day THEN n + 1 ELSE 1 END, day = excluded.day`),
+		hitTop: db.prepare(`SELECT h.damage, p.name, p.portrait, p.id FROM world_boss_hits h JOIN players p ON p.id = h.player
+			WHERE h.week = ? ORDER BY h.damage DESC LIMIT 10`),
+		hitRank: db.prepare("SELECT COUNT(*) AS n FROM world_boss_hits WHERE week = ? AND damage > ?"),
+		hitCount: db.prepare("SELECT COUNT(*) AS n FROM world_boss_hits WHERE week = ?"),
+		codeGet: db.prepare("SELECT * FROM codes WHERE code = ?"),
+		codeUse: db.prepare("UPDATE codes SET uses = uses + 1 WHERE code = ?"),
+		redeemAdd: db.prepare("INSERT OR IGNORE INTO redemptions (code, player, t) VALUES (?, ?, ?)"),
 		gwUse: db.prepare(`INSERT INTO guildwar_attacks (player, day, n) VALUES (?, ?, 1)
 			ON CONFLICT (player, day) DO UPDATE SET n = n + 1`),
 	};
@@ -167,6 +208,22 @@ function createServer(opts = {}) {
 			k = q.king.get(day);
 		}
 		return k;
+	}
+
+	// Bos Dunia minggu `week`: HP = 5x total kekuatan pemain aktif 7 hari terakhir.
+	function worldBoss(week) {
+		let b = q.bossGet.get(week);
+		if (!b) {
+			q.bossAdd.run(week, Math.max(BOSS_HP_MIN, q.bossPower.get(now() - 7 * DAY_MS).p * 5));
+			b = q.bossGet.get(week);
+		}
+		return b;
+	}
+
+	function bossStanding(week, me) {
+		const hit = q.hitGet.get(week, me.id);
+		return { damage: hit ? hit.damage : 0, rank: hit ? q.hitRank.get(week, hit.damage).n + 1 : 0,
+			players: q.hitCount.get(week).n };
 	}
 
 	// Pemilik tiap wilayah pada minggu `week`: aliansi dengan poin terbanyak.
@@ -402,6 +459,46 @@ function createServer(opts = {}) {
 		},
 	});
 
+	Object.assign(routes, {
+		// (auth) Bos Dunia minggu ini, peringkat Tuan, dan hasil minggu lalu (untuk hadiah).
+		"GET /v1/worldboss": (me) => {
+			const week = weekOf(now());
+			const boss = worldBoss(week);
+			const hit = q.hitGet.get(week, me.id);
+			const used = hit && hit.day === dayOf(now()) ? hit.n : 0;
+			const last = q.bossGet.get(week - 1);
+			return [200, { week, hp_max: boss.hp_max, damage: boss.damage, defeated: boss.damage >= boss.hp_max,
+				attacks_left: Math.max(0, BOSS_ATTACKS - used), me: bossStanding(week, me), top: q.hitTop.all(week),
+				last_week: week - 1, last: { ...bossStanding(week - 1, me), defeated: !!last && last.damage >= last.hp_max },
+				ends_in: (week + 1) * 7 * DAY_MS - 3 * DAY_MS - now() }];
+		},
+
+		// (auth) Serang bos: kerusakan = kekuatan x acak 0,8–1,2. Maks. 3 kali sehari.
+		"POST /v1/worldboss/attack": (me) => {
+			const week = weekOf(now());
+			const boss = worldBoss(week);
+			const hit = q.hitGet.get(week, me.id);
+			if (hit && hit.day === dayOf(now()) && hit.n >= BOSS_ATTACKS) return [429, { error: "Serangan hari ini habis." }];
+			const damage = Math.max(1, Math.round(Math.max(1, me.power) * (0.8 + 0.4 * random())));
+			q.hitAdd.run(week, me.id, damage, dayOf(now()));
+			q.bossHit.run(damage, week);
+			const b = q.bossGet.get(week);
+			return [200, { damage, hp_max: b.hp_max, total: b.damage, defeated: b.damage >= b.hp_max,
+				hp_before: Math.max(0, b.hp_max - b.damage + damage) }];
+		},
+
+		// (auth) Tukar kode hadiah buatan pengelola (lihat server/admin.js).
+		"POST /v1/redeem": (me, body) => {
+			const code = String(body.code || "").toUpperCase().replace(/\s/g, "").slice(0, 32);
+			const c = code ? q.codeGet.get(code) : null;
+			if (!c || c.expires < now()) return [404, { error: "Kode tidak dikenal atau sudah kedaluwarsa." }];
+			if (c.uses >= c.max_uses) return [410, { error: "Kuota kode ini sudah habis." }];
+			if (q.redeemAdd.run(code, me.id, now()).changes === 0) return [409, { error: "Kode ini sudah Tuan pakai." }];
+			q.codeUse.run(code);
+			return [200, { code, reward: cleanReward(JSON.parse(c.reward)) }];
+		},
+	});
+
 	const handler = async (req, res) => {
 		const url = new URL(req.url, "http://x");
 		const key = `${req.method} ${url.pathname}`;
@@ -445,7 +542,14 @@ function createServer(opts = {}) {
 	return server;
 }
 
-module.exports = { createServer };
+// Tambah/ubah kode hadiah langsung di database (dipakai server/admin.js dan tes).
+function addCode(db, code, reward, maxUses, expires) {
+	db.prepare(`INSERT INTO codes (code, reward, max_uses, expires) VALUES (?, ?, ?, ?)
+		ON CONFLICT (code) DO UPDATE SET reward = excluded.reward, max_uses = excluded.max_uses, expires = excluded.expires`)
+		.run(String(code).toUpperCase(), JSON.stringify(cleanReward(reward)), maxUses, expires);
+}
+
+module.exports = { createServer, openDb, addCode, cleanReward };
 
 if (require.main === module) {
 	const port = Number(process.env.PORT || 8080);

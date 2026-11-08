@@ -132,6 +132,27 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   - **Besan**: anak dewasa dilamar putra-putri wangsa bangsawan (calon berganti
     harian); tiap besan mengirim perak setiap hari.
   - **Teman** dan **Perang Wilayah** (mode online).
+  - **Diplomasi** (Tahap 15): 5 kerajaan tetangga dengan hubungan -100..100: kirim
+    hadiah, minta upeti, perjanjian dagang (+2% perak) dan persekutuan (+2% tempur).
+    Hubungan buruk memicu serangan. **Mata-mata** (Kecerdasan): intai, curi perak,
+    sabotase; yang tertangkap libur sehari.
+  - **Pacuan Kuda**: 3 pacuan per hari dengan kuda dari kandang, tayangan 6 jalur.
+  - **Kuis Sejarah Nusantara**: 5 soal per hari dari 40 soal sejarah dan budaya.
+  - **Penjelajahan Candi** (Tahap 18): 6 ruangan, pilih satu dari dua pintu, Buto
+    penjaga di akhir (tayangan duel). Sumber bahan tempa.
+  - **Besalen** (Tahap 18): tempa pusaka dari Besi Tempa + Kayu Cendana; Batu Meteor
+    menaikkan peluang Epik/Legenda.
+  - **Hewan Peliharaan** (Tahap 10): Elang Jawa, Jalak Bali, Kerbau Bule, Macan Tutul.
+  - **Bos Dunia** (mode online): satu bos untuk semua pemain tiap minggu.
+- **Jenis pasukan** — Tombak, Berkuda, dan Panah saling mengalahkan. Pilih susunan
+  pasukan di Kampanye; musuh tiap tahap punya susunan sendiri. Tayangan perang
+  menampilkan ketiga jenis.
+- **Musim** — Kemarau dan Penghujan bergantian tiap minggu (hasil dan bencana khas).
+- **Pemberontakan** — muncul bila kesetiaan rakyat di bawah 20; tumpas atau bujuk.
+- **Bonus pemain kembali** — absen 3 hari atau lebih: paket bantuan, +30% hasil
+  selama 3 hari, dan 3 misi kejar ketinggalan.
+- **Kode hadiah** — di Pengaturan. Kode bawaan `NUSANTARA` dan `TOPLORD2026`; kode
+  promosi baru dibuat di server dengan `node server/admin.js add-code ...`.
 - **Gelar lanjutan** — Adipati, Sultan, dan Maharaja setelah Perdana Menteri, dengan
   syarat wilayah, riset, kapal, dan besan, serta bingkai profil khusus.
 - **Mode malam & ukuran tampilan** — di Pengaturan → Perangkat.
@@ -141,8 +162,8 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   tanpa dependensi luar). Isi alamat server di Pengaturan → Server Online untuk
   chat aliansi dengan pemain sungguhan, papan peringkat "Pemain online", lawan
   Arena dari pemain lain (hasil dihitung server), teman & hadiah harian, kunjungan
-  kota, Raja Hari Ini (titah bonus untuk semua pemain), dan Perang Wilayah Aliansi
-  mingguan. Tanpa alamat server, game tetap
+  kota, Raja Hari Ini (titah bonus untuk semua pemain), Perang Wilayah Aliansi
+  mingguan, Bos Dunia mingguan, dan kode hadiah dari server. Tanpa alamat server, game tetap
   sepenuhnya offline. Lihat `server/README.md` untuk hosting dan batasannya.
 - **Festival musiman** — Pesta Tahun Baru (28 Des–7 Jan), Berkah Ramadan &
   Lebaran (awal Ramadan sampai sepekan setelah Idulfitri, tanggal per tahun di

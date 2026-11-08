@@ -225,6 +225,7 @@ func _ready() -> void:
 		if Online.is_online():
 			_realm_ui._load_friends()
 			_realm_ui._load_guildwar()
+			_realm_ui._load_world_boss()
 		_queue_rebuild())
 	Online.king_changed.connect(_queue_rebuild)
 	_display = [Settings.dark_mode, Settings.ui_scale]
@@ -1228,6 +1229,7 @@ func _build_campaign(page: Dictionary) -> void:
 		"  (tahap besar!)" if (model.stage + 1) % 5 == 0 else ""])
 
 	_build_formation(box)
+	_realm_ui.build_army(box)
 	var attack := _button(box, "SERANG!", _attack, true, "", "GoldButton", false, "attack")
 	_attack_button = attack
 	attack.custom_minimum_size.y = 96
@@ -1311,6 +1313,7 @@ func _attack():
 	var big_stage: bool = (model.stage + 1) % Data.BATTLE_FULL_EVERY == 0
 	var mine_before: int = model.soldiers
 	var enemy_total: int = info["enemy_soldiers"]
+	var stage_index: int = model.stage
 	var result: Dictionary = model.fight_stage()
 	var win: bool = result["ok"]
 	var mine_after: int = model.soldiers
@@ -1326,7 +1329,7 @@ func _attack():
 		_play_battle(plan, {"title": tr("Tahap Besar · %s") % tr(info["name"]), "me_name": model.me_name(),
 			"them_name": info["enemy_name"], "me_count": mine_before, "them_count": enemy_total,
 			"me_portrait": model.lord_portrait(), "them_portrait": info["enemy_id"], "win": win, "detail": result["msg"],
-			"bg": "campaign"})
+			"bg": "campaign", "me_mix": model.army_mix(), "them_mix": model.enemy_mix(stage_index)})
 		return null
 	_battling = true
 	var lord := _vs_lord
@@ -3398,7 +3401,12 @@ func _fill_bag() -> void:
 		_label(col, def["desc"], "SmallLabel").add_theme_color_override("font_color", UI.INK)
 		var item_id: String = id
 		var b: Button
-		if id == "recruit_ticket":
+		if def.get("material", false):
+			b = _button(row, "Besalen", func():
+				_close_bag()
+				_realm_ui.show_forge()
+				return null, _realm_ui.model.forge_unlocked(), "", "GoldButton")
+		elif id == "recruit_ticket":
 			b = _button(row, "Rekrut", func():
 				_close_bag()
 				_switch_page("gacha")
@@ -5396,6 +5404,7 @@ func _show_settings() -> void:
 		"Langsung tampilkan hasil perang tanpa animasi. Hasil pertempuran tetap sama.")
 
 	_build_online_section(box)
+	_realm_ui.build_redeem(box)
 
 	var data := _inner_box(box)
 	_label(data, "Data", "CardLabel").add_theme_font_override("font", UI.font_bold)

@@ -9,6 +9,7 @@ const Data := preload("res://scripts/core/game_data.gd")
 const Art := preload("res://scripts/ui/art.gd")
 const UI := preload("res://scripts/ui/ui_theme.gd")
 const HuntView := preload("res://scripts/ui/hunt_view.gd")
+const RaceView := preload("res://scripts/ui/race_view.gd")
 
 var ui  ## main.gd
 var model
@@ -21,6 +22,10 @@ var _ship_route := {}  ## kapal -> indeks tujuan terpilih
 var _friends := {}  ## data terakhir /v1/friends
 var _guildwar := {}
 var _friend_code_edit: LineEdit
+var _race_pick := ""
+var _forge_meteor := false
+var _world_boss := {}
+var _code_edit: LineEdit
 
 
 func _init(main) -> void:
@@ -82,6 +87,9 @@ func _result(r) -> void:
 
 func build_city_cards(box: VBoxContainer) -> void:
 	_king_banner(box)
+	_comeback_card(box)
+	_rebellion_banner(box)
+	_threat_banner(box)
 	_disaster_banner(box)
 	_hub_card(box)
 
@@ -124,7 +132,13 @@ func _disaster_banner(box: VBoxContainer) -> void:
 func _hub_card(box: VBoxContainer) -> void:
 	var now: float = Game.now()
 	var inner: VBoxContainer = ui._col(ui._card(box))
-	ui._label(inner, "Urusan Kerajaan", "CardTitle")
+	var head := _row(inner)
+	var hl: Label = ui._label(head, "Urusan Kerajaan", "CardTitle")
+	hl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var season: Dictionary = model.season_def(now)
+	head.add_child(ui._tex(Art.icon(season["icon"]), 40))
+	var sl := _small(head, season["name"])
+	sl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var grid := GridContainer.new()
 	grid.columns = 3
 	grid.add_theme_constant_override("h_separation", 8)
@@ -143,6 +157,16 @@ func _hub_card(box: VBoxContainer) -> void:
 		["Besan", "ring", true, 0, _adult_count() + (1 if model.kin_gift_ready(now) else 0), show_kin],
 		["Teman", "friends", true, 0, _friends.get("inbox", []).size() if online else 0, show_friends],
 		["Perang Wilayah", "war_flag", true, 0, int(_guildwar.get("attacks_left", 0)) if online else 0, show_guildwar],
+		["Diplomasi", "diplomacy", model.diplo_unlocked(), Data.DIPLO_UNLOCK_STAGE,
+			(model.envoys_left(now) if model.diplo_unlocked() else 0) + (1 if not model.threat().is_empty() else 0),
+			show_diplomacy],
+		["Pacuan Kuda", "race", not model.horses.is_empty(), -2, model.races_left(now), show_race],
+		["Kuis Sejarah", "quiz", true, 0, model.quiz_left(now), show_quiz],
+		["Candi", "candi", model.candi_unlocked(), Data.CANDI_UNLOCK_STAGE,
+			model.candi_free_left(now) + (1 if not model.candi_run().is_empty() else 0), show_candi],
+		["Besalen", "forge", model.forge_unlocked(), Data.FORGE_UNLOCK_STAGE, 0, show_forge],
+		["Peliharaan", "pet_elang", model.pet_unlocked(), Data.PET_UNLOCK_STAGE, 0, show_pets],
+		["Bos Dunia", "world_boss", true, 0, int(_world_boss.get("attacks_left", 0)) if online else 0, show_world_boss],
 	]
 	for t in tiles:
 		var unlocked: bool = t[2]
@@ -151,7 +175,8 @@ func _hub_card(box: VBoxContainer) -> void:
 		if unlocked and int(t[4]) > 0:
 			label += " (%d)" % int(t[4])
 		elif not unlocked:
-			label = tr("Tahap %d") % int(t[3]) if int(t[3]) >= 0 else tr("%d wilayah") % Data.FLEET_UNLOCK_REGIONS
+			label = tr("Tahap %d") % int(t[3]) if int(t[3]) >= 0 else (tr("%d wilayah") % Data.FLEET_UNLOCK_REGIONS
+				if int(t[3]) == -1 else tr("Butuh kuda"))
 		var b := Button.new()
 		b.text = label
 		b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
@@ -940,3 +965,547 @@ func _fill_king(box: VBoxContainer, subtitle: Label) -> void:
 				return null, true, "GoldButton", "promote")
 	else:
 		_small(box, "Raja belum bertitah hari ini.")
+
+
+
+# --- Kota: pemain kembali, pemberontakan, ancaman ----------------------------------------
+
+func _comeback_card(box: VBoxContainer) -> void:
+	var now: float = Game.now()
+	if not model.comeback_active(now):
+		return
+	var inner: VBoxContainer = ui._col(ui._card(box))
+	var head := _row(inner)
+	head.add_child(ui._tex(Art.icon("comeback"), 64))
+	var hc: VBoxContainer = ui._col(head)
+	ui._label(hc, "Semangat Kembali", "CardTitle")
+	_small(hc, tr("Semua hasil +30%% · berakhir dalam %s") % ui._duration(
+		int(float(model.realm["comeback"]["until"]) - now))).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	if not model.realm["comeback"]["pack"]:
+		ui._button(inner, "Ambil Paket Bantuan", func(): return model.claim_comeback_pack(Game.now()), true, "gift",
+			"GoldButton", false, "reveal_sr")
+	for i in Data.COMEBACK_MISSIONS.size():
+		var m: Dictionary = Data.COMEBACK_MISSIONS[i]
+		var row := _row(inner)
+		var col: VBoxContainer = ui._col(row)
+		var prog: int = model.comeback_progress(i)
+		ui._label(col, tr(m["text"]) + " (%d/%d)" % [prog, m["target"]], "CardLabel").auto_translate_mode = \
+			Node.AUTO_TRANSLATE_MODE_DISABLED
+		_small(col, ui._reward_text(m["reward"]))
+		var done: bool = model.realm["comeback"]["done"].has(i)
+		var idx: int = i
+		_side_button(row, "Diambil" if done else "Klaim", func(): return model.claim_comeback_mission(idx, Game.now()),
+			not done and prog >= int(m["target"]), "GreenButton", "coin")
+
+
+func _rebellion_banner(box: VBoxContainer) -> void:
+	var rb: Dictionary = model.rebellion()
+	if rb.is_empty():
+		return
+	var card: HBoxContainer = ui._card(box)
+	card.add_child(ui._tex(Art.icon("rebel"), 80))
+	var col: VBoxContainer = ui._col(card)
+	var t: Label = ui._label(col, "Pemberontakan!", "CardTitle")
+	t.add_theme_color_override("font_color", UI.RED)
+	ui._label(col, "Rakyat yang kecewa angkat senjata. Semua hasil -20%, sampai pemberontakan berakhir.", "CardLabel")
+	var row := _row(col)
+	var need := int(rb["soldiers"])
+	var crush: Button = ui._button(row, tr("Tumpas · %s prajurit") % ui._num(need), func():
+		var r: Dictionary = model.end_rebellion(true)
+		if r["ok"]:
+			ui._play_battle(r["plan"], {"title": tr("Menumpas Pemberontakan"), "me_name": model.me_name(),
+				"them_name": tr("Pemberontak"), "me_count": model.soldiers + need, "them_count": need,
+				"me_portrait": model.lord_portrait(), "them_portrait": "enemy_bandit", "win": true, "detail": r["msg"],
+				"bg": "city", "me_mix": model.army_mix()})
+			return null
+		return r, model.soldiers >= need, "", "")
+	crush.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	crush.add_theme_font_size_override("font_size", 20)
+	crush.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var cost := int(model.affair_yield("grain") * 3)
+	var talk: Button = ui._button(row, tr("Bujuk · %s pangan") % ui._num(cost), func(): return model.end_rebellion(false),
+		model.grain >= cost, "", "GreenButton")
+	talk.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	talk.add_theme_font_size_override("font_size", 20)
+	talk.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+
+func _threat_banner(box: VBoxContainer) -> void:
+	var th: Dictionary = model.threat()
+	if th.is_empty():
+		return
+	var k: Dictionary = model.kingdom_def(th["kingdom"])
+	var card: HBoxContainer = ui._card(box)
+	card.add_child(ui._tex(Art.icon(k["icon"]), 80))
+	var col: VBoxContainer = ui._col(card)
+	var t: Label = ui._label(col, tr("Serangan %s!") % tr(k["name"]), "CardTitle")
+	t.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	t.add_theme_color_override("font_color", UI.RED)
+	ui._label(col, "Pasukan musuh di perbatasan. Bila dibiarkan sampai besok, mereka menjarah perak.", "CardLabel")
+	var row := _row(col)
+	var fight: Button = ui._button(row, "Hadapi", func(): return _answer_threat(false), true, "", "")
+	fight.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var pay: Button = ui._button(row, "Bayar Damai", func(): return _answer_threat(true), true, "", "GreenButton")
+	pay.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+
+func _answer_threat(pay: bool):
+	var th: Dictionary = model.threat()
+	var name: String = model.kingdom_def(th.get("kingdom", "banten"))["name"]
+	var r: Dictionary = model.answer_threat(pay, Game.now())
+	if not r.has("plan"):
+		return r
+	ui._play_battle(r["plan"], {"title": tr("Serangan %s") % tr(name), "me_name": model.me_name(), "them_name": tr(name),
+		"me_count": model.soldiers, "them_count": int(model.affair_yield("soldiers") * 2), "me_portrait": model.lord_portrait(),
+		"them_portrait": "enemy_bandit", "win": r["win"], "detail": r["msg"], "bg": "campaign", "me_mix": model.army_mix()})
+	return null
+
+
+# --- Kampanye: susunan pasukan -------------------------------------------------------------
+
+func build_army(box: VBoxContainer) -> void:
+	var inner: VBoxContainer = ui._col(ui._card(box))
+	ui._label(inner, "Susunan Pasukan", "CardTitle")
+	var enemy: Array = model.enemy_mix(model.stage)
+	var main := 0
+	for i in 3:
+		if float(enemy[i]) > float(enemy[main]):
+			main = i
+	var er := _row(inner)
+	er.add_child(ui._tex(Art.icon("troop_" + Data.TROOP_TYPES[main]), 44))
+	var el := _small(ui._col(er), tr("Musuh mengandalkan %s. Tombak unggul atas berkuda, berkuda atas panah, panah atas tombak.")
+		% tr(Data.TROOP_NAMES[Data.TROOP_TYPES[main]]))
+	el.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
+	inner.add_child(grid)
+	var best: String = model.best_army(model.stage)
+	for id in Data.ARMY_ORDER:
+		var preset: Dictionary = Data.ARMY_PRESETS[id]
+		var edge: float = model.troop_edge(preset["mix"], enemy) * -1.0
+		var b := Button.new()
+		b.text = tr(preset["name"]) + ("\n" + tr("korban %+d%%") % roundi(edge * 100))
+		b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		b.add_theme_font_size_override("font_size", 20)
+		b.custom_minimum_size = Vector2(0, 76)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.theme_type_variation = "GoldButton" if model.realm["army"] == id else ("GreenButton" if id == best else "")
+		var aid: String = id
+		b.pressed.connect(func():
+			Audio.play("click")
+			model.set_army(aid))
+		grid.add_child(b)
+
+
+# --- Pengaturan: kode hadiah ----------------------------------------------------------------
+
+func build_redeem(box: VBoxContainer) -> void:
+	var inner: VBoxContainer = ui._inner_box(box)
+	ui._label(inner, "Kode Hadiah", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	var row := _row(inner)
+	_code_edit = LineEdit.new()
+	_code_edit.placeholder_text = tr("Masukkan kode")
+	_code_edit.max_length = 32
+	_code_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_code_edit.custom_minimum_size.y = 64
+	_code_edit.add_theme_stylebox_override("normal", UI.box(UI.INPUT_BG, UI.GOLD_DARK, 2, 12))
+	_code_edit.add_theme_color_override("font_color", UI.INK)
+	row.add_child(_code_edit)
+	_side_button(row, "Tukar", func():
+		Online.redeem(_code_edit.text, func(r: Dictionary):
+			if r["ok"]:
+				Audio.play("reveal_sr")
+				_code_edit.text = ""
+			ui._show(r))
+		return null, true, "GoldButton")
+	_small(inner, "Kode dibagikan lewat media sosial dan acara game. Tiap kode hanya bisa dipakai sekali.")
+
+
+# --- Diplomasi & mata-mata ------------------------------------------------------------------
+
+func show_diplomacy() -> void:
+	_show("diplo", "Diplomasi", "diplomacy", _fill_diplomacy)
+
+
+func _fill_diplomacy(box: VBoxContainer, subtitle: Label) -> void:
+	var now: float = Game.now()
+	var agent: String = model.spy_agent(now)
+	subtitle.text = tr("Utusan tersisa %d · mata-mata tersisa %d") % [model.envoys_left(now), model.spies_left(now)]
+	subtitle.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_small(box, tr("Kekuatan Tuan %s · agen terbaik: %s") % [ui._num(model.combat_power()),
+		Data.counselor_def(agent)["name"] if agent != "" else "-"]).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	for k in Data.KINGDOMS:
+		var id: String = k["id"]
+		var rel: int = model.relation(id)
+		var card: HBoxContainer = ui._card(box)
+		card.add_child(ui._tex(Art.icon(k["icon"]), 76))
+		var col: VBoxContainer = ui._col(card)
+		ui._label(col, k["name"], "CardTitle")
+		var pw: int = model.kingdom_power(id)
+		var power_text: String = ui._num(pw) if model.kingdom_scouted(id, now) else "~" + ui._num(int(round(pw / 1000.0) * 1000))
+		var status := []
+		if model.realm["diplo"]["trade"].has(id):
+			status.append(tr("Dagang"))
+		if model.realm["diplo"]["ally"].has(id):
+			status.append(tr("Sekutu"))
+		var info := _small(col, tr("Hubungan %+d · kekuatan %s") % [rel, power_text] + (" · " + ", ".join(status)
+			if not status.is_empty() else ""), UI.GREEN.darkened(0.2) if rel >= 40 else (UI.RED if rel < 0 else UI.INK))
+		info.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		var bar: ProgressBar = ui._bar(col, rel + 100, 200, UI.GREEN if rel >= 0 else UI.RED)
+		bar.custom_minimum_size.y = 10
+		var flow := HFlowContainer.new()
+		flow.add_theme_constant_override("h_separation", 6)
+		flow.add_theme_constant_override("v_separation", 6)
+		col.add_child(flow)
+		var gift_cost := int(model.affair_yield("silver") * Data.DIPLO_GIFT)
+		_mini(flow, tr("Hadiah · %s") % ui._num(gift_cost), func(): return model.send_gift(id, Game.now()),
+			model.envoys_left(now) > 0 and model.silver >= gift_cost, "GreenButton")
+		_mini(flow, "Minta Upeti", func(): return model.demand_tribute(id, Game.now()), model.envoys_left(now) > 0, "")
+		if not model.realm["diplo"]["trade"].has(id):
+			_mini(flow, "Perjanjian Dagang", func(): return model.sign_pact(id, "trade"), rel >= Data.DIPLO_TRADE_REL,
+				"GoldButton")
+		if not model.realm["diplo"]["ally"].has(id):
+			_mini(flow, "Persekutuan", func(): return model.sign_pact(id, "ally"), rel >= Data.DIPLO_ALLY_REL, "GoldButton")
+		for mission in Data.SPY_ORDER:
+			var m: Dictionary = Data.SPY_MISSIONS[mission]
+			var mid: String = mission
+			_mini(flow, "%s %d%%" % [tr(m["name"]), roundi(model.spy_chance(agent, id, mission) * 100)],
+				func(): return model.send_spy(id, mid, Game.now()), model.spies_left(now) > 0 and agent != "", "")
+
+
+## Tombol kecil di baris aksi.
+func _mini(parent: Node, text: String, action: Callable, enabled: bool, variation: String) -> Button:
+	var b: Button = ui._button(parent, text, action, enabled, "", variation if enabled else "")
+	b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	b.text = tr(text) if not text.contains("·") and not text.contains("%") else text
+	b.add_theme_font_size_override("font_size", 18)
+	b.custom_minimum_size = Vector2(0, 52)
+	return b
+
+
+# --- Pacuan Kuda ------------------------------------------------------------------------------
+
+func show_race() -> void:
+	_show("race", "Pacuan Kuda", "race", _fill_race)
+
+
+func _fill_race(box: VBoxContainer, subtitle: Label) -> void:
+	var now: float = Game.now()
+	subtitle.text = tr("Pacuan tersisa hari ini: %d / %d") % [model.races_left(now), Data.RACE_PER_DAY]
+	if model.horses.is_empty():
+		ui._label(box, "Beli kuda di Kandang Kuda (halaman Penasihat) untuk ikut pacuan.", "CardLabel")
+		return
+	if not model.horses.has(_race_pick):
+		var best := ""
+		for id in model.horses:
+			if best == "" or model.horse_speed(id) > model.horse_speed(best):
+				best = id
+		_race_pick = best
+	for id in Data.HORSE_ORDER:
+		if not model.horses.has(id):
+			continue
+		var card: HBoxContainer = ui._card(box)
+		card.add_child(ui._tex(Art.icon("horse_" + id), 84))
+		var col: VBoxContainer = ui._col(card)
+		ui._label(col, Data.HORSES[id]["name"], "CardTitle")
+		_small(col, tr("Level %d · kecepatan %.2f") % [int(model.horses[id]["level"]), model.horse_speed(id)]) \
+			.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		var hid: String = id
+		var b := _side_button(card, "Terpilih" if id == _race_pick else "Pilih", func():
+			_race_pick = hid
+			_fill("race")
+			return null, true, "GoldButton" if id == _race_pick else "GreenButton")
+		b.disabled = false
+	var rewards := []
+	for i in Data.RACE_REWARDS.size():
+		var def: Dictionary = Data.RACE_REWARDS[i]
+		rewards.append(tr("Peringkat %d: %s") % [i + 1, ui._reward_text(model._yields_of({"silver": def["silver"]}).merged(
+			{"gold": def.get("gold", 0)}))])
+	var rl := _small(box, "\n".join(rewards))
+	rl.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	ui._button(box, "Mulai Pacuan", func():
+		var r: Dictionary = model.go_race(_race_pick, Game.now())
+		if not r["ok"]:
+			return r
+		var view := RaceView.new()
+		view.setup(r)
+		ui.add_child(view)
+		ui.move_child(view, ui._toast.get_index())
+		view.finished.connect(ui._queue_rebuild)
+		return null, model.races_left(now) > 0, "race", "GoldButton")
+
+
+# --- Kuis Sejarah -------------------------------------------------------------------------------
+
+func show_quiz() -> void:
+	_show("quiz", "Kuis Sejarah Nusantara", "quiz", _fill_quiz)
+
+
+func _fill_quiz(box: VBoxContainer, subtitle: Label) -> void:
+	var now: float = Game.now()
+	var qs: Array = model.quiz_today(now)
+	subtitle.text = tr("Soal tersisa hari ini: %d / %d") % [model.quiz_left(now), Data.QUIZ_PER_DAY]
+	for i in qs.size():
+		var q: Dictionary = qs[i]
+		var inner: VBoxContainer = ui._inner_box(box)
+		ui._label(inner, "%d. %s" % [i + 1, tr(q["q"])], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		var state: int = model.quiz_answered(i, now)
+		var grid := GridContainer.new()
+		grid.columns = 2
+		grid.add_theme_constant_override("h_separation", 6)
+		grid.add_theme_constant_override("v_separation", 6)
+		inner.add_child(grid)
+		for o in q["options"].size():
+			var b := Button.new()
+			b.text = q["options"][o]
+			b.add_theme_font_size_override("font_size", 19)
+			b.custom_minimum_size = Vector2(0, 60)
+			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			b.clip_text = true
+			if state >= 0:
+				b.disabled = o != int(q["answer"])
+				b.theme_type_variation = "GreenButton" if o == int(q["answer"]) else ""
+			var slot: int = i
+			var choice: int = o
+			b.pressed.connect(func():
+				var r: Dictionary = model.answer_quiz(slot, choice, Game.now())
+				Audio.play("reveal_sr" if r.get("correct", false) else "error")
+				ui._show(r))
+			grid.add_child(b)
+		if state >= 0:
+			_small(inner, "Benar!" if state == 1 else "Kurang tepat.", UI.GREEN.darkened(0.2) if state == 1 else UI.RED)
+
+
+# --- Penjelajahan Candi -----------------------------------------------------------------------
+
+func show_candi() -> void:
+	_show("candi", "Penjelajahan Candi", "candi", _fill_candi)
+
+
+func _fill_candi(box: VBoxContainer, subtitle: Label) -> void:
+	var now: float = Game.now()
+	var run: Dictionary = model.candi_run()
+	if run.is_empty():
+		subtitle.text = tr("Penjelajahan gratis: %d · tambahan: %d") % [model.candi_free_left(now),
+			model.candi_extra_left(now) if model.candi_free_left(now) == 0 else Data.CANDI_EXTRA_LIMIT]
+		subtitle.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		var card: HBoxContainer = ui._card(box)
+		card.add_child(ui._tex(Art.bg("temple"), 160))
+		var col: VBoxContainer = ui._col(card)
+		ui._label(col, "Candi Kuno di Tengah Hutan", "CardTitle")
+		ui._label(col, "Enam ruangan berisi harta, jebakan, dan arca penjaga. Di ruangan terakhir, Buto penjaga candi menunggu.",
+			"CardLabel")
+		_small(col, tr("Kekuatan Buto penjaga: %s · Tuan: %s") % [ui._num(model.candi_boss_power()),
+			ui._num(model.combat_power())]).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		var free: bool = model.candi_free_left(now) > 0
+		var b: Button = ui._button(box, "Masuki Candi" if free else tr("Masuki Candi · %d emas") % Data.CANDI_EXTRA_GOLD,
+			func(): return model.enter_candi(Game.now()),
+			free or (model.candi_extra_left(now) > 0 and model.gold >= Data.CANDI_EXTRA_GOLD), "candi", "GoldButton")
+		b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		return
+	subtitle.text = tr("Ruangan %d dari %d") % [int(run["room"]) + 1, Data.CANDI_ROOMS]
+	var stat: VBoxContainer = ui._inner_box(box)
+	_small(stat, tr("Semangat %d/%d") % [run["hp"], Data.CANDI_HP])
+	ui._bar(stat, run["hp"], Data.CANDI_HP, UI.GREEN if int(run["hp"]) > 40 else UI.RED)
+	var loot_text: String = model._reward_list(run["loot"])
+	var ll := _small(stat, tr("Harta: %s") % (loot_text if loot_text != "" else "-"))
+	ll.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	ui._label(box, "Pilih pintu", "CardTitle")
+	var doors: Array = run["doors"]
+	var grid := GridContainer.new()
+	grid.columns = doors.size()
+	grid.add_theme_constant_override("h_separation", 8)
+	box.add_child(grid)
+	for d in doors.size():
+		var kind: String = doors[d]
+		var b := Button.new()
+		b.text = tr("Buto Penjaga Candi") if kind == "boss" else tr(Data.CANDI_KINDS[kind]["name"])
+		b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		b.icon = Art.icon("world_boss" if kind == "boss" else Data.CANDI_KINDS[kind]["icon"])
+		b.add_theme_constant_override("icon_max_width", 72)
+		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		b.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
+		b.custom_minimum_size = Vector2(0, 150)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.theme_type_variation = "GoldButton"
+		var door: int = d
+		b.pressed.connect(func(): _candi_door(door))
+		grid.add_child(b)
+	ui._button(box, "Keluar Membawa Harta", func(): return model.leave_candi(), true, "chest", "GreenButton", false,
+		"coin")
+
+
+func _candi_door(door: int) -> void:
+	Audio.play("click")
+	var r: Dictionary = model.candi_choose(door)
+	if not r.get("boss", false):
+		ui._show(r)
+		return
+	var ratio: float = r["ratio"]
+	var win: bool = r["win"]
+	var plan: Dictionary = model.duel_plan(1.0, 1.0, clampf(1.0 - 0.5 / maxf(ratio, 0.2), 0.15, 0.9) if win else 0.0,
+		0.0 if win else clampf(1.0 - 0.6 * ratio, 0.1, 0.9), hash(r["msg"]))
+	ui._play_duel(plan, {"title": tr("Buto Penjaga Candi"), "me_name": model.me_name(), "them_name": tr("Buto Penjaga"),
+		"me_total": model.combat_power(), "them_total": model.candi_boss_power(), "units": ["power", "hp"],
+		"me_portrait": model.lord_portrait(), "them_portrait": "boss_buto", "me_weapon": "keris", "them_weapon": "gada",
+		"them_big": true, "win": win, "bg": "arena", "detail": r["msg"]})
+
+
+# --- Besalen (tempa pusaka) ------------------------------------------------------------------
+
+func show_forge() -> void:
+	_show("forge", "Besalen", "forge", _fill_forge)
+
+
+func _fill_forge(box: VBoxContainer, subtitle: Label) -> void:
+	subtitle.text = tr("Pusaka di gudang: %d / %d") % [model.equipment.size(), Data.EQUIP_CAPACITY]
+	var mats: VBoxContainer = ui._inner_box(box)
+	ui._label(mats, "Bahan", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	var row := _row(mats)
+	for it in ["besi_tempa", "kayu_cendana", "batu_meteor"]:
+		row.add_child(ui._tex(Art.icon(Data.ITEMS[it]["icon"]), 48))
+		var l: Label = ui._label(row, "%s x%d" % [tr(Data.ITEMS[it]["name"]), model.item_count(it)], "SmallLabel")
+		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		l.add_theme_color_override("font_color", UI.INK)
+		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var cost := []
+	for it in Data.FORGE_COST:
+		cost.append("%d %s" % [Data.FORGE_COST[it], tr(Data.ITEMS[it]["name"])])
+	cost.append(tr("%s perak") % ui._num(model.forge_silver()))
+	_small(mats, tr("Biaya tempa: %s") % ", ".join(cost)).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	var odds: Array = Data.FORGE_ODDS_METEOR if _forge_meteor else Data.FORGE_ODDS
+	var mb: Button = ui._button(mats, (tr("Pakai Batu Meteor: ya") if _forge_meteor else tr("Pakai Batu Meteor: tidak"))
+		+ " · " + tr("Epik %d%%, Legenda %d%%") % [roundi(float(odds[0]) * 100), roundi(float(odds[1]) * 100)], func():
+			_forge_meteor = not _forge_meteor
+			_fill("forge")
+			return null, model.item_count("batu_meteor") > 0 or _forge_meteor, "mat_meteor", "GoldButton" if _forge_meteor else "")
+	mb.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	mb.add_theme_font_size_override("font_size", 20)
+	var can: bool = model.silver >= model.forge_silver()
+	for it in Data.FORGE_COST:
+		can = can and model.item_count(it) >= int(Data.FORGE_COST[it])
+	for slot in Data.EQUIP_SLOTS:
+		var sd: Dictionary = Data.EQUIP_SLOTS[slot]
+		var card: HBoxContainer = ui._card(box)
+		card.add_child(ui._tex(Art.icon(sd["icon"]), 72))
+		var col: VBoxContainer = ui._col(card)
+		ui._label(col, tr("Tempa %s") % tr(sd["name"]), "CardTitle").auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		var sid: String = slot
+		_side_button(card, "Tempa", func():
+			var r: Dictionary = model.forge(sid, _forge_meteor)
+			if r["ok"] and model.item_count("batu_meteor") <= 0:
+				_forge_meteor = false
+			return r, can and (not _forge_meteor or model.item_count("batu_meteor") > 0), "GoldButton", "upgrade")
+
+
+# --- Hewan peliharaan ----------------------------------------------------------------------
+
+func show_pets() -> void:
+	_show("pets", "Hewan Peliharaan", "pet_elang", _fill_pets)
+
+
+func _fill_pets(box: VBoxContainer, subtitle: Label) -> void:
+	var active := str(model.realm["pets"]["active"])
+	subtitle.text = tr("Menemani Tuan: %s") % (tr(Data.PETS[active]["name"]) if active != "" else "-")
+	subtitle.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	for id in Data.PET_ORDER:
+		var def: Dictionary = Data.PETS[id]
+		var lv: int = model.pet_level(id)
+		var card: HBoxContainer = ui._card(box)
+		card.add_child(ui._tex(Art.icon(def["icon"]), 84))
+		var col: VBoxContainer = ui._col(card)
+		ui._label(col, def["name"] + (" · Lv %d/%d" % [lv, Data.PET_MAX_LEVEL] if lv > 0 else ""), "CardTitle") \
+			.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		var value: float = model.pet_value(id) if lv > 0 else float(def["base"])
+		_small(col, tr(def["desc"]) % roundi(value * 100)).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		var btns := VBoxContainer.new()
+		card.add_child(btns)
+		var pid: String = id
+		if lv <= 0:
+			var cost: Dictionary = def["cost"]
+			var afford := true
+			for k in cost:
+				afford = afford and int(model.get(k)) >= int(cost[k])
+			_small(col, tr("Harga: %s") % _cost_text(cost)).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+			_side_button(btns, "Pelihara", func(): return model.adopt_pet(pid), afford, "GoldButton", "reveal_sr")
+			continue
+		if active != id:
+			_side_button(btns, "Temani", func(): return model.set_active_pet(pid), true, "GreenButton")
+		else:
+			_small(col, "Sedang menemani Tuan", UI.GREEN.darkened(0.2))
+		if lv < Data.PET_MAX_LEVEL:
+			var fc: int = model.pet_feed_cost(id)
+			var fb := _side_button(btns, tr("Pakan · %s") % ui._num(fc), func(): return model.feed_pet(pid),
+				model.silver >= fc, "GoldButton", "upgrade")
+			fb.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+
+
+# --- Online: Bos Dunia -----------------------------------------------------------------------
+
+func show_world_boss() -> void:
+	if _need_online():
+		return
+	_show("wboss", "Bos Dunia", "world_boss", _fill_world_boss)
+	_load_world_boss()
+
+
+func _load_world_boss() -> void:
+	Online.fetch_world_boss(func(data: Dictionary):
+		_world_boss = data
+		if is_open("wboss"):
+			_fill("wboss"))
+
+
+func _fill_world_boss(box: VBoxContainer, subtitle: Label) -> void:
+	if _world_boss.is_empty():
+		subtitle.text = "Memuat..."
+		return
+	var wb := _world_boss
+	var hp_max := int(wb.get("hp_max", 1))
+	var dmg := int(wb.get("damage", 0))
+	subtitle.text = tr("Serangan tersisa %d · berakhir dalam %s") % [int(wb.get("attacks_left", 0)),
+		ui._duration(int(float(wb.get("ends_in", 0)) / 1000.0))]
+	subtitle.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	var last: Dictionary = wb.get("last", {})
+	var last_week := int(wb.get("last_week", -1))
+	if int(last.get("rank", 0)) > 0 and int(model.realm["wb_claimed"]) < last_week:
+		var rb: VBoxContainer = ui._inner_box(box)
+		ui._label(rb, tr("Minggu lalu Tuan di peringkat %d dari %d penyerang.") % [int(last["rank"]), int(last["players"])],
+			"CardLabel").auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		ui._button(rb, "Ambil Hadiah Bos", func(): return model.claim_world_boss(last_week, int(last["rank"]),
+			int(last["players"]), bool(last.get("defeated", false))), true, "chest", "GoldButton", false, "reveal_ssr")
+	var card: HBoxContainer = ui._card(box)
+	card.add_child(ui._tex(Art.portrait("boss_buto"), 120))
+	var col: VBoxContainer = ui._col(card)
+	ui._label(col, "Buto Ijo Raksasa", "CardTitle")
+	_small(col, tr("Nyawa %s / %s") % [ui._num(maxi(0, hp_max - dmg)), ui._num(hp_max)]).auto_translate_mode = \
+		Node.AUTO_TRANSLATE_MODE_DISABLED
+	ui._bar(col, maxi(0, hp_max - dmg), hp_max, UI.RED)
+	if bool(wb.get("defeated", false)):
+		_small(col, "Bos sudah tumbang minggu ini! Serangan tetap menambah peringkat.", UI.GREEN.darkened(0.2))
+	var me: Dictionary = wb.get("me", {})
+	_small(col, tr("Kerusakan Tuan %s · peringkat %d dari %d") % [ui._num(int(me.get("damage", 0))), int(me.get("rank", 0)),
+		int(me.get("players", 0))]).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	ui._button(box, "Serang Bos", func():
+		Online.world_boss_attack(func(r: Dictionary):
+			if r.has("error"):
+				ui._show({"ok": false, "msg": r["error"]})
+				return
+			var before := float(r.get("hp_before", hp_max)) / maxf(1.0, float(r.get("hp_max", hp_max)))
+			var after := maxf(0.0, before - float(r["damage"]) / maxf(1.0, float(r.get("hp_max", hp_max))))
+			var plan: Dictionary = model.duel_plan(1.0, before, 0.55, after, int(r["damage"]), 8, 0)
+			ui._play_duel(plan, {"title": tr("Bos Dunia"), "me_name": model.me_name(), "them_name": tr("Buto Ijo Raksasa"),
+				"me_total": model.combat_power(), "them_total": int(r.get("hp_max", hp_max)), "units": ["power", "hp"],
+				"me_portrait": model.lord_portrait(), "them_portrait": "boss_buto", "me_weapon": "keris",
+				"them_weapon": "gada", "them_big": true, "win": true, "headline": tr("-%s NYAWA") % ui._num(int(r["damage"])),
+				"bg": "arena", "detail": tr("Kerusakan %s untuk Bos Dunia.") % ui._num(int(r["damage"]))})
+			_load_world_boss())
+		return null, int(wb.get("attacks_left", 0)) > 0, "attack", "GoldButton", false, "attack")
+	ui._label(box, "Penyerang Teratas", "CardTitle")
+	var top: Array = wb.get("top", [])
+	for i in top.size():
+		var t: Dictionary = top[i]
+		var l := _small(box, "%d. %s — %s" % [i + 1, str(t.get("name", "")), ui._num(int(t.get("damage", 0)))])
+		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED

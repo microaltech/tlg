@@ -42,7 +42,7 @@ atau nomor perangkat), nama Tuan, kostum dan bingkai profil, aliansi, kekuatan,
 tahap kampanye, rekor menara, prestise, ringkasan kota (jabatan, level bangunan,
 jumlah penasihat, wilayah, kapal, dan besan), pesan chat aliansi, daftar teman dan
 hadiah yang dikirim, titah bila Anda menjadi Raja Hari Ini, serangan Perang
-Wilayah, serta hasil arena online. Data ini dipakai untuk papan peringkat, chat,
+Wilayah dan Bos Dunia, kode hadiah yang Anda tukar, serta hasil arena online. Data ini dipakai untuk papan peringkat, chat,
 arena, teman, kunjungan kota, Raja Hari Ini, dan Perang Wilayah bersama pemain lain,
 dan dapat dilihat pemain lain (nama, kostum, kekuatan, ringkasan kota, pesan chat). Server
 dikelola oleh [NAMA PENGEMBANG]; data disimpan selama akun aktif dan dapat dihapus

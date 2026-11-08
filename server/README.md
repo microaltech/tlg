@@ -23,6 +23,20 @@ untuk fitur sosial dengan pemain sungguhan:
   0,8–1,2. Aliansi dengan poin terbanyak menguasai wilayah; hadiah minggu lalu
   diambil di game.
 
+- **Bos Dunia**: satu bos per minggu untuk semua pemain (HP = 5x total kekuatan
+  pemain aktif seminggu terakhir, min. 200.000). Maks. 3 serangan per hari;
+  kerusakan = kekuatan x 0,8–1,2. Peringkat minggu lalu dipakai game untuk hadiah.
+- **Kode hadiah**: dibuat pengelola dengan `server/admin.js`, berkuota dan
+  berkedaluwarsa, sekali per pemain. Hadiah dibatasi (emas maks. 1.000, sumber
+  daya maks. 10 juta, item yang dikenal maks. 10), dan game membatasinya lagi.
+
+### Kode hadiah
+
+```
+DB_PATH=server/data/tlg.db node server/admin.js add-code NUSANTARA2026 gold=100 items.recruit_ticket=1 --max 1000 --days 30
+DB_PATH=server/data/tlg.db node server/admin.js list-codes
+```
+
 ### Endpoint
 
 | Metode | Jalur | Keterangan |
@@ -38,6 +52,8 @@ untuk fitur sosial dengan pemain sungguhan:
 | GET | `/v1/player?id=` | Kunjungi kota pemain |
 | GET/POST | `/v1/king`, `/v1/king/decree` | Raja Hari Ini dan titahnya |
 | GET/POST | `/v1/guildwar`, `/v1/guildwar/attack` | Perang Wilayah Aliansi |
+| GET/POST | `/v1/worldboss`, `/v1/worldboss/attack` | Bos Dunia |
+| POST | `/v1/redeem` | Tukar kode hadiah |
 
 ## Menjalankan
 

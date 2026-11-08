@@ -717,9 +717,16 @@ const ITEMS := {
 		"open": {"grain": 10000}},
 	"troop_writ": {"name": "Surat Wajib Militer", "icon": "soldiers", "target": "", "desc": "Berisi 5.000 prajurit.",
 		"open": {"soldiers": 5000}},
+	# Bahan tempa pusaka (tidak bisa dipakai langsung).
+	"besi_tempa": {"name": "Besi Tempa", "icon": "mat_besi", "target": "", "material": true,
+		"desc": "Bahan utama menempa pusaka di Besalen."},
+	"kayu_cendana": {"name": "Kayu Cendana", "icon": "mat_cendana", "target": "", "material": true,
+		"desc": "Kayu harum untuk gagang dan warangka pusaka."},
+	"batu_meteor": {"name": "Batu Meteor", "icon": "mat_meteor", "target": "", "material": true,
+		"desc": "Bahan pamor langka. Menaikkan peluang pusaka Epik dan Legenda."},
 }
 const ITEM_ORDER := ["recruit_ticket", "star_stone", "scroll_train", "pill_intimacy", "energy_tea", "silver_box",
-	"grain_box", "troop_writ"]
+	"grain_box", "troop_writ", "besi_tempa", "kayu_cendana", "batu_meteor"]
 ## Item acak dari tahap besar kampanye (tiap tahap ke-5).
 const STAGE_ITEM_POOL := ["scroll_train", "scroll_train", "pill_intimacy", "energy_tea", "silver_box", "troop_writ",
 	"recruit_ticket"]
@@ -1446,6 +1453,9 @@ const MARKET_POOL := [
 	{"item": "grain_box", "cur": "silver", "price": 4000},
 	{"item": "troop_writ", "cur": "silver", "price": 6000},
 	{"item": "troop_writ", "cur": "prestige", "price": 140},
+	{"item": "besi_tempa", "cur": "silver", "price": 5000},
+	{"item": "kayu_cendana", "cur": "silver", "price": 5000},
+	{"item": "batu_meteor", "cur": "gold", "price": 150},
 ]
 const MARKET_CUR_NAMES := {"silver": "perak", "gold": "emas", "prestige": "prestise"}
 
@@ -1597,5 +1607,205 @@ const FEATURE_HELP := {
 	"Kandang Kuda": ["Kuda menambah atribut penunggangnya. Beri makan untuk menaikkan levelnya."],
 	"Menara Ujian": ["Naiki lantai demi lantai melawan penjaga yang makin kuat. Hadiah lantai hanya sekali."],
 	"Turnamen Silat": ["Daftarkan jagoan sekali seminggu. Pertandingan berlangsung otomatis setiap hari."],
+	"Diplomasi": ["Kirim hadiah untuk memperbaiki hubungan, atau minta upeti bila pasukan Tuan lebih kuat.",
+		"Hubungan baik membuka perjanjian dagang (perak) dan persekutuan (kekuatan tempur). Hubungan buruk bisa berujung serangan.",
+		"Mata-mata memakai Kecerdasan penasihat. Yang tertangkap tidak bisa bertugas lagi hari itu."],
+	"Pacuan Kuda": ["Pilih kuda dari kandang. Kecepatan naik dengan kelangkaan dan level kuda.",
+		"Tiga pacuan per hari; peringkat menentukan hadiah."],
+	"Kuis Sejarah Nusantara": ["Lima soal setiap hari tentang sejarah dan budaya Indonesia. Tiap jawaban benar berhadiah perak; lima benar menambah emas."],
+	"Penjelajahan Candi": ["Pilih satu dari dua pintu di tiap ruangan. Jebakan dan arca penjaga mengurangi semangat; mata air memulihkannya.",
+		"Keluar kapan saja dengan semua harta. Bila semangat habis, separuh harta hilang. Ruangan terakhir dijaga Buto penjaga candi."],
+	"Besalen": ["Tempa pusaka dari Besi Tempa dan Kayu Cendana. Batu Meteor menaikkan peluang Epik dan Legenda.",
+		"Bahan didapat dari Penjelajahan Candi dan Pasar Malam."],
+	"Hewan Peliharaan": ["Hanya satu hewan yang aktif memberi bonus. Beri pakan untuk menaikkan levelnya."],
+	"Bos Dunia": ["Seluruh pemain di server menyerang bos yang sama setiap minggu. Serang hingga 3 kali sehari.",
+		"Hadiah minggu lalu sesuai peringkat kerusakan; bila bos tidak tumbang, hadiah dibagi dua."],
 	"Ensiklopedia Nusantara": ["Kumpulkan semua tokoh, kuda, pusaka, dan wilayah untuk bonus permanen."],
 }
+
+
+# --- Batch 5: pasukan, diplomasi, mata-mata, pemberontakan, pacuan, kuis, candi, ---
+# --- tempa, peliharaan, musim, bos dunia, pemain kembali, kode hadiah ---------------
+
+## Jenis pasukan: tombak (infanteri) unggul atas berkuda, berkuda unggul atas panah,
+## panah unggul atas tombak. Keunggulan mengurangi korban kampanye.
+const TROOP_TYPES := ["infantry", "cavalry", "archer"]
+const TROOP_NAMES := {"infantry": "Pasukan Tombak", "cavalry": "Pasukan Berkuda", "archer": "Pasukan Panah"}
+const TROOP_BEATS := {"infantry": "cavalry", "cavalry": "archer", "archer": "infantry"}
+const TROOP_EDGE := 0.25  ## pengaruh keunggulan per porsi pasukan
+## Susunan pasukan yang bisa dipilih (porsi tombak, berkuda, panah).
+const ARMY_PRESETS := {
+	"seimbang": {"name": "Seimbang", "mix": [0.34, 0.33, 0.33]},
+	"tombak": {"name": "Barisan Tombak", "mix": [0.6, 0.2, 0.2]},
+	"berkuda": {"name": "Barisan Berkuda", "mix": [0.2, 0.6, 0.2]},
+	"panah": {"name": "Barisan Panah", "mix": [0.2, 0.2, 0.6]},
+}
+const ARMY_ORDER := ["seimbang", "tombak", "berkuda", "panah"]
+
+## Diplomasi dengan kerajaan tetangga (NPC). Hubungan -100..100.
+const DIPLO_UNLOCK_STAGE := 15
+const DIPLO_ENVOYS := 3  ## utusan per hari (hadiah/upeti)
+const KINGDOMS := [
+	{"id": "pagaruyung", "name": "Kerajaan Pagaruyung", "factor": 0.8, "icon": "emblem_pagaruyung"},
+	{"id": "banten", "name": "Kesultanan Banten", "factor": 1.0, "icon": "emblem_banten"},
+	{"id": "kediri", "name": "Kerajaan Kediri", "factor": 1.15, "icon": "emblem_kediri"},
+	{"id": "bone", "name": "Kerajaan Bone", "factor": 1.3, "icon": "emblem_bone"},
+	{"id": "banjar", "name": "Kesultanan Banjar", "factor": 1.5, "icon": "emblem_banjar"},
+]
+const DIPLO_GIFT := 2.0  ## hadiah = x hasil urusan perak
+const DIPLO_GIFT_REL := 10
+const DIPLO_TRIBUTE := 3.0  ## upeti = x hasil urusan perak
+const DIPLO_TRIBUTE_REL := -15
+const DIPLO_TRADE_REL := 40
+const DIPLO_TRADE_BONUS := 0.02  ## perak per perjanjian dagang
+const DIPLO_ALLY_REL := 70
+const DIPLO_ALLY_BONUS := 0.02  ## kekuatan tempur per sekutu
+const DIPLO_THREAT_REL := -40
+const DIPLO_DRIFT := 2  ## hubungan bergeser ke 0 per hari
+
+## Mata-mata: kirim penasihat (Kecerdasan) ke kerajaan tetangga.
+const SPY_PER_DAY := 2
+const SPY_MISSIONS := {
+	"intai": {"name": "Intai", "ease": 1.3, "desc": "Lihat kekuatan pasti kerajaan selama 24 jam."},
+	"curi": {"name": "Curi Perak", "ease": 1.0, "desc": "Bawa pulang perak (2x hasil urusan)."},
+	"sabotase": {"name": "Sabotase", "ease": 0.8, "desc": "Kekuatan kerajaan turun 20% (24 jam)."},
+}
+const SPY_ORDER := ["intai", "curi", "sabotase"]
+
+## Pemberontakan: muncul bila kesetiaan rakyat di bawah REBEL_LOYALTY.
+const REBEL_LOYALTY := 20
+const REBEL_PENALTY := -0.2  ## semua hasil selama pemberontakan
+const REBEL_SOLDIERS := 1.5  ## kekuatan pemberontak = x hasil urusan prajurit
+
+## Musim bergantian tiap minggu.
+const SEASONS := {
+	"kemarau": {"name": "Musim Kemarau", "icon": "season_kemarau", "effects": {"yield_grain": -0.08, "yield_silver": 0.05},
+		"desc": "Pangan -8%, perak +5%. Kebakaran dan gagal panen lebih sering.", "disasters": ["kebakaran", "gagal_panen"]},
+	"penghujan": {"name": "Musim Penghujan", "icon": "season_penghujan",
+		"effects": {"yield_grain": 0.08, "yield_soldiers": -0.04},
+		"desc": "Pangan +8%, prajurit -4%. Banjir dan wabah lebih sering.", "disasters": ["banjir", "wabah"]},
+}
+
+## Pacuan Kuda: 6 peserta, peringkat menentukan hadiah.
+const RACE_PER_DAY := 3
+const RACE_RIVALS := 5
+const RACE_SPEED := {"r": 1.0, "sr": 1.12, "ssr": 1.26}
+const RACE_LEVEL_SPEED := 0.02
+const RACE_REWARDS := [  ## per peringkat 1..6: kelipatan hasil urusan perak, emas
+	{"silver": 3.0, "gold": 15}, {"silver": 2.0, "gold": 8}, {"silver": 1.5, "gold": 4},
+	{"silver": 0.8}, {"silver": 0.6}, {"silver": 0.5}]
+const RACE_RIVAL_NAMES := ["Si Kilat", "Bayu Angin", "Guntur", "Mega Mendung", "Rajawali", "Sekar Jagad", "Panji Laras",
+	"Kuda Lumping", "Andaru", "Jaladri"]
+
+## Kuis Sejarah Nusantara: 5 soal per hari.
+const QUIZ_PER_DAY := 5
+const QUIZ_REWARD := {"silver": 1.0}  ## per jawaban benar (x hasil urusan)
+const QUIZ_PERFECT_GOLD := 10
+const QUIZ := [
+	{"q": "Kapan kemerdekaan Indonesia diproklamasikan?", "a": ["17 Agustus 1945", "20 Mei 1908", "28 Oktober 1928", "10 November 1945"], "c": 0},
+	{"q": "Sumpah Pemuda diikrarkan pada tanggal?", "a": ["28 Oktober 1928", "17 Agustus 1945", "1 Juni 1945", "2 Mei 1922"], "c": 0},
+	{"q": "Siapa patih Majapahit yang terkenal dengan Sumpah Palapa?", "a": ["Gajah Mada", "Ken Arok", "Hayam Wuruk", "Raden Wijaya"], "c": 0},
+	{"q": "Siapa pendiri Kerajaan Majapahit?", "a": ["Raden Wijaya", "Gajah Mada", "Ken Arok", "Mpu Sindok"], "c": 0},
+	{"q": "Raja Majapahit pada masa kejayaannya adalah?", "a": ["Hayam Wuruk", "Jayanegara", "Raden Patah", "Purnawarman"], "c": 0},
+	{"q": "Candi Borobudur dibangun oleh wangsa?", "a": ["Syailendra", "Sanjaya", "Rajasa", "Isyana"], "c": 0},
+	{"q": "Candi Borobudur terletak di?", "a": ["Magelang, Jawa Tengah", "Yogyakarta", "Mojokerto, Jawa Timur", "Bali"], "c": 0},
+	{"q": "Candi Prambanan adalah candi bercorak?", "a": ["Hindu", "Buddha", "Islam", "Konghucu"], "c": 0},
+	{"q": "Kerajaan Hindu tertua di Indonesia adalah?", "a": ["Kutai", "Majapahit", "Sriwijaya", "Mataram"], "c": 0},
+	{"q": "Raja Kutai yang terkenal dari prasasti Yupa adalah?", "a": ["Mulawarman", "Purnawarman", "Airlangga", "Hayam Wuruk"], "c": 0},
+	{"q": "Raja Tarumanegara yang terkenal adalah?", "a": ["Purnawarman", "Mulawarman", "Balaputradewa", "Kertanegara"], "c": 0},
+	{"q": "Pusat Kerajaan Sriwijaya diperkirakan di sekitar?", "a": ["Palembang", "Jakarta", "Makassar", "Banjarmasin"], "c": 0},
+	{"q": "Siapa pendiri Kerajaan Singasari?", "a": ["Ken Arok", "Raden Wijaya", "Gajah Mada", "Jayabaya"], "c": 0},
+	{"q": "Kerajaan Islam pertama di Pulau Jawa adalah?", "a": ["Demak", "Mataram Islam", "Banten", "Cirebon"], "c": 0},
+	{"q": "Sultan pertama Kesultanan Demak adalah?", "a": ["Raden Patah", "Sultan Agung", "Sultan Hasanuddin", "Pangeran Diponegoro"], "c": 0},
+	{"q": "Kerajaan Islam pertama di Nusantara adalah?", "a": ["Samudra Pasai", "Demak", "Malaka", "Ternate"], "c": 0},
+	{"q": "Siapa yang dijuluki Ayam Jantan dari Timur?", "a": ["Sultan Hasanuddin", "Pattimura", "Sultan Agung", "Teuku Umar"], "c": 0},
+	{"q": "Pangeran Diponegoro memimpin perang yang dikenal sebagai?", "a": ["Perang Jawa", "Perang Padri", "Perang Aceh", "Perang Puputan"], "c": 0},
+	{"q": "Cut Nyak Dien adalah pahlawan dari?", "a": ["Aceh", "Maluku", "Bali", "Sulawesi Selatan"], "c": 0},
+	{"q": "Kapitan Pattimura berjuang di daerah?", "a": ["Maluku", "Aceh", "Jawa Barat", "Kalimantan"], "c": 0},
+	{"q": "Hari Pahlawan diperingati setiap tanggal?", "a": ["10 November", "17 Agustus", "21 April", "2 Mei"], "c": 0},
+	{"q": "Siapa yang dijuluki Bapak Pendidikan Nasional?", "a": ["Ki Hajar Dewantara", "R.A. Kartini", "Mohammad Hatta", "Dewi Sartika"], "c": 0},
+	{"q": "R.A. Kartini lahir di?", "a": ["Jepara", "Surabaya", "Bandung", "Semarang"], "c": 0},
+	{"q": "Pencipta lagu kebangsaan Indonesia Raya adalah?", "a": ["W.R. Supratman", "Ismail Marzuki", "C. Simanjuntak", "Ibu Sud"], "c": 0},
+	{"q": "Kitab Negarakertagama ditulis oleh?", "a": ["Mpu Prapanca", "Mpu Tantular", "Mpu Sedah", "Mpu Kanwa"], "c": 0},
+	{"q": "Semboyan Bhinneka Tunggal Ika berasal dari kitab?", "a": ["Sutasoma", "Negarakertagama", "Arjunawiwaha", "Pararaton"], "c": 0},
+	{"q": "Hari Lahir Pancasila diperingati setiap tanggal?", "a": ["1 Juni", "1 Oktober", "17 Agustus", "28 Oktober"], "c": 0},
+	{"q": "Presiden pertama Republik Indonesia adalah?", "a": ["Soekarno", "Mohammad Hatta", "Soeharto", "Sutan Sjahrir"], "c": 0},
+	{"q": "Wakil presiden pertama Republik Indonesia adalah?", "a": ["Mohammad Hatta", "Soekarno", "Adam Malik", "Ki Hajar Dewantara"], "c": 0},
+	{"q": "Siapa yang mengetik naskah proklamasi?", "a": ["Sayuti Melik", "Soekarno", "Mohammad Hatta", "Fatmawati"], "c": 0},
+	{"q": "Bung Tomo dikenal karena pertempuran di kota?", "a": ["Surabaya", "Bandung", "Semarang", "Medan"], "c": 0},
+	{"q": "Karapan sapi adalah tradisi dari?", "a": ["Madura", "Bali", "Lombok", "Toraja"], "c": 0},
+	{"q": "Tari Kecak berasal dari?", "a": ["Bali", "Jawa Tengah", "Aceh", "Papua"], "c": 0},
+	{"q": "Rumah Gadang adalah rumah adat suku?", "a": ["Minangkabau", "Batak", "Dayak", "Toraja"], "c": 0},
+	{"q": "Alat musik angklung berasal dari?", "a": ["Jawa Barat", "Bali", "Sumatera Barat", "Maluku"], "c": 0},
+	{"q": "Kesenian Reog berasal dari?", "a": ["Ponorogo", "Banyuwangi", "Solo", "Cirebon"], "c": 0},
+	{"q": "Hewan komodo hidup di provinsi?", "a": ["Nusa Tenggara Timur", "Bali", "Sulawesi Utara", "Papua"], "c": 0},
+	{"q": "Danau Toba terletak di provinsi?", "a": ["Sumatera Utara", "Sumatera Barat", "Aceh", "Riau"], "c": 0},
+	{"q": "Kepulauan Maluku terkenal sejak dulu sebagai penghasil?", "a": ["Rempah-rempah", "Emas", "Teh", "Batu bara"], "c": 0},
+	{"q": "Ibu kota Kerajaan Majapahit diperkirakan berada di?", "a": ["Trowulan", "Kotagede", "Pajajaran", "Kartasura"], "c": 0},
+]
+
+## Penjelajahan Candi: 6 ruangan (ruangan terakhir penjaga utama). Tiap ruangan dua pintu.
+const CANDI_UNLOCK_STAGE := 18
+const CANDI_FREE := 1
+const CANDI_EXTRA_GOLD := 30
+const CANDI_EXTRA_LIMIT := 2
+const CANDI_ROOMS := 6
+const CANDI_HP := 100
+const CANDI_KINDS := {
+	"harta": {"name": "Ruang Harta", "icon": "chest", "weight": 3},
+	"jebakan": {"name": "Jebakan", "icon": "disaster", "weight": 2},
+	"penjaga": {"name": "Arca Penjaga", "icon": "power", "weight": 3},
+	"mata_air": {"name": "Mata Air Suci", "icon": "grain", "weight": 1},
+	"relik": {"name": "Ruang Relik", "icon": "mat_meteor", "weight": 1},
+}
+
+## Besalen (tempa pusaka).
+const FORGE_UNLOCK_STAGE := 18
+const FORGE_COST := {"besi_tempa": 3, "kayu_cendana": 2}
+const FORGE_SILVER := 4.0  ## x hasil urusan perak
+const FORGE_ODDS := [0.25, 0.05]  ## peluang Epik, Legenda tanpa batu meteor
+const FORGE_ODDS_METEOR := [0.55, 0.15]
+
+## Hewan peliharaan istana: satu yang aktif memberi bonus.
+const PET_UNLOCK_STAGE := 10
+const PET_MAX_LEVEL := 10
+const PETS := {
+	"elang": {"name": "Elang Jawa", "icon": "pet_elang", "effect": "hunt", "base": 0.05, "per": 0.01,
+		"cost": {"prestige": 300}, "desc": "Peluang berburu +%d%%."},
+	"jalak": {"name": "Jalak Bali", "icon": "pet_jalak", "effect": "yield_silver", "base": 0.02, "per": 0.005,
+		"cost": {"gold": 200}, "desc": "Hasil perak +%d%%."},
+	"kerbau": {"name": "Kerbau Bule", "icon": "pet_kerbau", "effect": "yield_grain", "base": 0.02, "per": 0.005,
+		"cost": {"silver": 60000}, "desc": "Hasil pangan +%d%%."},
+	"macan": {"name": "Macan Tutul", "icon": "pet_macan", "effect": "combat", "base": 0.02, "per": 0.004,
+		"cost": {"gold": 500}, "desc": "Kekuatan tempur +%d%%."},
+}
+const PET_ORDER := ["elang", "jalak", "kerbau", "macan"]
+const PET_FEED := 0.6  ## biaya pakan = x hasil urusan perak x level
+
+## Bos Dunia (online): hadiah per peringkat persentil, dibagi dua bila bos tidak tumbang.
+const WORLD_BOSS_REWARDS := [
+	{"top": 0.1, "reward": {"gold": 120, "items": {"star_stone": 1}}},
+	{"top": 0.5, "reward": {"gold": 60, "items": {"batu_meteor": 1}}},
+	{"top": 1.0, "reward": {"gold": 25}},
+]
+
+## Bonus pemain kembali: setelah absen COMEBACK_DAYS hari.
+const COMEBACK_DAYS := 3
+const COMEBACK_HOURS := 72
+const COMEBACK_BOOST := 0.3
+const COMEBACK_PACK := {"gold": 100, "items": {"energy_tea": 2, "recruit_ticket": 2, "scroll_train": 3}}
+const COMEBACK_MISSIONS := [
+	{"event": "affair", "target": 30, "text": "Kerjakan 30 urusan kota", "reward": {"gold": 40}},
+	{"event": "win", "target": 3, "text": "Menangkan 3 tahap kampanye", "reward": {"items": {"scroll_train": 3}}},
+	{"event": "upgrade", "target": 10, "text": "Latih penasihat 10 kali", "reward": {"items": {"star_stone": 1}}},
+]
+
+## Kode hadiah bawaan (offline). Kunci = SHA-256 dari kode huruf besar, agar kode
+## tidak terbaca langsung di data. Kode baru untuk promosi sebaiknya dibuat di server.
+const GIFT_CODES := {
+	"705af7d6be71a64f34189c5c23f45b811575fb2e6edd53de21f903af60ce185c": {"reward": {"gold": 100, "items": {"recruit_ticket": 1}}},
+	"6bcfe72d06e7589991d444546ba8a04d3326c1f7e50ca8c425f286f3959351d6": {"reward": {"gold": 50, "items": {"energy_tea": 2}}},
+}
+## Batas hadiah kode dari server (pengaman bila server salah konfigurasi).
+const GIFT_CODE_LIMITS := {"gold": 1000, "silver": 10000000, "grain": 10000000, "soldiers": 10000000, "prestige": 2000}
+const GIFT_CODE_ITEM_LIMIT := 10

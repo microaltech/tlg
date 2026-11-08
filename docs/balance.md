@@ -172,3 +172,15 @@ Hasilnya (seed 1–3, 4 sesi/hari), Menteri tercapai di hari ke-21 sampai 23 dan
 tahap di hari ke-30 adalah 78. Gelar lanjutan (Adipati 100.000, Sultan 220.000,
 Maharaja 450.000 prestise, ditambah syarat wilayah, riset, kapal, dan besan)
 ditujukan untuk pemain berbulan-bulan.
+
+## Pasukan, diplomasi, pacuan, kuis, candi, tempa, peliharaan, musim
+
+Bot kini memilih susunan pasukan terbaik tiap tahap (korban sekitar -11%), menjawab
+kuis (70% benar), berpacu tiga kali sehari, menjelajah candi sekali sehari, menempa
+pusaka, memelihara Kerbau Bule, serta memberi hadiah dan memakai mata-mata. Musim
+dan bencana musiman ikut berjalan.
+
+Tanpa penyesuaian angka, hasilnya (seed 1–3, 4 sesi/hari) Menteri tetap di hari
+ke-22 sampai 23 dan tahap di hari ke-30 adalah 78–79. Fitur ini hampir tidak
+memberi prestise (hanya menang melawan ancaman dan menumpas pemberontakan), jadi
+ambang jabatan tidak diubah.

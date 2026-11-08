@@ -97,6 +97,25 @@ func _ready() -> void:
 	var board: Dictionary = got.get("board", {})
 	check(int(board.get("attacks_left", -1)) == 2 and str(board["territories"][0]["owner"]) == "garuda",
 		"papan perang wilayah")
+	# Bos Dunia.
+	Online.world_boss_attack(func(r): got["boss"] = r)
+	await get_tree().create_timer(0.5).timeout
+	check(int(got.get("boss", {}).get("damage", 0)) > 0, "serang Bos Dunia")
+	Online.fetch_world_boss(func(d): got["wb"] = d)
+	await get_tree().create_timer(0.5).timeout
+	check(int(got.get("wb", {}).get("me", {}).get("rank", 0)) == 1 and int(got["wb"]["attacks_left"]) == 2,
+		"peringkat Bos Dunia")
+	# Kode hadiah: bawaan (offline) dan dari server.
+	var meteor: int = m.item_count("batu_meteor")
+	Online.redeem("ujikode", func(r): got["code"] = r)
+	await get_tree().create_timer(0.5).timeout
+	check(got.get("code", {}).get("ok", false) and m.item_count("batu_meteor") == meteor + 1, "kode hadiah dari server")
+	Online.redeem("UJIKODE", func(r): got["code2"] = r)
+	await get_tree().create_timer(0.5).timeout
+	check(not got.get("code2", {"ok": true})["ok"], "kode server tidak dipakai dua kali")
+	Online.redeem("NUSANTARA", func(r): got["code3"] = r)
+	await get_tree().create_timer(0.2).timeout
+	check(got.get("code3", {}).get("ok", false), "kode bawaan ditukar tanpa server")
 	Online.set_server("http://127.0.0.1:1")
 	for i in 50:
 		await get_tree().create_timer(0.1).timeout

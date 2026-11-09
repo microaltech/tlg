@@ -2005,6 +2005,37 @@ def bg_temple():
     return svg_doc(W, H, b, 1080, 540, defs)
 
 
+# --- Ikon batch 6 -----------------------------------------------------------------
+
+ICONS["wayang"] = icon_doc(
+    '<path d="M48 4 Q74 30 80 60 Q82 78 64 86 L32 86 Q14 78 16 60 Q22 30 48 4 Z" fill="#a8582a" stroke="#4a2410" stroke-width="3"/>'
+    '<path d="M48 14 Q66 34 70 58 Q70 72 58 78 L38 78 Q26 72 26 58 Q30 34 48 14 Z" fill="#2f6a3a"/>'
+    '<path d="M48 22 L48 76 M36 40 Q48 50 60 40 M32 56 Q48 66 64 56" stroke="#e8c070" stroke-width="3" fill="none"/>'
+    '<circle cx="48" cy="34" r="6" fill="#e8c070"/>'
+    '<path d="M44 86 L44 94 L52 94 L52 86" fill="#4a2410"/>')
+
+ICONS["ceremony"] = icon_doc(
+    '<path d="M48 8 Q80 50 84 82 L12 82 Q16 50 48 8 Z" fill="#e8c070" stroke="#a8742c" stroke-width="3"/>'
+    + "".join('<circle cx="%d" cy="%d" r="5" fill="%s"/>' % (x, y, c) for x, y, c in
+              [(48, 26, "#c0392b"), (38, 44, "#4f9a4a"), (58, 44, "#e06050"), (30, 62, "#f2c14e"), (48, 62, "#4f9a4a"),
+               (66, 62, "#c0392b")])
+    + '<rect x="8" y="80" width="80" height="10" rx="3" fill="#7a4b1f"/>'
+      '<path d="M48 8 L48 0" stroke="#c0392b" stroke-width="3"/>')
+
+ICONS["badge"] = icon_doc(
+    '<path d="M30 52 L20 90 L36 82 L44 94 L50 60 Z" fill="#2e86c1"/><path d="M66 52 L76 90 L60 82 L52 94 L46 60 Z" fill="#c0392b"/>'
+    '<circle cx="48" cy="40" r="30" fill="#e8c070" stroke="#a8742c" stroke-width="4"/>'
+    '<circle cx="48" cy="40" r="20" fill="none" stroke="#fff6d8" stroke-width="3"/>'
+    '<path d="M38 40 L45 47 L58 32" stroke="#a8322d" stroke-width="5" fill="none" stroke-linecap="round"/>')
+
+ICONS["tourney"] = icon_doc(
+    '<path d="M18 86 L70 10" stroke="#c9d1da" stroke-width="7" stroke-linecap="round"/>'
+    '<path d="M78 86 L26 10" stroke="#c9d1da" stroke-width="7" stroke-linecap="round"/>'
+    '<path d="M12 78 L26 92 M84 78 L70 92" stroke="#7a4b1f" stroke-width="8" stroke-linecap="round"/>'
+    '<circle cx="48" cy="48" r="14" fill="#c0392b" stroke="#6b1a12" stroke-width="3"/>'
+    '<path d="M48 40 L51 46 L57 46 L52 50 L54 56 L48 52 L42 56 L44 50 L39 46 L45 46 Z" fill="#f2c14e"/>')
+
+
 def main():
     for cid, spec in CHARACTERS.items():
         write("portraits/%s.svg" % cid, portrait(spec))

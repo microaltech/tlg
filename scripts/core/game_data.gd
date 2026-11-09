@@ -16,7 +16,7 @@ const RANKS := [
 	{"name": "Camat", "prestige": 300, "max_charges": 4, "mult": 1.25, "level_cap": 40, "child_seats": 3},
 	{"name": "Bupati", "prestige": 1500, "max_charges": 5, "mult": 1.5, "level_cap": 60, "child_seats": 4},
 	{"name": "Gubernur", "prestige": 6000, "max_charges": 6, "mult": 2.0, "level_cap": 80, "child_seats": 5},
-	{"name": "Menteri", "prestige": 23000, "max_charges": 7, "mult": 2.5, "level_cap": 100, "child_seats": 6},
+	{"name": "Menteri", "prestige": 22000, "max_charges": 7, "mult": 2.5, "level_cap": 100, "child_seats": 6},
 	{"name": "Perdana Menteri", "prestige": 50000, "max_charges": 8, "mult": 3.0, "level_cap": 150, "child_seats": 8},
 	# Gelar kebangsawanan lanjutan: selain prestise, butuh syarat tambahan ("req").
 	{"name": "Adipati", "prestige": 100000, "max_charges": 9, "mult": 3.6, "level_cap": 200, "child_seats": 9,
@@ -525,7 +525,30 @@ const FEATURE_INTROS := [
 	{"id": "tower", "stage": TOWER_UNLOCK_STAGE, "title": "Menara Ujian Terbuka!", "icon": "tower",
 		"page": "campaign", "panel": "tower", "text": "Daki lantai demi lantai dengan kekuatan tempur penasihat. "
 		+ "Tiap lantai ke-5 memberi pusaka. Kemajuan direset tiap minggu, rekor terbaik masuk peringkat."},
+	# Fitur kerajaan: "panel" = "realm:<fitur>" membuka panel Urusan Kerajaan.
+	{"id": "market", "stage": MARKET_UNLOCK_STAGE, "title": "Pasar Malam Dibuka!", "icon": "market", "page": "city",
+		"panel": "realm:market", "text": "Pedagang keliling menggelar dagangan langka tiap 4 jam. Jangan lupa menawar!"},
+	{"id": "policy", "stage": POLICY_UNLOCK_STAGE, "title": "Kebijakan Kota", "icon": "policy", "page": "city",
+		"panel": "realm:policy", "text": "Tetapkan kebijakan kota dan tangani bencana yang melanda negeri."},
+	{"id": "garden", "stage": GARDEN_UNLOCK_STAGE, "title": "Kebun Keraton", "icon": "garden", "page": "city",
+		"panel": "realm:garden", "text": "Tanam jahe, kunyit, melati, dan rempah lain untuk sumber daya dan item."},
+	{"id": "hunt", "stage": HUNT_UNLOCK_STAGE, "title": "Perburuan Dibuka!", "icon": "hunt", "page": "city",
+		"panel": "realm:hunt", "text": "Ajak penasihat berburu rusa, celeng, sampai harimau tiga kali sehari."},
+	{"id": "pets", "stage": PET_UNLOCK_STAGE, "title": "Hewan Peliharaan", "icon": "pet_elang", "page": "city",
+		"panel": "realm:pets", "text": "Pelihara elang, jalak, kerbau, atau macan tutul untuk bonus kerajaan."},
+	{"id": "research", "stage": RESEARCH_UNLOCK_STAGE, "title": "Perpustakaan Keraton", "icon": "research",
+		"page": "city", "panel": "realm:research", "text": "Para pujangga siap meneliti ilmu untuk bonus permanen."},
+	{"id": "diplomacy", "stage": DIPLO_UNLOCK_STAGE, "title": "Diplomasi Dibuka!", "icon": "diplomacy", "page": "city",
+		"panel": "realm:diplomacy", "text": "Kerajaan tetangga mengirim utusan. Jalin persahabatan, minta upeti, atau kirim mata-mata."},
+	{"id": "candi", "stage": CANDI_UNLOCK_STAGE, "title": "Candi Kuno Ditemukan!", "icon": "candi", "page": "city",
+		"panel": "realm:candi", "text": "Jelajahi candi kuno, kumpulkan harta dan bahan tempa, lalu kalahkan Buto penjaganya."},
+	{"id": "wayang", "stage": WAYANG_UNLOCK_STAGE, "title": "Pertunjukan Wayang", "icon": "wayang", "page": "city",
+		"panel": "realm:wayang", "text": "Sang dalang siap membawakan cerita rakyat Nusantara. Tamatkan lakon untuk hadiah dan bingkai."},
+	{"id": "ceremony", "stage": CEREMONY_UNLOCK_STAGE, "title": "Upacara Kerajaan", "icon": "ceremony", "page": "city",
+		"panel": "realm:ceremony", "text": "Gelar satu upacara besar tiap bulan untuk berkah sehari penuh bagi seluruh kerajaan."},
 ]
+## Versi daftar perkenalan: save lama menandai perkenalan fitur yang sudah terbuka sebagai terlihat.
+const FEATURE_INTROS_VERSION := 6
 ## Isi menu Panduan.
 const HELP_TOPICS := [
 	{"icon": "tab_city", "title": "Kota", "text": "Kerjakan urusan kota untuk perak, pangan, dan prajurit. "
@@ -1361,6 +1384,11 @@ const COSMETICS := {
 	"frame_maharaja": {"type": "frame", "name": "Bingkai Maharaja", "colors": ["#6b1a12", "#ffe08a"], "unlock": "rank:8"},
 	"frame_raja_hari_ini": {"type": "frame", "name": "Bingkai Raja Hari Ini", "colors": ["#2c3e50", "#ffd700"],
 		"unlock": "king"},
+	"frame_wayang_malin": {"type": "frame", "name": "Bingkai Batu Malin", "colors": ["#3a4a5a", "#c9d1da"], "unlock": "wayang"},
+	"frame_wayang_sangkuriang": {"type": "frame", "name": "Bingkai Tangkuban Parahu", "colors": ["#2f5a3a", "#e8c070"],
+		"unlock": "wayang"},
+	"frame_wayang_roro": {"type": "frame", "name": "Bingkai Seribu Candi", "colors": ["#7a5a48", "#f2e0b0"], "unlock": "wayang"},
+	"frame_wayang_timun": {"type": "frame", "name": "Bingkai Timun Emas", "colors": ["#4f7a2a", "#f2c14e"], "unlock": "wayang"},
 	"costume_lord": {"type": "costume", "name": "Busana Bangsawan", "portrait": "lord", "unlock": "default"},
 	"costume_batik": {"type": "costume", "name": "Busana Batik", "portrait": "lord_batik", "gold": 400},
 	"costume_zirah": {"type": "costume", "name": "Zirah Senapati", "portrait": "lord_zirah", "unlock": "stage:50"},
@@ -1368,7 +1396,8 @@ const COSMETICS := {
 }
 const COSMETIC_ORDER := ["frame_kayu", "frame_emas", "frame_giok", "frame_menteri", "frame_vip", "frame_tahun_baru",
 	"frame_ramadan", "frame_merdeka", "frame_sumpah_pemuda", "frame_pahlawan", "frame_silat",
-	"frame_adipati", "frame_sultan", "frame_maharaja", "frame_raja_hari_ini",
+	"frame_adipati", "frame_sultan", "frame_maharaja", "frame_raja_hari_ini", "frame_wayang_malin",
+	"frame_wayang_sangkuriang", "frame_wayang_roro", "frame_wayang_timun",
 	"costume_lord", "costume_batik", "costume_zirah", "costume_raja"]
 
 
@@ -1620,6 +1649,13 @@ const FEATURE_HELP := {
 	"Hewan Peliharaan": ["Hanya satu hewan yang aktif memberi bonus. Beri pakan untuk menaikkan levelnya."],
 	"Bos Dunia": ["Seluruh pemain di server menyerang bos yang sama setiap minggu. Serang hingga 3 kali sehari.",
 		"Hadiah minggu lalu sesuai peringkat kerusakan; bila bos tidak tumbang, hadiah dibagi dua."],
+	"Pertunjukan Wayang": ["Satu babak baru bisa ditonton setiap hari. Tiap babak berhadiah perak.",
+		"Tamatkan sebuah lakon untuk emas dan bingkai profil khusus."],
+	"Upacara Kerajaan": ["Satu upacara bisa digelar setiap 30 hari. Berkahnya berlaku 24 jam untuk seluruh kerajaan."],
+	"Lencana Musim": ["Lencana dikumpulkan dari kegiatan selama satu musim (91 hari). Lencana yang didapat tetap tersimpan di profil.",
+		"Tiap lencana baru memberi emas dan tampil saat pemain lain mengunjungi kota Tuan."],
+	"Turnamen Silat Online": ["Daftarkan diri Senin sampai Sabtu. Pada hari Minggu 16 pesilat terkuat yang mendaftar bertanding.",
+		"Hadiah sesuai babak tercapai, diambil setelah hasil diumumkan."],
 	"Ensiklopedia Nusantara": ["Kumpulkan semua tokoh, kuda, pusaka, dan wilayah untuk bonus permanen."],
 }
 
@@ -1809,3 +1845,80 @@ const GIFT_CODES := {
 ## Batas hadiah kode dari server (pengaman bila server salah konfigurasi).
 const GIFT_CODE_LIMITS := {"gold": 1000, "silver": 10000000, "grain": 10000000, "soldiers": 10000000, "prestige": 2000}
 const GIFT_CODE_ITEM_LIMIT := 10
+
+
+# --- Batch 6: tab kerajaan, wayang, upacara, gelar penasihat, lencana, turnamen --------
+
+## Kelompok tab di kartu Urusan Kerajaan.
+const HUB_TABS := [
+	{"id": "ekonomi", "name": "Ekonomi", "tiles": ["market", "garden", "fleet", "research", "ceremony"]},
+	{"id": "petualangan", "name": "Petualangan", "tiles": ["hunt", "candi", "race", "quiz", "wayang"]},
+	{"id": "istana", "name": "Istana", "tiles": ["kin", "pets", "forge", "policy", "badges"]},
+	{"id": "dunia", "name": "Dunia", "tiles": ["diplomacy", "friends", "guildwar", "worldboss", "tourney"]},
+]
+
+## Wayang & cerita rakyat: tiap lakon 3 babak; satu babak baru per hari.
+const WAYANG_UNLOCK_STAGE := 7
+const WAYANG_EPISODE_REWARD := {"silver": 1.5}  ## x hasil urusan
+const WAYANG_TALE_GOLD := 30
+const FOLKTALES := [
+	{"id": "malin", "name": "Malin Kundang", "origin": "Sumatera Barat", "frame": "frame_wayang_malin", "episodes": [
+		"Di pesisir Minangkabau hiduplah seorang janda dan anaknya, Malin Kundang. Malin tumbuh cerdas dan bertekad mengubah nasib. Suatu hari ia berpamitan untuk merantau dengan kapal dagang.",
+		"Bertahun-tahun di rantau, Malin menjadi saudagar kaya dan menikahi putri bangsawan. Kapalnya yang megah suatu hari berlabuh di kampung halamannya.",
+		"Ibunya berlari menyambut, tetapi Malin malu dan menyangkal ibunya sendiri. Sang ibu berdoa dengan hati hancur. Badai datang, dan Malin berubah menjadi batu di tepi pantai. Pesannya: hormati orang tua."]},
+	{"id": "sangkuriang", "name": "Sangkuriang", "origin": "Jawa Barat", "frame": "frame_wayang_sangkuriang", "episodes": [
+		"Dayang Sumbi hidup bersama putranya, Sangkuriang. Karena marah, Dayang Sumbi memukul kepala Sangkuriang dan mengusirnya. Sangkuriang pun mengembara jauh.",
+		"Bertahun-tahun kemudian Sangkuriang kembali dan jatuh cinta pada seorang perempuan cantik, tanpa tahu itu ibunya sendiri. Dayang Sumbi mengenali bekas luka di kepala Sangkuriang.",
+		"Untuk menolak, Dayang Sumbi meminta danau dan perahu besar selesai dalam satu malam. Saat hampir rampung, Dayang Sumbi membuat fajar seolah tiba. Sangkuriang murka dan menendang perahunya, yang menjadi Gunung Tangkuban Parahu."]},
+	{"id": "roro_jonggrang", "name": "Roro Jonggrang", "origin": "Jawa Tengah", "frame": "frame_wayang_roro", "episodes": [
+		"Bandung Bondowoso menaklukkan Kerajaan Prambanan dan ingin memperistri putri raja, Roro Jonggrang yang jelita.",
+		"Roro Jonggrang tidak ingin menikah dengannya, lalu meminta syarat: seribu candi dalam satu malam. Dibantu makhluk halus, Bandung Bondowoso hampir menyelesaikannya.",
+		"Roro Jonggrang membangunkan para gadis desa untuk menumbuk padi agar ayam berkokok. Candi baru berjumlah 999. Bandung Bondowoso murka dan mengubah Roro Jonggrang menjadi arca, yang menurut cerita ada di kompleks Prambanan."]},
+	{"id": "timun_mas", "name": "Timun Mas", "origin": "Jawa Tengah", "frame": "frame_wayang_timun", "episodes": [
+		"Mbok Srini mendambakan anak. Raksasa memberinya biji timun dengan syarat anak itu diserahkan saat dewasa. Dari timun emas lahirlah bayi perempuan, Timun Mas.",
+		"Saat raksasa datang menagih, Mbok Srini memberi Timun Mas empat bungkusan dari pertapa: biji timun, jarum, garam, dan terasi. Timun Mas pun berlari.",
+		"Biji timun menjadi ladang timun, jarum menjadi hutan bambu, garam menjadi lautan, dan terasi menjadi lumpur mendidih yang menenggelamkan raksasa. Timun Mas selamat berkat kecerdikan dan keberaniannya."]},
+]
+
+## Upacara kerajaan: satu kali per bulan (30 hari), berkah 24 jam.
+const CEREMONY_UNLOCK_STAGE := 9
+const CEREMONY_DAYS := 30
+const CEREMONY_HOURS := 24
+const CEREMONIES := {
+	"sekaten": {"name": "Sekaten", "icon": "ceremony", "cost": {"silver": 6.0, "grain": 4.0},
+		"effects": {"yield_all": 0.1}, "desc": "Perayaan rakyat sepekan dengan gamelan pusaka. Semua hasil naik 10% (sehari)."},
+	"grebeg": {"name": "Grebeg", "icon": "grain", "cost": {"grain": 8.0},
+		"effects": {"yield_grain": 0.15, "yield_silver": 0.05}, "loyalty": 10,
+		"desc": "Gunungan hasil bumi dibagikan ke rakyat. Pangan +15%, perak +5%, kesetiaan +10."},
+	"labuhan": {"name": "Labuhan", "icon": "ship", "cost": {"silver": 8.0},
+		"effects": {"combat": 0.05, "yield_soldiers": 0.1},
+		"desc": "Sesaji dilarung ke laut memohon keselamatan. Kekuatan tempur +5%, prajurit +10%."},
+}
+const CEREMONY_ORDER := ["sekaten", "grebeg", "labuhan"]
+
+## Gelar kehormatan penasihat dari jumlah tugas (berburu, ekspedisi, mata-mata, silat, perang).
+const COUNSELOR_TITLES := [
+	{"uses": 15, "name": "Senopati", "bonus": 0.02},
+	{"uses": 60, "name": "Tumenggung", "bonus": 0.04},
+	{"uses": 180, "name": "Mahapatih", "bonus": 0.06},
+]
+
+## Lencana musiman: musim = 91 hari. "event" dihitung dari penghitung game selama musim.
+const BADGE_SEASON_DAYS := 91
+const BADGES := [
+	{"id": "pemburu", "name": "Pemburu Ulung", "icon": "hunt", "event": "hunt", "target": 60},
+	{"id": "joki", "name": "Joki Juara", "icon": "race", "event": "race_win", "target": 15},
+	{"id": "cendekia", "name": "Cendekia Nusantara", "icon": "quiz", "event": "quiz_correct", "target": 100},
+	{"id": "penjelajah", "name": "Penakluk Candi", "icon": "candi", "event": "candi_boss", "target": 10},
+	{"id": "diplomat", "name": "Diplomat Ulung", "icon": "diplomacy", "event": "diplomacy", "target": 60},
+	{"id": "empu", "name": "Empu Pusaka", "icon": "forge", "event": "forge", "target": 20},
+	{"id": "panglima", "name": "Panglima Perang", "icon": "power", "event": "win", "target": 60},
+	{"id": "dalang", "name": "Penikmat Wayang", "icon": "wayang", "event": "wayang", "target": 12},
+]
+const BADGE_GOLD := 50
+
+## Turnamen silat antarpemain (online): daftar Senin–Sabtu, hasil hari Minggu.
+const TOURNEY_REWARDS := [  ## babak tercapai: 0 = gugur di babak pertama ... 4 = juara (16 peserta)
+	{"gold": 20}, {"gold": 40}, {"gold": 70}, {"gold": 120, "items": {"star_stone": 1}},
+	{"gold": 250, "items": {"star_stone": 2, "batu_meteor": 1}}]
+const TOURNEY_ROUND_NAMES := ["Babak 16 Besar", "Perempat Final", "Semifinal", "Final", "Juara"]

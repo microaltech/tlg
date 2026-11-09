@@ -4,6 +4,8 @@ extends RefCounted
 ## Semua fungsi yang bergantung waktu menerima `now` (detik unix).
 
 signal changed
+## Lencana musim baru didapat (id lencana).
+signal badge_earned(id: String)
 ## Dipancarkan saat progres sebuah misi harian mencapai target.
 signal mission_completed(text: String)
 ## Dipancarkan untuk setiap aksi pemain yang dicatat (dipakai tutorial).
@@ -141,6 +143,11 @@ var realm := {}
 ## Efek titah Raja Hari Ini dari server ({"yield_silver": 0.05}); tidak disimpan.
 var king_effects := {}
 var rng := RandomNumberGenerator.new()
+## Memo perhitungan berat (atribut, kekuatan, hasil urusan) selama UI dibangun.
+## Aktif hanya di antara memo_begin() dan memo_end(), saat state tidak berubah.
+var _memo := {}
+var _memo_on := false
+var _memo_depth := 0
 
 
 func new_game(now: float) -> void:
@@ -193,7 +200,7 @@ func new_game(now: float) -> void:
 	arena = {}
 	war = {}
 	war_reward = {}
-	tutorial = {"step": 0, "done": false, "intros": []}
+	tutorial = {"step": 0, "done": false, "intros": [], "intros_v": Data.FEATURE_INTROS_VERSION}
 	iap = _empty_iap()
 	vip = {"points": 0, "daily_day": -1, "packs": [], "gifts": []}
 	start_day = day_index(now)
@@ -262,6 +269,7 @@ func sync(now: float) -> void:
 	ensure_festival(now)
 	check_cosmetic_unlocks()
 	var realm_changed := _sync_realm(now)
+	realm_changed = check_badges(now) or realm_changed
 	var alliance_changed := _alliance_rollover(now)
 	alliance_changed = ensure_war(now) or alliance_changed
 	if ensure_arena(now) or alliance_changed or weekly_reset or daily_reset or built or realm_changed:
@@ -310,20 +318,45 @@ func _spend_charge(key: String, now: float) -> bool:
 
 # --- Penasihat ------------------------------------------------------------
 
+func memo_begin() -> void:
+	if _memo_depth == 0:
+		_memo.clear()
+	_memo_depth += 1
+	_memo_on = true
+
+
+func memo_end() -> void:
+	_memo_depth = maxi(0, _memo_depth - 1)
+	if _memo_depth == 0:
+		_memo_on = false
+		_memo.clear()
+
+
 func attr(id: String, key: String) -> int:
+	if _memo_on:
+		var mk := "a:%s:%s" % [id, key]
+		if not _memo.has(mk):
+			_memo_on = false
+			_memo[mk] = attr(id, key)
+			_memo_on = true
+		return _memo[mk]
 	var def := Data.counselor_def(id)
 	var st: Dictionary = counselors[id]
 	var mult := 1.0 + Data.STAR_BONUS * int(st.get("stars", 0))
 	var base := int(int(def[key]) * int(st["level"]) * mult)
-	return base + int(base * mount_pct(id)) + int(st["bonus"].get(key, 0)) + equipment_bonus(id, key)
+	return base + int(base * (mount_pct(id) + title_bonus(id))) + int(st["bonus"].get(key, 0)) + equipment_bonus(id, key)
 
 
 func total_attr(key: String) -> int:
+	if _memo_on and _memo.has("t:" + key):
+		return _memo["t:" + key]
 	var total := 0
 	for id in counselors:
 		total += attr(id, key)
 	if key == "cha":
 		total += total_intimacy()
+	if _memo_on:
+		_memo["t:" + key] = total
 	return total
 
 
@@ -372,8 +405,13 @@ func skill_bonus(effect: String) -> float:
 
 ## Kekuatan yang dipakai untuk pertarungan arena, bos aliansi, dan perang.
 func combat_power() -> int:
-	return int(power() * (1.0 + skill_bonus("combat")) * (1.0 + float(formation_def()["power"]))
+	if _memo_on and _memo.has("cp"):
+		return _memo["cp"]
+	var v := int(power() * (1.0 + skill_bonus("combat")) * (1.0 + float(formation_def()["power"]))
 		* (1.0 + story_bonus("combat")) * (1.0 + kingdom_bonus("combat")))
+	if _memo_on:
+		_memo["cp"] = v
+	return v
 
 
 # --- Formasi & rencana pertempuran ---------------------------------------------
@@ -527,13 +565,18 @@ func upgrade_counselor(id: String) -> Dictionary:
 # --- Urusan kota ----------------------------------------------------------
 
 func affair_yield(kind: String) -> int:
+	if _memo_on and _memo.has("y:" + kind):
+		return _memo["y:" + kind]
 	var a: Dictionary = AFFAIRS[kind]
-	return int((int(a["base"]) + total_attr(a["attr"]) * int(a["per_point"])) * float(rank_info()["mult"])
+	var v := int((int(a["base"]) + total_attr(a["attr"]) * int(a["per_point"])) * float(rank_info()["mult"])
 		* (1.0 + event_bonus("yield_" + kind) + alliance_bonus() + vip_perk("yield"))
 		* (1.0 + skill_bonus("yield_" + kind) + skill_bonus("yield_all") + officials_bonus() + honor_bonus()
 			+ building_bonus("yield_" + kind) + building_bonus("yield_all")
 			+ story_bonus("yield_" + kind) + story_bonus("yield_all") + loyalty_bonus()
 			+ kingdom_bonus("yield_" + kind) + kingdom_bonus("yield_all")))
+	if _memo_on:
+		_memo["y:" + kind] = v
+	return v
 
 
 func do_affair(kind: String, now: float) -> Dictionary:
@@ -662,6 +705,8 @@ func fight_stage() -> Dictionary:
 		add_item(stage_item)
 	stage += 1
 	_track("win")
+	for h in battle_heroes():
+		use_counselor(h["id"])
 	ensure_arena(_last_now)
 	var unlocked := _unlock_content()
 	changed.emit()
@@ -3437,6 +3482,7 @@ func send_expedition(dest_id: String, counselor_id: String, now: float) -> Dicti
 		return _fail("%s sedang dalam ekspedisi." % Data.counselor_def(counselor_id)["name"])
 	if expeditions.size() >= expedition_slots():
 		return _fail("Semua rombongan ekspedisi sedang berangkat.")
+	use_counselor(counselor_id)
 	# Hadiah ditentukan saat berangkat agar tidak berubah saat game dibuka ulang.
 	var reward := expedition_preview(dest, counselor_id)
 	var gold_range: Array = dest["gold"]
@@ -3978,6 +4024,7 @@ func silat_join(counselor_id: String, now: float) -> Dictionary:
 	if not counselors.has(counselor_id):
 		return _fail("Penasihat belum direkrut.")
 	var power := silat_power(counselor_id)
+	use_counselor(counselor_id, 3)
 	var r := _seeded(["silat", week_index(now)])
 	# Tujuh peserta lain. Bagan: [jagoan vs 0], [1 vs 2], [3 vs 4], [5 vs 6]. Lawan jagoan
 	# di tiap babak (0, 1, 3) punya kekuatan sesuai babaknya; sisanya peserta biasa.
@@ -4303,7 +4350,7 @@ func check_cosmetic_unlocks() -> Array:
 			ok = vip_level() >= int(u.substr(4))
 		elif u.begins_with("stage:"):
 			ok = stage >= int(u.substr(6))
-		elif u == "silat" or u == "king":
+		elif u == "silat" or u == "king" or u == "wayang":
 			ok = false  # hanya dari hadiah juara turnamen / Raja Hari Ini
 		if ok and unlock_cosmetic(id):
 			got.append(id)
@@ -5024,7 +5071,14 @@ func from_dict(d: Dictionary, now: float) -> void:
 		var intros := []
 		for id in src_tut.get("intros", []):
 			intros.append(str(id))
-		tutorial = {"step": int(src_tut.get("step", 0)), "done": bool(src_tut.get("done", false)), "intros": intros}
+		tutorial = {"step": int(src_tut.get("step", 0)), "done": bool(src_tut.get("done", false)), "intros": intros,
+			"intros_v": int(src_tut.get("intros_v", 0))}
+	if int(tutorial.get("intros_v", 0)) < Data.FEATURE_INTROS_VERSION:
+		# Update: perkenalan fitur yang sudah lama terbuka tidak dimunculkan beruntun.
+		for intro in Data.FEATURE_INTROS:
+			if stage >= int(intro["stage"]) and not tutorial["intros"].has(intro["id"]):
+				tutorial["intros"].append(intro["id"])
+		tutorial["intros_v"] = Data.FEATURE_INTROS_VERSION
 	var src_horses: Dictionary = d.get("horses", {})
 	for id in src_horses:
 		if not Data.HORSES.has(id) or not (src_horses[id] is Dictionary):
@@ -5164,6 +5218,11 @@ func _empty_realm(now: float) -> Dictionary:
 		"comeback": {},
 		"codes": [],
 		"wb_claimed": -1,
+		"usage": {},
+		"wayang": {"done": {}, "day": -1},
+		"ceremony": {"last_day": -1000, "id": "", "until": 0.0},
+		"badges": {"season": -1, "base": {}, "earned": {}},
+		"tourney_claimed": -1,
 	}
 
 
@@ -5265,6 +5324,7 @@ func kingdom_bonus(effect: String) -> float:
 	if effect == "combat":
 		total += Data.DIPLO_ALLY_BONUS * realm.get("diplo", {}).get("ally", []).size()
 	total += pet_bonus(effect)
+	total += ceremony_bonus(effect, _last_now)
 	return total
 
 
@@ -5333,6 +5393,7 @@ func go_hunt(counselor_id: String, ground_id: String, now: float) -> Dictionary:
 		h["day"] = day_index(now)
 		h["used"] = 0
 	h["used"] = int(h["used"]) + 1
+	use_counselor(counselor_id)
 	var hit := rng.randf() < hunt_chance(counselor_id, ground_id)
 	var shots := rng.randi_range(1, 3) if hit else 3
 	var reward := hunt_rewards(ground_id)
@@ -6090,6 +6151,7 @@ func _load_realm5(src: Dictionary, now: float) -> void:
 		if str(code).length() <= 80 and not realm["codes"].has(str(code)):
 			realm["codes"].append(str(code))
 	realm["wb_claimed"] = int(src.get("wb_claimed", -1))
+	_load_realm6(src)
 
 
 # --- Jenis pasukan -----------------------------------------------------------------
@@ -6362,6 +6424,7 @@ func send_spy(kingdom: String, mission: String, now: float) -> Dictionary:
 	var who: String = Data.counselor_def(agent)["name"]
 	var name: String = kingdom_def(kingdom)["name"]
 	_track("spy")
+	use_counselor(agent)
 	if rng.randf() >= spy_chance(agent, kingdom, mission):
 		dp["jailed"].append(agent)
 		_set_relation(kingdom, relation(kingdom) - 10)
@@ -6464,6 +6527,8 @@ func go_race(horse: String, now: float) -> Dictionary:
 	scores.sort_custom(func(a, b): return a[0] > b[0])
 	var order: Array = scores.map(func(x): return x[1])
 	var place: int = order.find(me_lane) + 1
+	if place == 1:
+		_track("race_win")
 	var def: Dictionary = Data.RACE_REWARDS[place - 1]
 	var reward := _yields_of({"silver": def["silver"]})
 	if def.has("gold"):
@@ -6529,6 +6594,7 @@ func answer_quiz(slot: int, choice: int, now: float) -> Dictionary:
 	_track("quiz")
 	var msg := ""
 	if correct:
+		_track("quiz_correct")
 		msg = "Benar! %s." % _give_rewards(_yields_of(Data.QUIZ_REWARD))
 	else:
 		msg = "Kurang tepat. Jawaban yang benar: %s." % q["options"][q["answer"]]
@@ -6674,6 +6740,7 @@ func _candi_boss(r: RandomNumberGenerator) -> Dictionary:
 	var ratio := float(combat_power()) / maxf(1.0, candi_boss_power())
 	var win := r.randf() < clampf(0.5 + (ratio - 1.0) * 0.8, 0.15, 0.9)
 	if win:
+		_track("candi_boss")
 		_loot_add(candi_run()["loot"], {"gold": 20, "items": {"batu_meteor": 1}})
 		_loot_add(candi_run()["loot"], _yields_of({"silver": 3.0}))
 	var result := _candi_end(win, "Buto penjaga candi tumbang! Harta disempurnakan." if win
@@ -6947,3 +7014,302 @@ func claim_world_boss(week: int, rank: int, players: int, defeated: bool) -> Dic
 	var text := _give_rewards(reward)
 	changed.emit()
 	return _ok("Hadiah Bos Dunia (peringkat %d dari %d): %s." % [rank, players, text])
+
+
+# --- Batch 6: muat & validasi ------------------------------------------------------
+
+func _load_realm6(src: Dictionary) -> void:
+	var u = src.get("usage", {})
+	if u is Dictionary:
+		for id in u:
+			if not Data.counselor_def(str(id)).is_empty():
+				realm["usage"][str(id)] = maxi(0, int(u[id]))
+	var w = src.get("wayang", {})
+	if w is Dictionary:
+		realm["wayang"]["day"] = int(w.get("day", -1))
+		var done = w.get("done", {})
+		if done is Dictionary:
+			for id in done:
+				if not folktale_def(str(id)).is_empty():
+					realm["wayang"]["done"][str(id)] = clampi(int(done[id]), 0, 3)
+	var c = src.get("ceremony", {})
+	if c is Dictionary:
+		realm["ceremony"] = {"last_day": int(c.get("last_day", -1000)),
+			"id": str(c.get("id", "")) if Data.CEREMONIES.has(str(c.get("id", ""))) else "",
+			"until": float(c.get("until", 0.0))}
+	var b = src.get("badges", {})
+	if b is Dictionary:
+		realm["badges"]["season"] = int(b.get("season", -1))
+		for k in b.get("base", {}):
+			realm["badges"]["base"][str(k)] = int(b["base"][k])
+		var earned = b.get("earned", {})
+		if earned is Dictionary:
+			for season in earned:
+				var ids := []
+				for id in earned[season]:
+					if not badge_def(str(id)).is_empty() and not ids.has(str(id)):
+						ids.append(str(id))
+				realm["badges"]["earned"][str(int(season))] = ids
+	realm["tourney_claimed"] = int(src.get("tourney_claimed", -1))
+
+
+# --- Gelar kehormatan penasihat ---------------------------------------------------------
+
+func use_counselor(id: String, amount := 1) -> void:
+	if counselors.has(id):
+		realm["usage"][id] = int(realm["usage"].get(id, 0)) + amount
+
+
+func counselor_uses(id: String) -> int:
+	return int(realm.get("usage", {}).get(id, 0))
+
+
+## Gelar tertinggi yang dicapai {name, bonus, uses} atau {}.
+func counselor_title(id: String) -> Dictionary:
+	var best := {}
+	for t in Data.COUNSELOR_TITLES:
+		if counselor_uses(id) >= int(t["uses"]):
+			best = t
+	return best
+
+
+func title_bonus(id: String) -> float:
+	return float(counselor_title(id).get("bonus", 0.0))
+
+
+## Gelar berikutnya {name, uses} atau {}.
+func next_counselor_title(id: String) -> Dictionary:
+	for t in Data.COUNSELOR_TITLES:
+		if counselor_uses(id) < int(t["uses"]):
+			return t
+	return {}
+
+
+# --- Wayang & cerita rakyat -----------------------------------------------------------------
+
+func wayang_unlocked() -> bool:
+	return stage >= Data.WAYANG_UNLOCK_STAGE
+
+
+func folktale_def(id: String) -> Dictionary:
+	for t in Data.FOLKTALES:
+		if t["id"] == id:
+			return t
+	return {}
+
+
+func wayang_progress(id: String) -> int:
+	return int(realm["wayang"]["done"].get(id, 0))
+
+
+func wayang_ready(now: float) -> bool:
+	return wayang_unlocked() and int(realm["wayang"]["day"]) != day_index(now)
+
+
+## Tonton babak berikutnya sebuah lakon. Satu babak per hari (lakon mana pun).
+func watch_wayang(id: String, now: float) -> Dictionary:
+	if not wayang_unlocked():
+		return _fail("Menangkan Tahap %d untuk menonton wayang." % Data.WAYANG_UNLOCK_STAGE)
+	var t := folktale_def(id)
+	if t.is_empty():
+		return _fail("Lakon tidak dikenal.")
+	var part := wayang_progress(id)
+	if part >= t["episodes"].size():
+		return _fail("Lakon ini sudah tamat.")
+	if not wayang_ready(now):
+		return _fail("Sang dalang beristirahat. Babak berikutnya besok.")
+	realm["wayang"]["day"] = day_index(now)
+	realm["wayang"]["done"][id] = part + 1
+	var reward := _yields_of(Data.WAYANG_EPISODE_REWARD)
+	var finished: bool = part + 1 >= t["episodes"].size()
+	if finished:
+		reward["gold"] = Data.WAYANG_TALE_GOLD
+		unlock_cosmetic(t["frame"])
+	var text := _give_rewards(reward)
+	_track("wayang")
+	changed.emit()
+	var result := _ok(("Lakon %s tamat! %s, bingkai baru terbuka." if finished else "Babak %d %s: %s.")
+		% ([t["name"], text] if finished else [part + 1, t["name"], text]))
+	result["episode"] = t["episodes"][part]
+	result["part"] = part
+	return result
+
+
+# --- Upacara kerajaan --------------------------------------------------------------------
+
+func ceremony_unlocked() -> bool:
+	return stage >= Data.CEREMONY_UNLOCK_STAGE
+
+
+func ceremony_cooldown_days(now: float) -> int:
+	return maxi(0, int(realm["ceremony"]["last_day"]) + Data.CEREMONY_DAYS - day_index(now))
+
+
+func ceremony_active(now: float) -> String:
+	var c: Dictionary = realm.get("ceremony", {})
+	return str(c.get("id", "")) if float(c.get("until", 0.0)) > now else ""
+
+
+func ceremony_bonus(effect: String, now: float) -> float:
+	var id := ceremony_active(now)
+	return float(Data.CEREMONIES[id]["effects"].get(effect, 0.0)) if id != "" else 0.0
+
+
+func ceremony_cost(id: String) -> Dictionary:
+	return _yields_of(Data.CEREMONIES[id]["cost"])
+
+
+func hold_ceremony(id: String, now: float) -> Dictionary:
+	if not ceremony_unlocked():
+		return _fail("Menangkan Tahap %d untuk menggelar upacara." % Data.CEREMONY_UNLOCK_STAGE)
+	if not Data.CEREMONIES.has(id):
+		return _fail("Upacara tidak dikenal.")
+	if ceremony_cooldown_days(now) > 0:
+		return _fail("Upacara berikutnya bisa digelar dalam %d hari." % ceremony_cooldown_days(now))
+	var cost := ceremony_cost(id)
+	for k in cost:
+		if int(get(k)) < int(cost[k]):
+			return _fail("%s tidak cukup (butuh %d)." % [Data.REWARD_NAMES[k].capitalize(), cost[k]])
+	for k in cost:
+		set(k, int(get(k)) - int(cost[k]))
+	var def: Dictionary = Data.CEREMONIES[id]
+	if int(def.get("loyalty", 0)) != 0:
+		court["loyalty"] = clampi(int(court.get("loyalty", 50)) + int(def["loyalty"]), 0, 100)
+	realm["ceremony"] = {"last_day": day_index(now), "id": id, "until": now + Data.CEREMONY_HOURS * 3600.0}
+	_track("ceremony")
+	changed.emit()
+	return _ok("Upacara %s digelar! Berkah berlaku 24 jam." % def["name"])
+
+
+# --- Lencana musiman ---------------------------------------------------------------------
+
+func badge_def(id: String) -> Dictionary:
+	for b in Data.BADGES:
+		if b["id"] == id:
+			return b
+	return {}
+
+
+func badge_season(now: float) -> int:
+	return int(floor(day_index(now) / float(Data.BADGE_SEASON_DAYS)))
+
+
+## Nomor musim untuk pemain (1 = musim saat mulai bermain).
+func badge_season_number(season: int) -> int:
+	return season - int(floor(start_day / float(Data.BADGE_SEASON_DAYS))) + 1
+
+
+func badge_season_days_left(now: float) -> int:
+	return (badge_season(now) + 1) * Data.BADGE_SEASON_DAYS - day_index(now)
+
+
+func _ensure_badge_season(now: float) -> void:
+	var b: Dictionary = realm["badges"]
+	if int(b["season"]) == badge_season(now):
+		return
+	b["season"] = badge_season(now)
+	b["base"] = {}
+	for d in Data.BADGES:
+		b["base"][d["event"]] = int(counters.get(d["event"], 0))
+
+
+func badge_progress(id: String, now: float) -> int:
+	_ensure_badge_season(now)
+	var d := badge_def(id)
+	return mini(int(d["target"]), int(counters.get(d["event"], 0)) - int(realm["badges"]["base"].get(d["event"], 0)))
+
+
+func badges_earned(season: int) -> Array:
+	return realm["badges"]["earned"].get(str(season), [])
+
+
+## Semua lencana yang pernah didapat: [{id, season}].
+func badge_album() -> Array:
+	var out := []
+	var seasons: Array = realm["badges"]["earned"].keys()
+	seasons.sort_custom(func(a, b): return int(a) > int(b))
+	for s in seasons:
+		for id in realm["badges"]["earned"][s]:
+			out.append({"id": id, "season": int(s)})
+	return out
+
+
+## Berikan lencana yang targetnya tercapai musim ini. True bila ada yang baru.
+func check_badges(now: float) -> bool:
+	_ensure_badge_season(now)
+	var season := badge_season(now)
+	var key := str(season)
+	var got := false
+	for d in Data.BADGES:
+		if badges_earned(season).has(d["id"]) or badge_progress(d["id"], now) < int(d["target"]):
+			continue
+		if not realm["badges"]["earned"].has(key):
+			realm["badges"]["earned"][key] = []
+		realm["badges"]["earned"][key].append(d["id"])
+		gold += Data.BADGE_GOLD
+		badge_earned.emit(d["id"])
+		got = true
+	return got
+
+
+# --- Ambil semua hadiah harian -----------------------------------------------------------------
+
+## Kumpulkan semua yang siap tanpa tayangan: login, VIP, besan, kebun, upeti, ekspedisi,
+## kapal (yang tidak diserang bajak laut tetap memakai hasil acaknya), paket kembali.
+func collect_daily(now: float) -> Dictionary:
+	var parts := []
+	var add := func(label: String, r: Dictionary):
+		if r.get("ok", false):
+			parts.append(label)
+	if login_can_claim(now):
+		add.call("hadiah login", claim_login(now))
+	if vip_daily_can_claim(now):
+		add.call("hadiah VIP", claim_vip_daily(now))
+	if kin_gift_ready(now):
+		add.call("kiriman besan", claim_kin_gifts(now))
+	if garden_unlocked() and garden_ready_count(now) > 0:
+		add.call("panen kebun", harvest_all(now))
+	if not tribute_pending(now).values().all(func(v): return v <= 0):
+		add.call("upeti", collect_tribute(now))
+	if expeditions_ready(now) > 0:
+		add.call("ekspedisi", claim_all_expeditions(now))
+	for ship in ships_owned():
+		if not voyage(ship).is_empty() and voyage_eta(ship, now) <= 0:
+			add.call("kapal %s" % Data.SHIPS[ship]["name"], claim_voyage(ship, now))
+	if comeback_active(now) and not realm["comeback"]["pack"]:
+		add.call("paket bantuan", claim_comeback_pack(now))
+	if parts.is_empty():
+		return _fail("Belum ada yang bisa diambil. Kembali nanti, Tuan.")
+	_track("collect_all")
+	return _ok("Diambil: %s." % ", ".join(parts))
+
+
+func collect_daily_count(now: float) -> int:
+	var n := 0
+	n += 1 if login_can_claim(now) else 0
+	n += 1 if vip_daily_can_claim(now) else 0
+	n += 1 if kin_gift_ready(now) else 0
+	n += 1 if garden_unlocked() and garden_ready_count(now) > 0 else 0
+	n += 0 if tribute_pending(now).values().all(func(v): return v <= 0) else 1
+	n += 1 if expeditions_ready(now) > 0 else 0
+	for ship in ships_owned():
+		n += 1 if not voyage(ship).is_empty() and voyage_eta(ship, now) <= 0 else 0
+	n += 1 if comeback_active(now) and not realm["comeback"]["pack"] else 0
+	return n
+
+
+# --- Turnamen silat online ----------------------------------------------------------------------
+
+func tourney_reward(round_reached: int) -> Dictionary:
+	return Data.TOURNEY_REWARDS[clampi(round_reached, 0, Data.TOURNEY_REWARDS.size() - 1)]
+
+
+func claim_tourney(week: int, round_reached: int) -> Dictionary:
+	if week <= int(realm["tourney_claimed"]):
+		return _fail("Hadiah turnamen minggu itu sudah diambil.")
+	if round_reached < 0:
+		return _fail("Tuan tidak ikut turnamen minggu itu.")
+	realm["tourney_claimed"] = week
+	var text := _give_rewards(tourney_reward(round_reached))
+	changed.emit()
+	return _ok("Hadiah Turnamen Silat (%s): %s." % [Data.TOURNEY_ROUND_NAMES[clampi(round_reached, 0, 4)], text])

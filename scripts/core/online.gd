@@ -116,7 +116,7 @@ static func profile_payload(m) -> Dictionary:
 		"power": m.combat_power(), "stage": m.stage, "tower": int(m.tower.get("best", 0)), "prestige": m.prestige,
 		"city": {"rank": m.rank, "buildings": m.buildings["levels"].duplicate(), "kin": m.kin_count(),
 			"ships": m.ships_owned().size(), "regions": m.territory.get("owned", []).size(),
-			"counselors": m.counselors.size()}}
+			"counselors": m.counselors.size(), "badges": m.badge_album().map(func(b): return b["id"])}}
 
 
 func push_profile() -> void:
@@ -288,6 +288,18 @@ func redeem(code: String, callback: Callable) -> void:
 			callback.call(Game.model.redeem_server_reward(code, data["reward"]))
 		else:
 			callback.call({"ok": false, "msg": str(data.get("error", "Kode tidak dikenal atau sudah kedaluwarsa."))}))
+
+
+func fetch_tourney(callback: Callable) -> void:
+	_request(HTTPClient.METHOD_GET, "/v1/tourney", {}, func(code: int, data: Dictionary):
+		callback.call(data if code == 200 else {}))
+
+
+## callback(ok: bool, message: String)
+func join_tourney(callback: Callable) -> void:
+	push_profile()
+	_request(HTTPClient.METHOD_POST, "/v1/tourney/join", {}, func(code: int, data: Dictionary):
+		callback.call(code == 200, str(data.get("error", ""))))
 
 
 func _request(method: int, path: String, body: Dictionary, callback: Callable, auth := true) -> void:

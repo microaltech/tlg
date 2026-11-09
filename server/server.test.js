@@ -282,3 +282,42 @@ test("kode hadiah: batas, kuota, kedaluwarsa, sekali per pemain", async () => {
 		assert.equal((await call("POST", "/v1/redeem", { code: "lama" }, users[2].token)).status, 404, "kedaluwarsa");
 	} finally { server.close(); }
 });
+
+test("turnamen silat online: daftar, bagan, hasil", async () => {
+	const { server, call, tick } = await start();
+	try {
+		// 1.700.000.000.000 ms = Selasa; maju ke hari Rabu agar jelas fase pendaftaran.
+		const users = [];
+		for (let i = 0; i < 5; i++) {
+			const u = await login(call, `turnamen-${i}`, `Pesilat ${i}`);
+			await call("POST", "/v1/profile", { power: 1000 * (i + 1) ** 2, city: { badges: ["joki", "palsu", "joki"] } }, u.token);
+			users.push(u);
+		}
+		const visit = await call("GET", `/v1/player?id=${users[1].player.id}`, null, users[0].token);
+		assert.deepEqual(visit.data.city.badges, ["joki"], "lencana disaring");
+		const before = await call("GET", "/v1/tourney", null, users[0].token);
+		assert.equal(before.data.phase, "register");
+		assert.equal(before.data.bracket, null);
+		for (const u of users) assert.equal((await call("POST", "/v1/tourney/join", null, u.token)).status, 200);
+		const reg = await call("GET", "/v1/tourney", null, users[0].token);
+		assert.equal(reg.data.count, 5);
+		assert.equal(reg.data.registered, true);
+		// Maju ke hari Minggu.
+		let day = (Math.floor(1_700_000_000_000 / 86400000) + 3) % 7;
+		tick(((6 - day + 7) % 7) * 86400000);
+		assert.equal((await call("POST", "/v1/tourney/join", null, users[0].token)).status, 400, "pendaftaran tutup");
+		const res = await call("GET", "/v1/tourney", null, users[4].token);
+		assert.equal(res.data.phase, "done");
+		assert.equal(res.data.rounds, 3, "5 peserta = bagan 8 (3 babak)");
+		assert.ok(res.data.my_wins >= 1, "unggulan teratas mendapat bye");
+		const again = await call("GET", "/v1/tourney", null, users[2].token);
+		assert.deepEqual(again.data.bracket, res.data.bracket, "bagan tetap");
+		const champ = res.data.bracket.champion;
+		const champWins = (await call("GET", "/v1/tourney", null, users.find((u) => u.player.id === champ).token)).data.my_wins;
+		assert.equal(champWins, 3, "juara menang semua babak");
+		tick(86400000);
+		const next = await call("GET", "/v1/tourney", null, users[4].token);
+		assert.equal(next.data.phase, "register");
+		assert.equal(next.data.last_wins, res.data.my_wins, "hasil minggu lalu untuk hadiah");
+	} finally { server.close(); }
+});

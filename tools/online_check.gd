@@ -116,6 +116,15 @@ func _ready() -> void:
 	Online.redeem("NUSANTARA", func(r): got["code3"] = r)
 	await get_tree().create_timer(0.2).timeout
 	check(got.get("code3", {}).get("ok", false), "kode bawaan ditukar tanpa server")
+	# Turnamen silat online (pendaftaran ditutup hari Minggu).
+	Online.fetch_tourney(func(d): got["tn"] = d)
+	await get_tree().create_timer(0.5).timeout
+	var tn: Dictionary = got.get("tn", {})
+	check(tn.has("phase"), "info turnamen")
+	if tn.get("phase", "") == "register":
+		Online.join_tourney(func(ok, _m): got["join"] = ok)
+		await get_tree().create_timer(0.8).timeout
+		check(got.get("join", false), "daftar turnamen")
 	Online.set_server("http://127.0.0.1:1")
 	for i in 50:
 		await get_tree().create_timer(0.1).timeout

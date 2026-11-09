@@ -144,6 +144,20 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
     menaikkan peluang Epik/Legenda.
   - **Hewan Peliharaan** (Tahap 10): Elang Jawa, Jalak Bali, Kerbau Bule, Macan Tutul.
   - **Bos Dunia** (mode online): satu bos untuk semua pemain tiap minggu.
+- **Urusan Kerajaan bertab** — Ekonomi, Petualangan, Istana, dan Dunia. Fitur yang
+  belum terbuka disembunyikan; tiap fitur diperkenalkan dengan pop-up saat terbuka
+  (save lama tidak dibanjiri pop-up). Tombol **Ambil Semua Harian** mengambil hadiah
+  login, VIP, besan, kebun, upeti, ekspedisi, kapal, dan paket kembali sekaligus.
+- **Wayang** (Tahap 7) — 4 cerita rakyat (Malin Kundang, Sangkuriang, Roro Jonggrang,
+  Timun Mas), satu babak per hari; lakon tamat membuka bingkai profil.
+- **Upacara Kerajaan** (Tahap 9) — Sekaten, Grebeg, atau Labuhan sekali per 30 hari,
+  berkah 24 jam.
+- **Gelar penasihat** — Senopati, Tumenggung, Mahapatih dari jumlah tugas (berburu,
+  ekspedisi, mata-mata, silat, kemenangan kampanye): +2/4/6% atribut.
+- **Lencana musim** — 8 lencana per musim 91 hari; tampil di profil dan saat kota
+  dikunjungi pemain lain.
+- **Turnamen Silat Online** — daftar Senin–Sabtu, 16 pesilat terkuat bertanding
+  hari Minggu (dihitung server).
 - **Jenis pasukan** — Tombak, Berkuda, dan Panah saling mengalahkan. Pilih susunan
   pasukan di Kampanye; musuh tiap tahap punya susunan sendiri. Tayangan perang
   menampilkan ketiga jenis.
@@ -163,7 +177,7 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
   chat aliansi dengan pemain sungguhan, papan peringkat "Pemain online", lawan
   Arena dari pemain lain (hasil dihitung server), teman & hadiah harian, kunjungan
   kota, Raja Hari Ini (titah bonus untuk semua pemain), Perang Wilayah Aliansi
-  mingguan, Bos Dunia mingguan, dan kode hadiah dari server. Tanpa alamat server, game tetap
+  mingguan, Bos Dunia mingguan, Turnamen Silat Online, dan kode hadiah dari server. Tanpa alamat server, game tetap
   sepenuhnya offline. Lihat `server/README.md` untuk hosting dan batasannya.
 - **Festival musiman** — Pesta Tahun Baru (28 Des–7 Jan), Berkah Ramadan &
   Lebaran (awal Ramadan sampai sepekan setelah Idulfitri, tanggal per tahun di
@@ -537,3 +551,9 @@ Catatan penting:
   validasi IAP), lalu fase 1 (aliansi, chat, peringkat sungguhan).
 - Konten lanjutan: penasihat dan selir baru, banner rekrut *rate-up*, toko event,
   iklan berhadiah (AdMob), serta bab cerita setelah Perdana Menteri.
+
+## Alat tambahan
+
+- `tools/perf_check.gd` — ukur waktu bangun halaman (lihat `docs/performance.md`).
+- `tools/store_assets.gd` — buat feature graphic dan tangkapan layar Play Store ke
+  `build/store/` (teks listing di `docs/store_listing.md`).

@@ -54,6 +54,7 @@ DB_PATH=server/data/tlg.db node server/admin.js list-codes
 | GET/POST | `/v1/guildwar`, `/v1/guildwar/attack` | Perang Wilayah Aliansi |
 | GET/POST | `/v1/worldboss`, `/v1/worldboss/attack` | Bos Dunia |
 | POST | `/v1/redeem` | Tukar kode hadiah |
+| GET/POST | `/v1/tourney`, `/v1/tourney/join` | Turnamen silat online (daftar Senin–Sabtu, hasil Minggu) |
 
 ## Menjalankan
 

@@ -46,7 +46,9 @@
        `godot --headless --path . --script res://tools/sim_economy.gd -- 30 4 1`
        lalu bandingkan dengan `docs/balance.md`.
 4. [ ] Set environment keystore (`GODOT_ANDROID_KEYSTORE_RELEASE_*`).
-5. [ ] Build: `GODOT=/path/ke/godot tools/build_android.sh aab`.
+5. [ ] Build: `GODOT=/path/ke/godot tools/build_android.sh aab`. Butuh Android Build
+       Template terpasang dan akses internet ke repositori Google Maven
+       (dl.google.com) serta Maven Central untuk Gradle.
 6. [ ] Uji APK rilis di minimal satu HP sungguhan
        (`tools/build_android.sh release`). Periksa: tutorial, gulir layar,
        pembelian di jalur Internal testing dengan akun penguji lisensi,
@@ -54,8 +56,9 @@
        aplikasi ditutup paksa.
 7. [ ] Unggah AAB ke **Internal testing**, lalu Closed testing, lalu Production.
 8. [ ] Lengkapi listing toko: ikon 512 px (`assets/launcher/play_store_512.png`),
-       feature graphic 1024×500, minimal 2 tangkapan layar ponsel, deskripsi
-       singkat dan lengkap, kategori Strategi.
+       feature graphic 1024×500 dan 6 tangkapan layar ponsel 1080×1920 (buat
+       dengan `tools/store_assets.gd`, hasil di `build/store/`), teks dari
+       `docs/store_listing.md`, kategori Strategi.
 9. [ ] Periksa **App content**: Data safety (`docs/play_data_safety.md`),
        rating konten, target audiens, dan iklan.
 

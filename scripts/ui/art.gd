@@ -17,6 +17,17 @@ static func tex(path_no_ext: String) -> Texture2D:
 	return t
 
 
+## Mulai memuat semua potret dan ikon di thread latar agar halaman pertama kali
+## dibuka tidak tersendat. load() biasa kemudian mengambil dari cache.
+static func warm_up() -> void:
+	for dir in ["res://assets/portraits/", "res://assets/icons/"]:
+		for f in DirAccess.get_files_at(dir):
+			var path: String = dir + f.trim_suffix(".import").trim_suffix(".remap")
+			if path.ends_with(".svg") or path.ends_with(".png") or path.ends_with(".webp"):
+				if ResourceLoader.exists(path) and not ResourceLoader.has_cached(path):
+					ResourceLoader.load_threaded_request(path, "Texture2D")
+
+
 static func portrait(id: String) -> Texture2D:
 	return tex("res://assets/portraits/" + id)
 

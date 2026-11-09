@@ -184,3 +184,12 @@ Tanpa penyesuaian angka, hasilnya (seed 1–3, 4 sesi/hari) Menteri tetap di har
 ke-22 sampai 23 dan tahap di hari ke-30 adalah 78–79. Fitur ini hampir tidak
 memberi prestise (hanya menang melawan ancaman dan menumpas pemberontakan), jadi
 ambang jabatan tidak diubah.
+
+## Wayang, upacara, gelar penasihat, lencana
+
+Gelar penasihat (+2/4/6% atribut untuk penasihat yang sering bertugas), lencana
+(+50 emas), wayang, dan upacara Sekaten bulanan sedikit menggeser hasil simulasi:
+Menteri mundur ke hari ke-24 sampai 25. Pengaruhnya tidak langsung (atribut lebih
+tinggi menaikkan hasil prajurit yang memakan pangan, sehingga urutan pengeluaran
+bot berubah). Ambang Menteri diturunkan dari 23.000 ke 22.000; hasilnya (seed 1–3)
+Menteri di hari ke-21 sampai 23 dan tahap di hari ke-30 adalah 78.

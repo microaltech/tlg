@@ -36,6 +36,8 @@ const GUILDWAR_ATTACKS = 3;
 const TERRITORIES = ["Selat Sunda", "Teluk Bone", "Laut Banda", "Tanah Karo", "Lembah Baliem", "Danau Toba"];
 const DAY_MS = 86400000;
 const BOSS_ATTACKS = 3;
+const TOURNEY_SIZE = 16;
+const BADGE_IDS = ["pemburu", "joki", "cendekia", "penjelajah", "diplomat", "empu", "panglima", "dalang"];
 const BOSS_HP_MIN = 200000;
 const CODE_LIMITS = { gold: 1000, silver: 10000000, grain: 10000000, soldiers: 10000000, prestige: 2000 };
 const CODE_ITEMS = ["scroll_train", "star_stone", "pill_intimacy", "recruit_ticket", "energy_tea", "silver_box",
@@ -85,6 +87,9 @@ function openDb(file) {
 		CREATE TABLE IF NOT EXISTS codes (
 			code TEXT PRIMARY KEY, reward TEXT NOT NULL, max_uses INTEGER NOT NULL, uses INTEGER NOT NULL DEFAULT 0,
 			expires INTEGER NOT NULL);
+		CREATE TABLE IF NOT EXISTS tourney_entries (
+			week INTEGER NOT NULL, player TEXT NOT NULL, power INTEGER NOT NULL, PRIMARY KEY (week, player));
+		CREATE TABLE IF NOT EXISTS tourney_results (week INTEGER PRIMARY KEY, bracket TEXT NOT NULL);
 		CREATE TABLE IF NOT EXISTS redemptions (
 			code TEXT NOT NULL, player TEXT NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (code, player));
 	`);
@@ -184,6 +189,13 @@ function createServer(opts = {}) {
 			WHERE h.week = ? ORDER BY h.damage DESC LIMIT 10`),
 		hitRank: db.prepare("SELECT COUNT(*) AS n FROM world_boss_hits WHERE week = ? AND damage > ?"),
 		hitCount: db.prepare("SELECT COUNT(*) AS n FROM world_boss_hits WHERE week = ?"),
+		tourneyJoin: db.prepare("INSERT OR REPLACE INTO tourney_entries (week, player, power) VALUES (?, ?, ?)"),
+		tourneyEntries: db.prepare(`SELECT e.player AS id, e.power, p.name, p.portrait FROM tourney_entries e
+			JOIN players p ON p.id = e.player WHERE e.week = ? ORDER BY e.power DESC, p.created ASC LIMIT ?`),
+		tourneyCount: db.prepare("SELECT COUNT(*) AS n FROM tourney_entries WHERE week = ?"),
+		tourneyMine: db.prepare("SELECT 1 AS x FROM tourney_entries WHERE week = ? AND player = ?"),
+		tourneyGet: db.prepare("SELECT bracket FROM tourney_results WHERE week = ?"),
+		tourneySave: db.prepare("INSERT OR IGNORE INTO tourney_results (week, bracket) VALUES (?, ?)"),
 		codeGet: db.prepare("SELECT * FROM codes WHERE code = ?"),
 		codeUse: db.prepare("UPDATE codes SET uses = uses + 1 WHERE code = ?"),
 		redeemAdd: db.prepare("INSERT OR IGNORE INTO redemptions (code, player, t) VALUES (?, ?, ?)"),
@@ -220,6 +232,56 @@ function createServer(opts = {}) {
 		return b;
 	}
 
+	// Turnamen silat: daftar Senin–Sabtu, hasil dari hari Minggu (dihitung sekali, lalu disimpan).
+	const dayInWeek = (t) => (dayOf(t) + 3) % 7;
+	function tourneyBracket(week) {
+		const saved = q.tourneyGet.get(week);
+		if (saved) return JSON.parse(saved.bracket);
+		const entries = q.tourneyEntries.all(week, TOURNEY_SIZE);
+		if (entries.length < 2) return null;
+		let size = 2;
+		while (size < entries.length) size *= 2;
+		// Unggulan: 1 lawan terakhir, 2 lawan kedua terakhir, dst.; slot kosong = bye.
+		const slots = [];
+		for (let i = 0; i < size / 2; i++) slots.push(entries[i] || null, entries[size - 1 - i] || null);
+		let seed = week * 2654435761 % 4294967296;
+		const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+		const rounds = [];
+		let alive = slots;
+		while (alive.length > 1) {
+			const matches = [];
+			const next = [];
+			for (let i = 0; i < alive.length; i += 2) {
+				const [a, b] = [alive[i], alive[i + 1]];
+				let winner = a || b;
+				if (a && b) {
+					const pa = Math.pow(Math.max(1, a.power), 3);
+					const pb = Math.pow(Math.max(1, b.power), 3);
+					winner = rnd() < pa / (pa + pb) ? a : b;
+				}
+				matches.push({ a, b, winner: winner ? winner.id : null });
+				next.push(winner);
+			}
+			rounds.push(matches);
+			alive = next;
+		}
+		const bracket = { rounds, champion: alive[0] ? alive[0].id : null };
+		q.tourneySave.run(week, JSON.stringify(bracket));
+		return bracket;
+	}
+
+	// Jumlah kemenangan pemain di bagan; -1 bila tidak ikut. Juara = jumlah babak.
+	function tourneyWins(bracket, id) {
+		if (!bracket) return -1;
+		let wins = -1;
+		for (const round of bracket.rounds) {
+			for (const m of round) {
+				if ((m.a && m.a.id === id) || (m.b && m.b.id === id)) wins = Math.max(wins, 0) + (m.winner === id ? 1 : 0);
+			}
+		}
+		return wins;
+	}
+
 	function bossStanding(week, me) {
 		const hit = q.hitGet.get(week, me.id);
 		return { damage: hit ? hit.damage : 0, rank: hit ? q.hitRank.get(week, hit.damage).n + 1 : 0,
@@ -249,6 +311,7 @@ function createServer(opts = {}) {
 		const out = { rank: clampInt(c.rank, 0, 20), buildings: {}, kin: clampInt(c.kin, 0, 999),
 			ships: clampInt(c.ships, 0, 10), regions: clampInt(c.regions, 0, 100), counselors: clampInt(c.counselors, 0, 999) };
 		for (const k of ["istana", "pasar", "lumbung", "barak"]) out.buildings[k] = clampInt(c.buildings?.[k], 0, 99);
+		out.badges = Array.isArray(c.badges) ? [...new Set(c.badges.filter((b) => BADGE_IDS.includes(b)))] : [];
 		return JSON.stringify(out);
 	}
 
@@ -485,6 +548,26 @@ function createServer(opts = {}) {
 			const b = q.bossGet.get(week);
 			return [200, { damage, hp_max: b.hp_max, total: b.damage, defeated: b.damage >= b.hp_max,
 				hp_before: Math.max(0, b.hp_max - b.damage + damage) }];
+		},
+
+		// (auth) Turnamen silat minggu ini dan hasil minggu lalu.
+		"GET /v1/tourney": (me) => {
+			const week = weekOf(now());
+			const done = dayInWeek(now()) === 6;
+			const bracket = done ? tourneyBracket(week) : null;
+			const last = tourneyBracket(week - 1);
+			return [200, { week, phase: done ? "done" : "register", registered: !!q.tourneyMine.get(week, me.id),
+				count: q.tourneyCount.get(week).n, entrants: q.tourneyEntries.all(week, TOURNEY_SIZE).map((e) => e.name),
+				bracket, my_wins: tourneyWins(bracket, me.id), rounds: bracket ? bracket.rounds.length : 0,
+				last_week: week - 1, last_wins: tourneyWins(last, me.id), last_rounds: last ? last.rounds.length : 0 }];
+		},
+
+		// (auth) Daftar turnamen (Senin–Sabtu) dengan kekuatan saat ini.
+		"POST /v1/tourney/join": (me) => {
+			if (dayInWeek(now()) === 6) return [400, { error: "Pendaftaran sudah ditutup. Hasil diumumkan hari ini." }];
+			if (me.power <= 0) return [400, { error: "Kirim profil dulu." }];
+			q.tourneyJoin.run(weekOf(now()), me.id, me.power);
+			return [200, { registered: true, count: q.tourneyCount.get(weekOf(now())).n }];
 		},
 
 		// (auth) Tukar kode hadiah buatan pengelola (lihat server/admin.js).

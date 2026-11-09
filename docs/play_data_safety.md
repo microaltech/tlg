@@ -73,3 +73,21 @@ ditinjau secara berkala (lihat `server/README.md`).
 Kebijakan Google Play mewajibkan peluang item acak berbayar ditampilkan sebelum
 pembelian. Game ini sudah menampilkan peluang Legenda 4%, Epik 21%, dan Langka
 75%, serta jaminan Legenda di tarikan ke-50, pada halaman Rekrut dan Panduan.
+
+## Bila build memakai server sosial (mode online)
+
+Server hanya dipakai bila pemain mengisi alamat server di Pengaturan, atau bila
+build rilis Anda mengisinya lebih dulu. Bila alamat diisi lebih dulu, jawab formulir
+dengan **Ya, mengumpulkan data**:
+
+| Jenis data | Dikumpulkan | Dibagikan | Wajib/Opsional | Tujuan |
+|---|---|---|---|---|
+| ID pengguna (ID akun acak dari ID perangkat buatan game) | Ya | Tidak | Wajib untuk mode online | Fungsi aplikasi, manajemen akun |
+| Nama pengguna (nama Tuan) | Ya | Tidak | Wajib untuk mode online | Fungsi aplikasi (peringkat, chat, teman) |
+| Pesan dalam aplikasi (chat aliansi) | Ya | Tidak | Opsional | Fungsi aplikasi |
+| Aktivitas aplikasi lainnya (kekuatan, tahap, ringkasan kota, lencana, serangan Perang Wilayah/Bos Dunia, pendaftaran turnamen, teman, hadiah, kode yang ditukar) | Ya | Tidak | Wajib untuk mode online | Fungsi aplikasi |
+
+- **Enkripsi saat transit:** Ya, asalkan server di-hosting dengan HTTPS (wajib).
+- **Penghapusan data:** sediakan alamat email permintaan hapus akun (lihat
+  `docs/privacy_policy.md`) dan hapus baris pemain di database server.
+- Laporan chat (`reports`) dipakai untuk moderasi; sebutkan di kebijakan privasi.

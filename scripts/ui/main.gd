@@ -51,6 +51,8 @@ var _login_subtitle: Label
 var _login_next_label: Label
 var _login_prompted_day := -1
 var _realm_ui  ## RealmUI: panel fitur kerajaan (scripts/ui/realm_ui.gd)
+const COUNSELOR_PAGE := 6  ## kartu penasihat yang dibangun sebelum "Tampilkan Semua"
+var _counselors_all := false
 var _display := []  ## [mode malam, skala] saat UI dibangun
 var _reloading := false
 var _startup_prompted := false  ## true setelah prompt awal (ringkasan/login) pertama kali dicoba.
@@ -162,6 +164,7 @@ const SCROLL_DEADZONE := 20
 func _ready() -> void:
 	model = Game.model
 	_realm_ui = RealmUI.new(self)
+	Art.warm_up.call_deferred()
 	UI.apply_palette(Settings.dark_mode)
 	get_tree().root.content_scale_factor = Settings.ui_scale
 	# Agar layar bisa digeser walau jari mulai di atas kartu/tombol: kontrol bawaan
@@ -226,10 +229,16 @@ func _ready() -> void:
 			_realm_ui._load_friends()
 			_realm_ui._load_guildwar()
 			_realm_ui._load_world_boss()
+			_realm_ui._load_tourney()
 		_queue_rebuild())
 	Online.king_changed.connect(_queue_rebuild)
 	_display = [Settings.dark_mode, Settings.ui_scale]
 	Settings.changed.connect(_on_display_settings)
+	model.badge_earned.connect(func(id):
+		if _startup_prompted:
+			Audio.play("reveal_ssr")
+			_show({"ok": true, "msg": tr("Lencana baru: %s! +%d emas") % [tr(model.badge_def(id)["name"]), Data.BADGE_GOLD]})
+		_queue_rebuild())
 	model.cosmetic_unlocked.connect(func(id):
 		if _startup_prompted:
 			Audio.play("reveal_sr")
@@ -689,6 +698,7 @@ func _queue_rebuild() -> void:
 
 func _rebuild() -> void:
 	_rebuild_queued = false
+	model.memo_begin()
 	var scrolls := {}
 	for k in _pages:
 		scrolls[k] = _pages[k]["scroll"].scroll_vertical
@@ -754,6 +764,7 @@ func _rebuild() -> void:
 	if is_instance_valid(_story_overlay):
 		_fill_story()
 	_tick()
+	model.memo_end()
 	# Kembalikan posisi gulir setelah layout dihitung ulang.
 	await get_tree().process_frame
 	for k in scrolls:
@@ -765,6 +776,13 @@ func _tick() -> void:
 	_realm_ui.tick()
 	model.sync(now)
 	model.check_achievements()
+	# Perhitungan berat dipakai ulang selama header dan lencana diperbarui.
+	model.memo_begin()
+	_tick_ui(now)
+	model.memo_end()
+
+
+func _tick_ui(now: float) -> void:
 	# Paket terbatas baru tampil sekali, setelah panel lain (mis. perayaan naik
 	# jabatan) ditutup.
 	if _startup_prompted and not model.tutorial_active() and get_tree().get_nodes_in_group("modal").is_empty():
@@ -873,6 +891,12 @@ func _tick() -> void:
 
 
 func _build_page_content(key: String) -> void:
+	model.memo_begin()
+	_build_page_content_memo(key)
+	model.memo_end()
+
+
+func _build_page_content_memo(key: String) -> void:
 	match key:
 		"city":
 			_build_city(_pages["city"]["content"])
@@ -1107,7 +1131,17 @@ func _build_counselors(box: VBoxContainer) -> void:
 	_build_codex_card(box)
 	_build_bonds(box)
 
+	# Kartu penasihat berat dibangun (banyak label & tombol); di HP, tampilkan sebagian dulu.
+	var shown := 0
 	for id in model.counselors:
+		if not _counselors_all and shown >= COUNSELOR_PAGE:
+			var more := _button(box, tr("Tampilkan Semua Penasihat (%d)") % model.counselors.size(), func():
+				_counselors_all = true
+				_queue_rebuild()
+				return null, true, "tab_counselor", "GoldButton")
+			more.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+			break
+		shown += 1
 		var def: Dictionary = Data.counselor_def(id)
 		var card := _card(box)
 		var left := VBoxContainer.new()
@@ -1141,6 +1175,14 @@ func _build_counselors(box: VBoxContainer) -> void:
 		if mount != "":
 			_label(col, "Tunggangan: %s (+%d%% atribut)" % [Data.HORSES[mount]["name"], roundi(model.mount_pct(id) * 100)],
 				"SmallLabel").add_theme_color_override("font_color", Color("7a4a24"))
+		var title: Dictionary = model.counselor_title(id)
+		var next_title: Dictionary = model.next_counselor_title(id)
+		var tl := _label(col, (tr("Gelar %s (+%d%% atribut)") % [tr(title["name"]), roundi(float(title["bonus"]) * 100)]
+			if not title.is_empty() else tr("Belum bergelar")) + (" · " + tr("%s di %d tugas (%d)") % [
+			tr(next_title["name"]), next_title["uses"], model.counselor_uses(id)] if not next_title.is_empty() else ""),
+			"SmallLabel")
+		tl.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		tl.add_theme_color_override("font_color", Color("b5651d"))
 		var lv: int = model.counselors[id]["level"]
 		var cap: int = model.rank_info()["level_cap"]
 		_label(col, "Level %d / %d" % [lv, cap], "CardLabel")
@@ -4951,6 +4993,16 @@ func _fill_profile() -> void:
 		_show_vip()
 		return null, true, "vip", "GoldButton" if model.vip_daily_can_claim(Game.now()) else "GreenButton")
 	vip.custom_minimum_size.y = 60
+	var album: Array = model.badge_album()
+	if not album.is_empty():
+		var bl := _label(_profile_box, tr("Lencana (%d)") % album.size(), "CardLabel")
+		bl.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		bl.add_theme_font_override("font", UI.font_bold)
+		var flow := HFlowContainer.new()
+		flow.add_theme_constant_override("h_separation", 6)
+		_profile_box.add_child(flow)
+		for b in album:
+			flow.add_child(_tex(Art.icon(model.badge_def(b["id"])["icon"]), 52))
 	for section in [["frame", "Bingkai Profil"], ["costume", "Busana Tuan"]]:
 		_label(_profile_box, section[1], "CardLabel").add_theme_font_override("font", UI.font_bold)
 		var grid := GridContainer.new()
@@ -5279,6 +5331,8 @@ func _show_intro(intro: Dictionary) -> void:
 		_switch_page(page)
 		if panel == "tower":
 			_show_tower()
+		elif panel.begins_with("realm:"):
+			_realm_ui.call("show_" + panel.substr(6))
 		return null, true, "", "GoldButton")
 	go.custom_minimum_size.y = 80
 

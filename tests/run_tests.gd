@@ -32,6 +32,8 @@ func _init() -> void:
 		"test_fleet", "test_garden", "test_rank_reqs", "test_online_rewards", "test_realm_save", "test_summary_notification",
 		"test_troops", "test_seasons", "test_diplomacy", "test_spies", "test_rebellion", "test_race", "test_quiz",
 		"test_candi", "test_forge", "test_pets", "test_comeback", "test_gift_codes", "test_world_boss", "test_realm5_save",
+		"test_intro_update", "test_collect_daily", "test_counselor_titles", "test_wayang", "test_ceremony", "test_badges",
+		"test_tourney_reward", "test_realm6_save",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -739,7 +741,10 @@ func test_feature_intros() -> void:
 	m.stage = Data.ALLIANCE_UNLOCK_STAGE
 	check(m.pending_intro().get("id", "") == "alliance", "pengenalan aliansi di tahap 5")
 	m.mark_intro_seen("alliance")
-	check(m.pending_intro().is_empty(), "pengenalan hanya sekali")
+	check(m.pending_intro().get("id", "") != "alliance", "pengenalan hanya sekali")
+	while not m.pending_intro().is_empty():
+		m.mark_intro_seen(m.pending_intro()["id"])
+	check(m.tutorial["intros"].has("market") and m.tutorial["intros"].has("policy"), "fitur kerajaan ikut diperkenalkan")
 	m.stage = Data.ARENA_UNLOCK_STAGE
 	check(m.pending_intro().get("id", "") == "arena", "pengenalan arena di tahap 8")
 	var t := fresh()
@@ -2962,3 +2967,148 @@ func test_realm5_save() -> void:
 		and m2.realm["pets"]["active"] == "", "peliharaan rusak divalidasi")
 	check(not m2.candi_run()["loot"].get("items", {}).has("palsu") and not m2.candi_run()["loot"].has("emas_palsu"),
 		"harta candi rusak divalidasi")
+
+
+
+func test_intro_update() -> void:
+	var m := _realm_model()
+	m.stage = 20
+	var d: Dictionary = m.to_dict()
+	d["tutorial"] = {"step": 99, "done": true, "intros": ["alliance", "arena", "tower"]}  # save versi lama
+	var m2 := Model.new()
+	m2.from_dict(d, 1000.0)
+	check(m2.pending_intro().is_empty(), "update tidak memunculkan perkenalan beruntun")
+	m2.stage = Data.WAYANG_UNLOCK_STAGE if m2.stage < Data.WAYANG_UNLOCK_STAGE else m2.stage
+	var m3 := fresh()
+	m3.skip_tutorial()
+	m3.stage = Data.HUNT_UNLOCK_STAGE
+	var ids := []
+	while not m3.pending_intro().is_empty():
+		ids.append(m3.pending_intro()["id"])
+		m3.mark_intro_seen(ids[-1])
+	check(ids.has("hunt") and ids.has("wayang") and not ids.has("candi"), "pemain baru dapat perkenalan sesuai tahap")
+	check(Data.FEATURE_INTROS.filter(func(i): return str(i.get("panel", "")).begins_with("realm:")).all(
+		func(i): return i["panel"].substr(6) in ["market", "policy", "garden", "hunt", "pets", "research", "diplomacy",
+			"candi", "wayang", "ceremony"]), "panel perkenalan dikenal")
+
+
+func test_collect_daily() -> void:
+	var m := _realm_model()
+	var t := 1000.0
+	m.sync(t)
+	m.plant_seed(0, "jahe", t - 99999.0)
+	m.children.append({"name": "Adi", "gender": "m", "mother": "melati", "talent": 3, "level": Data.CHILD_MAX_LEVEL})
+	m.marry_noble(m.children.size() - 1, 0, t)
+	var n := m.collect_daily_count(t)
+	check(n >= 3, "beberapa hadiah siap (%d)" % n)
+	var r: Dictionary = m.collect_daily(t)
+	check(r["ok"] and not m.login_can_claim(t) and not m.kin_gift_ready(t) and m.garden_ready_count(t) == 0,
+		"semua diambil sekaligus")
+	check(m.collect_daily_count(t) == 0 and not m.collect_daily(t)["ok"], "tidak ada sisa")
+
+
+func test_counselor_titles() -> void:
+	var m := _realm_model()
+	var id: String = m.counselors.keys()[0]
+	m.counselors[id]["level"] = 50
+	check(m.counselor_title(id).is_empty() and m.next_counselor_title(id)["name"] == "Senopati", "belum bergelar")
+	var a := m.attr(id, "str")
+	m.realm["usage"][id] = 15
+	check(m.counselor_title(id)["name"] == "Senopati" and m.attr(id, "str") > a, "gelar Senopati menambah atribut")
+	m.realm["usage"][id] = 500
+	check(m.counselor_title(id)["name"] == "Mahapatih" and m.next_counselor_title(id).is_empty(), "gelar tertinggi")
+	var before := m.counselor_uses(id)
+	m.go_hunt(id, "rusa", 1000.0)
+	check(m.counselor_uses(id) == before + 1, "berburu menambah tugas")
+	m.soldiers = 1 << 40
+	var hero: String = m.battle_heroes()[0]["id"]
+	var hb := m.counselor_uses(hero)
+	m.fight_stage()
+	check(m.counselor_uses(hero) == hb + 1, "memenangkan tahap menambah tugas pahlawan")
+
+
+func test_wayang() -> void:
+	var m := _realm_model()
+	var t := 1000.0
+	var silver := m.silver
+	var r: Dictionary = m.watch_wayang("malin", t)
+	check(r["ok"] and m.silver > silver and r["episode"] == Data.FOLKTALES[0]["episodes"][0], "babak pertama")
+	check(not m.watch_wayang("sangkuriang", t)["ok"], "satu babak per hari")
+	m.watch_wayang("malin", t + 86400.0)
+	var gold := m.gold
+	var last: Dictionary = m.watch_wayang("malin", t + 2 * 86400.0)
+	check(last["ok"] and m.gold == gold + Data.WAYANG_TALE_GOLD and m.owns_cosmetic("frame_wayang_malin"),
+		"lakon tamat: emas dan bingkai")
+	check(not m.watch_wayang("malin", t + 3 * 86400.0)["ok"], "lakon tamat tidak diulang")
+	for tale in Data.FOLKTALES:
+		check(tale["episodes"].size() == 3 and Data.COSMETICS.has(tale["frame"]), "lakon lengkap: %s" % tale["name"])
+
+
+func test_ceremony() -> void:
+	var m := _realm_model()
+	var t := 1000.0
+	m.sync(t)
+	var base := m.affair_yield("silver")
+	check(m.hold_ceremony("sekaten", t)["ok"] and m.ceremony_active(t) == "sekaten", "upacara digelar")
+	check(m.affair_yield("silver") > base, "berkah Sekaten menambah hasil")
+	check(not m.hold_ceremony("grebeg", t + 86400.0)["ok"], "sekali per 30 hari")
+	m.sync(t + 2 * 86400.0)
+	check(m.ceremony_active(t + 2 * 86400.0) == "" and m.ceremony_cooldown_days(t + 2 * 86400.0) == 28, "berkah 24 jam")
+	var loy := int(m.court["loyalty"])
+	check(m.hold_ceremony("grebeg", t + 31 * 86400.0)["ok"] and int(m.court["loyalty"]) == mini(100, loy + 10),
+		"Grebeg menambah kesetiaan")
+	m.silver = 0
+	m.grain = 0
+	check(not m.hold_ceremony("sekaten", t + 70 * 86400.0)["ok"], "biaya harus cukup")
+
+
+func test_badges() -> void:
+	var m := _realm_model()
+	var t := 1000.0
+	m.sync(t)
+	check(m.badge_progress("pemburu", t) == 0, "musim baru dari nol")
+	var gold := m.gold
+	for i in 60:
+		m._track("hunt")
+	m.sync(t + 60.0)
+	check(m.badges_earned(m.badge_season(t)).has("pemburu") and m.gold == gold + Data.BADGE_GOLD, "lencana didapat")
+	m.sync(t + 120.0)
+	check(m.gold == gold + Data.BADGE_GOLD, "lencana tidak diberikan dua kali")
+	var next := t + Data.BADGE_SEASON_DAYS * 86400.0
+	m.sync(next)
+	check(m.badge_progress("pemburu", next) == 0 and m.badge_album().size() == 1, "musim baru, album tetap")
+	for i in 60:
+		m._track("hunt")
+	m.sync(next + 60.0)
+	check(m.badge_album().size() == 2, "lencana yang sama bisa didapat lagi di musim berikutnya")
+
+
+func test_tourney_reward() -> void:
+	var m := _realm_model()
+	var gold := m.gold
+	check(not m.claim_tourney(3, -1)["ok"], "tidak ikut")
+	check(m.claim_tourney(3, 4)["ok"] and m.gold == gold + 250 and m.item_count("star_stone") >= 2, "hadiah juara")
+	check(not m.claim_tourney(3, 4)["ok"] and not m.claim_tourney(2, 1)["ok"], "sekali per minggu")
+
+
+func test_realm6_save() -> void:
+	var m := _realm_model()
+	var t := 1000.0
+	m.sync(t)
+	m.watch_wayang("timun_mas", t)
+	m.hold_ceremony("labuhan", t)
+	m.go_hunt(m.counselors.keys()[0], "rusa", t)
+	for i in 60:
+		m._track("hunt")
+	m.sync(t)
+	m.claim_tourney(4, 2)
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
+	check(var_to_str(m2.to_dict()["realm"]) == var_to_str(m.to_dict()["realm"]), "simpan/muat batch 6 identik")
+	var bad := m.to_dict()
+	bad["realm"]["wayang"]["done"] = {"malin": 9, "dongeng_palsu": 1}
+	bad["realm"]["badges"]["earned"] = {"0": ["pemburu", "palsu", "pemburu"]}
+	bad["realm"]["ceremony"]["id"] = "pesta_palsu"
+	m2.from_dict(bad, t)
+	check(m2.wayang_progress("malin") == 3 and not m2.realm["wayang"]["done"].has("dongeng_palsu"), "wayang divalidasi")
+	check(m2.badges_earned(0) == ["pemburu"] and m2.ceremony_active(t) == "", "lencana & upacara divalidasi")

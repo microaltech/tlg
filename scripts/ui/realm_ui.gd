@@ -26,6 +26,8 @@ var _race_pick := ""
 var _forge_meteor := false
 var _world_boss := {}
 var _code_edit: LineEdit
+var _hub_tab := "ekonomi"
+var _tourney := {}
 
 
 func _init(main) -> void:
@@ -139,61 +141,135 @@ func _hub_card(box: VBoxContainer) -> void:
 	head.add_child(ui._tex(Art.icon(season["icon"]), 40))
 	var sl := _small(head, season["name"])
 	sl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var ready: int = model.collect_daily_count(now)
+	var all: Button = ui._button(inner, tr("Ambil Semua Harian (%d)") % ready if ready > 0 else tr("Ambil Semua Harian"),
+		func(): return model.collect_daily(Game.now()), ready > 0, "chest_open", "GreenButton", false, "reveal_sr")
+	all.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	all.add_theme_font_size_override("font_size", 24)
+	var tiles := _hub_tiles(now)
+	# Tab: hanya fitur yang sudah terbuka yang ditampilkan.
+	var tabs := HBoxContainer.new()
+	tabs.add_theme_constant_override("separation", 6)
+	inner.add_child(tabs)
+	for tab in Data.HUB_TABS:
+		var count := 0
+		for id in tab["tiles"]:
+			if tiles.has(id) and tiles[id]["open"]:
+				count += int(tiles[id]["badge"])
+		var tb := Button.new()
+		tb.text = tr(tab["name"]) + (" (%d)" % count if count > 0 else "")
+		tb.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		tb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tb.custom_minimum_size.y = 58
+		tb.clip_text = true
+		tb.add_theme_font_size_override("font_size", 19)
+		tb.theme_type_variation = "GoldButton" if tab["id"] == _hub_tab else ""
+		var tid: String = tab["id"]
+		tb.pressed.connect(func():
+			Audio.play("click")
+			_hub_tab = tid
+			ui._queue_rebuild())
+		tabs.add_child(tb)
 	var grid := GridContainer.new()
 	grid.columns = 3
 	grid.add_theme_constant_override("h_separation", 8)
 	grid.add_theme_constant_override("v_separation", 8)
 	inner.add_child(grid)
+	var next_stage := 9999
+	var shown := 0
+	for tab in Data.HUB_TABS:
+		if tab["id"] != _hub_tab:
+			continue
+		for id in tab["tiles"]:
+			if not tiles.has(id):
+				continue
+			var t: Dictionary = tiles[id]
+			if not t["open"]:
+				if int(t.get("stage", -1)) > 0:
+					next_stage = mini(next_stage, int(t["stage"]))
+				continue
+			shown += 1
+			var fn: Callable = t["fn"]
+			var b := Button.new()
+			b.text = tr(t["name"]) + (" (%d)" % int(t["badge"]) if int(t["badge"]) > 0 else "")
+			b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+			b.icon = Art.icon(t["icon"])
+			b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			b.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
+			b.add_theme_constant_override("icon_max_width", 56)
+			b.add_theme_font_size_override("font_size", 19)
+			b.custom_minimum_size = Vector2(0, 112)
+			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			b.theme_type_variation = "GoldButton" if int(t["badge"]) > 0 else ""
+			b.clip_text = true
+			b.pressed.connect(func():
+				Audio.play("click")
+				fn.call())
+			grid.add_child(b)
+	if next_stage < 9999:
+		_small(inner, tr("Fitur berikutnya di tab ini terbuka di Tahap %d.") % next_stage).auto_translate_mode = \
+			Node.AUTO_TRANSLATE_MODE_DISABLED
+	elif shown == 0:
+		_small(inner, "Isi alamat server di Pengaturan untuk membuka fitur online.")
+
+
+## Semua ubin Urusan Kerajaan: id -> {name, icon, open, badge, fn, stage}.
+func _hub_tiles(now: float) -> Dictionary:
 	var online: bool = Online.is_online()
-	var tiles := [
-		["Perburuan", "hunt", model.hunt_unlocked(), Data.HUNT_UNLOCK_STAGE, model.hunts_left(now), show_hunt],
-		["Pasar Malam", "market", model.market_unlocked(), Data.MARKET_UNLOCK_STAGE, 0, show_market],
-		["Kebijakan", "policy", model.policy_unlocked(), Data.POLICY_UNLOCK_STAGE,
-			1 if not model.disaster_active().is_empty() else 0, show_policy],
-		["Kebun", "garden", model.garden_unlocked(), Data.GARDEN_UNLOCK_STAGE, model.garden_ready_count(now), show_garden],
-		["Perpustakaan", "research", model.research_unlocked(), Data.RESEARCH_UNLOCK_STAGE,
-			1 if model.research_unlocked() and model.research_job().is_empty() else 0, show_research],
-		["Armada", "ship", model.fleet_unlocked(), -1, _fleet_ready(now), show_fleet],
-		["Besan", "ring", true, 0, _adult_count() + (1 if model.kin_gift_ready(now) else 0), show_kin],
-		["Teman", "friends", true, 0, _friends.get("inbox", []).size() if online else 0, show_friends],
-		["Perang Wilayah", "war_flag", true, 0, int(_guildwar.get("attacks_left", 0)) if online else 0, show_guildwar],
-		["Diplomasi", "diplomacy", model.diplo_unlocked(), Data.DIPLO_UNLOCK_STAGE,
-			(model.envoys_left(now) if model.diplo_unlocked() else 0) + (1 if not model.threat().is_empty() else 0),
-			show_diplomacy],
-		["Pacuan Kuda", "race", not model.horses.is_empty(), -2, model.races_left(now), show_race],
-		["Kuis Sejarah", "quiz", true, 0, model.quiz_left(now), show_quiz],
-		["Candi", "candi", model.candi_unlocked(), Data.CANDI_UNLOCK_STAGE,
-			model.candi_free_left(now) + (1 if not model.candi_run().is_empty() else 0), show_candi],
-		["Besalen", "forge", model.forge_unlocked(), Data.FORGE_UNLOCK_STAGE, 0, show_forge],
-		["Peliharaan", "pet_elang", model.pet_unlocked(), Data.PET_UNLOCK_STAGE, 0, show_pets],
-		["Bos Dunia", "world_boss", true, 0, int(_world_boss.get("attacks_left", 0)) if online else 0, show_world_boss],
-	]
-	for t in tiles:
-		var unlocked: bool = t[2]
-		var fn: Callable = t[5]
-		var label: String = tr(t[0])
-		if unlocked and int(t[4]) > 0:
-			label += " (%d)" % int(t[4])
-		elif not unlocked:
-			label = tr("Tahap %d") % int(t[3]) if int(t[3]) >= 0 else (tr("%d wilayah") % Data.FLEET_UNLOCK_REGIONS
-				if int(t[3]) == -1 else tr("Butuh kuda"))
-		var b := Button.new()
-		b.text = label
-		b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-		b.icon = Art.icon(t[1])
-		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		b.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
-		b.add_theme_constant_override("icon_max_width", 56)
-		b.add_theme_font_size_override("font_size", 19)
-		b.custom_minimum_size = Vector2(0, 112)
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.theme_type_variation = "GoldButton" if unlocked and int(t[4]) > 0 else ("" if unlocked else "GreenButton")
-		b.disabled = not unlocked
-		b.clip_text = true
-		b.pressed.connect(func():
-			Audio.play("click")
-			fn.call())
-		grid.add_child(b)
+	var has_server: bool = Settings.server_url != ""
+	return {
+		"hunt": {"name": "Perburuan", "icon": "hunt", "open": model.hunt_unlocked(), "stage": Data.HUNT_UNLOCK_STAGE,
+			"badge": model.hunts_left(now) if model.hunt_unlocked() else 0, "fn": show_hunt},
+		"market": {"name": "Pasar Malam", "icon": "market", "open": model.market_unlocked(),
+			"stage": Data.MARKET_UNLOCK_STAGE, "badge": 0, "fn": show_market},
+		"policy": {"name": "Kebijakan", "icon": "policy", "open": model.policy_unlocked(),
+			"stage": Data.POLICY_UNLOCK_STAGE, "badge": 1 if not model.disaster_active().is_empty() else 0, "fn": show_policy},
+		"garden": {"name": "Kebun", "icon": "garden", "open": model.garden_unlocked(), "stage": Data.GARDEN_UNLOCK_STAGE,
+			"badge": model.garden_ready_count(now) if model.garden_unlocked() else 0, "fn": show_garden},
+		"research": {"name": "Perpustakaan", "icon": "research", "open": model.research_unlocked(),
+			"stage": Data.RESEARCH_UNLOCK_STAGE,
+			"badge": 1 if model.research_unlocked() and model.research_job().is_empty() else 0, "fn": show_research},
+		"fleet": {"name": "Armada", "icon": "ship", "open": model.fleet_unlocked(), "badge": _fleet_ready(now),
+			"fn": show_fleet},
+		"kin": {"name": "Besan", "icon": "ring", "open": _adult_count() > 0 or model.kin_count() > 0,
+			"badge": _adult_count() + (1 if model.kin_gift_ready(now) else 0), "fn": show_kin},
+		"friends": {"name": "Teman", "icon": "friends", "open": has_server,
+			"badge": _friends.get("inbox", []).size() if online else 0, "fn": show_friends},
+		"guildwar": {"name": "Perang Wilayah", "icon": "war_flag", "open": has_server and not model.alliance.is_empty(),
+			"badge": int(_guildwar.get("attacks_left", 0)) if online else 0, "fn": show_guildwar},
+		"diplomacy": {"name": "Diplomasi", "icon": "diplomacy", "open": model.diplo_unlocked(),
+			"stage": Data.DIPLO_UNLOCK_STAGE,
+			"badge": (model.envoys_left(now) if model.diplo_unlocked() else 0) + (1 if not model.threat().is_empty() else 0),
+			"fn": show_diplomacy},
+		"race": {"name": "Pacuan Kuda", "icon": "race", "open": not model.horses.is_empty(),
+			"badge": model.races_left(now) if not model.horses.is_empty() else 0, "fn": show_race},
+		"quiz": {"name": "Kuis Sejarah", "icon": "quiz", "open": model.stage >= 2, "stage": 2,
+			"badge": model.quiz_left(now), "fn": show_quiz},
+		"candi": {"name": "Candi", "icon": "candi", "open": model.candi_unlocked(), "stage": Data.CANDI_UNLOCK_STAGE,
+			"badge": model.candi_free_left(now) + (1 if not model.candi_run().is_empty() else 0), "fn": show_candi},
+		"forge": {"name": "Besalen", "icon": "forge", "open": model.forge_unlocked(), "stage": Data.FORGE_UNLOCK_STAGE,
+			"badge": 0, "fn": show_forge},
+		"pets": {"name": "Peliharaan", "icon": "pet_elang", "open": model.pet_unlocked(), "stage": Data.PET_UNLOCK_STAGE,
+			"badge": 0, "fn": show_pets},
+		"worldboss": {"name": "Bos Dunia", "icon": "world_boss", "open": has_server,
+			"badge": int(_world_boss.get("attacks_left", 0)) if online else 0, "fn": show_world_boss},
+		"tourney": {"name": "Turnamen Online", "icon": "tourney", "open": has_server,
+			"badge": 1 if online and _tourney.get("phase", "") == "register" and not _tourney.get("registered", true) else 0,
+			"fn": show_tourney},
+		"wayang": {"name": "Wayang", "icon": "wayang", "open": model.wayang_unlocked(), "stage": Data.WAYANG_UNLOCK_STAGE,
+			"badge": 1 if model.wayang_ready(now) and _wayang_left() > 0 else 0, "fn": show_wayang},
+		"ceremony": {"name": "Upacara", "icon": "ceremony", "open": model.ceremony_unlocked(),
+			"stage": Data.CEREMONY_UNLOCK_STAGE,
+			"badge": 1 if model.ceremony_unlocked() and model.ceremony_cooldown_days(now) == 0 else 0, "fn": show_ceremony},
+		"badges": {"name": "Lencana", "icon": "badge", "open": model.stage >= 3, "stage": 3, "badge": 0, "fn": show_badges},
+	}
+
+
+func _wayang_left() -> int:
+	var n := 0
+	for t in Data.FOLKTALES:
+		n += t["episodes"].size() - model.wayang_progress(t["id"])
+	return n
 
 
 func _adult_count() -> int:
@@ -640,7 +716,7 @@ func _claim_voyage(ship: String):
 		return r
 	ui._play_battle(r["plan"], {"title": "Serangan Bajak Laut", "me_name": Data.SHIPS[ship]["name"],
 		"them_name": "Bajak Laut", "me_count": 300, "them_count": 260, "me_portrait": model.lord_portrait(),
-		"them_portrait": "enemy_bandit", "win": r["win"], "detail": r["msg"], "bg": "sea",
+		"them_portrait": "enemy_pirate", "win": r["win"], "detail": r["msg"], "bg": "sea",
 		"headline": "BAJAK LAUT KALAH!" if r["win"] else "MUATAN DIRAMPAS..."})
 	return null
 
@@ -837,6 +913,16 @@ func _fill_visit(box: VBoxContainer, subtitle: Label, state: Dictionary) -> void
 	]
 	for s in stats:
 		_small(col, s).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	var badges: Array = city.get("badges", [])
+	if not badges.is_empty():
+		ui._label(box, tr("Lencana (%d)") % badges.size(), "CardTitle").auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		var flow := HFlowContainer.new()
+		flow.add_theme_constant_override("h_separation", 6)
+		box.add_child(flow)
+		for id in badges:
+			var d: Dictionary = model.badge_def(str(id))
+			if not d.is_empty():
+				flow.add_child(ui._tex(Art.icon(d["icon"]), 52))
 	ui._label(box, "Bangunan Kota", "CardTitle")
 	var grid := GridContainer.new()
 	grid.columns = 2
@@ -1015,7 +1101,7 @@ func _rebellion_banner(box: VBoxContainer) -> void:
 		if r["ok"]:
 			ui._play_battle(r["plan"], {"title": tr("Menumpas Pemberontakan"), "me_name": model.me_name(),
 				"them_name": tr("Pemberontak"), "me_count": model.soldiers + need, "them_count": need,
-				"me_portrait": model.lord_portrait(), "them_portrait": "enemy_bandit", "win": true, "detail": r["msg"],
+				"me_portrait": model.lord_portrait(), "them_portrait": "enemy_rebel", "win": true, "detail": r["msg"],
 				"bg": "city", "me_mix": model.army_mix()})
 			return null
 		return r, model.soldiers >= need, "", "")
@@ -1057,7 +1143,7 @@ func _answer_threat(pay: bool):
 		return r
 	ui._play_battle(r["plan"], {"title": tr("Serangan %s") % tr(name), "me_name": model.me_name(), "them_name": tr(name),
 		"me_count": model.soldiers, "them_count": int(model.affair_yield("soldiers") * 2), "me_portrait": model.lord_portrait(),
-		"them_portrait": "enemy_bandit", "win": r["win"], "detail": r["msg"], "bg": "campaign", "me_mix": model.army_mix()})
+		"them_portrait": "enemy_warlord", "win": r["win"], "detail": r["msg"], "bg": "campaign", "me_mix": model.army_mix()})
 	return null
 
 
@@ -1509,3 +1595,225 @@ func _fill_world_boss(box: VBoxContainer, subtitle: Label) -> void:
 		var t: Dictionary = top[i]
 		var l := _small(box, "%d. %s — %s" % [i + 1, str(t.get("name", "")), ui._num(int(t.get("damage", 0)))])
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+
+
+# --- Wayang & cerita rakyat ------------------------------------------------------------
+
+func show_wayang() -> void:
+	_show("wayang", "Pertunjukan Wayang", "wayang", _fill_wayang)
+
+
+func _fill_wayang(box: VBoxContainer, subtitle: Label) -> void:
+	var now: float = Game.now()
+	subtitle.text = "Babak baru siap ditonton!" if model.wayang_ready(now) else "Babak berikutnya besok."
+	for t in Data.FOLKTALES:
+		var id: String = t["id"]
+		var done: int = model.wayang_progress(id)
+		var total: int = t["episodes"].size()
+		var card: HBoxContainer = ui._card(box)
+		card.add_child(ui._tex(Art.icon("wayang"), 80))
+		var col: VBoxContainer = ui._col(card)
+		ui._label(col, t["name"], "CardTitle")
+		_small(col, tr("Cerita rakyat %s · babak %d/%d") % [tr(t["origin"]), done, total]).auto_translate_mode = \
+			Node.AUTO_TRANSLATE_MODE_DISABLED
+		ui._bar(col, done, total, UI.GOLD)
+		var btns := VBoxContainer.new()
+		card.add_child(btns)
+		if done < total:
+			_side_button(btns, tr("Tonton Babak %d") % (done + 1), func():
+				var r: Dictionary = model.watch_wayang(id, Game.now())
+				if r["ok"]:
+					_show_episode(t["name"], int(r["part"]), str(r["episode"]), r["msg"])
+					return null
+				return r, model.wayang_ready(now), "GoldButton", "reveal_sr").auto_translate_mode = \
+				Node.AUTO_TRANSLATE_MODE_DISABLED
+		else:
+			_small(col, "Tamat", UI.GREEN.darkened(0.2))
+		if done > 0:
+			_side_button(btns, "Baca Ulang", func():
+				var text := []
+				for i in done:
+					text.append(tr(t["episodes"][i]))
+				_show_episode(t["name"], -1, "\n\n".join(text), "")
+				return null, true, "")
+
+
+## Naskah babak wayang dalam panel tersendiri.
+func _show_episode(title: String, part: int, text: String, reward: String) -> void:
+	var holder := {}
+	var p: Dictionary = ui._open_panel(title, "wayang", func():
+		Audio.play("click")
+		if is_instance_valid(holder.get("overlay")):
+			holder["overlay"].queue_free(), 0.1, 0.9)
+	holder["overlay"] = p["overlay"]
+	p["subtitle"].text = tr("Babak %d") % (part + 1) if part >= 0 else tr("Seluruh babak")
+	p["subtitle"].auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	var stage := PanelContainer.new()
+	stage.add_theme_stylebox_override("panel", UI.box(Color("1e120a"), UI.GOLD, 3, 14))
+	p["content"].add_child(stage)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 10)
+	stage.add_child(v)
+	var pic: TextureRect = ui._tex(Art.icon("wayang"), 140)
+	pic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	v.add_child(pic)
+	var l: Label = ui._label(v, text, "")
+	l.add_theme_color_override("font_color", UI.PARCHMENT)
+	if reward != "":
+		var rl: Label = ui._label(p["content"], reward, "CardLabel")
+		rl.add_theme_font_override("font", UI.font_bold)
+
+
+# --- Upacara kerajaan ----------------------------------------------------------------------
+
+func show_ceremony() -> void:
+	_show("ceremony", "Upacara Kerajaan", "ceremony", _fill_ceremony)
+
+
+func _fill_ceremony(box: VBoxContainer, subtitle: Label) -> void:
+	var now: float = Game.now()
+	var active: String = model.ceremony_active(now)
+	var cd: int = model.ceremony_cooldown_days(now)
+	if active != "":
+		subtitle.text = tr("Berkah %s berlaku %s lagi") % [tr(Data.CEREMONIES[active]["name"]),
+			ui._duration(int(float(model.realm["ceremony"]["until"]) - now))]
+	elif cd > 0:
+		subtitle.text = tr("Upacara berikutnya dalam %d hari") % cd
+	else:
+		subtitle.text = "Upacara bisa digelar sekarang"
+	subtitle.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	for id in Data.CEREMONY_ORDER:
+		var def: Dictionary = Data.CEREMONIES[id]
+		var cost: Dictionary = model.ceremony_cost(id)
+		var card: HBoxContainer = ui._card(box)
+		card.add_child(ui._tex(Art.icon(def["icon"]), 80))
+		var col: VBoxContainer = ui._col(card)
+		ui._label(col, def["name"], "CardTitle")
+		ui._label(col, def["desc"], "CardLabel")
+		_small(col, tr("Biaya: %s") % _cost_text(cost)).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		var afford := true
+		for k in cost:
+			afford = afford and int(model.get(k)) >= int(cost[k])
+		var cid: String = id
+		_side_button(card, "Berlangsung" if active == id else "Gelar", func(): return model.hold_ceremony(cid, Game.now()),
+			cd == 0 and afford, "GoldButton", "promote")
+
+
+# --- Lencana musiman -------------------------------------------------------------------------
+
+func show_badges() -> void:
+	_show("badges", "Lencana Musim", "badge", _fill_badges)
+
+
+func _fill_badges(box: VBoxContainer, subtitle: Label) -> void:
+	var now: float = Game.now()
+	var season: int = model.badge_season(now)
+	subtitle.text = tr("Musim %d · berakhir dalam %d hari") % [model.badge_season_number(season),
+		model.badge_season_days_left(now)]
+	subtitle.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	var earned: Array = model.badges_earned(season)
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
+	box.add_child(grid)
+	for d in Data.BADGES:
+		var cell: VBoxContainer = ui._inner_box(grid)
+		cell.get_parent().size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var head := _row(cell)
+		var icon: TextureRect = ui._tex(Art.icon(d["icon"]), 52)
+		if not earned.has(d["id"]):
+			icon.modulate = Color(1, 1, 1, 0.45)
+		head.add_child(icon)
+		ui._label(ui._col(head), d["name"], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		var prog: int = model.badge_progress(d["id"], now)
+		ui._bar(cell, prog, d["target"], UI.GOLD)
+		_small(cell, (tr("Didapat! +%d emas") % Data.BADGE_GOLD) if earned.has(d["id"]) else "%d / %d" % [prog, d["target"]],
+			UI.GREEN.darkened(0.2) if earned.has(d["id"]) else UI.INK).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	var album: Array = model.badge_album()
+	ui._label(box, tr("Album Lencana (%d)") % album.size(), "CardTitle").auto_translate_mode = \
+		Node.AUTO_TRANSLATE_MODE_DISABLED
+	if album.is_empty():
+		_small(box, "Belum ada lencana. Lencana yang didapat tampil di profil dan saat kota Tuan dikunjungi.")
+	var flow := HFlowContainer.new()
+	flow.add_theme_constant_override("h_separation", 6)
+	box.add_child(flow)
+	for b in album:
+		var d: Dictionary = model.badge_def(b["id"])
+		var t: TextureRect = ui._tex(Art.icon(d["icon"]), 56)
+		t.tooltip_text = "%s · %s" % [tr(d["name"]), tr("Musim %d") % model.badge_season_number(int(b["season"]))]
+		flow.add_child(t)
+
+
+# --- Online: Turnamen silat ---------------------------------------------------------------
+
+func show_tourney() -> void:
+	if _need_online():
+		return
+	_show("tourney", "Turnamen Silat Online", "tourney", _fill_tourney)
+	_load_tourney()
+
+
+func _load_tourney() -> void:
+	Online.fetch_tourney(func(data: Dictionary):
+		_tourney = data
+		if is_open("tourney"):
+			_fill("tourney"))
+
+
+## Babak tercapai dari jumlah kemenangan: juara selalu indeks terakhir.
+func _tourney_round(wins: int, rounds: int) -> int:
+	if wins < 0:
+		return -1
+	return Data.TOURNEY_REWARDS.size() - 1 if wins >= rounds else mini(wins, Data.TOURNEY_REWARDS.size() - 2)
+
+
+func _fill_tourney(box: VBoxContainer, subtitle: Label) -> void:
+	if _tourney.is_empty():
+		subtitle.text = "Memuat..."
+		return
+	var tn := _tourney
+	var done: bool = tn.get("phase", "") == "done"
+	subtitle.text = tr("%d pendaftar · hasil diumumkan hari Minggu") % int(tn.get("count", 0)) if not done \
+		else "Hasil turnamen minggu ini"
+	subtitle.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	var last_week := int(tn.get("last_week", -1))
+	var last_round := _tourney_round(int(tn.get("last_wins", -1)), int(tn.get("last_rounds", 0)))
+	if last_round >= 0 and int(model.realm["tourney_claimed"]) < last_week:
+		var rb: VBoxContainer = ui._inner_box(box)
+		ui._label(rb, tr("Minggu lalu Tuan mencapai %s.") % tr(Data.TOURNEY_ROUND_NAMES[last_round]), "CardLabel") \
+			.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		ui._button(rb, "Ambil Hadiah Turnamen", func(): return model.claim_tourney(last_week, last_round), true, "chest",
+			"GoldButton", false, "reveal_ssr")
+	if not done:
+		var reg: bool = tn.get("registered", false)
+		ui._label(box, "Daftarkan diri sebelum hari Minggu. 16 pesilat terkuat yang mendaftar akan bertanding.", "CardLabel")
+		ui._button(box, "Sudah Terdaftar" if reg else "Daftar Turnamen", func():
+			Online.join_tourney(func(ok: bool, msg: String):
+				ui._show({"ok": ok, "msg": "Tuan terdaftar di turnamen minggu ini!" if ok else msg})
+				_load_tourney())
+			return null, not reg, "tourney", "GoldButton")
+		var names: Array = tn.get("entrants", [])
+		if not names.is_empty():
+			_small(box, tr("Peserta teratas: %s") % ", ".join(names)).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	else:
+		var bracket = tn.get("bracket")
+		if bracket == null:
+			ui._label(box, "Peserta kurang dari dua. Turnamen minggu ini batal.", "CardLabel")
+			return
+		var rounds: Array = bracket["rounds"]
+		var me_round := _tourney_round(int(tn.get("my_wins", -1)), rounds.size())
+		if me_round >= 0:
+			ui._label(box, tr("Tuan mencapai %s!") % tr(Data.TOURNEY_ROUND_NAMES[me_round]), "CardTitle") \
+				.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		for r in rounds.size():
+			var rb: VBoxContainer = ui._inner_box(box)
+			var rname: String = Data.TOURNEY_ROUND_NAMES[Data.TOURNEY_ROUND_NAMES.size() - 1 - rounds.size() + r]
+			ui._label(rb, rname, "CardLabel").add_theme_font_override("font", UI.font_bold)
+			for mt in rounds[r]:
+				var a = mt.get("a")
+				var b = mt.get("b")
+				var an := str(a["name"]) if a != null else tr("(bye)")
+				var bn := str(b["name"]) if b != null else tr("(bye)")
+				var wn := an if a != null and str(a["id"]) == str(mt.get("winner")) else bn
+				_small(rb, "%s vs %s → %s" % [an, bn, wn]).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED

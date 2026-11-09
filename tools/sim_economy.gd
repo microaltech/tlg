@@ -377,6 +377,12 @@ func _realm_session(now: float) -> void:
 
 ## Batch 5: kuis, pacuan, candi, tempa, peliharaan, diplomasi.
 func _realm5_session(now: float) -> void:
+	if m.wayang_ready(now):
+		for t in Data.FOLKTALES:
+			if m.watch_wayang(t["id"], now)["ok"]:
+				break
+	if m.ceremony_unlocked() and m.ceremony_cooldown_days(now) == 0:
+		m.hold_ceremony("sekaten", now)
 	var qs: Array = m.quiz_today(now)
 	for i in qs.size():
 		if m.quiz_answered(i, now) < 0:

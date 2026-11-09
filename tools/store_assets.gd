@@ -36,6 +36,8 @@ func _run() -> void:
 	var args := OS.get_cmdline_user_args()
 	var lang: String = args[0] if args.size() > 0 else "id"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
+	# build/ bukan bagian game: jangan diimpor Godot (gambar toko tidak masuk APK).
+	FileAccess.open("res://build/.gdignore", FileAccess.WRITE).store_string("")
 	var settings = root.get_node("Settings")
 	settings.language = lang
 	root.get_node("I18n").apply()

@@ -502,8 +502,12 @@ di atas dengan kode bahasa tersebut.
   `tools/gen_launcher_icons.gd`.
 - **Statistik & crash lokal**: `Telemetry` mencatat sesi, lama bermain, dan aksi
   di perangkat. Bila game berhenti tiba-tiba, ekor log sesi itu disimpan, lalu
-  pemain bisa menyalin laporannya dari **Pengaturan → Salin Laporan**. Tidak ada
-  data yang dikirim ke internet.
+  pemain bisa menyalin laporannya dari **Pengaturan → Salin Laporan**. Pilihan
+  **Bagikan statistik anonim** (mati sejak awal) mengirim ringkasan harian ke server
+  pengembang (`POST /v1/stats`, lihat `server/README.md`).
+- **Uji cepat** (hanya build debug): Pengaturan → Uji Cepat untuk lompat tahap,
+  tambah sumber daya, dan memajukan jam game. Checklist uji di banyak HP:
+  `docs/test_checklist.md`.
 - Dokumen: `docs/privacy_policy.md`, `docs/play_data_safety.md`,
   `docs/release_checklist.md`.
 
@@ -551,6 +555,20 @@ Catatan penting:
   validasi IAP), lalu fase 1 (aliansi, chat, peringkat sungguhan).
 - Konten lanjutan: penasihat dan selir baru, banner rekrut *rate-up*, toko event,
   iklan berhadiah (AdMob), serta bab cerita setelah Perdana Menteri.
+
+## Fitur pasca-rilis
+
+- **Acara Sejarah bulanan** (`MONTH_EVENTS`): Sumpah Palapa, Perang Jawa, Jalur
+  Rempah bergiliran tiap bulan; lima tugas dari penghitung aksi, hadiah akhir emas,
+  kostum penasihat, dan bingkai profil.
+- **Lemari Busana** (`SKINS`): kostum yang mengganti potret penasihat di seluruh game
+  (`Art.skins`), dibeli dengan emas atau didapat dari acara. Atribut tidak berubah.
+- **Kotak Surat**: surat sambutan, surat saat kembali, dan surat dari server
+  (`admin.js send-mail`) untuk pengumuman dan kompensasi.
+- **Musik per tempat**: kota, istana, perang, petualangan (berburu, pacuan, candi),
+  wayang, dan laut (armada, pasar), dibuat oleh `tools/gen_audio.py`.
+- **Layar tablet/tinggi**: `window/stretch/aspect="expand"` sehingga layar 20:9 dan
+  tablet terisi penuh tanpa pita hitam.
 
 ## Alat tambahan
 

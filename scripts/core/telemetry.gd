@@ -8,6 +8,11 @@ extends Node
 ##   dijeda/ditutup dengan normal. Bila penanda masih ada saat game dibuka, sesi
 ##   sebelumnya berhenti tiba-tiba; ekor log Godot sesi itu disimpan sebagai
 ##   laporan yang bisa disalin pemain untuk dikirim ke pengembang.
+## - Statistik anonim (opt-in, Settings.share_stats, default mati): sekali sehari
+##   ringkasan angka (sesi, menit, tahap, jabatan, hitungan aksi) dikirim ke
+##   POST /v1/stats di server pengembang dengan ID pemasangan acak, tanpa akun,
+##   nama, atau isi chat. Alamat: Settings.server_url, atau
+##   application/config/stats_url di project.godot.
 
 const STATS_PATH := "user://analytics.json"
 const CRASH_PATH := "user://crash_reports.json"
@@ -64,6 +69,7 @@ func _process(delta: float) -> void:
 	if _save_timer >= SAVE_SECONDS:
 		_save_timer = 0.0
 		_flush()
+		send_daily_stats()
 	if _beat_left > 0.0:
 		_beat_left -= delta
 		_beat_timer += delta
@@ -163,9 +169,54 @@ func _on_tracked(event: String) -> void:
 
 
 func clear_stats() -> void:
+	Settings.install_id = ""  # ID pemasangan baru: laporan lama tidak bisa dikaitkan lagi
+	Settings.save()
 	stats = {}
 	_session_start = Time.get_unix_time_from_system()
 	_write_json(STATS_PATH, stats)
+
+
+## Alamat tujuan statistik anonim ("" = tidak ada server, tidak dikirim).
+func stats_url() -> String:
+	var base := Settings.server_url.strip_edges().trim_suffix("/")
+	if base == "":
+		base = str(ProjectSettings.get_setting("application/config/stats_url", "")).strip_edges().trim_suffix("/")
+	return base + "/v1/stats" if base != "" else ""
+
+
+## Isi laporan harian: hanya angka dan nama aksi bawaan game.
+func stats_payload() -> Dictionary:
+	if Settings.install_id.length() < 16:
+		var rng := RandomNumberGenerator.new()
+		rng.randomize()
+		var hex := ""
+		for i in 16:
+			hex += "%02x" % (rng.randi() % 256)
+		Settings.install_id = hex
+		Settings.save()
+	var m = Game.model
+	return {"install": Settings.install_id, "version": _version(), "sessions": int(stats.get("sessions", 0)),
+		"play_seconds": int(stats.get("play_seconds", 0)), "days": int(stats.get("active_days", 0)),
+		"stage": int(m.stage), "rank": int(m.rank), "tutorial_done": bool(m.tutorial.get("done", false)),
+		"language": TranslationServer.get_locale().substr(0, 2), "events": stats.get("events", {})}
+
+
+## Kirim sekali sehari bila pemain mengizinkan dan alamat server ada.
+func send_daily_stats() -> void:
+	if not Settings.share_stats or not Settings.analytics:
+		return
+	var url := stats_url()
+	var today := Time.get_date_string_from_system()
+	if url == "" or str(stats.get("sent_day", "")) == today:
+		return
+	stats["sent_day"] = today
+	var http := HTTPRequest.new()
+	http.timeout = 10.0
+	add_child(http)
+	http.request_completed.connect(func(_r, _c, _h, _b): http.queue_free())
+	if http.request(url, PackedStringArray(["Content-Type: application/json"]), HTTPClient.METHOD_POST,
+			JSON.stringify(stats_payload())) != OK:
+		http.queue_free()
 
 
 func _record_crash(lock_text: String) -> void:

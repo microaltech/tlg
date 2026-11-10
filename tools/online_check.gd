@@ -116,6 +116,28 @@ func _ready() -> void:
 	Online.redeem("NUSANTARA", func(r): got["code3"] = r)
 	await get_tree().create_timer(0.2).timeout
 	check(got.get("code3", {}).get("ok", false), "kode bawaan ditukar tanpa server")
+	# Kotak surat dari server (dikirim lewat admin.js di e2e.sh).
+	Online.fetch_mail(func(n): got["mail"] = n)
+	await get_tree().create_timer(0.5).timeout
+	check(int(got.get("mail", 0)) == 1 and m.realm["mail"][0]["id"].begins_with("server:"), "surat server masuk kotak surat")
+	var silver_before: int = m.silver
+	Online.claim_server_mail(m.realm["mail"][0]["id"], func(r): got["mc"] = r)
+	await get_tree().create_timer(0.5).timeout
+	check(got.get("mc", {}).get("ok", false) and m.silver == silver_before + 777, "ambil hadiah surat server")
+	Online.fetch_mail(func(n): got["mail2"] = n)
+	await get_tree().create_timer(0.5).timeout
+	check(int(got.get("mail2", -1)) == 0, "surat yang sudah diambil tidak masuk lagi")
+	# Statistik anonim: hanya terkirim bila pemain mengizinkan.
+	Settings.share_stats = false
+	Telemetry.stats.erase("sent_day")
+	Telemetry.send_daily_stats()
+	check(not Telemetry.stats.has("sent_day"), "statistik tidak dikirim tanpa izin")
+	Settings.share_stats = true
+	Settings.analytics = true
+	Telemetry.send_daily_stats()
+	await get_tree().create_timer(0.5).timeout
+	check(Telemetry.stats.has("sent_day"), "statistik anonim dikirim setelah diizinkan")
+	Settings.share_stats = false
 	# Turnamen silat online (pendaftaran ditutup hari Minggu).
 	Online.fetch_tourney(func(d): got["tn"] = d)
 	await get_tree().create_timer(0.5).timeout

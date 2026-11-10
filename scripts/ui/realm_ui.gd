@@ -28,6 +28,12 @@ var _world_boss := {}
 var _code_edit: LineEdit
 var _hub_tab := "ekonomi"
 var _tourney := {}
+var mail_button: Button  ## disorot tutorial
+
+## Musik khas tempat: panel ini memutar lagunya sendiri, lalu kembali ke musik halaman saat ditutup.
+const PLACE_MUSIC := {"hunt": "adventure", "race": "adventure", "candi": "adventure", "quiz": "palace",
+	"wayang": "wayang", "fleet": "sea", "market": "sea", "diplomacy": "palace", "ceremony": "palace",
+	"worldboss": "battle", "guildwar": "battle", "tourney": "battle", "month_event": "palace"}
 
 
 func _init(main) -> void:
@@ -42,7 +48,17 @@ func _show(key: String, title: String, icon: String, fill: Callable) -> void:
 		return
 	var p: Dictionary = ui._open_panel(title, icon, func(): close(key))
 	_panels[key] = {"overlay": p["overlay"], "box": p["content"], "subtitle": p["subtitle"], "fill": fill}
+	if PLACE_MUSIC.has(key):
+		Audio.play_music(PLACE_MUSIC[key])
 	_fill(key)
+
+
+## Musik tempat dari panel terbuka (kosong bila tidak ada).
+func place_music() -> String:
+	for key in _panels:
+		if PLACE_MUSIC.has(key) and is_open(key):
+			return PLACE_MUSIC[key]
+	return ""
 
 
 func is_open(key: String) -> bool:
@@ -54,6 +70,8 @@ func close(key: String) -> void:
 		Audio.play("click")
 		_panels[key]["overlay"].queue_free()
 	_panels.erase(key)
+	if PLACE_MUSIC.has(key):
+		ui._play_page_music()
 
 
 func _fill(key: String) -> void:
@@ -146,6 +164,27 @@ func _hub_card(box: VBoxContainer) -> void:
 		func(): return model.collect_daily(Game.now()), ready > 0, "chest_open", "GreenButton", false, "reveal_sr")
 	all.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	all.add_theme_font_size_override("font_size", 24)
+	# Acara sejarah bulanan dan kotak surat: selalu terlihat, dengan jumlah yang bisa diambil.
+	var quick := _row(inner)
+	var ev: Dictionary = model.month_event_def(now)
+	var ev_n: int = model.month_event_claimable(now)
+	var eb: Button = ui._button(quick, tr("Acara: %s") % tr(ev["name"]) + (" (%d)" % ev_n if ev_n > 0 else ""),
+		func():
+			show_month_event()
+			return null, true, "month_event", "GoldButton" if ev_n > 0 else "")
+	eb.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	eb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	eb.clip_text = true
+	eb.add_theme_constant_override("icon_max_width", 40)
+	var mail_n: int = model.mail_unread()
+	var mb: Button = ui._button(quick, tr("Surat") + (" (%d)" % mail_n if mail_n > 0 else ""), func():
+		show_mail()
+		return null, true, "mail", "GoldButton" if mail_n > 0 else "")
+	mb.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	mail_button = mb
+	mb.custom_minimum_size.x = 200
+	mb.clip_text = true
+	mb.add_theme_constant_override("icon_max_width", 40)
 	var tiles := _hub_tiles(now)
 	# Tab: hanya fitur yang sudah terbuka yang ditampilkan.
 	var tabs := HBoxContainer.new()
@@ -262,6 +301,7 @@ func _hub_tiles(now: float) -> Dictionary:
 			"stage": Data.CEREMONY_UNLOCK_STAGE,
 			"badge": 1 if model.ceremony_unlocked() and model.ceremony_cooldown_days(now) == 0 else 0, "fn": show_ceremony},
 		"badges": {"name": "Lencana", "icon": "badge", "open": model.stage >= 3, "stage": 3, "badge": 0, "fn": show_badges},
+		"wardrobe": {"name": "Lemari Busana", "icon": "wardrobe", "open": true, "badge": 0, "fn": show_wardrobe},
 	}
 
 
@@ -1817,3 +1857,127 @@ func _fill_tourney(box: VBoxContainer, subtitle: Label) -> void:
 				var bn := str(b["name"]) if b != null else tr("(bye)")
 				var wn := an if a != null and str(a["id"]) == str(mt.get("winner")) else bn
 				_small(rb, "%s vs %s → %s" % [an, bn, wn]).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+
+
+# --- Acara sejarah bulanan ---------------------------------------------------------------
+
+func show_month_event() -> void:
+	_show("month_event", "Acara Sejarah", "month_event", _fill_month_event)
+
+
+func _fill_month_event(box: VBoxContainer, subtitle: Label) -> void:
+	var now: float = Game.now()
+	model.ensure_month_event(now)
+	var ev: Dictionary = model.month_event_def(now)
+	var me: Dictionary = model.realm["month_event"]
+	subtitle.text = tr("%s · berakhir dalam %d hari") % [tr(ev["name"]), model.month_event_days_left(now)]
+	subtitle.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	var story: HBoxContainer = ui._card(box)
+	story.add_child(ui._tex(Art.icon(ev["icon"]), 72))
+	var sc: VBoxContainer = ui._col(story)
+	ui._label(sc, ev["name"], "CardTitle")
+	ui._label(sc, ev["story"], "CardLabel")
+	var skin: Dictionary = Data.SKINS[ev["skin"]]
+	var prize: HBoxContainer = ui._card(box)
+	prize.add_child(ui._tex(Art.tex("res://assets/portraits/" + str(ev["skin"])), 96))
+	var pc: VBoxContainer = ui._col(prize)
+	ui._label(pc, "Hadiah Akhir", "CardTitle")
+	_small(pc, tr("Kostum %s untuk %s, bingkai profil acara, dan +%d emas.") % [tr(skin["name"]),
+		Data.counselor_def(skin["counselor"])["name"], Data.MONTH_EVENT_GOLD]).auto_translate_mode = \
+		Node.AUTO_TRANSLATE_MODE_DISABLED
+	var all_done: bool = me["done"].size() == ev["missions"].size()
+	_side_button(prize, "Diambil" if me["final"] else "Ambil", func(): return model.claim_month_final(Game.now()),
+		all_done and not me["final"], "GoldButton", "reveal_ssr")
+	for i in ev["missions"].size():
+		var m: Dictionary = ev["missions"][i]
+		var prog: int = model.month_event_progress(i, now)
+		var card: HBoxContainer = ui._card(box)
+		var col: VBoxContainer = ui._col(card)
+		ui._label(col, m["text"], "CardLabel").add_theme_font_override("font", UI.font_bold)
+		ui._bar(col, prog, m["target"], UI.GOLD)
+		_small(col, "%d / %d · %s" % [prog, m["target"], ui._reward_text(m["reward"])]).auto_translate_mode = \
+			Node.AUTO_TRANSLATE_MODE_DISABLED
+		var done: bool = me["done"].has(i)
+		var idx: int = i
+		_side_button(card, "Selesai" if done else "Ambil", func(): return model.claim_month_mission(idx, Game.now()),
+			not done and prog >= int(m["target"]))
+
+
+# --- Kotak surat ------------------------------------------------------------------------
+
+func show_mail() -> void:
+	_show("mail", "Kotak Surat", "mail", _fill_mail)
+	Online.fetch_mail(func(added: int):
+		if added > 0 and is_open("mail"):
+			_fill("mail"))
+
+
+func _fill_mail(box: VBoxContainer, subtitle: Label) -> void:
+	var mails: Array = model.realm["mail"]
+	subtitle.text = tr("%d surat · %d hadiah belum diambil") % [mails.size(), model.mail_unread()]
+	subtitle.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	if mails.is_empty():
+		_small(box, "Belum ada surat. Surat dari istana dan pengumuman pengembang akan muncul di sini.")
+		return
+	for m in mails:
+		var card: HBoxContainer = ui._card(box)
+		card.add_child(ui._tex(Art.icon("mail"), 56))
+		var col: VBoxContainer = ui._col(card)
+		var title := ui._label(col, m["title"], "CardTitle") as Label
+		title.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_ALWAYS if str(m["id"]).begins_with("local:") \
+			else Node.AUTO_TRANSLATE_MODE_DISABLED
+		var body := ui._label(col, m["body"], "CardLabel") as Label
+		body.auto_translate_mode = title.auto_translate_mode
+		_small(col, Time.get_date_string_from_unix_time(int(m["t"]))).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		var reward: Dictionary = m["reward"]
+		if reward.is_empty():
+			continue
+		var rt := _small(col, ui._reward_text(reward), UI.GREEN.darkened(0.2))
+		rt.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		var id: String = m["id"]
+		if id.begins_with("server:"):
+			_side_button(card, "Diambil" if m["claimed"] else "Ambil", func():
+				Online.claim_server_mail(id, func(r: Dictionary):
+					_result(r)
+					if is_open("mail"):
+						_fill("mail"))
+				return null, not m["claimed"] and Online.is_online())
+		else:
+			_side_button(card, "Diambil" if m["claimed"] else "Ambil", func(): return model.claim_mail(id), not m["claimed"])
+
+
+# --- Lemari busana (kostum penasihat) -------------------------------------------------------
+
+func show_wardrobe() -> void:
+	_show("wardrobe", "Lemari Busana", "wardrobe", _fill_wardrobe)
+
+
+func _fill_wardrobe(box: VBoxContainer, subtitle: Label) -> void:
+	subtitle.text = "Kostum hanya mengubah tampilan, bukan atribut."
+	for id in Data.SKIN_ORDER:
+		var def: Dictionary = Data.SKINS[id]
+		var cid: String = def["counselor"]
+		var cdef: Dictionary = Data.counselor_def(cid)
+		var card: HBoxContainer = ui._card(box)
+		card.add_child(ui._tex(Art.tex("res://assets/portraits/" + id), 104))
+		var col: VBoxContainer = ui._col(card)
+		ui._label(col, def["name"], "CardTitle")
+		_small(col, cdef["name"]).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		var has_c: bool = model.counselors.has(cid)
+		var sid: String = id
+		if model.owns_skin(id):
+			var worn: bool = model.skin_worn(cid) == id
+			_small(col, "Sedang dipakai" if worn else "Dimiliki", UI.GREEN.darkened(0.2))
+			_side_button(card, "Lepas" if worn else "Pakai", func(): return model.wear_skin(cid, "" if worn else sid),
+				has_c, "" if worn else "GreenButton")
+		elif def.has("gold"):
+			_small(col, tr("%d emas") % int(def["gold"])).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+			_side_button(card, "Beli", func(): return model.buy_skin(sid), model.gold >= int(def["gold"]), "GoldButton")
+		else:
+			var ev_name := ""
+			for ev in Data.MONTH_EVENTS:
+				if ev["id"] == def["event"]:
+					ev_name = tr(ev["name"])
+			_small(col, tr("Hadiah akhir acara %s") % ev_name).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		if not has_c:
+			_small(col, "Penasihat ini belum direkrut.", Color("b5651d"))

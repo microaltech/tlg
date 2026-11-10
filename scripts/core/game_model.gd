@@ -164,6 +164,7 @@ func new_game(now: float) -> void:
 	codex = {"equip": [], "claimed": []}
 	wheel = {"day": -1, "free": false, "tickets": 0, "gold_spins": 0}
 	realm = _empty_realm(now)
+	add_mail(Data.WELCOME_MAIL, now)
 	buildings = {"levels": {"istana": 1, "pasar": 0, "lumbung": 0, "barak": 0}, "job": {}}
 	cosmetics = {"owned": ["frame_kayu", "costume_lord"], "frame": "frame_kayu", "costume": "costume_lord"}
 	equipment = []
@@ -269,6 +270,7 @@ func sync(now: float) -> void:
 	ensure_festival(now)
 	check_cosmetic_unlocks()
 	var realm_changed := _sync_realm(now)
+	ensure_month_event(now)
 	realm_changed = check_badges(now) or realm_changed
 	var alliance_changed := _alliance_rollover(now)
 	alliance_changed = ensure_war(now) or alliance_changed
@@ -4350,7 +4352,7 @@ func check_cosmetic_unlocks() -> Array:
 			ok = vip_level() >= int(u.substr(4))
 		elif u.begins_with("stage:"):
 			ok = stage >= int(u.substr(6))
-		elif u == "silat" or u == "king" or u == "wayang":
+		elif u == "silat" or u == "king" or u == "wayang" or u == "month_event":
 			ok = false  # hanya dari hadiah juara turnamen / Raja Hari Ini
 		if ok and unlock_cosmetic(id):
 			got.append(id)
@@ -5223,6 +5225,10 @@ func _empty_realm(now: float) -> Dictionary:
 		"ceremony": {"last_day": -1000, "id": "", "until": 0.0},
 		"badges": {"season": -1, "base": {}, "earned": {}},
 		"tourney_claimed": -1,
+		"month_event": {"month": -1, "base": {}, "done": [], "final": false},
+		"skins": {"owned": [], "worn": {}},
+		"mail": [],
+		"mail_claimed": [],
 	}
 
 
@@ -6910,6 +6916,9 @@ func start_comeback(now: float) -> bool:
 	for m in Data.COMEBACK_MISSIONS:
 		base[m["event"]] = int(counters.get(m["event"], 0))
 	realm["comeback"] = {"until": now + Data.COMEBACK_HOURS * 3600.0, "pack": false, "base": base, "done": []}
+	var letter: Dictionary = Data.COMEBACK_MAIL.duplicate(true)
+	letter["id"] = "local:kembali_%d" % day_index(now)
+	add_mail(letter, now)
 	changed.emit()
 	return true
 
@@ -7051,6 +7060,7 @@ func _load_realm6(src: Dictionary) -> void:
 						ids.append(str(id))
 				realm["badges"]["earned"][str(int(season))] = ids
 	realm["tourney_claimed"] = int(src.get("tourney_claimed", -1))
+	_load_realm7(src)
 
 
 # --- Gelar kehormatan penasihat ---------------------------------------------------------
@@ -7313,3 +7323,264 @@ func claim_tourney(week: int, round_reached: int) -> Dictionary:
 	var text := _give_rewards(tourney_reward(round_reached))
 	changed.emit()
 	return _ok("Hadiah Turnamen Silat (%s): %s." % [Data.TOURNEY_ROUND_NAMES[clampi(round_reached, 0, 4)], text])
+
+
+# --- Batch 7: muat & validasi ------------------------------------------------------
+
+func _load_realm7(src: Dictionary) -> void:
+	var me = src.get("month_event", {})
+	if me is Dictionary:
+		var base := {}
+		for k in me.get("base", {}):
+			base[str(k)] = int(me["base"][k])
+		var done := []
+		for i in me.get("done", []):
+			if int(i) >= 0 and int(i) < 5 and not done.has(int(i)):
+				done.append(int(i))
+		realm["month_event"] = {"month": int(me.get("month", -1)), "base": base, "done": done,
+			"final": bool(me.get("final", false))}
+	var sk = src.get("skins", {})
+	if sk is Dictionary:
+		for id in sk.get("owned", []):
+			if Data.SKINS.has(str(id)) and not realm["skins"]["owned"].has(str(id)):
+				realm["skins"]["owned"].append(str(id))
+		var worn = sk.get("worn", {})
+		if worn is Dictionary:
+			for c in worn:
+				var id := str(worn[c])
+				if realm["skins"]["owned"].has(id) and Data.SKINS[id]["counselor"] == str(c):
+					realm["skins"]["worn"][str(c)] = id
+	var src_mail = src.get("mail", null)
+	if src_mail is Array:
+		realm["mail"] = []
+		for m in src_mail:
+			if m is Dictionary and m.get("id") is String and m["id"] != "" and realm["mail"].size() < Data.MAIL_KEEP:
+				realm["mail"].append({"id": str(m["id"]), "title": str(m.get("title", "")), "body": str(m.get("body", "")),
+					"reward": _safe_reward(m.get("reward", {})), "claimed": bool(m.get("claimed", false)),
+					"t": float(m.get("t", 0.0))})
+	for id in src.get("mail_claimed", []):
+		if str(id).length() <= 64 and not realm["mail_claimed"].has(str(id)):
+			realm["mail_claimed"].append(str(id))
+
+
+## Hadiah dari sumber luar (surat server, kode) dibatasi GIFT_CODE_LIMITS.
+func _safe_reward(reward) -> Dictionary:
+	var safe := {}
+	if not (reward is Dictionary):
+		return safe
+	for k in Data.GIFT_CODE_LIMITS:
+		if reward.has(k):
+			safe[k] = clampi(int(reward[k]), 0, int(Data.GIFT_CODE_LIMITS[k]))
+	var items = reward.get("items", {})
+	if items is Dictionary:
+		for it in items:
+			if Data.ITEMS.has(str(it)):
+				if not safe.has("items"):
+					safe["items"] = {}
+				safe["items"][str(it)] = clampi(int(items[it]), 0, Data.GIFT_CODE_ITEM_LIMIT)
+	return safe
+
+
+# --- Acara sejarah bulanan -----------------------------------------------------------------
+
+func month_index(now: float) -> int:
+	var d := Time.get_datetime_dict_from_unix_time(int(now + tz_bias))
+	return int(d["year"]) * 12 + int(d["month"]) - 1
+
+
+func month_event_def(now: float) -> Dictionary:
+	return Data.MONTH_EVENTS[posmod(month_index(now), Data.MONTH_EVENTS.size())]
+
+
+## Mulai acara bulan baru: catat penghitung saat ini sebagai titik nol.
+func ensure_month_event(now: float) -> void:
+	var me: Dictionary = realm["month_event"]
+	if int(me["month"]) == month_index(now):
+		return
+	var base := {}
+	for m in month_event_def(now)["missions"]:
+		base[m["event"]] = int(counters.get(m["event"], 0))
+	realm["month_event"] = {"month": month_index(now), "base": base, "done": [], "final": false}
+
+
+func month_event_progress(index: int, now: float) -> int:
+	ensure_month_event(now)
+	var m: Dictionary = month_event_def(now)["missions"][index]
+	return mini(int(m["target"]), int(counters.get(m["event"], 0)) - int(realm["month_event"]["base"].get(m["event"], 0)))
+
+
+func month_event_days_left(now: float) -> int:
+	var d := Time.get_datetime_dict_from_unix_time(int(now + tz_bias))
+	var y := int(d["year"])
+	var mo := int(d["month"])
+	var next := Time.get_unix_time_from_datetime_dict({"year": y + (1 if mo == 12 else 0), "month": 1 if mo == 12 else mo + 1,
+		"day": 1, "hour": 0, "minute": 0, "second": 0})
+	return int(ceil((next - (now + tz_bias)) / 86400.0))
+
+
+func month_event_claimable(now: float) -> int:
+	var n := 0
+	var ev := month_event_def(now)
+	for i in ev["missions"].size():
+		if not realm["month_event"]["done"].has(i) and month_event_progress(i, now) >= int(ev["missions"][i]["target"]):
+			n += 1
+	return n + (1 if realm["month_event"]["done"].size() == ev["missions"].size() and not realm["month_event"]["final"] else 0)
+
+
+func claim_month_mission(index: int, now: float) -> Dictionary:
+	ensure_month_event(now)
+	var ev := month_event_def(now)
+	if index < 0 or index >= ev["missions"].size():
+		return _fail("Tugas tidak ditemukan.")
+	var me: Dictionary = realm["month_event"]
+	if me["done"].has(index):
+		return _fail("Hadiah tugas ini sudah diambil.")
+	var m: Dictionary = ev["missions"][index]
+	if month_event_progress(index, now) < int(m["target"]):
+		return _fail("Tugas belum selesai.")
+	me["done"].append(index)
+	var text := _give_rewards(m["reward"])
+	changed.emit()
+	return _ok("Tugas acara selesai: %s." % text)
+
+
+## Hadiah akhir: emas, kostum acara, dan bingkai acara.
+func claim_month_final(now: float) -> Dictionary:
+	ensure_month_event(now)
+	var ev := month_event_def(now)
+	var me: Dictionary = realm["month_event"]
+	if me["final"]:
+		return _fail("Hadiah akhir acara sudah diambil.")
+	if me["done"].size() < ev["missions"].size():
+		return _fail("Selesaikan semua tugas acara dulu.")
+	me["final"] = true
+	gold += Data.MONTH_EVENT_GOLD
+	unlock_cosmetic("frame_acara_" + str(ev["id"]))
+	var skin: String = ev["skin"]
+	if not realm["skins"]["owned"].has(skin):
+		realm["skins"]["owned"].append(skin)
+	_track("month_event")
+	changed.emit()
+	return _ok("Acara %s tuntas! +%d emas, kostum %s, dan bingkai baru." % [ev["name"], Data.MONTH_EVENT_GOLD,
+		Data.SKINS[skin]["name"]])
+
+
+# --- Kostum penasihat -------------------------------------------------------------------
+
+func owns_skin(id: String) -> bool:
+	return realm["skins"]["owned"].has(id)
+
+
+func skin_worn(counselor_id: String) -> String:
+	return str(realm.get("skins", {}).get("worn", {}).get(counselor_id, ""))
+
+
+func buy_skin(id: String) -> Dictionary:
+	var def: Dictionary = Data.SKINS.get(id, {})
+	if def.is_empty():
+		return _fail("Kostum tidak dikenal.")
+	if owns_skin(id):
+		return _fail("Kostum ini sudah dimiliki.")
+	if not def.has("gold"):
+		return _fail("Kostum ini hadiah acara bulanan.")
+	if gold < int(def["gold"]):
+		return _fail("Emas tidak cukup (butuh %d)." % def["gold"])
+	gold -= int(def["gold"])
+	realm["skins"]["owned"].append(id)
+	_track("skin")
+	changed.emit()
+	return _ok("Kostum %s didapat!" % def["name"])
+
+
+## Pakai kostum (id kosong = kembali ke busana asli penasihat `counselor_id`).
+func wear_skin(counselor_id: String, id: String) -> Dictionary:
+	if id == "":
+		realm["skins"]["worn"].erase(counselor_id)
+		changed.emit()
+		return _ok("Busana asli dipakai kembali.")
+	if not owns_skin(id):
+		return _fail("Kostum belum dimiliki.")
+	if Data.SKINS[id]["counselor"] != counselor_id:
+		return _fail("Kostum ini bukan untuk penasihat itu.")
+	realm["skins"]["worn"][counselor_id] = id
+	changed.emit()
+	return _ok("%s kini memakai %s." % [Data.counselor_def(counselor_id)["name"], Data.SKINS[id]["name"]])
+
+
+## Peta penasihat -> potret kostum yang dipakai (untuk Art).
+func skin_portraits() -> Dictionary:
+	var out := {}
+	for c in realm.get("skins", {}).get("worn", {}):
+		out[c] = realm["skins"]["worn"][c]
+	return out
+
+
+# --- Kotak surat ---------------------------------------------------------------------------
+
+## Tambah surat lokal (tanpa server). Id sama tidak ditambah dua kali.
+func add_mail(mail: Dictionary, now: float) -> bool:
+	var id := str(mail.get("id", ""))
+	if id == "" or realm["mail"].any(func(m): return m["id"] == id) or realm["mail_claimed"].has(id):
+		return false
+	realm["mail"].push_front({"id": id, "title": str(mail.get("title", "")), "body": str(mail.get("body", "")),
+		"reward": _safe_reward(mail.get("reward", {})), "claimed": false, "t": now})
+	while realm["mail"].size() > Data.MAIL_KEEP:
+		realm["mail"].pop_back()
+	return true
+
+
+func mail_unread() -> int:
+	return realm["mail"].filter(func(m): return not m["claimed"] and not m["reward"].is_empty()).size()
+
+
+func claim_mail(id: String) -> Dictionary:
+	for m in realm["mail"]:
+		if m["id"] != id:
+			continue
+		if m["claimed"]:
+			return _fail("Hadiah surat ini sudah diambil.")
+		m["claimed"] = true
+		realm["mail_claimed"].append(id)
+		var text := _give_rewards(m["reward"])
+		_track("mail")
+		changed.emit()
+		return _ok("Isi surat diterima: %s." % (text if text != "" else "-"))
+	return _fail("Surat tidak ditemukan.")
+
+
+## Hadiah surat dari server (sudah ditandai diklaim di server). Dicatat agar tidak dobel.
+func claim_server_mail(id: String, reward: Dictionary) -> Dictionary:
+	var key := "server:" + id
+	if realm["mail_claimed"].has(key):
+		return _fail("Hadiah surat ini sudah diambil.")
+	realm["mail_claimed"].append(key)
+	while realm["mail_claimed"].size() > 200:
+		realm["mail_claimed"].pop_front()
+	for m in realm["mail"]:
+		if m["id"] == key:
+			m["claimed"] = true
+	var text := _give_rewards(_safe_reward(reward))
+	_track("mail")
+	changed.emit()
+	return _ok("Isi surat diterima: %s." % (text if text != "" else "-"))
+
+
+# --- Uji cepat (hanya dipanggil dari panel debug di build debug) ---------------------------
+
+func debug_skip_stages(n: int) -> Dictionary:
+	stage += maxi(0, n)
+	changed.emit()
+	return _ok("Tahap dilompati ke %d." % (stage + 1))
+
+
+func debug_grant() -> Dictionary:
+	silver += 1000000
+	grain += 1000000
+	soldiers += 1000000
+	gold += 5000
+	prestige += 5000
+	for id in ["recruit_ticket", "energy_tea", "star_stone", "scroll_train"]:
+		if Data.ITEMS.has(id):
+			add_item(id, 10)
+	changed.emit()
+	return _ok("Sumber daya uji ditambahkan.")

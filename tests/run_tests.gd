@@ -33,7 +33,7 @@ func _init() -> void:
 		"test_troops", "test_seasons", "test_diplomacy", "test_spies", "test_rebellion", "test_race", "test_quiz",
 		"test_candi", "test_forge", "test_pets", "test_comeback", "test_gift_codes", "test_world_boss", "test_realm5_save",
 		"test_intro_update", "test_collect_daily", "test_counselor_titles", "test_wayang", "test_ceremony", "test_badges",
-		"test_tourney_reward", "test_realm6_save",
+		"test_tourney_reward", "test_realm6_save", "test_month_event", "test_skins", "test_mail", "test_realm7_save",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -713,7 +713,7 @@ func test_tutorial_flow() -> void:
 	for step in Data.TUTORIAL_STEPS:
 		var w: String = step["wait"]
 		check(w == "next" or w.begins_with("page:") or w in ["affair_silver", "affair_soldiers", "upgrade", "battle",
-			"recruit", "visit"], "langkah tutorial menunggu aksi yang dikenal (%s)" % w)
+			"recruit", "visit", "mail"], "langkah tutorial menunggu aksi yang dikenal (%s)" % w)
 
 
 func test_tutorial_skip_old_save() -> void:
@@ -3112,3 +3112,98 @@ func test_realm6_save() -> void:
 	m2.from_dict(bad, t)
 	check(m2.wayang_progress("malin") == 3 and not m2.realm["wayang"]["done"].has("dongeng_palsu"), "wayang divalidasi")
 	check(m2.badges_earned(0) == ["pemburu"] and m2.ceremony_active(t) == "", "lencana & upacara divalidasi")
+
+
+func test_month_event() -> void:
+	var m := _realm_model()
+	var t := 1_780_000_000.0  # pertengahan bulan
+	m.sync(t)
+	var ev: Dictionary = m.month_event_def(t)
+	check(m.month_event_progress(0, t) == 0, "acara bulanan mulai dari nol")
+	check(not m.claim_month_mission(0, t)["ok"], "tugas belum selesai tidak bisa diklaim")
+	check(not m.claim_month_final(t)["ok"], "hadiah akhir butuh semua tugas")
+	for i in ev["missions"].size():
+		var mis: Dictionary = ev["missions"][i]
+		for k in int(mis["target"]):
+			m._track(mis["event"])
+	check(m.month_event_claimable(t) == ev["missions"].size(), "semua tugas siap diklaim")
+	for i in ev["missions"].size():
+		check(m.claim_month_mission(i, t)["ok"], "klaim tugas acara %d" % i)
+	check(not m.claim_month_mission(0, t)["ok"], "tugas tidak bisa diklaim dua kali")
+	var gold := m.gold
+	check(m.claim_month_final(t)["ok"] and m.gold == gold + Data.MONTH_EVENT_GOLD, "hadiah akhir acara")
+	check(m.owns_skin(ev["skin"]), "kostum acara didapat")
+	check(not m.claim_month_final(t)["ok"], "hadiah akhir sekali")
+	var next := t + 40 * 86400.0
+	m.sync(next)
+	check(m.month_event_def(next)["id"] != ev["id"] and m.month_event_progress(0, next) == 0, "bulan baru, acara baru")
+	check(m.month_event_days_left(t) >= 1 and m.month_event_days_left(t) <= 31, "sisa hari acara masuk akal")
+
+
+func test_skins() -> void:
+	var m := _realm_model()
+	m.gold = 1000
+	check(not m.wear_skin("arya", "skin_arya_emas")["ok"], "kostum belum dimiliki tidak bisa dipakai")
+	check(m.buy_skin("skin_arya_emas")["ok"] and m.gold == 700, "beli kostum dengan emas")
+	check(not m.buy_skin("skin_arya_emas")["ok"], "kostum tidak dibeli dua kali")
+	check(not m.buy_skin("skin_gajah_hitam")["ok"], "kostum acara tidak dijual")
+	check(not m.wear_skin("sekar", "skin_arya_emas")["ok"], "kostum hanya untuk penasihatnya")
+	var power := m.combat_power()
+	check(m.wear_skin("arya", "skin_arya_emas")["ok"] and m.skin_portraits() == {"arya": "skin_arya_emas"}, "pakai kostum")
+	check(m.combat_power() == power, "kostum tidak mengubah kekuatan")
+	check(m.wear_skin("arya", "")["ok"] and m.skin_portraits().is_empty(), "lepas kostum")
+	m.gold = 10
+	check(not m.buy_skin("skin_dewi_merah")["ok"], "emas kurang")
+	for id in Data.SKIN_ORDER:
+		check(Data.SKINS.has(id) and Data.counselor_def(Data.SKINS[id]["counselor"]).size() > 0, "kostum %s valid" % id)
+		check(ResourceLoader.exists("res://assets/portraits/%s.svg" % id), "gambar kostum %s ada" % id)
+
+
+func test_mail() -> void:
+	var m := fresh()
+	var t := 1000.0
+	check(m.mail_unread() == 1 and m.realm["mail"][0]["id"] == Data.WELCOME_MAIL["id"], "surat sambutan di game baru")
+	var gold := m.gold
+	check(m.claim_mail(Data.WELCOME_MAIL["id"])["ok"] and m.gold == gold + 50, "ambil hadiah surat")
+	check(not m.claim_mail(Data.WELCOME_MAIL["id"])["ok"] and m.mail_unread() == 0, "surat hanya sekali")
+	check(not m.add_mail(Data.WELCOME_MAIL, t), "surat yang sudah diambil tidak masuk lagi")
+	check(m.add_mail({"id": "server:7", "title": "Kompensasi", "body": "Maaf.", "reward": {"gold": 999999,
+		"items": {"palsu": 3, "star_stone": 1}}}, t), "surat server masuk")
+	check(int(m.realm["mail"][0]["reward"].get("gold", 0)) <= 1000 and not m.realm["mail"][0]["reward"]["items"].has("palsu"),
+		"hadiah surat dibersihkan")
+	check(not m.add_mail({"id": "server:7", "title": "x", "body": "y"}, t), "surat sama tidak dobel")
+	check(m.claim_server_mail("7", {"gold": 100})["ok"] and m.realm["mail"][0]["claimed"], "klaim surat server")
+	check(not m.claim_server_mail("7", {"gold": 100})["ok"], "surat server sekali")
+	for i in Data.MAIL_KEEP + 5:
+		m.add_mail({"id": "local:x%d" % i, "title": "t", "body": "b"}, t)
+	check(m.realm["mail"].size() == Data.MAIL_KEEP, "kotak surat dibatasi")
+	m.debug_grant()
+	check(m.gold > 5000, "hadiah uji cepat")
+	var st := m.stage
+	m.debug_skip_stages(10)
+	check(m.stage == st + 10, "lompat tahap uji cepat")
+
+
+func test_realm7_save() -> void:
+	var m := _realm_model()
+	var t := 1_780_000_000.0
+	m.sync(t)
+	m.buy_skin("skin_arya_emas")
+	m.wear_skin("arya", "skin_arya_emas")
+	m.add_mail({"id": "server:3", "title": "Halo", "body": "Isi", "reward": {"silver": 10}}, t)
+	for k in 5:
+		m._track(m.month_event_def(t)["missions"][0]["event"])
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
+	m2.sync(t)
+	check(var_to_str(m2.to_dict()["realm"]) == var_to_str(m.to_dict()["realm"]), "simpan/muat batch 7 identik")
+	var bad := m.to_dict()
+	bad["realm"]["skins"] = {"owned": ["skin_arya_emas", "skin_palsu"], "worn": {"arya": "skin_palsu", "sekar": "skin_arya_emas"}}
+	bad["realm"]["mail"] = [{"id": 5}, "rusak", {"id": "local:a", "title": "t", "body": "b", "reward": {"gold": 99999}}]
+	bad["realm"]["month_event"] = {"month": "x", "done": [0, 0, 99]}
+	m2.from_dict(bad, t)
+	m2.sync(t)
+	check(m2.owns_skin("skin_arya_emas") and not m2.owns_skin("skin_palsu") and m2.skin_portraits().is_empty(),
+		"kostum divalidasi")
+	check(m2.realm["mail"].size() == 1 and int(m2.realm["mail"][0]["reward"].get("gold", 0)) <= 1000, "surat divalidasi")
+	check(m2.realm["month_event"]["done"].size() <= m2.month_event_def(t)["missions"].size(), "acara divalidasi")

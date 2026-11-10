@@ -56,6 +56,20 @@ Chat dengan pemain sungguhan termasuk konten buatan pengguna (UGC). Game sudah
 menyediakan tombol Laporkan dan Blokir di tiap pesan pemain lain; pastikan laporan
 ditinjau secara berkala (lihat `server/README.md`).
 
+## Bila statistik anonim dipakai (opt-in)
+
+Build ini punya pilihan **Bagikan statistik anonim** (mati sejak awal). Bila build
+rilis mengisi `application/config/stats_url` atau alamat server, data berikut bisa
+terkirim setelah pemain menyalakannya, jadi jawab **Ya, mengumpulkan data**:
+
+| Kategori Play Console | Data | Dibagikan | Wajib/Opsional | Tujuan |
+|---|---|---|---|---|
+| Aktivitas aplikasi → Interaksi aplikasi | Jumlah sesi, lama bermain, hari aktif, hitungan aksi, tahap, jabatan, tutorial selesai | Tidak | Opsional | Analitik |
+| ID perangkat atau lainnya | ID pemasangan acak (bisa direset dengan Hapus Statistik) | Tidak | Opsional | Analitik |
+
+Data diproses secara efemeral? **Tidak** (disimpan per hari di server). Enkripsi
+saat transit: Ya, bila server memakai HTTPS (wajib).
+
 ## Isian lain di App content
 
 | Bagian | Isian yang disarankan |

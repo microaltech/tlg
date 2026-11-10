@@ -238,6 +238,33 @@ def music_battle():
                                 saron_gain=0.6, bonang_gain=0.32), 0.75)
 
 
+def music_adventure():
+    # Perburuan, pacuan, candi: slendro lincah dengan kendang rapat.
+    sc = scale(220, SLENDRO)
+    bal = [2, 3, 5, 6, 5, 3, 2, 1, 2, 3, 2, 1, 6, 5, 6, 1]
+    sl = [(0, 6, 1.5), (2, 5, 1.5), (4, 3, 2), (8, 2, 1.5), (10, 3, 1.5), (12, 5, 3)]
+    return master(gamelan_piece(bal, sc, 0.55, 3, ["D", "", "t", "t", "D", "t", "", "t"], "run", sl,
+                                saron_gain=0.5, bonang_gain=0.26), 0.7)
+
+
+def music_wayang():
+    # Wayang: pelog lambat dan sendu, suling menonjol, tanpa hiasan bonang rapat.
+    sc = scale(233, PELOG)
+    bal = [5, 0, 6, 5, 3, 0, 2, 1, 2, 0, 3, 5, 6, 0, 5, 3]
+    sl = [(0, 6, 4), (4, 5, 3), (8, 3, 4), (12, 2, 3.5)]
+    return master(gamelan_piece(bal, sc, 1.1, 2, ["D", "", "", "", "", "", "t", ""], "double", sl,
+                                saron_gain=0.4, bonang_gain=0.12), 0.6)
+
+
+def music_sea():
+    # Armada & jalur rempah: slendro mengalun dengan ketukan seperti ombak.
+    sc = scale(208, SLENDRO)
+    bal = [1, 2, 3, 2, 5, 3, 2, 1, 6, 1, 2, 3, 2, 1, 6, 5]
+    sl = [(0, 3, 3), (4, 5, 3), (8, 6, 2), (10, 5, 2), (12, 3, 4)]
+    return master(gamelan_piece(bal, sc, 0.85, 2, ["D", "", "", "t", "", "", "t", ""], "double", sl,
+                                saron_gain=0.42, bonang_gain=0.2), 0.65)
+
+
 # --- Efek suara -----------------------------------------------------------
 
 def sfx_click():
@@ -383,6 +410,9 @@ def main():
     save("music_city", music_city(), 3)
     save("music_palace", music_palace(), 3)
     save("music_battle", music_battle(), 3)
+    save("music_adventure", music_adventure(), 3)
+    save("music_wayang", music_wayang(), 3)
+    save("music_sea", music_sea(), 3)
     for name, fn in [("click", sfx_click), ("coin", sfx_coin), ("grain", sfx_grain),
                      ("recruit", sfx_recruit), ("upgrade", sfx_upgrade), ("attack", sfx_attack),
                      ("win", sfx_win), ("lose", sfx_lose), ("heart", sfx_heart), ("birth", sfx_birth),

@@ -193,3 +193,10 @@ Menteri mundur ke hari ke-24 sampai 25. Pengaruhnya tidak langsung (atribut lebi
 tinggi menaikkan hasil prajurit yang memakan pangan, sehingga urutan pengeluaran
 bot berubah). Ambang Menteri diturunkan dari 23.000 ke 22.000; hasilnya (seed 1–3)
 Menteri di hari ke-21 sampai 23 dan tahap di hari ke-30 adalah 78.
+
+## Acara sejarah bulanan dan kotak surat
+
+Bot kini juga mengambil surat dan tugas acara bulanan (sekitar +210 emas dan
+beberapa item per bulan, ditambah 50 emas surat sambutan). Hasil seed 1: Menteri di
+hari ke-20, tahap di hari ke-30 adalah 79. Kostum hanya mengubah tampilan, jadi
+tidak memengaruhi kekuatan. Ambang jabatan tidak diubah.

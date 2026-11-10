@@ -2036,9 +2036,45 @@ ICONS["tourney"] = icon_doc(
     '<path d="M48 40 L51 46 L57 46 L52 50 L54 56 L48 52 L42 56 L44 50 L39 46 L45 46 Z" fill="#f2c14e"/>')
 
 
+# Kostum penasihat (Data.SKINS): varian warna/aksesori dari potret dasar.
+SKIN_VARIANTS = {
+    "skin_arya_emas": ("arya", dict(outfit="#b8862f", inner="#f6e7b0", metal="#e0b84a", plume="#c0392b",
+                                    bg=("#f2d27a", "#6b4210"))),
+    "skin_sekar_batik": ("sekar", dict(outfit="#6b3d1e", inner="#f2e2c0", shawl="#c9963f",
+                                       flowers=[(170, 74, "#f2c14e")], bg=("#c9963f", "#3d2410"))),
+    "skin_dewi_merah": ("dewi", dict(outfit="#9e1f1f", inner="#f7d9c9", shawl="#e0b84a", gem="#c0392b",
+                                     bg=("#e06050", "#4a0e0e"))),
+    "skin_gajah_hitam": ("gajah", dict(outfit="#1e1e26", metal="#3a3d4a", plume="#c0392b", bg=("#4a4f6b", "#0e0f1a"))),
+    "skin_satria_perang": ("satria", dict(headwear="helmet", metal="#c9963f", plume="#f2f2f2", outfit="#2f3b6b",
+                                          inner="#c9963f", extras=["necklace", "armor"], bg=("#6a7fd6", "#141f4a"))),
+    "skin_ratna_kebaya": ("ratna", dict(outfit="#f7f2e8", inner="#e9d6b0", shawl="#c9963f",
+                                        flowers=[(164, 70, "#ffffff"), (176, 86, "#f2c14e")], bg=("#d9e4f2", "#3a4f6b"))),
+}
+
+ICONS["mail"] = icon_doc(
+    '<rect x="10" y="22" width="76" height="54" rx="6" fill="#efe0bf" stroke="#7a4b1f" stroke-width="4"/>'
+    '<path d="M12 26 L48 54 L84 26" fill="none" stroke="#7a4b1f" stroke-width="4" stroke-linejoin="round"/>'
+    '<circle cx="48" cy="56" r="11" fill="#c0392b" stroke="#6b1a12" stroke-width="2"/>'
+    '<path d="M44 52 L52 60 M52 52 L44 60" stroke="#f2c14e" stroke-width="2.5"/>')
+ICONS["wardrobe"] = icon_doc(
+    '<path d="M48 12 C42 12 40 18 44 21 L48 24" fill="none" stroke="#7a4b1f" stroke-width="4" stroke-linecap="round"/>'
+    '<path d="M48 24 L14 44 L20 50 L30 46 L30 86 L66 86 L66 46 L76 50 L82 44 Z" fill="#a33a6b" stroke="#5a1a3a" '
+    'stroke-width="3" stroke-linejoin="round"/>'
+    '<path d="M30 58 L66 58 M30 70 L66 70" stroke="#f2c14e" stroke-width="3"/>'
+    '<circle cx="48" cy="64" r="4" fill="#f2c14e"/>')
+ICONS["month_event"] = icon_doc(
+    '<rect x="12" y="18" width="72" height="66" rx="6" fill="#efe0bf" stroke="#7a4b1f" stroke-width="4"/>'
+    '<rect x="12" y="18" width="72" height="18" rx="6" fill="#c0392b"/>'
+    '<path d="M28 10 L28 26 M68 10 L68 26" stroke="#5e3a12" stroke-width="5" stroke-linecap="round"/>'
+    '<path d="M48 44 L53 56 L66 57 L56 65 L59 78 L48 71 L37 78 L40 65 L30 57 L43 56 Z" fill="#f2c14e" '
+    'stroke="#b8862f" stroke-width="2"/>')
+
+
 def main():
     for cid, spec in CHARACTERS.items():
         write("portraits/%s.svg" % cid, portrait(spec))
+    for sid, (base, change) in SKIN_VARIANTS.items():
+        write("portraits/%s.svg" % sid, portrait(dict(CHARACTERS[base], **change)))
     for name, doc in ICONS.items():
         write("icons/%s.svg" % name, doc)
     write("bg/city.svg", bg_city())

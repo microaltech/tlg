@@ -47,14 +47,28 @@
        lalu bandingkan dengan `docs/balance.md`.
 4. [ ] Set environment keystore (`GODOT_ANDROID_KEYSTORE_RELEASE_*`).
 5. [ ] Build: `GODOT=/path/ke/godot tools/build_android.sh aab`. Butuh Android Build
-       Template terpasang dan akses internet ke repositori Google Maven
-       (dl.google.com) serta Maven Central untuk Gradle.
+       Template terpasang, **JDK 17** (Godot 4.3 menolak Java 21; set
+       `export/android/java_sdk_path` di Editor Settings ke JDK 17), Android SDK
+       platform 34 + build-tools 34, dan akses internet ke repositori Google Maven
+       (dl.google.com) serta Maven Central untuk Gradle. Bila Maven Central
+       membalas 429 (terlalu banyak permintaan), tunggu semenit lalu ulangi;
+       unduhan yang sudah selesai tersimpan di cache Gradle.
 6. [ ] Uji APK rilis di minimal satu HP sungguhan
        (`tools/build_android.sh release`). Periksa: tutorial, gulir layar,
        pembelian di jalur Internal testing dengan akun penguji lisensi,
        notifikasi, ringkasan "Selamat datang kembali", dan simpan/muat setelah
        aplikasi ditutup paksa.
 7. [ ] Unggah AAB ke **Internal testing**, lalu Closed testing, lalu Production.
+       Langkah Internal testing:
+       a. Play Console → Create app (nama "Tuan Nusantara", Game, Gratis).
+       b. Setup → App integrity → **Play App Signing**: biarkan Google membuat kunci
+          aplikasi; keystore Anda menjadi *upload key*.
+       c. Testing → Internal testing → Testers: buat daftar email penguji (maks. 100).
+       d. Create new release → unggah `build/tuan-nusantara.aab` (versi rilis, bukan
+          `-debug`; Play menolak AAB yang ditandatangani kunci debug) → isi catatan
+          rilis → Review → Start rollout.
+       e. Bagikan tautan "Join on the web" ke penguji; uji dengan
+          `docs/test_checklist.md` di beberapa HP.
 8. [ ] Lengkapi listing toko: ikon 512 px (`assets/launcher/play_store_512.png`),
        feature graphic 1024×500 dan 6 tangkapan layar ponsel 1080×1920 (buat
        dengan `tools/store_assets.gd`, hasil di `build/store/`), teks dari

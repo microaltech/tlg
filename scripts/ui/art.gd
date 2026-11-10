@@ -3,6 +3,8 @@ extends RefCounted
 ## sehingga gambar buatan ilustrator cukup diletakkan dengan nama yang sama.
 
 static var _cache := {}
+## Kostum yang dipakai: id penasihat -> id potret kostum (diisi main dari GameModel.skin_portraits()).
+static var skins := {}
 
 
 static func tex(path_no_ext: String) -> Texture2D:
@@ -29,7 +31,7 @@ static func warm_up() -> void:
 
 
 static func portrait(id: String) -> Texture2D:
-	return tex("res://assets/portraits/" + id)
+	return tex("res://assets/portraits/" + str(skins.get(id, id)))
 
 
 static func icon(name: String) -> Texture2D:

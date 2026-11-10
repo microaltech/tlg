@@ -344,3 +344,36 @@ func _set_status(s: Status) -> void:
 		return
 	status = s
 	status_changed.emit()
+
+
+## Ambil surat dari server dan masukkan ke kotak surat lokal (id "server:<n>").
+## callback(added: int)
+func fetch_mail(callback: Callable = func(_n): pass) -> void:
+	if not is_online():
+		callback.call(0)
+		return
+	_request(HTTPClient.METHOD_GET, "/v1/mail", {}, func(code: int, data: Dictionary):
+		var added := 0
+		if code == 200 and data.get("mail") is Array:
+			for m in data["mail"]:
+				if not (m is Dictionary) or bool(m.get("claimed", false)):
+					continue
+				if Game.model.add_mail({"id": "server:%d" % int(m.get("id", 0)), "title": str(m.get("title", "")),
+						"body": str(m.get("body", "")), "reward": m.get("reward", {})}, Game.now()):
+					added += 1
+			if added > 0:
+				Game.model.changed.emit()
+		callback.call(added))
+
+
+## Ambil hadiah surat server (dicek server agar sekali per akun). callback(result: Dictionary)
+func claim_server_mail(id: String, callback: Callable) -> void:
+	var n := int(id.trim_prefix("server:"))
+	_request(HTTPClient.METHOD_POST, "/v1/mail/claim", {"id": n}, func(code: int, data: Dictionary):
+		if code == 200 and data.get("reward") is Dictionary:
+			callback.call(Game.model.claim_server_mail(str(n), data["reward"]))
+		elif code == 409:
+			Game.model.claim_server_mail(str(n), {})
+			callback.call({"ok": false, "msg": "Hadiah surat ini sudah diambil."})
+		else:
+			callback.call({"ok": false, "msg": str(data.get("error", "Tidak bisa terhubung ke server."))}))

@@ -19,11 +19,37 @@ func _ready() -> void:
 	model.rng.randomize()
 	# Misi harian direset pada tengah malam waktu setempat (bias dalam menit).
 	model.tz_bias = int(Time.get_time_zone_from_system().get("bias", 0)) * 60
+	if debug_enabled():
+		var cfg := ConfigFile.new()
+		if cfg.load(DEBUG_PATH) == OK:
+			time_offset = maxf(0.0, float(cfg.get_value("debug", "time_offset", 0.0)))
 	load_game()
 
 
+## Mode uji cepat (hanya build debug): geser jam game ke depan untuk menguji
+## pengisian ulang, hari baru, dan acara tanpa menunggu. Disimpan di user://debug.cfg
+## agar waktu tidak mundur saat game dibuka lagi.
+const DEBUG_PATH := "user://debug.cfg"
+var time_offset := 0.0
+
+
 func now() -> float:
-	return Time.get_unix_time_from_system()
+	return Time.get_unix_time_from_system() + time_offset
+
+
+func debug_enabled() -> bool:
+	return OS.is_debug_build() and not OS.has_feature("template_release")
+
+
+func debug_advance(seconds: float) -> void:
+	if not debug_enabled():
+		return
+	time_offset += seconds
+	var cfg := ConfigFile.new()
+	cfg.set_value("debug", "time_offset", time_offset)
+	cfg.save(DEBUG_PATH)
+	model.sync(now())
+	model.changed.emit()
 
 
 func _process(delta: float) -> void:

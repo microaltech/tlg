@@ -26,9 +26,21 @@ dibaca oleh game ini.
 | Statistik bermain (`analytics.json`) | Jumlah sesi, lama bermain, hari aktif, hitungan aksi game | Menampilkan statistik Anda sendiri. Bisa dimatikan dan dihapus di Pengaturan |
 | Laporan crash dan log (`crash_reports.json`, `logs/`) | Waktu crash, versi game, dan log teknis Godot | Membantu Anda melaporkan masalah |
 
-Data di atas **tidak dikirim** ke mana pun. Tombol **Salin Laporan** hanya
+Data di atas **tidak dikirim** ke mana pun, kecuali Anda menyalakan **Bagikan
+statistik anonim** (lihat di bawah). Tombol **Salin Laporan** hanya
 menyalin teks laporan (versi game, sistem operasi, model perangkat, dan log
 crash) ke clipboard. Anda sendiri yang memutuskan apakah akan mengirimkannya.
+
+**Statistik anonim (opsional, mati sejak awal).** Bila Anda menyalakan
+Pengaturan → Privasi → *Bagikan statistik anonim*, game mengirim satu laporan
+ringkas sehari ke server pengembang: ID pemasangan acak (bukan ID akun, ID iklan,
+atau nomor perangkat), versi game, bahasa, jumlah sesi, lama bermain, jumlah hari
+aktif, tahap kampanye, jabatan, apakah tutorial selesai, dan jumlah tiap jenis aksi
+game (mis. berburu, bertempur). Tidak ada nama, isi chat, lokasi, atau kontak.
+Data ini hanya dipakai untuk memperbaiki keseimbangan dan alur game, tidak dijual
+dan tidak dibagikan. **Hapus Statistik** membuat ID pemasangan baru sehingga
+laporan lama tidak bisa dikaitkan lagi dengan Anda. Mematikan pilihan ini
+menghentikan pengiriman.
 
 ## Pemain lain, chat, dan peringkat
 
@@ -42,7 +54,8 @@ atau nomor perangkat), nama Tuan, kostum dan bingkai profil, aliansi, kekuatan,
 tahap kampanye, rekor menara, prestise, ringkasan kota (jabatan, level bangunan,
 jumlah penasihat, wilayah, kapal, dan besan), pesan chat aliansi, daftar teman dan
 hadiah yang dikirim, titah bila Anda menjadi Raja Hari Ini, serangan Perang
-Wilayah dan Bos Dunia, kode hadiah yang Anda tukar, serta hasil arena online. Data ini dipakai untuk papan peringkat, chat,
+Wilayah dan Bos Dunia, kode hadiah yang Anda tukar, surat yang hadiahnya Anda ambil
+dari Kotak Surat, serta hasil arena online. Data ini dipakai untuk papan peringkat, chat,
 arena, teman, kunjungan kota, Raja Hari Ini, dan Perang Wilayah bersama pemain lain,
 dan dapat dilihat pemain lain (nama, kostum, kekuatan, ringkasan kota, pesan chat). Server
 dikelola oleh [NAMA PENGEMBANG]; data disimpan selama akun aktif dan dapat dihapus

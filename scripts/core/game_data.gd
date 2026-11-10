@@ -462,13 +462,13 @@ const ARENA_AVATARS := ["arya", "sekar", "bayu", "ratna", "gajah", "lintang", "d
 ## wait = "next" (tombol Lanjut), nama aksi (lihat _track di game_model.gd), atau "page:<halaman>".
 const TUTORIAL_GUIDE := {"name": "Sekar Pandita", "portrait": "sekar"}
 const TUTORIAL_STEPS := [
-	{"text": "Selamat datang, Tuan! Saya Sekar Pandita, penasihat Anda. Mari saya tunjukkan cara memimpin kota ini.",
-		"wait": "next"},
-	{"text": "Ini sumber daya Anda: Perak, Pangan, Prajurit, dan Emas. Semuanya dibutuhkan untuk membangun kekuatan.",
-		"target": "resources", "wait": "next"},
+	{"text": "Selamat datang, Tuan! Saya Sekar Pandita, penasihat Anda. Di atas ini sumber daya Anda: Perak, Pangan, "
+		+ "Prajurit, dan Emas.", "target": "resources", "wait": "next"},
 	{"text": "Tarik pajak dari rakyat untuk mendapat perak. Ketuk \"Kerjakan\" pada Tarik Pajak.",
 		"target": "affair_silver", "wait": "affair_silver"},
 	{"text": "Bagus! Sekarang rekrut prajurit untuk pasukan Anda.", "target": "affair_soldiers", "wait": "affair_soldiers"},
+	{"text": "Rakyat mengirim surat sambutan berisi emas dan tiket rekrut. Buka Surat lalu ketuk \"Ambil\".",
+		"target": "mail", "wait": "mail"},
 	{"text": "Urusan kota terisi lagi seiring waktu, bahkan saat game ditutup. Sekarang buka menu Penasihat.",
 		"target": "nav_counselor", "wait": "page:counselor"},
 	{"text": "Penasihat adalah kekuatan Anda. Latih penasihat dengan perak untuk menaikkan atributnya.",
@@ -1389,6 +1389,12 @@ const COSMETICS := {
 		"unlock": "wayang"},
 	"frame_wayang_roro": {"type": "frame", "name": "Bingkai Seribu Candi", "colors": ["#7a5a48", "#f2e0b0"], "unlock": "wayang"},
 	"frame_wayang_timun": {"type": "frame", "name": "Bingkai Timun Emas", "colors": ["#4f7a2a", "#f2c14e"], "unlock": "wayang"},
+	"frame_acara_gajah_mada": {"type": "frame", "name": "Bingkai Sumpah Palapa", "colors": ["#7a2a12", "#f2c14e"],
+		"unlock": "month_event"},
+	"frame_acara_diponegoro": {"type": "frame", "name": "Bingkai Perang Jawa", "colors": ["#1e1e24", "#e9e4dc"],
+		"unlock": "month_event"},
+	"frame_acara_samudra": {"type": "frame", "name": "Bingkai Jalur Rempah", "colors": ["#1a4a6e", "#e8c070"],
+		"unlock": "month_event"},
 	"costume_lord": {"type": "costume", "name": "Busana Bangsawan", "portrait": "lord", "unlock": "default"},
 	"costume_batik": {"type": "costume", "name": "Busana Batik", "portrait": "lord_batik", "gold": 400},
 	"costume_zirah": {"type": "costume", "name": "Zirah Senapati", "portrait": "lord_zirah", "unlock": "stage:50"},
@@ -1397,7 +1403,8 @@ const COSMETICS := {
 const COSMETIC_ORDER := ["frame_kayu", "frame_emas", "frame_giok", "frame_menteri", "frame_vip", "frame_tahun_baru",
 	"frame_ramadan", "frame_merdeka", "frame_sumpah_pemuda", "frame_pahlawan", "frame_silat",
 	"frame_adipati", "frame_sultan", "frame_maharaja", "frame_raja_hari_ini", "frame_wayang_malin",
-	"frame_wayang_sangkuriang", "frame_wayang_roro", "frame_wayang_timun",
+	"frame_wayang_sangkuriang", "frame_wayang_roro", "frame_wayang_timun", "frame_acara_gajah_mada",
+	"frame_acara_diponegoro", "frame_acara_samudra",
 	"costume_lord", "costume_batik", "costume_zirah", "costume_raja"]
 
 
@@ -1656,6 +1663,11 @@ const FEATURE_HELP := {
 		"Tiap lencana baru memberi emas dan tampil saat pemain lain mengunjungi kota Tuan."],
 	"Turnamen Silat Online": ["Daftarkan diri Senin sampai Sabtu. Pada hari Minggu 16 pesilat terkuat yang mendaftar bertanding.",
 		"Hadiah sesuai babak tercapai, diambil setelah hasil diumumkan."],
+	"Acara Sejarah": ["Tiap bulan ada acara bertema sejarah Nusantara dengan lima tugas.",
+		"Selesaikan semua tugas untuk emas, kostum penasihat, dan bingkai profil khusus acara itu."],
+	"Kotak Surat": ["Surat dari istana dan dari pengelola game: pengumuman, hadiah, dan kompensasi.",
+		"Ambil hadiah sebelum surat kedaluwarsa."],
+	"Lemari Busana": ["Kostum mengganti tampilan penasihat di seluruh game tanpa mengubah atributnya."],
 	"Ensiklopedia Nusantara": ["Kumpulkan semua tokoh, kuda, pusaka, dan wilayah untuk bonus permanen."],
 }
 
@@ -1853,7 +1865,7 @@ const GIFT_CODE_ITEM_LIMIT := 10
 const HUB_TABS := [
 	{"id": "ekonomi", "name": "Ekonomi", "tiles": ["market", "garden", "fleet", "research", "ceremony"]},
 	{"id": "petualangan", "name": "Petualangan", "tiles": ["hunt", "candi", "race", "quiz", "wayang"]},
-	{"id": "istana", "name": "Istana", "tiles": ["kin", "pets", "forge", "policy", "badges"]},
+	{"id": "istana", "name": "Istana", "tiles": ["kin", "pets", "forge", "policy", "badges", "wardrobe"]},
 	{"id": "dunia", "name": "Dunia", "tiles": ["diplomacy", "friends", "guildwar", "worldboss", "tourney"]},
 ]
 
@@ -1922,3 +1934,57 @@ const TOURNEY_REWARDS := [  ## babak tercapai: 0 = gugur di babak pertama ... 4 
 	{"gold": 20}, {"gold": 40}, {"gold": 70}, {"gold": 120, "items": {"star_stone": 1}},
 	{"gold": 250, "items": {"star_stone": 2, "batu_meteor": 1}}]
 const TOURNEY_ROUND_NAMES := ["Babak 16 Besar", "Perempat Final", "Semifinal", "Final", "Juara"]
+
+
+# --- Batch 7: acara bulanan, kostum penasihat, surat ---------------------------------
+
+## Acara sejarah bulanan (bergiliran per bulan kalender). Kemajuan tugas dihitung
+## dari penghitung game sejak acara dimulai.
+const MONTH_EVENTS := [
+	{"id": "gajah_mada", "name": "Sumpah Palapa", "icon": "crown", "skin": "skin_gajah_hitam",
+		"story": "Gajah Mada bersumpah tidak akan menikmati palapa sebelum Nusantara bersatu. Bantu sang Mahapatih menyatukan negeri!",
+		"missions": [
+			{"event": "win", "target": 30, "text": "Menangkan 30 tahap kampanye", "reward": {"gold": 30}},
+			{"event": "expedition", "target": 10, "text": "Selesaikan 10 ekspedisi", "reward": {"items": {"scroll_train": 3}}},
+			{"event": "diplomacy", "target": 15, "text": "Kirim 15 utusan diplomasi", "reward": {"gold": 30}},
+			{"event": "conquest", "target": 1, "text": "Taklukkan 1 wilayah di Peta Nusantara", "reward": {"items": {"star_stone": 1}}},
+			{"event": "upgrade", "target": 60, "text": "Latih penasihat 60 kali", "reward": {"items": {"energy_tea": 2}}}]},
+	{"id": "diponegoro", "name": "Perang Jawa", "icon": "power", "skin": "skin_satria_perang",
+		"story": "Pangeran Diponegoro memimpin perlawanan dari Goa Selarong. Kumpulkan pasukan dan siasat untuk membantunya.",
+		"missions": [
+			{"event": "battle", "target": 40, "text": "Bertempur 40 kali", "reward": {"gold": 30}},
+			{"event": "hunt", "target": 20, "text": "Berburu 20 kali", "reward": {"items": {"troop_writ": 3}}},
+			{"event": "spy", "target": 10, "text": "Kirim 10 mata-mata", "reward": {"gold": 30}},
+			{"event": "forge", "target": 3, "text": "Tempa 3 pusaka di Besalen", "reward": {"items": {"batu_meteor": 1}}},
+			{"event": "tower_win", "target": 10, "text": "Taklukkan 10 lantai Menara Ujian", "reward": {"items": {"star_stone": 1}}}]},
+	{"id": "samudra", "name": "Jalur Rempah", "icon": "ship", "skin": "skin_ratna_kebaya",
+		"story": "Kapal-kapal dagang dari berbagai bangsa singgah di bandar Nusantara mencari cengkeh dan pala. Ramaikan jalur rempah!",
+		"missions": [
+			{"event": "voyage", "target": 15, "text": "Berlayarkan kapal dagang 15 kali", "reward": {"gold": 30}},
+			{"event": "market", "target": 10, "text": "Beli 10 dagangan di Pasar Malam", "reward": {"items": {"silver_box": 2}}},
+			{"event": "harvest", "target": 20, "text": "Panen 20 petak kebun", "reward": {"items": {"pill_intimacy": 3}}},
+			{"event": "quiz_correct", "target": 20, "text": "Jawab benar 20 soal kuis", "reward": {"gold": 30}},
+			{"event": "race", "target": 15, "text": "Ikuti 15 pacuan kuda", "reward": {"items": {"energy_tea": 2}}}]},
+]
+const MONTH_EVENT_GOLD := 150
+
+## Kostum penasihat: mengganti potret (atribut tidak berubah). "event" = hadiah acara bulanan.
+const SKINS := {
+	"skin_arya_emas": {"counselor": "arya", "name": "Zirah Emas", "gold": 300},
+	"skin_sekar_batik": {"counselor": "sekar", "name": "Busana Batik Parang", "gold": 300},
+	"skin_dewi_merah": {"counselor": "dewi", "name": "Busana Merah Kerajaan", "gold": 500},
+	"skin_gajah_hitam": {"counselor": "gajah", "name": "Zirah Malam", "event": "gajah_mada"},
+	"skin_satria_perang": {"counselor": "satria", "name": "Zirah Senapati", "event": "diponegoro"},
+	"skin_ratna_kebaya": {"counselor": "ratna", "name": "Kebaya Putih", "event": "samudra"},
+}
+const SKIN_ORDER := ["skin_arya_emas", "skin_sekar_batik", "skin_dewi_merah", "skin_gajah_hitam", "skin_satria_perang",
+	"skin_ratna_kebaya"]
+
+## Surat bawaan dari istana (dikirim game sendiri, tanpa server).
+const WELCOME_MAIL := {"id": "local:selamat_datang", "title": "Selamat Datang, Tuan!",
+	"body": "Rakyat menyambut kepala desa baru dengan suka cita. Terimalah bekal ini untuk membangun negeri.",
+	"reward": {"gold": 50, "items": {"recruit_ticket": 1}}}
+const COMEBACK_MAIL := {"title": "Rakyat Merindukan Tuan",
+	"body": "Selama Tuan pergi, rakyat menyiapkan bekal agar kerajaan cepat bangkit kembali.",
+	"reward": {"gold": 30, "items": {"energy_tea": 1}}}
+const MAIL_KEEP := 30

@@ -2528,3 +2528,89 @@ Peserta kurang dari dua. Turnamen minggu ini batal.	Fewer than two entrants. Thi
 Tuan mencapai %s!	You reached the %s!
 %s vs %s → %s	%s vs %s → %s
 (bye)	(bye)
+# --- Batch 7: acara bulanan, kostum, kotak surat, statistik, uji cepat ---
+Selamat datang, Tuan! Saya Sekar Pandita, penasihat Anda. Di atas ini sumber daya Anda: Perak, Pangan, Prajurit, dan Emas.	Welcome, my Lord! I am Sekar Pandita, your advisor. Up here are your resources: Silver, Grain, Soldiers, and Gold.
+Rakyat mengirim surat sambutan berisi emas dan tiket rekrut. Buka Surat lalu ketuk \"Ambil\".	The people sent a welcome letter with gold and a recruit ticket. Open Mail and tap \"Claim\".
+Bingkai Sumpah Palapa	Palapa Oath Frame
+Bingkai Perang Jawa	Java War Frame
+Bingkai Jalur Rempah	Spice Route Frame
+Tiap bulan ada acara bertema sejarah Nusantara dengan lima tugas.	Every month brings a Nusantara history event with five tasks.
+Selesaikan semua tugas untuk emas, kostum penasihat, dan bingkai profil khusus acara itu.	Complete every task for gold, an advisor outfit, and that event's special profile frame.
+Surat dari istana dan dari pengelola game: pengumuman, hadiah, dan kompensasi.	Letters from the palace and the game team: announcements, gifts, and compensation.
+Ambil hadiah sebelum surat kedaluwarsa.	Claim gifts before the letter expires.
+Kostum mengganti tampilan penasihat di seluruh game tanpa mengubah atributnya.	Outfits change how an advisor looks everywhere in the game without changing their attributes.
+Sumpah Palapa	The Palapa Oath
+Gajah Mada bersumpah tidak akan menikmati palapa sebelum Nusantara bersatu. Bantu sang Mahapatih menyatukan negeri!	Gajah Mada swore he would not enjoy palapa until Nusantara was united. Help the Mahapatih unite the land!
+Menangkan 30 tahap kampanye	Win 30 campaign stages
+Selesaikan 10 ekspedisi	Complete 10 expeditions
+Kirim 15 utusan diplomasi	Send 15 diplomatic envoys
+Taklukkan 1 wilayah di Peta Nusantara	Conquer 1 region on the Nusantara Map
+Latih penasihat 60 kali	Train advisors 60 times
+Pangeran Diponegoro memimpin perlawanan dari Goa Selarong. Kumpulkan pasukan dan siasat untuk membantunya.	Prince Diponegoro leads the resistance from Selarong Cave. Gather troops and stratagems to aid him.
+Bertempur 40 kali	Fight 40 battles
+Berburu 20 kali	Hunt 20 times
+Kirim 10 mata-mata	Send 10 spies
+Tempa 3 pusaka di Besalen	Forge 3 heirlooms at the Smithy
+Taklukkan 10 lantai Menara Ujian	Clear 10 floors of the Trial Tower
+Jalur Rempah	The Spice Route
+Kapal-kapal dagang dari berbagai bangsa singgah di bandar Nusantara mencari cengkeh dan pala. Ramaikan jalur rempah!	Merchant ships from many nations call at Nusantara's ports seeking cloves and nutmeg. Bring the spice route to life!
+Berlayarkan kapal dagang 15 kali	Send trade ships to sea 15 times
+Beli 10 dagangan di Pasar Malam	Buy 10 goods at the Night Market
+Panen 20 petak kebun	Harvest 20 garden plots
+Jawab benar 20 soal kuis	Answer 20 quiz questions correctly
+Ikuti 15 pacuan kuda	Enter 15 horse races
+Zirah Emas	Golden Armor
+Busana Batik Parang	Parang Batik Attire
+Busana Merah Kerajaan	Royal Red Attire
+Zirah Malam	Night Armor
+Kebaya Putih	White Kebaya
+Selamat Datang, Tuan!	Welcome, my Lord!
+Rakyat menyambut kepala desa baru dengan suka cita. Terimalah bekal ini untuk membangun negeri.	The people joyfully welcome their new village head. Accept these supplies to build the land.
+Rakyat Merindukan Tuan	The People Missed You
+Selama Tuan pergi, rakyat menyiapkan bekal agar kerajaan cepat bangkit kembali.	While you were away, the people prepared supplies so the kingdom can rise again quickly.
+Hadiah tugas ini sudah diambil.	This task's reward has already been claimed.
+Tugas belum selesai.	The task is not finished yet.
+Tugas acara selesai: %s.	Event task complete: %s.
+Hadiah akhir acara sudah diambil.	The event's final reward has already been claimed.
+Selesaikan semua tugas acara dulu.	Complete every event task first.
+Acara %s tuntas! +%d emas, kostum %s, dan bingkai baru.	%s event complete! +%d gold, the %s outfit, and a new frame.
+Kostum tidak dikenal.	Unknown outfit.
+Kostum ini sudah dimiliki.	You already own this outfit.
+Kostum ini hadiah acara bulanan.	This outfit is a monthly event reward.
+Kostum %s didapat!	Got the %s outfit!
+Busana asli dipakai kembali.	Original attire restored.
+Kostum belum dimiliki.	You don't own this outfit yet.
+Kostum ini bukan untuk penasihat itu.	This outfit is not for that advisor.
+%s kini memakai %s.	%s now wears %s.
+Hadiah surat ini sudah diambil.	This letter's gift has already been claimed.
+Isi surat diterima: %s.	Letter contents received: %s.
+Surat tidak ditemukan.	Letter not found.
+Tahap dilompati ke %d.	Skipped ahead to stage %d.
+Sumber daya uji ditambahkan.	Test resources added.
+Bagikan statistik anonim	Share anonymous statistics
+Sekali sehari kirim angka ringkas (sesi, menit, tahap, jabatan, jumlah aksi) dengan ID acak ke server pengembang untuk memperbaiki game. Tanpa nama, akun, atau isi chat. Mati sejak awal.	Once a day, send summary numbers (sessions, minutes, stage, rank, action counts) with a random ID to the developer's server to improve the game. No name, account, or chat content. Off by default.
+Uji Cepat (build debug)	Quick Test (debug build)
+Jam game maju %d jam %d menit dari jam HP.	Game clock is %d h %d min ahead of the phone clock.
++10 Tahap	+10 Stages
++Sumber Daya	+Resources
+Maju 1 Jam	Advance 1 Hour
+Jam game maju 1 jam.	Game clock advanced 1 hour.
+Maju 1 Hari	Advance 1 Day
+Jam game maju 1 hari.	Game clock advanced 1 day.
+Acara: %s	Event: %s
+Surat	Mail
+Lemari Busana	Wardrobe
+Acara Sejarah	History Event
+%s · berakhir dalam %d hari	%s · ends in %d days
+Hadiah Akhir	Final Reward
+Kostum %s untuk %s, bingkai profil acara, dan +%d emas.	The %s outfit for %s, the event profile frame, and +%d gold.
+Ambil	Claim
+Kotak Surat	Mailbox
+%d surat · %d hadiah belum diambil	%d letters · %d gifts unclaimed
+Belum ada surat. Surat dari istana dan pengumuman pengembang akan muncul di sini.	No letters yet. Palace letters and developer announcements will appear here.
+Kostum hanya mengubah tampilan, bukan atribut.	Outfits only change appearance, not attributes.
+Sedang dipakai	Wearing
+Dimiliki	Owned
+%d emas	%d gold
+Hadiah akhir acara %s	Final reward of the %s event
+Penasihat ini belum direkrut.	This advisor has not been recruited yet.

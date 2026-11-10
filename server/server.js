@@ -90,6 +90,13 @@ function openDb(file) {
 		CREATE TABLE IF NOT EXISTS tourney_entries (
 			week INTEGER NOT NULL, player TEXT NOT NULL, power INTEGER NOT NULL, PRIMARY KEY (week, player));
 		CREATE TABLE IF NOT EXISTS tourney_results (week INTEGER PRIMARY KEY, bracket TEXT NOT NULL);
+		CREATE TABLE IF NOT EXISTS mail (
+			id INTEGER PRIMARY KEY AUTOINCREMENT, target TEXT NOT NULL, title TEXT NOT NULL, body TEXT NOT NULL,
+			reward TEXT NOT NULL, created INTEGER NOT NULL, expires INTEGER NOT NULL);
+		CREATE TABLE IF NOT EXISTS mail_claims (mail INTEGER NOT NULL, player TEXT NOT NULL, t INTEGER NOT NULL,
+			PRIMARY KEY (mail, player));
+		CREATE TABLE IF NOT EXISTS stats_reports (
+			install TEXT NOT NULL, day INTEGER NOT NULL, payload TEXT NOT NULL, PRIMARY KEY (install, day));
 		CREATE TABLE IF NOT EXISTS redemptions (
 			code TEXT NOT NULL, player TEXT NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (code, player));
 	`);
@@ -119,6 +126,25 @@ function cleanReward(raw) {
 		for (const id of CODE_ITEMS) if (raw.items[id] != null) out.items[id] = clampInt(raw.items[id], 0, 10);
 	}
 	return out;
+}
+
+// Statistik anonim: hanya angka dan nama kejadian yang dikenal, tanpa teks bebas.
+const STAT_EVENTS = /^[a-z_]{1,24}$/;
+function cleanStats(raw) {
+	const out = { version: String(raw.version || "").slice(0, 16), sessions: clampInt(raw.sessions, 0, 1e6),
+		play_seconds: clampInt(raw.play_seconds, 0, 1e9), days: clampInt(raw.days, 0, 1e5), stage: clampInt(raw.stage, 0, 1e6),
+		rank: clampInt(raw.rank, 0, 20), tutorial_done: !!raw.tutorial_done, language: String(raw.language || "").slice(0, 5),
+		events: {} };
+	if (raw.events && typeof raw.events === "object") {
+		for (const [k, v] of Object.entries(raw.events).slice(0, 100)) if (STAT_EVENTS.test(k)) out.events[k] = clampInt(v, 0, 1e9);
+	}
+	return out;
+}
+
+function addMail(db, target, title, body, reward, days, t = Date.now()) {
+	db.prepare("INSERT INTO mail (target, title, body, reward, created, expires) VALUES (?, ?, ?, ?, ?, ?)")
+		.run(target, String(title).slice(0, 60), String(body).slice(0, 500), JSON.stringify(cleanReward(reward)), t,
+			t + days * 86400000);
 }
 
 function clampInt(v, lo, hi) {
@@ -196,6 +222,11 @@ function createServer(opts = {}) {
 		tourneyMine: db.prepare("SELECT 1 AS x FROM tourney_entries WHERE week = ? AND player = ?"),
 		tourneyGet: db.prepare("SELECT bracket FROM tourney_results WHERE week = ?"),
 		tourneySave: db.prepare("INSERT OR IGNORE INTO tourney_results (week, bracket) VALUES (?, ?)"),
+		mailList: db.prepare(`SELECT m.*, (SELECT 1 FROM mail_claims c WHERE c.mail = m.id AND c.player = ?) AS claimed
+			FROM mail m WHERE (m.target = '*' OR m.target = ?) AND m.expires > ? ORDER BY m.id DESC LIMIT 30`),
+		mailGet: db.prepare("SELECT * FROM mail WHERE id = ?"),
+		mailClaim: db.prepare("INSERT OR IGNORE INTO mail_claims (mail, player, t) VALUES (?, ?, ?)"),
+		statsAdd: db.prepare("INSERT OR REPLACE INTO stats_reports (install, day, payload) VALUES (?, ?, ?)"),
 		codeGet: db.prepare("SELECT * FROM codes WHERE code = ?"),
 		codeUse: db.prepare("UPDATE codes SET uses = uses + 1 WHERE code = ?"),
 		redeemAdd: db.prepare("INSERT OR IGNORE INTO redemptions (code, player, t) VALUES (?, ?, ?)"),
@@ -570,6 +601,27 @@ function createServer(opts = {}) {
 			return [200, { registered: true, count: q.tourneyCount.get(weekOf(now())).n }];
 		},
 
+		// (auth) Kotak surat: surat untuk semua pemain ("*") atau untuk Tuan saja.
+		"GET /v1/mail": (me) => [200, { mail: q.mailList.all(me.id, me.id, now()).map((m) => ({ id: m.id, title: m.title,
+			body: m.body, reward: JSON.parse(m.reward), created: m.created, expires: m.expires, claimed: !!m.claimed })) }],
+
+		"POST /v1/mail/claim": (me, body) => {
+			const m = q.mailGet.get(clampInt(body.id, 0, Number.MAX_SAFE_INTEGER));
+			if (!m || (m.target !== "*" && m.target !== me.id) || m.expires <= now()) return [404, { error: "Surat tidak ditemukan." }];
+			if (q.mailClaim.run(m.id, me.id, now()).changes === 0) return [409, { error: "Hadiah surat ini sudah diambil." }];
+			return [200, { id: m.id, reward: cleanReward(JSON.parse(m.reward)) }];
+		},
+
+		// Statistik anonim (opt-in di game): satu laporan ringkas per pemasangan per hari.
+		// Tidak memakai token akun; "install" adalah ID acak terpisah dari akun.
+		"POST /v1/stats": (_me, body) => {
+			const install = String(body.install || "").replace(/[^0-9a-f]/gi, "").slice(0, 32);
+			if (install.length < 16) return [400, { error: "install tidak valid" }];
+			const clean = cleanStats(body);
+			q.statsAdd.run(install, dayOf(now()), JSON.stringify(clean));
+			return [200, { ok: true }];
+		},
+
 		// (auth) Tukar kode hadiah buatan pengelola (lihat server/admin.js).
 		"POST /v1/redeem": (me, body) => {
 			const code = String(body.code || "").toUpperCase().replace(/\s/g, "").slice(0, 32);
@@ -605,7 +657,8 @@ function createServer(opts = {}) {
 			}
 		}
 		let me = null;
-		const open = key === "GET /health" || key === "POST /v1/auth/device" || key === "GET /v1/alliances";
+		const open = key === "GET /health" || key === "POST /v1/auth/device" || key === "GET /v1/alliances"
+			|| key === "POST /v1/stats";
 		if (!open) {
 			const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
 			me = token ? q.byToken.get(token) : null;
@@ -632,7 +685,7 @@ function addCode(db, code, reward, maxUses, expires) {
 		.run(String(code).toUpperCase(), JSON.stringify(cleanReward(reward)), maxUses, expires);
 }
 
-module.exports = { createServer, openDb, addCode, cleanReward };
+module.exports = { createServer, openDb, addCode, cleanReward, addMail };
 
 if (require.main === module) {
 	const port = Number(process.env.PORT || 8080);

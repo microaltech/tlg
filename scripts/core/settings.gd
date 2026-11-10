@@ -13,6 +13,10 @@ var battery_saver := false  ## 30 FPS + mode prosesor rendah
 var notifications := true  ## pengingat lokal Android (charge penuh, rekrut gratis)
 var language := "auto"  ## "auto" (ikuti bahasa perangkat), "id", atau "en"
 var analytics := true  ## statistik bermain lokal (tidak dikirim ke mana pun)
+## Kirim ringkasan statistik anonim ke server pengembang (opt-in, default mati).
+var share_stats := false
+## ID acak pemasangan untuk statistik anonim (bukan ID akun; dibuat ulang saat statistik dihapus).
+var install_id := ""
 var battle_speed := 1  ## kecepatan tayangan perang: 1 atau 2
 var skip_battles := false  ## lewati tayangan perang, langsung tampilkan hasil
 var server_url := ""  ## alamat server sosial (kosong = mode offline)
@@ -34,6 +38,8 @@ func _ready() -> void:
 		battery_saver = bool(cfg.get_value("device", "battery_saver", false))
 		notifications = bool(cfg.get_value("device", "notifications", true))
 		analytics = bool(cfg.get_value("privacy", "analytics", true))
+		share_stats = bool(cfg.get_value("privacy", "share_stats", false))
+		install_id = str(cfg.get_value("privacy", "install_id", ""))
 		language = str(cfg.get_value("device", "language", "auto"))
 		battle_speed = 2 if int(cfg.get_value("battle", "speed", 1)) == 2 else 1
 		skip_battles = bool(cfg.get_value("battle", "skip", false))
@@ -59,6 +65,8 @@ func save() -> void:
 	cfg.set_value("device", "battery_saver", battery_saver)
 	cfg.set_value("device", "notifications", notifications)
 	cfg.set_value("privacy", "analytics", analytics)
+	cfg.set_value("privacy", "share_stats", share_stats)
+	cfg.set_value("privacy", "install_id", install_id)
 	cfg.set_value("device", "language", language)
 	cfg.set_value("battle", "speed", battle_speed)
 	cfg.set_value("battle", "skip", skip_battles)

@@ -37,6 +37,32 @@ DB_PATH=server/data/tlg.db node server/admin.js add-code NUSANTARA2026 gold=100 
 DB_PATH=server/data/tlg.db node server/admin.js list-codes
 ```
 
+### Kotak surat (pengumuman & kompensasi)
+
+```
+# untuk semua pemain, berlaku 14 hari
+DB_PATH=server/data/tlg.db node server/admin.js send-mail --to all --title "Maaf atas gangguan" \
+  --body "Server sempat mati. Terimalah kompensasi ini." gold=100 items.energy_tea=2 --days 14
+# untuk satu pemain (kode teman dari halaman Teman)
+DB_PATH=server/data/tlg.db node server/admin.js send-mail --to 1a2b3c4d --title "..." --body "..." silver=5000
+```
+
+Hadiah surat dibatasi sama seperti kode hadiah, dan tiap surat hanya bisa diambil
+sekali per pemain (dicek server).
+
+### Statistik anonim (opt-in)
+
+Pemain yang menyalakan *Bagikan statistik anonim* mengirim satu laporan ringkas per
+hari ke `POST /v1/stats` (tanpa token; ID pemasangan acak, hanya angka dan nama aksi
+bawaan). Ringkasan harian, retensi H1/H7, dan aksi terpopuler:
+
+```
+DB_PATH=server/data/tlg.db node server/admin.js stats 14
+```
+
+Statistik juga bisa diarahkan ke server tersendiri tanpa mode online dengan mengisi
+`application/config/stats_url` di `project.godot` sebelum build rilis.
+
 ### Endpoint
 
 | Metode | Jalur | Keterangan |
@@ -54,6 +80,8 @@ DB_PATH=server/data/tlg.db node server/admin.js list-codes
 | GET/POST | `/v1/guildwar`, `/v1/guildwar/attack` | Perang Wilayah Aliansi |
 | GET/POST | `/v1/worldboss`, `/v1/worldboss/attack` | Bos Dunia |
 | POST | `/v1/redeem` | Tukar kode hadiah |
+| GET/POST | `/v1/mail`, `/v1/mail/claim` | Kotak surat dari pengelola, ambil hadiah sekali |
+| POST | `/v1/stats` | Statistik anonim harian (tanpa token, opt-in di game) |
 | GET/POST | `/v1/tourney`, `/v1/tourney/join` | Turnamen silat online (daftar Senin–Sabtu, hasil Minggu) |
 
 ## Menjalankan

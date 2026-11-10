@@ -6,6 +6,7 @@ config_version=5
 
 config/name="Tuan Nusantara"
 config/version="0.1.0"
+config/stats_url=""
 config/description="Game idle strategi kerajaan bertema Nusantara."
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.3", "Mobile")
@@ -42,6 +43,7 @@ window/size/viewport_height=1280
 window/size/window_width_override=450
 window/size/window_height_override=800
 window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 window/handheld/orientation=1
 
 [internationalization]

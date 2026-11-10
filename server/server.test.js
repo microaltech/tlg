@@ -321,3 +321,45 @@ test("turnamen silat online: daftar, bagan, hasil", async () => {
 		assert.equal(next.data.last_wins, res.data.my_wins, "hasil minggu lalu untuk hadiah");
 	} finally { server.close(); }
 });
+
+test("kotak surat: semua pemain, pribadi, klaim sekali, kedaluwarsa", async () => {
+	const { server, call, tick } = await start();
+	const { addMail } = require("./server.js");
+	try {
+		const a = await login(call, "surat-a", "Arya");
+		const b = await login(call, "surat-b", "Bayu");
+		const t0 = 1_700_000_000_000;
+		addMail(server.db, "*", "Kompensasi", "Maaf atas gangguan server.", { gold: 5000, items: { star_stone: 1 } }, 7, t0);
+		addMail(server.db, a.player.id, "Untuk Arya", "Hadiah khusus.", { silver: 100 }, 1, t0);
+		const la = await call("GET", "/v1/mail", null, a.token);
+		assert.equal(la.data.mail.length, 2);
+		assert.equal(la.data.mail[1].reward.gold, 1000, "hadiah dibatasi");
+		const lb = await call("GET", "/v1/mail", null, b.token);
+		assert.equal(lb.data.mail.length, 1, "surat pribadi tidak terlihat pemain lain");
+		const id = lb.data.mail[0].id;
+		assert.equal((await call("POST", "/v1/mail/claim", { id }, b.token)).status, 200);
+		assert.equal((await call("POST", "/v1/mail/claim", { id }, b.token)).status, 409, "klaim sekali");
+		assert.equal((await call("GET", "/v1/mail", null, b.token)).data.mail[0].claimed, true);
+		const priv = la.data.mail[0].id;
+		assert.equal((await call("POST", "/v1/mail/claim", { id: priv }, b.token)).status, 404, "bukan suratnya");
+		tick(2 * 86400000);
+		assert.equal((await call("GET", "/v1/mail", null, a.token)).data.mail.length, 1, "surat kedaluwarsa hilang");
+	} finally { server.close(); }
+});
+
+test("statistik anonim: tanpa token, dibersihkan, satu per hari", async () => {
+	const { server, call } = await start();
+	try {
+		assert.equal((await call("POST", "/v1/stats", { install: "pendek" })).status, 400);
+		const body = { install: "abcdef0123456789abcd", version: "0.1.0", sessions: 5, play_seconds: 1200, stage: 12,
+			tutorial_done: true, events: { hunt: 3, "Bad Key!": 9, win: 12 }, email: "rahasia@contoh.id" };
+		assert.equal((await call("POST", "/v1/stats", body)).status, 200);
+		await call("POST", "/v1/stats", { ...body, sessions: 6 });
+		const rows = server.db.prepare("SELECT * FROM stats_reports").all();
+		assert.equal(rows.length, 1, "satu laporan per hari");
+		const p = JSON.parse(rows[0].payload);
+		assert.equal(p.sessions, 6);
+		assert.deepEqual(p.events, { hunt: 3, win: 12 }, "kejadian tak dikenal dibuang");
+		assert.equal(p.email, undefined, "kolom asing dibuang");
+	} finally { server.close(); }
+});

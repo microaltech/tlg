@@ -230,6 +230,7 @@ func _ready() -> void:
 			_realm_ui._load_guildwar()
 			_realm_ui._load_world_boss()
 			_realm_ui._load_tourney()
+			Online.fetch_mail()
 		_queue_rebuild())
 	Online.king_changed.connect(_queue_rebuild)
 	_display = [Settings.dark_mode, Settings.ui_scale]
@@ -511,6 +512,15 @@ func _build_nav() -> Control:
 	return wrap
 
 
+## Musik per halaman: kota, istana (istana & rekrut), perang (kampanye), petualangan (aliansi/arena).
+const PAGE_MUSIC := {"campaign": "battle", "palace": "palace", "gacha": "palace", "counselor": "palace"}
+
+
+func _play_page_music() -> void:
+	var place: String = _realm_ui.place_music() if _realm_ui else ""
+	Audio.play_music(place if place != "" else PAGE_MUSIC.get(_current, "city"))
+
+
 func _switch_page(key: String, animate := true) -> void:
 	Telemetry.mark("halaman: " + key)
 	_current = key
@@ -519,7 +529,7 @@ func _switch_page(key: String, animate := true) -> void:
 		_build_page_content(key)
 	if _tutorial:
 		_tutorial.on_page(key)
-	Audio.play_music({"campaign": "battle", "palace": "palace", "gacha": "palace"}.get(key, "city"))
+	_play_page_music()
 	for k in _pages:
 		var on: bool = k == key
 		_pages[k]["root"].visible = on
@@ -699,6 +709,7 @@ func _queue_rebuild() -> void:
 func _rebuild() -> void:
 	_rebuild_queued = false
 	model.memo_begin()
+	Art.skins = model.skin_portraits()
 	var scrolls := {}
 	for k in _pages:
 		scrolls[k] = _pages[k]["scroll"].scroll_vertical
@@ -1329,6 +1340,7 @@ func _play_battle(plan: Dictionary, info: Dictionary, on_done := Callable()) -> 
 	move_child(view, _toast.get_index())
 	Audio.play_music("battle")
 	view.finished.connect(func():
+		_play_page_music()
 		if on_done.is_valid():
 			on_done.call()
 		_queue_rebuild())
@@ -1342,6 +1354,7 @@ func _play_duel(plan: Dictionary, info: Dictionary, on_done := Callable()) -> vo
 	move_child(view, _toast.get_index())
 	Audio.play_music("battle")
 	view.finished.connect(func():
+		_play_page_music()
 		if on_done.is_valid():
 			on_done.call()
 		_queue_rebuild())
@@ -5289,6 +5302,8 @@ func tutorial_target(key: String) -> Control:
 			return _first_visit_button
 		"missions":
 			return _mission_hb["root"]
+		"mail":
+			return _realm_ui.mail_button if is_instance_valid(_realm_ui.mail_button) else null
 	return null
 
 
@@ -5476,11 +5491,16 @@ func _show_settings() -> void:
 		.add_theme_color_override("font_color", UI.INK)
 
 	_build_backup_section(box, close)
+	if Game.debug_enabled():
+		_build_debug_section(box)
 
 	var privacy := _inner_box(box)
 	_label(privacy, "Privasi & Laporan Masalah", "CardLabel").add_theme_font_override("font", UI.font_bold)
 	_setting_toggle(privacy, "Statistik bermain", "analytics",
 		"Jumlah sesi, lama bermain, dan aksi. Hanya disimpan di perangkat ini, tidak dikirim ke mana pun.")
+	_setting_toggle(privacy, "Bagikan statistik anonim", "share_stats",
+		"Sekali sehari kirim angka ringkas (sesi, menit, tahap, jabatan, jumlah aksi) dengan ID acak ke server pengembang"
+		+ " untuk memperbaiki game. Tanpa nama, akun, atau isi chat. Mati sejak awal.")
 	var st: Dictionary = Telemetry.stats
 	var events := 0
 	for k in st.get("events", {}):
@@ -5508,6 +5528,32 @@ func _show_settings() -> void:
 		close.call()
 		_show_settings.call_deferred()
 		return {"ok": true, "msg": "Statistik bermain dihapus."})
+
+
+## Mode uji cepat: hanya ada di build debug (APK uji), tidak pernah di build rilis Play Store.
+func _build_debug_section(box: VBoxContainer) -> void:
+	var dbg := _inner_box(box)
+	_label(dbg, "Uji Cepat (build debug)", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	var off := int(Game.time_offset)
+	var info := _label(dbg, tr("Jam game maju %d jam %d menit dari jam HP.") % [off / 3600, off / 60 % 60], "SmallLabel")
+	info.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	info.add_theme_color_override("font_color", UI.INK)
+	var rows := [
+		[["+10 Tahap", func(): return model.debug_skip_stages(10)],
+			["+Sumber Daya", func(): return model.debug_grant()]],
+		[["Maju 1 Jam", func():
+			Game.debug_advance(3600)
+			return {"ok": true, "msg": "Jam game maju 1 jam."}],
+			["Maju 1 Hari", func():
+			Game.debug_advance(86400)
+			return {"ok": true, "msg": "Jam game maju 1 hari."}]],
+	]
+	for r in rows:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		dbg.add_child(row)
+		for b in r:
+			_button(row, b[0], b[1]).size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 
 ## Cadangan save: kode yang bisa disalin/ditempel, dan Google Play Games bila tersedia.

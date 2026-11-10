@@ -383,6 +383,13 @@ func _realm5_session(now: float) -> void:
 				break
 	if m.ceremony_unlocked() and m.ceremony_cooldown_days(now) == 0:
 		m.hold_ceremony("sekaten", now)
+	# Batch 7: kotak surat dan acara sejarah bulanan.
+	for mail in m.realm["mail"]:
+		if not mail["claimed"] and not mail["reward"].is_empty():
+			m.claim_mail(mail["id"])
+	for i in m.month_event_def(now)["missions"].size():
+		m.claim_month_mission(i, now)
+	m.claim_month_final(now)
 	var qs: Array = m.quiz_today(now)
 	for i in qs.size():
 		if m.quiz_answered(i, now) < 0:

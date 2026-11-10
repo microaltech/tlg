@@ -10,11 +10,8 @@ Nama aplikasi: **Tuan Nusantara** (dipakai di `project.godot`, kedua preset eksp
 laporan masalah, dan cadangan Google Play Games). Sebelum rilis, cek di Play Store
 dan PDKI (pdki-indonesia.dgip.go.id) bahwa nama ini belum dipakai pihak lain.
 
-ID paket masih `com.microaltech.toplordlike`. ID paket tidak tampil sebagai nama
-aplikasi, tetapi terlihat di alamat halaman Play Store dan **tidak bisa diganti
-setelah rilis pertama**. Bila ingin menggantinya (mis. `com.microaltech.tuannusantara`),
-lakukan sebelum unggah pertama. Di HP penguji, aplikasi dengan ID baru terpasang
-sebagai aplikasi terpisah, jadi pindahkan progres dulu lewat Pengaturan → kode cadangan.
+ID paket: `com.microaltech.tuannusantara`. ID ini terlihat di alamat halaman Play Store
+dan **tidak bisa diganti setelah rilis pertama**.
 
 ## Bahasa Indonesia (utama)
 

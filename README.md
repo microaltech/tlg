@@ -392,7 +392,7 @@ godot --headless --path . --script res://tests/run_tests.gd
 ## Build Android (APK)
 
 Proyek sudah berisi preset ekspor **Android** (`export_presets.cfg`):
-package `com.microaltech.toplordlike`, arm64-v8a + armeabi-v7a, layar portrait
+package `com.microaltech.tuannusantara`, arm64-v8a + armeabi-v7a, layar portrait
 penuh (immersive). Progres otomatis tersimpan saat tombol Back ditekan atau
 aplikasi di-minimize.
 

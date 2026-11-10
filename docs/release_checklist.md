@@ -7,8 +7,8 @@
       kunci unggahan bisa diganti bila hilang.
 - [ ] Di Godot: **Project → Install Android Build Template** (dibutuhkan preset
       AAB dan plugin).
-- [ ] Ganti `package/unique_name` (`com.microaltech.toplordlike`) bila perlu.
-      Nama ini **tidak bisa diubah** setelah rilis pertama.
+- [ ] ID paket: `com.microaltech.tuannusantara` (`package/unique_name` di kedua preset).
+      ID ini **tidak bisa diubah** setelah rilis pertama.
 - [ ] Hosting `docs/privacy_policy.md` di URL publik, lalu isi nama pengembang,
       email, dan tanggal.
 - [ ] Buat produk IAP di Play Console dengan ID yang sama seperti `IAP_PRODUCTS`

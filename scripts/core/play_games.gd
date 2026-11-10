@@ -13,7 +13,7 @@ signal cloud_loaded(data: String)
 signal cloud_result(ok: bool, message: String)
 
 const SINGLETON := "GodotPlayGameServices"
-const SNAPSHOT_NAME := "toplordlike_save"
+const SNAPSHOT_NAME := "tuannusantara_save"
 
 ## "id_pencapaian:tingkat" -> ID Play Console. Kosong = tidak dilaporkan.
 const ACHIEVEMENT_IDS := {

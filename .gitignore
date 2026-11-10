@@ -7,3 +7,4 @@
 *.keystore
 *.jks
 /server/data/
+/plugins/tlg_notify_android/local.properties

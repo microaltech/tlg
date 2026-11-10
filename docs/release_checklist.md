@@ -53,6 +53,11 @@
        (dl.google.com) serta Maven Central untuk Gradle. Bila Maven Central
        membalas 429 (terlalu banyak permintaan), tunggu semenit lalu ulangi;
        unduhan yang sudah selesai tersimpan di cache Gradle.
+5b. [ ] Semua preset Android memakai Gradle build agar plugin TlgNotify (notifikasi,
+       bagikan, pemantau server) ikut. Bila Java plugin diubah, bangun ulang AAR
+       (lihat README, bagian Plugin Android TlgNotify).
+5c. [ ] Bila server dipakai: set `ADMIN_TOKEN`, `IAP_PACKAGE`, dan
+       `IAP_SERVICE_ACCOUNT` (lihat `server/README.md`).
 6. [ ] Uji APK rilis di minimal satu HP sungguhan
        (`tools/build_android.sh release`). Periksa: tutorial, gulir layar,
        pembelian di jalur Internal testing dengan akun penguji lisensi,

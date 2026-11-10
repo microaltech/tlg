@@ -200,3 +200,10 @@ Bot kini juga mengambil surat dan tugas acara bulanan (sekitar +210 emas dan
 beberapa item per bulan, ditambah 50 emas surat sambutan). Hasil seed 1: Menteri di
 hari ke-20, tahap di hari ke-30 adalah 79. Kostum hanya mengubah tampilan, jadi
 tidak memengaruhi kekuatan. Ambang jabatan tidak diubah.
+
+## Sejarah harian, dapur, pewaris, konten akhir
+
+Bot membaca sejarah harian, memasak sekali tiap berkah habis (rata-rata 2 adukan
+tepat), dan mengangkat pewaris. Hasil seed 1: Menteri di hari ke-20, tahap di hari
+ke-30 adalah 79 (tidak berubah). Bonus gelar Adipati ke atas (`RANK_PERKS`) baru
+terasa setelah hari ke-30 dan menjadi tujuan pemain lama bersama tiga bab akhir.

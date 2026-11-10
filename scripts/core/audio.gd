@@ -72,8 +72,14 @@ func play_music(track: String) -> void:
 	_music_tween.chain().tween_callback(old.stop)
 
 
+## Getar singkat (milidetik) untuk momen penting; bisa dimatikan di Pengaturan.
+const HAPTICS := {"win": 40, "promote": 120, "reveal_ssr": 160, "error": 25}
+
+
 ## Mainkan efek suara; pitch sedikit diacak supaya tidak monoton.
 func play(sound: String, pitch_jitter := 0.04) -> void:
+	if HAPTICS.has(sound) and Settings.vibration:
+		Input.vibrate_handheld(HAPTICS[sound])
 	if Settings.sfx_volume <= 0 or sound == "":
 		return
 	var s := _stream("sfx_" + sound)

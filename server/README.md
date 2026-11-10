@@ -63,6 +63,45 @@ DB_PATH=server/data/tlg.db node server/admin.js stats 14
 Statistik juga bisa diarahkan ke server tersendiri tanpa mode online dengan mengisi
 `application/config/stats_url` di `project.godot` sebelum build rilis.
 
+### Dasbor admin
+
+Set `ADMIN_TOKEN` (acak, panjang) saat menjalankan server, lalu buka
+`https://alamat-server/admin`. Isi token di pojok kanan atas. Dasbor menampilkan
+ringkasan pemain, statistik anonim & retensi, musim aliansi, form kirim surat dan
+buat kode hadiah, serta laporan chat (sembunyikan/tampilkan pesan). Tanpa
+`ADMIN_TOKEN` semua API admin menolak (403).
+
+```
+ADMIN_TOKEN=$(openssl rand -hex 24) node server/server.js
+```
+
+### Verifikasi pembelian Google Play
+
+1. Play Console → Setup → API access: hubungkan proyek Google Cloud, buat *service
+   account*, beri izin "View financial data" untuk aplikasi.
+2. Unduh kunci JSON service account ke server (jangan di-commit).
+3. Jalankan server dengan:
+   `IAP_PACKAGE=com.microaltech.tuannusantara IAP_SERVICE_ACCOUNT=/path/kunci.json`
+
+Game memanggil `POST /v1/iap/verify` sebelum memberi emas. Token pembelian dicatat
+sehingga tidak bisa dipakai dua akun. Tanpa konfigurasi server menjawab 503 dan game
+memakai cek di perangkat seperti sebelumnya.
+
+### Undang teman, musim aliansi, pasar pemain
+
+- **Undang teman**: pemain baru (≤7 hari) memasukkan kode teman pengundang. Saat
+  profilnya melaporkan tahap ≥10, keduanya mendapat 100 emas + 2 Tiket Rekrut lewat
+  surat (maks. 20 undangan berhadiah per pengundang).
+- **Musim aliansi**: 4 minggu. Poin = poin serangan Perang Wilayah + akar kerusakan
+  Bos Dunia. Anggota 3 aliansi teratas mengambil hadiah musim lalu sekali
+  (`frame_juara_musim` / `frame_musim`).
+- **Pasar pemain**: item dari daftar kode hadiah, maks. 10 per dagangan, harga ≤10 juta
+  perak, 5 dagangan per hari, pajak 10%. Hasil penjualan, dagangan yang ditarik, dan
+  yang tidak laku 3 hari dikirim lewat kotak surat. Item dipotong di perangkat penjual
+  saat memasang dagangan (anti-curang penuh butuh inventaris di server).
+- **Pemberitahuan**: `GET /v1/notices?since=` dipakai plugin Android saat game
+  ditutup (jumlah surat baru dan dagangan laku).
+
 ### Endpoint
 
 | Metode | Jalur | Keterangan |
@@ -82,6 +121,12 @@ Statistik juga bisa diarahkan ke server tersendiri tanpa mode online dengan meng
 | POST | `/v1/redeem` | Tukar kode hadiah |
 | GET/POST | `/v1/mail`, `/v1/mail/claim` | Kotak surat dari pengelola, ambil hadiah sekali |
 | POST | `/v1/stats` | Statistik anonim harian (tanpa token, opt-in di game) |
+| GET/POST | `/v1/referral` | Kode undangan sendiri / masukkan kode pengundang |
+| GET/POST | `/v1/season`, `/v1/season/claim` | Musim aliansi dan hadiahnya |
+| GET/POST | `/v1/market`, `/v1/market/sell`, `/v1/market/buy`, `/v1/market/cancel` | Pasar pemain |
+| GET | `/v1/notices?since=` | Ringkasan untuk notifikasi saat game ditutup |
+| POST | `/v1/iap/verify` | Verifikasi pembelian Google Play |
+| GET | `/admin`, `/admin/api/*` | Dasbor admin (header `X-Admin-Token`) |
 | GET/POST | `/v1/tourney`, `/v1/tourney/join` | Turnamen silat online (daftar Senin–Sabtu, hasil Minggu) |
 
 ## Menjalankan

@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dasbor Tuan Nusantara</title>
+<style>
+	:root { --bg: #f6efe1; --card: #fffaf0; --ink: #2b1d10; --muted: #7a6650; --gold: #b8862f; --red: #a33a2b;
+		--green: #2f6b45; --line: #e2d3b5; }
+	@media (prefers-color-scheme: dark) {
+		:root { --bg: #1b140e; --card: #261c13; --ink: #f2e6d0; --muted: #b8a588; --line: #3d2f20; }
+	}
+	* { box-sizing: border-box; }
+	body { margin: 0; font: 15px/1.45 system-ui, sans-serif; background: var(--bg); color: var(--ink); }
+	header { padding: 14px 16px; background: #5e1810; color: #f6e7b0; display: flex; gap: 12px; align-items: center;
+		flex-wrap: wrap; }
+	header h1 { font-size: 18px; margin: 0; flex: 1; }
+	header input { padding: 6px 8px; border-radius: 6px; border: 0; width: 200px; }
+	nav { display: flex; gap: 4px; padding: 8px 16px; overflow-x: auto; border-bottom: 1px solid var(--line); }
+	nav button { background: none; border: 0; padding: 8px 12px; border-radius: 6px; color: var(--ink); cursor: pointer;
+		white-space: nowrap; font: inherit; }
+	nav button.on { background: var(--gold); color: #fff; }
+	main { padding: 16px; max-width: 980px; margin: 0 auto; }
+	section { display: none; } section.on { display: block; }
+	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+	.tile { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+	.tile b { display: block; font-size: 26px; }
+	.tile span { color: var(--muted); font-size: 13px; }
+	table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 10px; overflow: hidden; }
+	th, td { padding: 7px 9px; border-bottom: 1px solid var(--line); text-align: left; font-size: 14px; }
+	th { color: var(--muted); font-weight: 600; }
+	td.n { text-align: right; font-variant-numeric: tabular-nums; }
+	.scroll { overflow-x: auto; }
+	form { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid;
+		gap: 10px; max-width: 560px; }
+	label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+	input, textarea, select { font: inherit; padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px;
+		background: var(--bg); color: var(--ink); width: 100%; }
+	.btn { background: var(--green); color: #fff; border: 0; border-radius: 6px; padding: 9px 14px; font: inherit;
+		cursor: pointer; justify-self: start; }
+	.btn.red { background: var(--red); }
+	#msg { position: fixed; bottom: 16px; left: 16px; right: 16px; max-width: 520px; margin: 0 auto; padding: 10px 14px;
+		border-radius: 8px; background: #2b1d10; color: #fff; display: none; }
+	h2 { font-size: 16px; margin: 18px 0 8px; }
+	.muted { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+	<h1>Dasbor Tuan Nusantara</h1>
+	<input id="token" type="password" placeholder="ADMIN_TOKEN" autocomplete="off">
+</header>
+<nav id="tabs">
+	<button data-tab="overview" class="on">Ringkasan</button>
+	<button data-tab="stats">Statistik</button>
+	<button data-tab="mail">Kirim Surat</button>
+	<button data-tab="codes">Kode Hadiah</button>
+	<button data-tab="reports">Laporan Chat</button>
+</nav>
+<main>
+	<section id="overview" class="on"><div class="grid" id="ov"></div><h2>Musim aliansi</h2><div id="season"></div></section>
+	<section id="stats">
+		<label style="max-width:160px">Rentang hari <input id="days" type="number" value="14" min="1" max="90"></label>
+		<div class="scroll"><table id="st"></table></div>
+		<p id="ret" class="muted"></p><h2>Aksi teratas</h2><p id="ev" class="muted"></p>
+	</section>
+	<section id="mail">
+		<form id="mailf">
+			<label>Untuk <input name="to" value="all" placeholder="all atau kode teman 8 huruf"></label>
+			<label>Judul <input name="title" maxlength="60" required></label>
+			<label>Isi <textarea name="body" rows="4" maxlength="500" required></textarea></label>
+			<label>Hadiah (mis. <code>gold=100 items.energy_tea=2</code>) <input name="reward"></label>
+			<label>Berlaku (hari) <input name="days" type="number" value="14" min="1" max="90"></label>
+			<button class="btn">Kirim surat</button>
+		</form>
+	</section>
+	<section id="codes">
+		<form id="codef">
+			<label>Kode <input name="code" required></label>
+			<label>Hadiah <input name="reward" placeholder="gold=100 items.recruit_ticket=1"></label>
+			<label>Kuota pemakaian <input name="max" type="number" value="1000"></label>
+			<label>Berlaku (hari) <input name="days" type="number" value="30"></label>
+			<button class="btn">Buat kode</button>
+		</form>
+		<h2>Daftar kode</h2><div class="scroll"><table id="cl"></table></div>
+	</section>
+	<section id="reports"><div class="scroll"><table id="rp"></table></div></section>
+</main>
+<div id="msg"></div>
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (v) => String(v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+try { $("#token").value = sessionStorage.getItem("adm") || ""; } catch (e) {}
+$("#token").addEventListener("change", () => { try { sessionStorage.setItem("adm", $("#token").value); } catch (e) {} load(); });
+function toast(t) { const m = $("#msg"); m.textContent = t; m.style.display = "block"; setTimeout(() => m.style.display = "none", 3500); }
+async function api(path, body) {
+	const res = await fetch(path, { method: body ? "POST" : "GET", headers: { "X-Admin-Token": $("#token").value,
+		"Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+	const data = await res.json().catch(() => ({}));
+	if (!res.ok) throw new Error(data.error || res.status);
+	return data;
+}
+function reward(text) {
+	const r = { items: {} };
+	for (const part of String(text || "").split(/\s+/).filter(Boolean)) {
+		const [k, v] = part.split("=");
+		if (k.startsWith("items.")) r.items[k.slice(6)] = Number(v); else r[k] = Number(v);
+	}
+	return r;
+}
+const rewardText = (r) => Object.entries(r).flatMap(([k, v]) => k === "items" ? Object.entries(v).map(([i, n]) => `${i}×${n}`) : [`${k} ${v}`]).join(", ");
+function table(el, head, rows) {
+	el.innerHTML = `<tr>${head.map((h) => `<th>${h}</th>`).join("")}</tr>` + rows.map((r) => `<tr>${r.join("")}</tr>`).join("");
+}
+const td = (v, n) => `<td${n ? ' class="n"' : ""}>${esc(v)}</td>`;
+async function load() {
+	try {
+		const ov = await api("/admin/api/overview");
+		$("#ov").innerHTML = [["Pemain", ov.players], ["Aktif 24 jam", ov.active_1d], ["Aktif 7 hari", ov.active_7d],
+			["Baru 7 hari", ov.new_7d], ["Laporan terbuka", ov.reports_open], ["Dagangan di pasar", ov.market_open],
+			["Pembelian terverifikasi", ov.iap_verified]].map(([k, v]) => `<div class="tile"><b>${esc(v)}</b><span>${k}</span></div>`).join("");
+		$("#season").innerHTML = `<p class="muted">Musim ${ov.season}: ` + ov.season_board.map((r) => `${esc(r.alliance)} ${esc(r.points)}`).join(" · ") + "</p>";
+		const st = await api("/admin/api/stats?days=" + Number($("#days").value || 14));
+		table($("#st"), ["Tanggal", "Aktif", "Baru", "Sesi", "Menit", "Median tahap", "Tutorial"],
+			st.days.map((d) => [td(d.date), td(d.active, 1), td(d.new, 1), td(d.sessions, 1), td(d.minutes, 1), td(d.median_stage, 1), td(d.tutorial + "%", 1)]));
+		$("#ret").textContent = `Retensi dari ${st.retention.cohort} pemasangan: H1 ${st.retention.d1}%, H7 ${st.retention.d7}%`;
+		$("#ev").textContent = st.events.map(([k, v]) => `${k} ${v}`).join(" · ") || "Belum ada data.";
+		const cl = await api("/admin/api/codes");
+		table($("#cl"), ["Kode", "Hadiah", "Dipakai", "Berakhir"], cl.codes.map((c) => [td(c.code), td(rewardText(c.reward)),
+			td(`${c.uses}/${c.max_uses}`, 1), td(new Date(c.expires).toISOString().slice(0, 10))]));
+		const rp = await api("/admin/api/reports");
+		table($("#rp"), ["Pemain", "Pesan", "Laporan", ""], rp.reports.map((r) => [td(r.name), td(r.text), td(r.n, 1),
+			`<td><button class="btn ${r.hidden ? "" : "red"}" data-hide="${r.id}" data-v="${r.hidden ? 0 : 1}">${r.hidden ? "Tampilkan" : "Sembunyikan"}</button></td>`]));
+	} catch (e) { toast("Gagal memuat: " + e.message); }
+}
+$("#tabs").addEventListener("click", (e) => {
+	const t = e.target.dataset.tab; if (!t) return;
+	document.querySelectorAll("nav button, section").forEach((n) => n.classList.toggle("on", n.dataset.tab === t || n.id === t));
+});
+$("#days").addEventListener("change", load);
+$("#rp").addEventListener("click", async (e) => {
+	const id = e.target.dataset.hide; if (!id) return;
+	try { await api("/admin/api/reports/hide", { id: Number(id), hidden: e.target.dataset.v === "1" }); load(); } catch (err) { toast(err.message); }
+});
+$("#mailf").addEventListener("submit", async (e) => {
+	e.preventDefault(); const f = new FormData(e.target);
+	try {
+		const r = await api("/admin/api/mail", { to: f.get("to"), title: f.get("title"), body: f.get("body"),
+			reward: reward(f.get("reward")), days: Number(f.get("days")) });
+		toast("Surat terkirim ke " + r.target); e.target.reset();
+	} catch (err) { toast(err.message); }
+});
+$("#codef").addEventListener("submit", async (e) => {
+	e.preventDefault(); const f = new FormData(e.target);
+	try {
+		const r = await api("/admin/api/codes", { code: f.get("code"), reward: reward(f.get("reward")),
+			max: Number(f.get("max")), days: Number(f.get("days")) });
+		toast("Kode " + r.code + " dibuat"); load();
+	} catch (err) { toast(err.message); }
+});
+if ($("#token").value) load();
+</script>
+</body>
+</html>

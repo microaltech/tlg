@@ -123,12 +123,44 @@ func _on_purchases_updated(purchases: Array) -> void:
 			continue  # tertunda (mis. bayar di minimarket): diproses saat statusnya berubah
 		var id: String = p["sku"] if p.has("sku") else (p.get("skus", [""])[0])
 		var token: String = p.get("purchase_token", "")
-		var r := _grant(id, token)
-		if not r["ok"] and not r.get("duplicate", false):
+		if Game.model.iap.get("processed", []).has(token):
+			_finish_purchase(id, token, p)  # sudah diberikan: cukup selesaikan di Google Play
 			continue
-		# Habiskan produk yang bisa dibeli ulang; produk sekali beli cukup di-acknowledge.
-		if Data.iap_def(id).get("type", "") == "once":
-			if not p.get("is_acknowledged", false):
-				_billing.acknowledgePurchase(token)
+		verify(id, token, func(result: String): _on_verified(result, id, token, p))
+
+
+func _on_verified(result: String, id: String, token: String, p: Dictionary) -> void:
+	if result == "valid":
+		var r := _grant(id, token)
+		if r["ok"] or r.get("duplicate", false):
+			_finish_purchase(id, token, p)
+	elif result == "invalid":
+		purchase_failed.emit("Pembelian tidak bisa diverifikasi Google Play. Hubungi pengembang bila saldo terpotong.")
+	else:
+		# Server/Google sedang tidak bisa dihubungi: jangan diselesaikan, coba lagi nanti
+		# (Google Play mengembalikan dana otomatis bila tidak di-acknowledge dalam 3 hari).
+		purchase_failed.emit("Pembelian sedang diverifikasi. Hadiah diberikan saat koneksi pulih.")
+
+
+## Cek pembelian di server (POST /v1/iap/verify). callback(result): "valid", "invalid", atau "retry".
+## Tanpa server, atau server tanpa kredensial Google (503), pembelian dianggap sah seperti sebelumnya.
+func verify(id: String, token: String, callback: Callable) -> void:
+	if not Online.is_online():
+		callback.call("valid")
+		return
+	Online.verify_purchase(id, token, func(code: int):
+		if code == 200 or code == 503 or code == 0:
+			callback.call("valid")
+		elif code == 402 or code == 409 or code == 400:
+			callback.call("invalid")
 		else:
-			_billing.consumePurchase(token)
+			callback.call("retry"))
+
+
+## Habiskan produk yang bisa dibeli ulang; produk sekali beli cukup di-acknowledge.
+func _finish_purchase(id: String, token: String, p: Dictionary) -> void:
+	if Data.iap_def(id).get("type", "") == "once":
+		if not p.get("is_acknowledged", false):
+			_billing.acknowledgePurchase(token)
+	else:
+		_billing.consumePurchase(token)

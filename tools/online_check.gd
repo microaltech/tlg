@@ -138,6 +138,26 @@ func _ready() -> void:
 	await get_tree().create_timer(0.5).timeout
 	check(Telemetry.stats.has("sent_day"), "statistik anonim dikirim setelah diizinkan")
 	Settings.share_stats = false
+	# Pasar pemain: beli dagangan "Lawan" (dipasang e2e.sh), lalu jual item sendiri.
+	Online.fetch_market(func(d): got["mk"] = d)
+	await get_tree().create_timer(0.5).timeout
+	var listings: Array = got.get("mk", {}).get("listings", [])
+	check(listings.size() == 1, "dagangan pemain lain terlihat")
+	if listings.size() == 1:
+		m.silver = maxi(m.silver, 1000)
+		var stones: int = m.item_count("star_stone")
+		Online.market_buy(listings[0], func(r): got["buy"] = r)
+		await get_tree().create_timer(0.5).timeout
+		check(got.get("buy", {}).get("ok", false) and m.item_count("star_stone") == stones + 1, "beli di pasar pemain")
+		Online.market_sell("star_stone", 1, 50, func(r): got["sell"] = r)
+		await get_tree().create_timer(0.5).timeout
+		check(got.get("sell", {}).get("ok", false) and m.item_count("star_stone") == stones, "jual di pasar pemain")
+	Online.fetch_season(func(d): got["season"] = d)
+	await get_tree().create_timer(0.5).timeout
+	check(got.get("season", {}).has("board"), "info musim aliansi")
+	Online.verify_purchase("gold_60", "token-uji-1234567", func(code): got["iap"] = code)
+	await get_tree().create_timer(0.5).timeout
+	check(int(got.get("iap", 0)) == 503, "verifikasi pembelian nonaktif tanpa kredensial (pakai cek perangkat)")
 	# Turnamen silat online (pendaftaran ditutup hari Minggu).
 	Online.fetch_tourney(func(d): got["tn"] = d)
 	await get_tree().create_timer(0.5).timeout

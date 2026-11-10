@@ -390,6 +390,14 @@ func _realm5_session(now: float) -> void:
 	for i in m.month_event_def(now)["missions"].size():
 		m.claim_month_mission(i, now)
 	m.claim_month_final(now)
+	# Batch 8: sejarah harian, dapur (rata-rata 2 adukan tepat), pewaris.
+	if m.history_claimable(now):
+		m.claim_history(now)
+	if m.kitchen_unlocked() and m.cooks_left(now) > 0 and m.meal_active(now).is_empty():
+		m.cook(["rendang", "sate_lilit", "soto"][m.rng.randi_range(0, 2)], m.rng.randi_range(1, 3), now)
+	for i in m.heir_candidates():
+		if m.make_heir(i)["ok"]:
+			break
 	var qs: Array = m.quiz_today(now)
 	for i in qs.size():
 		if m.quiz_answered(i, now) < 0:

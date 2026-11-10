@@ -152,6 +152,7 @@ var _memo_depth := 0
 
 func new_game(now: float) -> void:
 	_last_now = now
+	Data.heirs = {}
 	lord_name = ""
 	formation = "balanced"
 	festival = {}
@@ -2455,6 +2456,12 @@ func story_chapter_def() -> Dictionary:
 ## Nilai sekarang untuk jenis misi tertentu.
 func story_metric(type: String) -> int:
 	match type:
+		"heirs":
+			return realm.get("heirs", {}).size()
+		"cooked":
+			return int(counters.get("cook", 0))
+		"regions":
+			return rank_req_value("regions")
 		"stage":
 			return stage
 		"power":
@@ -4352,7 +4359,7 @@ func check_cosmetic_unlocks() -> Array:
 			ok = vip_level() >= int(u.substr(4))
 		elif u.begins_with("stage:"):
 			ok = stage >= int(u.substr(6))
-		elif u == "silat" or u == "king" or u == "wayang" or u == "month_event":
+		elif u == "silat" or u == "king" or u == "wayang" or u == "month_event" or u == "season":
 			ok = false  # hanya dari hadiah juara turnamen / Raja Hari Ini
 		if ok and unlock_cosmetic(id):
 			got.append(id)
@@ -4835,6 +4842,9 @@ func from_dict(d: Dictionary, now: float) -> void:
 	if not src_wheel.is_empty():
 		wheel = {"day": int(src_wheel.get("day", -1)), "free": bool(src_wheel.get("free", false)),
 			"tickets": maxi(0, int(src_wheel.get("tickets", 0))), "gold_spins": maxi(0, int(src_wheel.get("gold_spins", 0)))}
+	# Pewaris dipulihkan sebelum realm dan penasihat (keduanya memvalidasi id lewat Data.counselor_def).
+	var src_realm = d.get("realm", {})
+	Data.heirs = _parse_heirs(src_realm.get("heirs", {}) if src_realm is Dictionary else {})
 	_load_realm(d.get("realm", {}), now)
 	var src_codex: Dictionary = d.get("codex", {})
 	for id in src_codex.get("equip", []):
@@ -5229,6 +5239,11 @@ func _empty_realm(now: float) -> Dictionary:
 		"skins": {"owned": [], "worn": {}},
 		"mail": [],
 		"mail_claimed": [],
+		"history_day": -1,
+		"heirs": {},
+		"heir_seq": 0,
+		"kitchen": {"day": -1, "used": 0, "meal": {"id": "", "until": 0.0, "mult": 1.0}},
+		"season_claimed": [],
 	}
 
 
@@ -5331,6 +5346,8 @@ func kingdom_bonus(effect: String) -> float:
 		total += Data.DIPLO_ALLY_BONUS * realm.get("diplo", {}).get("ally", []).size()
 	total += pet_bonus(effect)
 	total += ceremony_bonus(effect, _last_now)
+	total += float(Data.RANK_PERKS.get(rank, {}).get(effect, 0.0))
+	total += meal_bonus(effect, _last_now)
 	return total
 
 
@@ -7061,6 +7078,7 @@ func _load_realm6(src: Dictionary) -> void:
 				realm["badges"]["earned"][str(int(season))] = ids
 	realm["tourney_claimed"] = int(src.get("tourney_claimed", -1))
 	_load_realm7(src)
+	_load_realm8(src)
 
 
 # --- Gelar kehormatan penasihat ---------------------------------------------------------
@@ -7510,6 +7528,8 @@ func wear_skin(counselor_id: String, id: String) -> Dictionary:
 ## Peta penasihat -> potret kostum yang dipakai (untuk Art).
 func skin_portraits() -> Dictionary:
 	var out := {}
+	for id in realm.get("heirs", {}):
+		out[id] = "heir_" + str(realm["heirs"][id].get("gender", "m"))
 	for c in realm.get("skins", {}).get("worn", {}):
 		out[c] = realm["skins"]["worn"][c]
 	return out
@@ -7584,3 +7604,216 @@ func debug_grant() -> Dictionary:
 			add_item(id, 10)
 	changed.emit()
 	return _ok("Sumber daya uji ditambahkan.")
+
+
+
+# --- Batch 8: sejarah harian, pewaris, dapur, musim aliansi, pasar pemain ----------------
+
+func _load_realm8(src: Dictionary) -> void:
+	realm["history_day"] = int(src.get("history_day", -1))
+	realm["heirs"] = Data.heirs.duplicate(true)
+	realm["heir_seq"] = maxi(int(src.get("heir_seq", 0)), realm["heirs"].size())
+	var k = src.get("kitchen", {})
+	if k is Dictionary:
+		var meal = k.get("meal", {})
+		var mid := str(meal.get("id", "")) if meal is Dictionary else ""
+		realm["kitchen"] = {"day": int(k.get("day", -1)), "used": clampi(int(k.get("used", 0)), 0, Data.KITCHEN_DAILY),
+			"meal": {"id": mid if Data.RECIPES.has(mid) else "", "until": float(meal.get("until", 0.0)) if mid != "" else 0.0,
+				"mult": clampf(float(meal.get("mult", 1.0)) if mid != "" else 1.0, 0.0, Data.KITCHEN_QUALITY[-1])}}
+	for v in src.get("season_claimed", []):
+		if not realm["season_claimed"].has(int(v)):
+			realm["season_claimed"].append(int(v))
+
+
+## Pewaris dari save: hanya id "heir_N" dengan atribut dalam batas wajar.
+func _parse_heirs(src) -> Dictionary:
+	var out := {}
+	if not (src is Dictionary):
+		return out
+	for id in src:
+		var h = src[id]
+		if not (h is Dictionary) or not str(id).begins_with("heir_") or out.size() >= Data.HEIR_MAX:
+			continue
+		var def := {"id": str(id), "name": str(h.get("name", "Pewaris")).left(24),
+			"rarity": "sr" if str(h.get("rarity", "r")) == "sr" else "r", "gender": "f" if str(h.get("gender", "m")) == "f" else "m",
+			"unlock_stage": -1, "heir": true}
+		for a in Data.ATTRS:
+			def[a] = clampi(int(h.get(a, 1)), 1, 20)
+		out[str(id)] = def
+	return out
+
+
+# Hari ini dalam sejarah ------------------------------------------------------------
+
+func history_key(now: float) -> String:
+	var d := Time.get_datetime_dict_from_unix_time(int(now + tz_bias))
+	return "%02d-%02d" % [int(d["month"]), int(d["day"])]
+
+
+## Peristiwa hari ini, atau yang terdekat sebelumnya: {date, year, text, exact}.
+func history_today(now: float) -> Dictionary:
+	var key := history_key(now)
+	var keys: Array = Data.HISTORY.keys()
+	keys.sort()
+	var pick: String = keys[-1]  # awal Januari tanpa catatan: pakai akhir Desember
+	for k in keys:
+		if k <= key:
+			pick = k
+	var e: Array = Data.HISTORY[pick]
+	return {"date": pick, "year": int(e[0]), "text": str(e[1]), "exact": pick == key}
+
+
+func history_claimable(now: float) -> bool:
+	return int(realm["history_day"]) != day_index(now)
+
+
+func claim_history(now: float) -> Dictionary:
+	if not history_claimable(now):
+		return _fail("Kisah hari ini sudah dibaca. Kembali besok untuk kisah berikutnya.")
+	realm["history_day"] = day_index(now)
+	var reward: Dictionary = Data.HISTORY_REWARD.duplicate()
+	reward["silver"] = int(affair_yield("silver") * Data.HISTORY_SILVER)
+	var text := _give_rewards(reward)
+	_track("history")
+	changed.emit()
+	return _ok("Pengetahuan bertambah: %s." % text)
+
+
+# Pewaris ---------------------------------------------------------------------------
+
+## Indeks anak dewasa yang bisa diangkat menjadi pewaris.
+func heir_candidates() -> Array:
+	var out := []
+	for i in children.size():
+		var c: Dictionary = children[i]
+		if int(c["level"]) >= Data.CHILD_MAX_LEVEL and int(c["talent"]) >= Data.HEIR_TALENT_MIN:
+			out.append(i)
+	return out
+
+
+func make_heir(index: int) -> Dictionary:
+	if not heir_candidates().has(index):
+		return _fail("Hanya anak dewasa berbakat %d ke atas yang bisa menjadi pewaris." % Data.HEIR_TALENT_MIN)
+	if realm["heirs"].size() >= Data.HEIR_MAX:
+		return _fail("Istana sudah punya %d pewaris." % Data.HEIR_MAX)
+	if gold < int(Data.HEIR_COST["gold"]):
+		return _fail("Emas tidak cukup (butuh %d)." % Data.HEIR_COST["gold"])
+	gold -= int(Data.HEIR_COST["gold"])
+	var child: Dictionary = children[index]
+	var talent := int(child["talent"])
+	realm["heir_seq"] = int(realm["heir_seq"]) + 1
+	var id := "heir_%d" % realm["heir_seq"]
+	var def := {"id": id, "name": str(child["name"]), "rarity": "sr" if talent >= 5 else "r",
+		"gender": str(child.get("gender", "m")), "unlock_stage": -1, "heir": true}
+	# Atribut: dasar dari bakat, ditambah bakat ibu pada atribut yang paling menonjol darinya.
+	for a in Data.ATTRS:
+		def[a] = 2 + talent * 2 + rng.randi_range(0, 3)
+	var fav: String = Data.ATTRS[hash(str(child.get("mother", ""))) % Data.ATTRS.size()]
+	def[fav] = int(def[fav]) + 3
+	realm["heirs"][id] = def
+	Data.heirs[id] = def
+	counselors[id] = {"level": 1, "stars": 0, "bonus": {}}
+	children.remove_at(index)
+	_track("heir")
+	changed.emit()
+	return _ok("%s diangkat menjadi pewaris dan kini bertugas sebagai penasihat!" % def["name"])
+
+
+# Dapur Nusantara -------------------------------------------------------------------
+
+func kitchen_unlocked() -> bool:
+	return stage >= Data.KITCHEN_UNLOCK_STAGE
+
+
+func cooks_left(now: float) -> int:
+	var k: Dictionary = realm["kitchen"]
+	return Data.KITCHEN_DAILY - (int(k["used"]) if int(k["day"]) == day_index(now) else 0)
+
+
+func recipe_cost(id: String) -> Dictionary:
+	return _yields_of(Data.RECIPES[id]["cost"])
+
+
+func meal_active(now: float) -> Dictionary:
+	var meal: Dictionary = realm.get("kitchen", {}).get("meal", {})
+	if str(meal.get("id", "")) == "" or float(meal.get("until", 0.0)) <= now:
+		return {}
+	return meal
+
+
+func meal_bonus(effect: String, now: float) -> float:
+	var meal := meal_active(now)
+	if meal.is_empty():
+		return 0.0
+	return float(Data.RECIPES[meal["id"]]["effects"].get(effect, 0.0)) * float(meal["mult"])
+
+
+## Masak hidangan. stars = jumlah adukan tepat di mini-game (0–3).
+func cook(id: String, stars: int, now: float) -> Dictionary:
+	if not kitchen_unlocked():
+		return _fail("Dapur terbuka di Tahap %d." % Data.KITCHEN_UNLOCK_STAGE)
+	if not Data.RECIPES.has(id):
+		return _fail("Resep tidak dikenal.")
+	if cooks_left(now) <= 0:
+		return _fail("Juru masak sudah lelah. Dapur buka lagi besok.")
+	var cost := recipe_cost(id)
+	for k in cost:
+		if int(get(k)) < int(cost[k]):
+			return _fail("Bahan tidak cukup (%s)." % Data.REWARD_NAMES.get(k, k))
+	for k in cost:
+		set(k, int(get(k)) - int(cost[k]))
+	var k: Dictionary = realm["kitchen"]
+	if int(k["day"]) != day_index(now):
+		k["day"] = day_index(now)
+		k["used"] = 0
+	k["used"] = int(k["used"]) + 1
+	stars = clampi(stars, 0, 3)
+	var mult: float = Data.KITCHEN_QUALITY[stars]
+	k["meal"] = {"id": id, "until": now + Data.KITCHEN_HOURS * 3600.0, "mult": mult}
+	_track("cook")
+	changed.emit()
+	var quality: String = ["Agak gosong", "Lumayan", "Lezat", "Sempurna!"][stars]
+	return _ok("%s: %s Berkah hidangan x%s selama %d jam." % [Data.RECIPES[id]["name"], quality, str(mult),
+		Data.KITCHEN_HOURS])
+
+
+# Musim aliansi (hadiah dicek server) --------------------------------------------------
+
+func claim_season_reward(season: int, season_rank: int, reward: Dictionary, frame: String) -> Dictionary:
+	if realm["season_claimed"].has(season):
+		return _fail("Hadiah musim ini sudah diambil.")
+	realm["season_claimed"].append(season)
+	var text := _give_rewards(_safe_reward(reward))
+	if Data.COSMETICS.has(frame):
+		unlock_cosmetic(frame)
+	_track("season")
+	changed.emit()
+	return _ok("Hadiah musim (peringkat %d): %s dan bingkai baru!" % [season_rank, text])
+
+
+# Pasar pemain (online) ----------------------------------------------------------------
+
+## Pisahkan item dari tas untuk dijual (dikembalikan bila server menolak).
+func market_reserve(item: String, qty: int) -> Dictionary:
+	if not Data.BAZAAR_ITEMS.has(item):
+		return _fail("Item ini tidak bisa dijual di pasar.")
+	if qty < 1 or item_count(item) < qty:
+		return _fail("Item di tas tidak cukup.")
+	add_item(item, -qty)
+	changed.emit()
+	return _ok("")
+
+
+func market_refund(item: String, qty: int) -> void:
+	add_item(item, qty)
+	changed.emit()
+
+
+func market_bought(item: String, qty: int, price: int) -> Dictionary:
+	if not Data.BAZAAR_ITEMS.has(item):
+		return _fail("Item tidak dikenal.")
+	silver = maxi(0, silver - price)
+	add_item(item, clampi(qty, 0, 10))
+	_track("bazaar")
+	changed.emit()
+	return _ok("Dibeli: %d %s." % [qty, Data.ITEMS[item]["name"]])

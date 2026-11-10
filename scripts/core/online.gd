@@ -53,6 +53,11 @@ func _ready() -> void:
 		connect_server.call_deferred()
 
 
+## Token sesi (dipakai pemantau server di plugin Android saat game ditutup).
+func token() -> String:
+	return _token
+
+
 func is_online() -> bool:
 	return status == Status.ONLINE
 
@@ -377,3 +382,83 @@ func claim_server_mail(id: String, callback: Callable) -> void:
 			callback.call({"ok": false, "msg": "Hadiah surat ini sudah diambil."})
 		else:
 			callback.call({"ok": false, "msg": str(data.get("error", "Tidak bisa terhubung ke server."))}))
+
+
+## Verifikasi pembelian Google Play di server. callback(http_code: int); 0 = tidak terhubung.
+func verify_purchase(product: String, token: String, callback: Callable) -> void:
+	_request(HTTPClient.METHOD_POST, "/v1/iap/verify", {"product": product, "token": token}, func(code: int, _d: Dictionary):
+		callback.call(code))
+
+
+# --- Undang teman --------------------------------------------------------------------
+
+func fetch_referral(callback: Callable) -> void:
+	_request(HTTPClient.METHOD_GET, "/v1/referral", {}, func(code: int, data: Dictionary):
+		callback.call(data if code == 200 else {}))
+
+
+## callback(ok: bool, message: String)
+func enter_referral(code_text: String, callback: Callable) -> void:
+	_request(HTTPClient.METHOD_POST, "/v1/referral", {"code": code_text}, func(code: int, data: Dictionary):
+		callback.call(code == 200, tr("Kode diterima! Hadiah untuk Tuan dan %s dikirim lewat Kotak Surat saat Tuan mencapai Tahap %d.")
+			% [str(data.get("inviter", "")), int(data.get("stage_needed", 10))] if code == 200
+			else str(data.get("error", "Tidak bisa terhubung ke server."))))
+
+
+# --- Musim aliansi -------------------------------------------------------------------
+
+func fetch_season(callback: Callable) -> void:
+	_request(HTTPClient.METHOD_GET, "/v1/season", {}, func(code: int, data: Dictionary):
+		callback.call(data if code == 200 else {}))
+
+
+## callback(result: Dictionary) — hadiah diberikan lewat GameModel.claim_season_reward.
+func claim_season(callback: Callable) -> void:
+	_request(HTTPClient.METHOD_POST, "/v1/season/claim", {}, func(code: int, data: Dictionary):
+		if code == 200 and data.get("reward") is Dictionary:
+			callback.call(Game.model.claim_season_reward(int(data.get("season", 0)), int(data.get("rank", 0)), data["reward"],
+				str(data.get("frame", ""))))
+		else:
+			callback.call({"ok": false, "msg": str(data.get("error", "Tidak bisa terhubung ke server."))}))
+
+
+# --- Pasar antar pemain ---------------------------------------------------------------
+
+func fetch_market(callback: Callable) -> void:
+	_request(HTTPClient.METHOD_GET, "/v1/market", {}, func(code: int, data: Dictionary):
+		callback.call(data if code == 200 else {}))
+
+
+## Item dipotong lebih dulu; bila server menolak, item dikembalikan. callback(result)
+func market_sell(item: String, qty: int, price: int, callback: Callable) -> void:
+	var r: Dictionary = Game.model.market_reserve(item, qty)
+	if not r["ok"]:
+		callback.call(r)
+		return
+	_request(HTTPClient.METHOD_POST, "/v1/market/sell", {"item": item, "qty": qty, "price": price},
+		func(code: int, data: Dictionary):
+			if code == 200:
+				Game.save_game()
+				callback.call({"ok": true, "msg": tr("Dagangan dipasang. Perak hasil penjualan dikirim lewat Kotak Surat.")})
+			else:
+				Game.model.market_refund(item, qty)
+				callback.call({"ok": false, "msg": str(data.get("error", "Tidak bisa terhubung ke server."))}))
+
+
+func market_buy(listing: Dictionary, callback: Callable) -> void:
+	var price := int(listing.get("price", 0))
+	if Game.model.silver < price:
+		callback.call({"ok": false, "msg": "Perak tidak cukup."})
+		return
+	_request(HTTPClient.METHOD_POST, "/v1/market/buy", {"id": int(listing.get("id", 0))}, func(code: int, data: Dictionary):
+		if code == 200:
+			callback.call(Game.model.market_bought(str(data.get("item", "")), int(data.get("qty", 0)), int(data.get("price", 0))))
+			Game.save_game()
+		else:
+			callback.call({"ok": false, "msg": str(data.get("error", "Tidak bisa terhubung ke server."))}))
+
+
+func market_cancel(id: int, callback: Callable) -> void:
+	_request(HTTPClient.METHOD_POST, "/v1/market/cancel", {"id": id}, func(code: int, data: Dictionary):
+		callback.call({"ok": code == 200, "msg": "Dagangan ditarik. Item dikembalikan lewat Kotak Surat." if code == 200
+			else str(data.get("error", "Tidak bisa terhubung ke server."))}))

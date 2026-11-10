@@ -634,12 +634,16 @@ function createServer(opts = {}) {
 		},
 	});
 
+	const open = new Set(["GET /health", "POST /v1/auth/device", "GET /v1/alliances", "POST /v1/stats"]);
+	require("./batch8.js").install({ db, routes, open, now, random, opts, h: { dayOf, weekOf, friendCode, addMail,
+		cleanReward, clampInt, addCode, statsSummary, ALLIANCES, CODE_ITEMS } });
+
 	const handler = async (req, res) => {
 		const url = new URL(req.url, "http://x");
 		const key = `${req.method} ${url.pathname}`;
-		const send = (code, data) => {
-			res.writeHead(code, { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" });
-			res.end(JSON.stringify(data));
+		const send = (code, data, type) => {
+			res.writeHead(code, { "Content-Type": type || "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" });
+			res.end(type ? data : JSON.stringify(data));
 		};
 		const route = routes[key];
 		if (!route) return send(404, { error: "Tidak ditemukan." });
@@ -657,17 +661,15 @@ function createServer(opts = {}) {
 			}
 		}
 		let me = null;
-		const open = key === "GET /health" || key === "POST /v1/auth/device" || key === "GET /v1/alliances"
-			|| key === "POST /v1/stats";
-		if (!open) {
+		if (!open.has(key)) {
 			const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
 			me = token ? q.byToken.get(token) : null;
 			if (!me) return send(401, { error: "Token tidak valid." });
 			q.seen.run(now(), me.id);
 		}
 		try {
-			const [code, data] = route(me, body, url.searchParams);
-			send(code, data);
+			const [code, data, type] = await route(me, body, url.searchParams, req);
+			send(code, data, type);
 		} catch (e) {
 			console.error(e);
 			send(500, { error: "Kesalahan server." });
@@ -685,7 +687,37 @@ function addCode(db, code, reward, maxUses, expires) {
 		.run(String(code).toUpperCase(), JSON.stringify(cleanReward(reward)), maxUses, expires);
 }
 
-module.exports = { createServer, openDb, addCode, cleanReward, addMail };
+// Ringkasan statistik anonim per hari, retensi H1/H7, dan aksi teratas (admin.js stats & dasbor).
+function statsSummary(db, days, nowMs = Date.now()) {
+	const today = Math.floor(nowMs / 86400000);
+	const rows = db.prepare("SELECT install, day, payload FROM stats_reports WHERE day > ?").all(today - days - 30);
+	const first = {};
+	for (const r of db.prepare("SELECT install, MIN(day) AS d FROM stats_reports GROUP BY install").all()) first[r.install] = r.d;
+	const byDay = {};
+	for (const r of rows) (byDay[r.day] ||= []).push({ install: r.install, ...JSON.parse(r.payload) });
+	const out = { days: [], retention: {}, events: [] };
+	for (let d = today - days + 1; d <= today; d++) {
+		const list = byDay[d] || [];
+		const stages = list.map((x) => x.stage).sort((a, b) => a - b);
+		const avg = (f) => (list.length ? list.reduce((s, x) => s + f(x), 0) / list.length : 0);
+		out.days.push({ date: new Date(d * 86400000).toISOString().slice(0, 10), active: list.length,
+			new: list.filter((x) => first[x.install] === d).length, sessions: +avg((x) => x.sessions).toFixed(1),
+			minutes: Math.round(avg((x) => x.play_seconds) / 60), median_stage: stages[Math.floor(stages.length / 2)] || 0,
+			tutorial: Math.round(avg((x) => (x.tutorial_done ? 1 : 0)) * 100) });
+	}
+	const cohort = Object.entries(first).filter(([, d]) => d > today - days && d <= today - 7);
+	const seen = new Set(rows.map((r) => `${r.install}:${r.day}`));
+	const ret = (k) => (cohort.length ? Math.round(cohort.filter(([i, d]) => seen.has(`${i}:${d + k}`)).length / cohort.length * 100) : 0);
+	out.retention = { cohort: cohort.length, d1: ret(1), d7: ret(7) };
+	const events = {};
+	for (const list of Object.values(byDay)) {
+		for (const x of list) for (const [k, v] of Object.entries(x.events || {})) events[k] = (events[k] || 0) + v;
+	}
+	out.events = Object.entries(events).sort((a, b) => b[1] - a[1]).slice(0, 15);
+	return out;
+}
+
+module.exports = { createServer, openDb, addCode, cleanReward, addMail, statsSummary };
 
 if (require.main === module) {
 	const port = Number(process.env.PORT || 8080);

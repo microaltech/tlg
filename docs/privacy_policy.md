@@ -55,7 +55,14 @@ tahap kampanye, rekor menara, prestise, ringkasan kota (jabatan, level bangunan,
 jumlah penasihat, wilayah, kapal, dan besan), pesan chat aliansi, daftar teman dan
 hadiah yang dikirim, titah bila Anda menjadi Raja Hari Ini, serangan Perang
 Wilayah dan Bos Dunia, kode hadiah yang Anda tukar, surat yang hadiahnya Anda ambil
-dari Kotak Surat, serta hasil arena online. Data ini dipakai untuk papan peringkat, chat,
+dari Kotak Surat, kode undangan yang Anda masukkan, dagangan dan pembelian di Pasar
+Pemain (nama Tuan tampil di dagangan), poin musim aliansi, token pembelian Google
+Play untuk verifikasi, serta hasil arena online. Saat game ditutup, aplikasi
+memeriksa server sekitar 4 jam sekali untuk memberi tahu surat baru atau dagangan
+yang laku (mati bila notifikasi dimatikan atau mode online tidak dipakai).
+
+**Bagikan.** Tombol Bagikan membuat gambar kartu di perangkat lalu membuka menu
+bagikan Android. Gambar hanya terkirim ke aplikasi yang Anda pilih sendiri. Data ini dipakai untuk papan peringkat, chat,
 arena, teman, kunjungan kota, Raja Hari Ini, dan Perang Wilayah bersama pemain lain,
 dan dapat dilihat pemain lain (nama, kostum, kekuatan, ringkasan kota, pesan chat). Server
 dikelola oleh [NAMA PENGEMBANG]; data disimpan selama akun aktif dan dapat dihapus

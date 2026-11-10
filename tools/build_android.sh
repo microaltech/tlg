@@ -2,9 +2,12 @@
 # Build APK Android dari command line.
 #
 #   GODOT=/path/ke/godot tools/build_android.sh          # APK debug (untuk tes di HP)
+#   GODOT=/path/ke/godot tools/build_android.sh arm64    # APK debug kecil, hanya HP 64-bit (hampir semua HP sejak 2017)
 #   GODOT=/path/ke/godot tools/build_android.sh release  # APK release
 #   GODOT=/path/ke/godot tools/build_android.sh aab      # AAB untuk Google Play (butuh Gradle build)
 #
+# Semua preset memakai Gradle build (plugin TlgNotify: notifikasi, bagikan, pemantau server),
+# jadi jalankan Project > Install Android Build Template sekali. Butuh JDK 17.
 # Path Android SDK, JDK, dan debug keystore diatur sekali di Godot:
 # Editor > Editor Settings > Export > Android.
 # Untuk release/aab, buat keystore sekali dengan tools/make_keystore.sh, lalu isi
@@ -35,6 +38,8 @@ if [[ "$MODE" == "aab" ]]; then
 	"$GODOT" --headless --path . --export-release "Android AAB (Play Store)" build/tuan-nusantara.aab
 	ls -lh build/*.aab
 	exit 0
+elif [[ "$MODE" == "arm64" ]]; then
+	"$GODOT" --headless --path . --export-debug "Android arm64" build/tuan-nusantara-arm64.apk
 elif [[ "$MODE" == "release" ]]; then
 	"$GODOT" --headless --path . --export-release "Android" build/tuan-nusantara.apk
 else

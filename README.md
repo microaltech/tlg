@@ -570,6 +570,47 @@ Catatan penting:
 - **Layar tablet/tinggi**: `window/stretch/aspect="expand"` sehingga layar 20:9 dan
   tablet terisi penuh tanpa pita hitam.
 
+## Fitur batch 8
+
+- **Bagikan** (`scripts/ui/share_card.gd`): kartu gambar 1080×1080 saat naik jabatan,
+  dapat penasihat Legenda, dari Profil, dan undangan teman; dibuka di menu bagikan
+  Android lewat plugin TlgNotify (FileProvider). Tanpa plugin gambar disimpan dan
+  teks ajakan disalin.
+- **Undang teman**: kode undangan = kode teman; hadiah lewat Kotak Surat untuk
+  keduanya saat yang diundang mencapai Tahap 10 (dicek server).
+- **Hari Ini dalam Sejarah** (`HISTORY`): 63 peristiwa sejarah Nusantara; hari tanpa
+  catatan memakai peristiwa terdekat sebelumnya. Hadiah kecil sekali sehari.
+- **Konten akhir**: tiga bab cerita baru (Adipati, Sultan, Maharaja), panglima
+  bernama tiap 10 tahap mulai tahap 80, bonus permanen gelar (`RANK_PERKS`), gelar
+  kehormatan Pemersatu Nusantara.
+- **Pewaris**: anak dewasa berbakat ≥3 diangkat menjadi penasihat junior (`heir_N`,
+  `Data.heirs`), potret `heir_m`/`heir_f`.
+- **Dapur Nusantara**: lima hidangan daerah, mini-game aduk (`cook_view.gd`), berkah
+  4 jam sesuai ketepatan adukan, 3 kali sehari.
+- **Musim Aliansi** dan **Pasar Pemain** (online): lihat `server/README.md`.
+- **Notifikasi dari server tanpa Firebase**: plugin memeriksa `GET /v1/notices`
+  tiap 4 jam saat game ditutup (surat baru, dagangan laku).
+- **Aksesibilitas**: ukuran tampilan Ekstra (125%), mode ramah buta warna
+  (merah/hijau → oranye/biru), getar yang bisa dimatikan.
+- **Langit kota** (`sky_layer.gd`): fajar, senja, malam berbintang, dan hujan di musim
+  penghujan.
+- **APK lebih kecil**: `tools/build_android.sh arm64` (hanya HP 64-bit) dengan library
+  terkompresi; AAB Play Store otomatis dipecah per arsitektur.
+- **Dasbor admin web** dan **verifikasi pembelian Google Play** di server.
+
+### Plugin Android TlgNotify
+
+Sumber di `plugins/tlg_notify_android` (notifikasi lokal, pemantau server, bagikan
+gambar). AAR hasil build disimpan di `addons/tlg_notify/bin/` dan ikut di semua preset
+(semuanya memakai Gradle build). Membangun ulang setelah mengubah Java:
+
+```
+cd plugins/tlg_notify_android
+echo "sdk.dir=/path/ke/android-sdk" > local.properties
+JAVA_HOME=/path/ke/jdk17 gradle assembleRelease
+cp build/outputs/aar/tlg_notify-release.aar ../../addons/tlg_notify/bin/
+```
+
 ## Alat tambahan
 
 - `tools/perf_check.gd` — ukur waktu bangun halaman (lihat `docs/performance.md`).

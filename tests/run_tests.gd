@@ -33,7 +33,7 @@ func _init() -> void:
 		"test_troops", "test_seasons", "test_diplomacy", "test_spies", "test_rebellion", "test_race", "test_quiz",
 		"test_candi", "test_forge", "test_pets", "test_comeback", "test_gift_codes", "test_world_boss", "test_realm5_save",
 		"test_intro_update", "test_collect_daily", "test_counselor_titles", "test_wayang", "test_ceremony", "test_badges",
-		"test_tourney_reward", "test_realm6_save", "test_month_event", "test_skins", "test_mail", "test_realm7_save",
+		"test_tourney_reward", "test_realm6_save", "test_month_event", "test_skins", "test_mail", "test_realm7_save", "test_history", "test_endgame", "test_heirs", "test_kitchen", "test_season_market", "test_realm8_save", "test_share_card",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -1285,7 +1285,7 @@ func test_story() -> void:
 		for q in ch["quests"]:
 			check(m.story_metric(q["type"]) >= 0 and q["type"] in ["stage", "power", "rank", "counselors", "max_level",
 				"prestige", "children_total", "intimacy", "alliance", "arena_wins", "officials", "stars_total",
-				"tower", "equipment", "equip_level"],
+				"tower", "equipment", "equip_level", "heirs", "cooked", "regions"],
 				"jenis misi dikenal: %s" % q["type"])
 	var m2 := Model.new()
 	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
@@ -1560,7 +1560,9 @@ func test_honor() -> void:
 	m.story["chapter"] = 7
 	check(m.honor_title()["name"] == "Patih" and m.affair_yield("silver") > base, "Patih menambah hasil urusan")
 	m.story["chapter"] = 8
-	check(m.honor_title()["name"] == "Mahapatih" and m.story_done(), "Mahapatih di akhir kisah")
+	check(m.honor_title()["name"] == "Mahapatih" and not m.story_done(), "Mahapatih setelah bab 8")
+	m.story["chapter"] = Data.STORY_CHAPTERS.size()
+	check(m.honor_title()["name"] == "Pemersatu Nusantara" and m.story_done(), "Pemersatu Nusantara di akhir kisah")
 	m.story["chapter"] = 6
 	m.story["claimed"] = []
 	check(m.story_chapter_def()["title"] == "Patih Negeri", "bab 7 setelah Perdana Menteri")
@@ -3207,3 +3209,150 @@ func test_realm7_save() -> void:
 		"kostum divalidasi")
 	check(m2.realm["mail"].size() == 1 and int(m2.realm["mail"][0]["reward"].get("gold", 0)) <= 1000, "surat divalidasi")
 	check(m2.realm["month_event"]["done"].size() <= m2.month_event_def(t)["missions"].size(), "acara divalidasi")
+
+
+func test_history() -> void:
+	var m := fresh()
+	var t := 1_794_268_800.0  # 10 November 2026 (UTC)
+	m.tz_bias = 0
+	var h := m.history_today(t)
+	check(h["exact"] and h["date"] == "11-10" and h["year"] == 1945, "sejarah hari ini (Hari Pahlawan)")
+	var h2 := m.history_today(t + 86400.0 * 3)
+	check(not h2["exact"] and h2["date"] == "11-11", "hari tanpa catatan memakai peristiwa terdekat sebelumnya")
+	var jan := m.history_today(1_767_225_600.0 + 3600)  # 1 Januari 2026
+	check(jan["date"] == "12-31", "awal Januari memakai akhir Desember")
+	var gold := m.gold
+	check(m.claim_history(t)["ok"] and m.gold == gold + 5, "hadiah membaca sejarah")
+	check(not m.claim_history(t)["ok"] and not m.history_claimable(t), "sekali sehari")
+	check(m.history_claimable(t + 86400.0), "besok bisa lagi")
+	for k in Data.HISTORY:
+		var parts: PackedStringArray = str(k).split("-")
+		check(parts.size() == 2 and int(parts[0]) >= 1 and int(parts[0]) <= 12 and int(parts[1]) >= 1 and int(parts[1]) <= 31,
+			"tanggal sejarah valid %s" % k)
+
+
+func test_endgame() -> void:
+	var m := fresh()
+	var normal := Data.stage_info(78)
+	var boss := Data.stage_info(79)
+	check(not normal.has("boss") and boss.has("boss") and boss["enemy_name"] == Data.ENDGAME_BOSSES[0], "panglima tahap 80")
+	check(Data.stage_info(89)["enemy_name"] == Data.ENDGAME_BOSSES[1] and not Data.stage_info(84).has("boss"), "panglima tiap 10 tahap")
+	check(boss["reward_gold"] > normal["reward_gold"] + Data.ENDGAME_BOSS_GOLD - 10, "panglima memberi emas lebih")
+	var base := m.affair_yield("silver")
+	var power := m.combat_power()
+	m.rank = 6
+	m.memo_begin()
+	m.memo_end()
+	check(m.kingdom_bonus("yield_all") >= 0.1 - 0.0001, "bonus Adipati")
+	m.rank = 8
+	check(is_equal_approx(float(Data.RANK_PERKS[8]["combat"]), 0.2) and m.kingdom_bonus("combat") >= 0.2 - 0.0001, "bonus Maharaja")
+	check(m.affair_yield("silver") > base or base == 0, "hasil naik dengan gelar")
+	check(m.combat_power() >= power, "kekuatan naik dengan gelar")
+	check(Data.STORY_CHAPTERS.size() == 11, "tiga bab akhir")
+
+
+func test_heirs() -> void:
+	var m := _realm_model()
+	check(m.heir_candidates().is_empty(), "belum ada calon pewaris")
+	m.children.append({"name": "Raden Panji", "gender": "m", "mother": "melati", "talent": 2, "level": Data.CHILD_MAX_LEVEL})
+	m.children.append({"name": "Dyah Ayu", "gender": "f", "mother": "melati", "talent": 5, "level": Data.CHILD_MAX_LEVEL})
+	m.children.append({"name": "Kecil", "gender": "m", "mother": "melati", "talent": 5, "level": 3})
+	check(m.heir_candidates() == [1], "hanya anak dewasa berbakat")
+	check(not m.make_heir(0)["ok"], "bakat rendah ditolak")
+	var gold := m.gold
+	var r := m.make_heir(1)
+	check(r["ok"] and m.gold == gold - 100 and m.children.size() == 2, "angkat pewaris")
+	var id: String = m.realm["heirs"].keys()[0]
+	check(m.counselors.has(id) and Data.counselor_def(id)["name"] == "Dyah Ayu" and Data.counselor_def(id)["rarity"] == "sr",
+		"pewaris menjadi penasihat")
+	check(m.attr(id, "str") > 0 and m.combat_power() > 0, "atribut pewaris dihitung")
+	check(m.skin_portraits()[id] == "heir_f", "potret pewaris")
+	check(m.upgrade(id)["ok"] if m.has_method("upgrade") else true, "pewaris bisa dilatih")
+	check(m.story_metric("heirs") == 1, "misi pewaris")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 1000.0)
+	check(m2.counselors.has(id) and m2.realm["heirs"].has(id) and Data.counselor_def(id)["name"] == "Dyah Ayu",
+		"pewaris tersimpan")
+	var bad := m.to_dict()
+	bad["realm"]["heirs"] = {"arya": {"name": "Palsu"}, id: {"name": "Dyah", "str": 9999, "rarity": "ssr"}}
+	m2.from_dict(bad, 1000.0)
+	check(Data.counselor_def(id)["str"] == 20 and Data.counselor_def(id)["rarity"] == "r" and Data.counselor_def("arya")["name"] != "Palsu",
+		"pewaris divalidasi")
+	fresh()
+	check(Data.counselor_def(id).is_empty(), "game baru membersihkan pewaris")
+
+
+func test_kitchen() -> void:
+	var m := _realm_model()
+	var t := 1000.0
+	m.stage = 0
+	check(not m.cook("rendang", 3, t)["ok"], "dapur terkunci")
+	m.stage = Data.KITCHEN_UNLOCK_STAGE
+	var base := m.kingdom_bonus("combat")
+	var grain := m.grain
+	check(m.cook("rendang", 3, t)["ok"] and m.grain < grain, "masak rendang")
+	m.sync(t)
+	check(is_equal_approx(m.kingdom_bonus("combat") - base, 0.08 * 1.25), "berkah sempurna x1.25")
+	check(m.cook("gudeg", 0, t)["ok"] and m.meal_active(t)["id"] == "gudeg", "masakan baru mengganti berkah")
+	check(is_equal_approx(m.meal_bonus("yield_grain", t), 0.15 * 0.5), "berkah gosong x0.5")
+	check(m.cook("soto", 2, t)["ok"] and m.cooks_left(t) == 0, "tiga kali sehari")
+	check(not m.cook("soto", 2, t)["ok"], "dapur tutup")
+	check(m.meal_active(t + Data.KITCHEN_HOURS * 3600.0 + 1).is_empty(), "berkah habis")
+	check(m.cooks_left(t + 86400.0) == Data.KITCHEN_DAILY, "besok buka lagi")
+	check(m.story_metric("cooked") == 3, "misi memasak")
+	m.grain = 0
+	check(not m.cook("rendang", 3, t + 86400.0)["ok"], "bahan kurang")
+	# Mini-game: 3 adukan, tepat di zona emas dihitung.
+	var v = load("res://scripts/ui/cook_view.gd").new()
+	v.recipe = "rendang"
+	v._pos = 0.5
+	v._stir()
+	v._pos = 0.05
+	v._stir()
+	check(v._hits == 1 and v._stirs == 2 and v.ZONE[0] < 0.5 and v.ZONE[1] > 0.5, "adukan tepat dihitung di zona emas")
+	v.free()
+
+
+func test_season_market() -> void:
+	var m := _realm_model()
+	var gold := m.gold
+	var r := m.claim_season_reward(5, 1, {"gold": 300, "items": {"star_stone": 2}}, "frame_juara_musim")
+	check(r["ok"] and m.gold == gold + 300 and m.cosmetics["owned"].has("frame_juara_musim"), "hadiah musim + bingkai")
+	check(not m.claim_season_reward(5, 1, {"gold": 300}, "frame_juara_musim")["ok"], "hadiah musim sekali")
+	m.add_item("star_stone", 3)
+	var n := m.item_count("star_stone")
+	check(not m.market_reserve("palsu", 1)["ok"] and not m.market_reserve("star_stone", n + 1)["ok"], "jual item tidak sah ditolak")
+	check(m.market_reserve("star_stone", 2)["ok"] and m.item_count("star_stone") == n - 2, "item disisihkan untuk dijual")
+	m.market_refund("star_stone", 2)
+	check(m.item_count("star_stone") == n, "item kembali bila gagal")
+	var silver := m.silver
+	check(m.market_bought("energy_tea", 2, 500)["ok"] and m.silver == silver - 500, "beli di pasar")
+	for id in Data.BAZAAR_ITEMS:
+		check(Data.ITEMS.has(id), "item pasar dikenal: %s" % id)
+
+
+func test_realm8_save() -> void:
+	var m := _realm_model()
+	var t := 1_794_268_800.0
+	m.sync(t)
+	m.stage = 20
+	m.claim_history(t)
+	m.cook("papeda", 2, t)
+	m.claim_season_reward(3, 2, {"gold": 10}, "frame_musim")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
+	m2.sync(t)
+	check(var_to_str(m2.to_dict()["realm"]) == var_to_str(m.to_dict()["realm"]), "simpan/muat batch 8 identik")
+	var bad := m.to_dict()
+	bad["realm"]["kitchen"] = {"day": 1, "used": 99, "meal": {"id": "racun", "until": 9e12, "mult": 50}}
+	m2.from_dict(bad, t)
+	check(m2.realm["kitchen"]["used"] == Data.KITCHEN_DAILY and m2.meal_active(t).is_empty(), "dapur divalidasi")
+
+
+func test_share_card() -> void:
+	var c: Control = load("res://scripts/ui/share_card.gd").build({"headline": "NAIK JABATAN!", "title": "Adipati",
+		"portrait": "lord", "lines": ["Tuan Wira"]}, "AB12CD34")
+	check(c.size == Vector2(1080, 1080) and c.get_child_count() >= 4, "kartu bagikan dibuat")
+	c.free()
+	var sky = load("res://scripts/ui/sky_layer.gd")
+	check(sky.tint(22.0).a > 0.4 and sky.tint(12.0).a == 0.0 and sky.tint(18.0).a > 0.1, "langit malam, siang, senja")

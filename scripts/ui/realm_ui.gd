@@ -10,6 +10,7 @@ const Art := preload("res://scripts/ui/art.gd")
 const UI := preload("res://scripts/ui/ui_theme.gd")
 const HuntView := preload("res://scripts/ui/hunt_view.gd")
 const RaceView := preload("res://scripts/ui/race_view.gd")
+const CookView := preload("res://scripts/ui/cook_view.gd")
 
 var ui  ## main.gd
 var model
@@ -29,6 +30,13 @@ var _code_edit: LineEdit
 var _hub_tab := "ekonomi"
 var _tourney := {}
 var mail_button: Button  ## disorot tutorial
+var _season := {}
+var _bazaar := {}
+var _referral := {}
+var _ref_edit: LineEdit
+var _sell_item := ""
+var _sell_qty := 1
+var _sell_price_edit: LineEdit
 
 ## Musik khas tempat: panel ini memutar lagunya sendiri, lalu kembali ke musik halaman saat ditutup.
 const PLACE_MUSIC := {"hunt": "adventure", "race": "adventure", "candi": "adventure", "quiz": "palace",
@@ -107,6 +115,7 @@ func _result(r) -> void:
 
 func build_city_cards(box: VBoxContainer) -> void:
 	_king_banner(box)
+	_history_card(box)
 	_comeback_card(box)
 	_rebellion_banner(box)
 	_threat_banner(box)
@@ -302,6 +311,16 @@ func _hub_tiles(now: float) -> Dictionary:
 			"badge": 1 if model.ceremony_unlocked() and model.ceremony_cooldown_days(now) == 0 else 0, "fn": show_ceremony},
 		"badges": {"name": "Lencana", "icon": "badge", "open": model.stage >= 3, "stage": 3, "badge": 0, "fn": show_badges},
 		"wardrobe": {"name": "Lemari Busana", "icon": "wardrobe", "open": true, "badge": 0, "fn": show_wardrobe},
+		"kitchen": {"name": "Dapur", "icon": "kitchen", "open": model.kitchen_unlocked(), "stage": Data.KITCHEN_UNLOCK_STAGE,
+			"badge": model.cooks_left(now) if model.kitchen_unlocked() and model.meal_active(now).is_empty() else 0,
+			"fn": show_kitchen},
+		"heirs": {"name": "Pewaris", "icon": "heir", "open": not model.children.is_empty() or not model.realm["heirs"].is_empty(),
+			"badge": model.heir_candidates().size() if model.realm["heirs"].size() < Data.HEIR_MAX else 0, "fn": show_heirs},
+		"season": {"name": "Musim Aliansi", "icon": "season", "open": has_server and not model.alliance.is_empty(),
+			"badge": 1 if online and _season.get("last_reward") != null and not _season.get("last_claimed", true) else 0,
+			"fn": show_season},
+		"bazaar": {"name": "Pasar Pemain", "icon": "bazaar", "open": has_server and model.stage >= 10, "stage": 10,
+			"badge": 0, "fn": show_bazaar},
 	}
 
 
@@ -885,6 +904,7 @@ func _fill_friends(box: VBoxContainer, subtitle: Label) -> void:
 		DisplayServer.clipboard_set(str(_friends.get("code", "")))
 		return {"ok": true, "msg": "Kode disalin. Bagikan ke teman Tuan."}, true, "", "")
 	copy.add_theme_font_size_override("font_size", 22)
+	_referral_box(box)
 	var inbox: Array = _friends.get("inbox", [])
 	var claim: Button = ui._button(box, tr("Terima Hadiah Teman (%d)") % inbox.size(), func():
 		Online.claim_gifts(func(r: Dictionary):
@@ -1981,3 +2001,301 @@ func _fill_wardrobe(box: VBoxContainer, subtitle: Label) -> void:
 			_small(col, tr("Hadiah akhir acara %s") % ev_name).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		if not has_c:
 			_small(col, "Penasihat ini belum direkrut.", Color("b5651d"))
+
+
+# --- Hari ini dalam sejarah ----------------------------------------------------------------
+
+func _history_card(box: VBoxContainer) -> void:
+	var now: float = Game.now()
+	if model.tutorial_active() or not model.history_claimable(now):
+		return
+	var h: Dictionary = model.history_today(now)
+	var card: HBoxContainer = ui._card(box)
+	card.add_child(ui._tex(Art.icon("history"), 72))
+	var col: VBoxContainer = ui._col(card)
+	ui._label(col, "Hari Ini dalam Sejarah" if h["exact"] else "Kilas Sejarah", "CardTitle")
+	var parts: PackedStringArray = str(h["date"]).split("-")
+	_small(col, "%d %s %d" % [int(parts[1]), tr(MONTHS[int(parts[0]) - 1]), h["year"]], UI.GOLD_DARK).auto_translate_mode = \
+		Node.AUTO_TRANSLATE_MODE_DISABLED
+	ui._label(col, h["text"], "CardLabel")
+	_side_button(card, "Baca", func(): return model.claim_history(Game.now()), true, "GoldButton", "coin")
+
+
+const MONTHS := ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober",
+	"November", "Desember"]
+
+
+# --- Undang teman --------------------------------------------------------------------
+
+func _referral_box(box: VBoxContainer) -> void:
+	var inv: VBoxContainer = ui._inner_box(box)
+	ui._label(inv, "Undang Teman", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	if _referral.is_empty():
+		Online.fetch_referral(func(d: Dictionary):
+			_referral = d
+			if is_open("friends") and not d.is_empty():
+				_fill("friends"))
+		_small(inv, "Memuat...")
+		return
+	var reward: String = ui._reward_text(_referral.get("reward", {}))
+	_small(inv, tr("Saat teman yang Tuan undang mencapai Tahap %d, Tuan dan teman sama-sama mendapat %s.") % [
+		int(_referral.get("stage_needed", 10)), reward]).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_small(inv, tr("Diundang: %d · berhasil: %d") % [int(_referral.get("invited", 0)), int(_referral.get("rewarded", 0))]) \
+		.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	var row := _row(inv)
+	ui._button(row, "Bagikan Undangan", func():
+		ui.share_card({"kind": "invite", "headline": "AYO BERGABUNG!", "title": model.me_name(),
+			"portrait": model.lord_portrait(), "bg": "city",
+			"lines": [tr("Masukkan kode %s di menu Teman") % str(_referral.get("code", ""))],
+			"text": "Ayo main Tuan Nusantara bersamaku!"})
+		return null, true, "share", "GoldButton").size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if _referral.get("inviter") != null:
+		_small(inv, tr("Tuan bergabung lewat undangan %s.") % str(_referral["inviter"]), UI.GREEN.darkened(0.2)) \
+			.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		return
+	var row2 := _row(inv)
+	_ref_edit = LineEdit.new()
+	_ref_edit.placeholder_text = tr("Kode undangan teman")
+	_ref_edit.max_length = 8
+	_ref_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_ref_edit.custom_minimum_size.y = 64
+	row2.add_child(_ref_edit)
+	_side_button(row2, "Masukkan", func():
+		Online.enter_referral(_ref_edit.text, func(ok: bool, msg: String):
+			ui._show({"ok": ok, "msg": msg})
+			if ok:
+				_referral = {}
+				_fill("friends"))
+		return null, true, "GreenButton")
+
+
+# --- Dapur Nusantara -------------------------------------------------------------------
+
+func show_kitchen() -> void:
+	_show("kitchen", "Dapur Nusantara", "kitchen", _fill_kitchen)
+
+
+func _fill_kitchen(box: VBoxContainer, subtitle: Label) -> void:
+	var now: float = Game.now()
+	subtitle.text = tr("Sisa memasak hari ini: %d") % model.cooks_left(now)
+	subtitle.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	var meal: Dictionary = model.meal_active(now)
+	if not meal.is_empty():
+		var cur: HBoxContainer = ui._card(box)
+		cur.add_child(ui._tex(Art.icon(Data.RECIPES[meal["id"]]["icon"]), 64))
+		var cc: VBoxContainer = ui._col(cur)
+		ui._label(cc, tr("Berkah %s (x%s)") % [tr(Data.RECIPES[meal["id"]]["name"]), str(meal["mult"])], "CardTitle") \
+			.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		var left := _small(cc, tr("Berlaku %s lagi") % ui._duration(int(float(meal["until"]) - now)))
+		left.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	for id in Data.RECIPE_ORDER:
+		var def: Dictionary = Data.RECIPES[id]
+		var card: HBoxContainer = ui._card(box)
+		card.add_child(ui._tex(Art.icon(def["icon"]), 80))
+		var col: VBoxContainer = ui._col(card)
+		var t: Label = ui._label(col, "%s · %s" % [tr(def["name"]), tr(def["origin"])], "CardTitle")
+		t.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		ui._label(col, def["desc"], "CardLabel")
+		var cost: Dictionary = model.recipe_cost(id)
+		var afford := true
+		for k in cost:
+			afford = afford and int(model.get(k)) >= int(cost[k])
+		_small(col, tr("Bahan: %s") % _cost_text(cost)).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		var rid: String = id
+		_side_button(card, "Masak", func():
+			var v := CookView.new()
+			v.setup(rid)
+			v.done.connect(func(stars: int): ui._show(model.cook(rid, stars, Game.now())))
+			ui.add_child(v)
+			Audio.play("click")
+			return null, model.cooks_left(now) > 0 and afford, "GoldButton")
+
+
+# --- Pewaris ----------------------------------------------------------------------------
+
+func show_heirs() -> void:
+	_show("heirs", "Pewaris Istana", "heir", _fill_heirs)
+
+
+func _fill_heirs(box: VBoxContainer, subtitle: Label) -> void:
+	subtitle.text = tr("%d/%d pewaris · biaya %d emas") % [model.realm["heirs"].size(), Data.HEIR_MAX, Data.HEIR_COST["gold"]]
+	subtitle.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	for id in model.realm["heirs"]:
+		var def: Dictionary = model.realm["heirs"][id]
+		var card: HBoxContainer = ui._card(box)
+		card.add_child(ui._tex(Art.portrait(id), 80))
+		var col: VBoxContainer = ui._col(card)
+		var n: Label = ui._label(col, def["name"], "CardTitle")
+		n.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		var lv := int(model.counselors.get(id, {}).get("level", 1))
+		_small(col, tr("Pewaris · level %d · Kekuatan %d, Kecerdasan %d, Politik %d, Karisma %d") % [lv, def["str"], def["int"],
+			def["pol"], def["cha"]]).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	var cands: Array = model.heir_candidates()
+	ui._label(box, "Calon Pewaris", "CardTitle")
+	if cands.is_empty():
+		_small(box, tr("Didik anak sampai dewasa. Anak berbakat %d ke atas bisa diangkat menjadi pewaris.") % Data.HEIR_TALENT_MIN) \
+			.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	for i in cands:
+		var c: Dictionary = model.children[i]
+		var card: HBoxContainer = ui._card(box)
+		card.add_child(ui._tex(Art.portrait("child_" + str(c.get("gender", "m"))), 72))
+		var col: VBoxContainer = ui._col(card)
+		var n: Label = ui._label(col, c["name"], "CardTitle")
+		n.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		_small(col, tr("Bakat %d/5 · dewasa") % int(c["talent"])).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		var idx: int = i
+		_side_button(card, "Angkat", func(): return model.make_heir(idx),
+			model.gold >= int(Data.HEIR_COST["gold"]) and model.realm["heirs"].size() < Data.HEIR_MAX, "GoldButton", "promote")
+
+
+# --- Musim aliansi (online) -------------------------------------------------------------
+
+func show_season() -> void:
+	if _need_online():
+		return
+	_show("season", "Musim Aliansi", "season", _fill_season)
+	_load_season()
+
+
+func _load_season() -> void:
+	Online.fetch_season(func(d: Dictionary):
+		_season = d
+		if is_open("season"):
+			_fill("season")
+		ui._queue_rebuild())
+
+
+func _fill_season(box: VBoxContainer, subtitle: Label) -> void:
+	if _season.is_empty():
+		subtitle.text = "Memuat..."
+		return
+	subtitle.text = tr("Musim %d · berakhir dalam %s") % [int(_season["season"]), ui._duration(int(_season["ends_in"]) / 1000)]
+	subtitle.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_small(box, "Poin dari serangan Perang Wilayah dan Bos Dunia anggota aliansi. 3 besar mendapat hadiah.")
+	for r in _season.get("board", []):
+		var card: HBoxContainer = ui._card(box)
+		var mine: bool = r["alliance"] == str(model.alliance.get("id", ""))
+		var name: Label = ui._label(ui._col(card), "%d. %s" % [maxi(1, int(r["rank"])), _alliance_name(r["alliance"])],
+			"CardTitle")
+		name.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		if mine:
+			name.add_theme_color_override("font_color", UI.GOLD.darkened(0.3))
+		var pts := _small(card, tr("%s poin") % ui._num(int(r["points"])))
+		pts.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		pts.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var reward = _season.get("last_reward")
+	if reward is Dictionary:
+		var card: HBoxContainer = ui._card(box)
+		var col: VBoxContainer = ui._col(card)
+		ui._label(col, tr("Musim lalu: peringkat %d") % int(_season["last_rank"]), "CardTitle").auto_translate_mode = \
+			Node.AUTO_TRANSLATE_MODE_DISABLED
+		_small(col, ui._reward_text(reward)).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		_side_button(card, "Diambil" if _season.get("last_claimed", false) else "Ambil", func():
+			Online.claim_season(func(r: Dictionary):
+				ui._show(r)
+				_load_season())
+			return null, not _season.get("last_claimed", false), "GoldButton")
+
+
+# --- Pasar pemain (online) --------------------------------------------------------------
+
+func show_bazaar() -> void:
+	if _need_online():
+		return
+	_show("bazaar", "Pasar Pemain", "bazaar", _fill_bazaar)
+	_load_bazaar()
+
+
+func _load_bazaar() -> void:
+	Online.fetch_market(func(d: Dictionary):
+		_bazaar = d
+		if is_open("bazaar"):
+			_fill("bazaar"))
+
+
+func _fill_bazaar(box: VBoxContainer, subtitle: Label) -> void:
+	if _bazaar.is_empty():
+		subtitle.text = "Memuat..."
+		return
+	subtitle.text = tr("Perak: %s · sisa dagangan hari ini: %d") % [ui._num(model.silver), int(_bazaar.get("left_today", 0))]
+	subtitle.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	# Jual.
+	var sell: VBoxContainer = ui._inner_box(box)
+	ui._label(sell, "Jual Item", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	var owned: Array = Data.BAZAAR_ITEMS.filter(func(id): return model.item_count(id) > 0)
+	if owned.is_empty():
+		_small(sell, "Tidak ada item yang bisa dijual di tas.")
+	else:
+		if not owned.has(_sell_item):
+			_sell_item = owned[0]
+		var flow := HFlowContainer.new()
+		flow.add_theme_constant_override("h_separation", 6)
+		sell.add_child(flow)
+		for id in owned:
+			var b := Button.new()
+			b.icon = Art.icon(Data.ITEMS[id]["icon"])
+			b.add_theme_constant_override("icon_max_width", 40)
+			b.text = "x%d" % model.item_count(id)
+			b.theme_type_variation = "GoldButton" if id == _sell_item else ""
+			b.tooltip_text = tr(Data.ITEMS[id]["name"])
+			var iid: String = id
+			b.pressed.connect(func():
+				_sell_item = iid
+				_sell_qty = 1
+				_fill("bazaar"))
+			flow.add_child(b)
+		_sell_qty = clampi(_sell_qty, 1, mini(10, model.item_count(_sell_item)))
+		var row := _row(sell)
+		var name := _small(row, "%s x%d" % [tr(Data.ITEMS[_sell_item]["name"]), _sell_qty])
+		name.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_mini(row, "-", func():
+			_sell_qty -= 1
+			_fill("bazaar"), _sell_qty > 1, "")
+		_mini(row, "+", func():
+			_sell_qty += 1
+			_fill("bazaar"), _sell_qty < mini(10, model.item_count(_sell_item)), "")
+		var row2 := _row(sell)
+		_sell_price_edit = LineEdit.new()
+		_sell_price_edit.placeholder_text = tr("Harga (perak)")
+		_sell_price_edit.virtual_keyboard_type = LineEdit.KEYBOARD_TYPE_NUMBER
+		_sell_price_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_sell_price_edit.custom_minimum_size.y = 64
+		row2.add_child(_sell_price_edit)
+		_side_button(row2, "Jual", func():
+			var price := int(_sell_price_edit.text.to_int())
+			if price < 1:
+				return {"ok": false, "msg": "Isi harga lebih dari nol."}
+			Online.market_sell(_sell_item, _sell_qty, price, func(r: Dictionary):
+				ui._show(r)
+				_load_bazaar())
+			return null, int(_bazaar.get("left_today", 0)) > 0, "GreenButton")
+		_small(sell, tr("Pajak %d%%. Perak hasil penjualan dikirim lewat Kotak Surat.") % int(round(float(_bazaar.get("tax", 0.1)) * 100))) \
+			.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	# Dagangan pemain lain.
+	ui._label(box, "Dagangan", "CardTitle")
+	var listings: Array = _bazaar.get("listings", [])
+	if listings.is_empty():
+		_small(box, "Belum ada dagangan. Jadilah pedagang pertama!")
+	for m in listings:
+		var card: HBoxContainer = ui._card(box)
+		card.add_child(ui._tex(Art.icon(Data.ITEMS.get(m["item"], {}).get("icon", "bag")), 56))
+		var col: VBoxContainer = ui._col(card)
+		var t: Label = ui._label(col, "%s x%d" % [tr(Data.ITEMS.get(m["item"], {}).get("name", m["item"])), int(m["qty"])], "CardLabel")
+		t.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		t.add_theme_font_override("font", UI.font_bold)
+		_small(col, tr("%s perak · %s") % [ui._num(int(m["price"])), str(m["seller_name"])]).auto_translate_mode = \
+			Node.AUTO_TRANSLATE_MODE_DISABLED
+		var listing: Dictionary = m
+		if m.get("mine", false):
+			_side_button(card, "Tarik", func():
+				Online.market_cancel(int(listing["id"]), func(r: Dictionary):
+					ui._show(r)
+					_load_bazaar())
+				return null, true, "")
+		else:
+			_side_button(card, "Beli", func():
+				Online.market_buy(listing, func(r: Dictionary):
+					ui._show(r)
+					_load_bazaar())
+				return null, model.silver >= int(m["price"]), "GoldButton")

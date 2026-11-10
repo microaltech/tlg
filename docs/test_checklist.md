@@ -56,6 +56,21 @@ Minimal satu dari tiap kelompok:
 - [ ] Tayangan perang, duel, perburuan, pacuan: tombol Lewati dan Lanjut
 - [ ] Maju 1 Hari: misi harian reset, kalender login lanjut, kebun bisa dipanen
 
+## Batch 8
+
+- [ ] Bagikan: naik jabatan, penasihat Legenda, Profil → menu bagikan Android muncul,
+      gambar terkirim ke WhatsApp
+- [ ] Undang teman: HP A membagikan kode, HP B (akun baru) memasukkannya; saat B
+      mencapai Tahap 10 keduanya mendapat surat hadiah
+- [ ] Hari Ini dalam Sejarah muncul setelah tutorial; Baca memberi hadiah sekali sehari
+- [ ] Dapur (Tahap 12): mini-game aduk, berkah tampil dan habis setelah 4 jam
+- [ ] Pewaris: anak dewasa berbakat ≥3 → Angkat → muncul di halaman Penasihat
+- [ ] Pasar Pemain dan Musim Aliansi (dua HP, satu aliansi)
+- [ ] Tutup game ≥4 jam setelah admin mengirim surat → notifikasi "Surat baru"
+- [ ] Ukuran Ekstra, mode ramah buta warna, getar nyala/mati
+- [ ] Langit kota: malam (setelah 19.30) berbintang, hujan di musim penghujan
+- [ ] APK arm64 terpasang di HP 64-bit; APK universal di HP 32-bit lama
+
 ## Ketahanan
 
 - [ ] Tutup paksa saat tayangan perang lalu buka lagi: progres tersimpan

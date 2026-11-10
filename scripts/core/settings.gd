@@ -24,7 +24,9 @@ var server_url := ""  ## alamat server sosial (kosong = mode offline)
 ## pernah membuat game crash di perangkat ini.
 var simple_login := false
 var dark_mode := false  ## tema gelap
-var ui_scale := 1.0  ## ukuran tampilan: 0.9, 1.0, atau 1.1
+var ui_scale := 1.0  ## ukuran tampilan: 0.9, 1.0, 1.1, atau 1.25 (ekstra besar)
+var colorblind := false  ## palet ramah buta warna merah-hijau
+var vibration := true  ## getar singkat pada momen penting
 
 
 func _ready() -> void:
@@ -46,7 +48,9 @@ func _ready() -> void:
 		server_url = str(cfg.get_value("online", "url", ""))
 		simple_login = bool(cfg.get_value("device", "simple_login_v2", false))
 		dark_mode = bool(cfg.get_value("device", "dark_mode", false))
-		ui_scale = clampf(float(cfg.get_value("device", "ui_scale", 1.0)), 0.9, 1.1)
+		ui_scale = clampf(float(cfg.get_value("device", "ui_scale", 1.0)), 0.9, 1.25)
+		colorblind = bool(cfg.get_value("device", "colorblind", false))
+		vibration = bool(cfg.get_value("device", "vibration", true))
 	_apply_power()
 
 
@@ -74,6 +78,8 @@ func save() -> void:
 	cfg.set_value("device", "simple_login_v2", simple_login)
 	cfg.set_value("device", "dark_mode", dark_mode)
 	cfg.set_value("device", "ui_scale", ui_scale)
+	cfg.set_value("device", "colorblind", colorblind)
+	cfg.set_value("device", "vibration", vibration)
 	cfg.save(PATH)
 
 

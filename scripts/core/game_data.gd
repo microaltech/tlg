@@ -843,6 +843,35 @@ const STORY_CHAPTERS := [
 			{"type": "power", "target": 100000, "text": "Capai kekuatan 100.000", "reward": {"gold": 500}},
 			{"type": "equip_level", "target": 6, "text": "Tingkatkan satu pusaka ke +5", "reward": {"silver": 300000}},
 		], "reward": {"gold": 2000, "items": {"star_stone": 5, "recruit_ticket": 10}}},
+	{"title": "Kadipaten di Tepi Samudra", "story": [
+		{"speaker": "kedaton", "text": "Raja menganugerahkan sebuah kadipaten kepada Tuan. Namun bajak laut menguasai bandarnya."},
+		{"speaker": "arya", "text": "Raja Bajak Laut Selat bersembunyi di benteng karang. Kita butuh armada dan pasukan terbaik."},
+		{"speaker": "sekar", "text": "Kadipaten yang makmur butuh pemimpin muda yang cakap. Didiklah putra-putri istana menjadi pewaris."}],
+		"quests": [
+			{"type": "stage", "target": 80, "text": "Kalahkan Raja Bajak Laut Selat: Tahap 80", "reward": {"gold": 500}},
+			{"type": "rank", "target": 6, "text": "Menjadi Adipati", "reward": {"gold": 500}},
+			{"type": "heirs", "target": 1, "text": "Angkat seorang anak menjadi pewaris", "reward": {"items": {"star_stone": 3}}},
+			{"type": "cooked", "target": 10, "text": "Masak 10 hidangan di Dapur Nusantara", "reward": {"silver": 500000}},
+		], "reward": {"gold": 2500, "items": {"star_stone": 5, "recruit_ticket": 10}}},
+	{"title": "Kesultanan Rempah", "story": [
+		{"speaker": "ratna", "text": "Para saudagar memohon perlindungan Tuan. Kesultanan yang kuat akan menjaga jalur rempah."},
+		{"speaker": "satria", "text": "Datu Gunung Berapi menghimpun pasukan di pedalaman. Ia ingin merebut gelar Sultan dari Tuan!"}],
+		"quests": [
+			{"type": "stage", "target": 95, "text": "Taklukkan Datu Gunung Berapi: Tahap 95", "reward": {"gold": 600}},
+			{"type": "rank", "target": 7, "text": "Menjadi Sultan", "reward": {"gold": 800}},
+			{"type": "regions", "target": 8, "text": "Kuasai 8 wilayah di Peta Nusantara", "reward": {"items": {"batu_meteor": 3}}},
+			{"type": "tower", "target": 40, "text": "Capai lantai 40 Menara Ujian", "reward": {"items": {"star_stone": 4}}},
+		], "reward": {"gold": 3000, "items": {"star_stone": 8, "recruit_ticket": 12}}},
+	{"title": "Maharaja Nusantara", "story": [
+		{"speaker": "resi", "text": "Ramalan kuno berkata: ketika seorang pemimpin menyatukan seribu pulau, zaman keemasan akan tiba."},
+		{"speaker": "gajah", "text": "Sumpah Palapa hampir terwujud, Tuan. Hanya Ratu Kegelapan Laut Selatan yang tersisa."},
+		{"speaker": "lord", "text": "Bersama kalian semua, akan kusatukan Nusantara. Bukan dengan rasa takut, melainkan dengan keadilan."}],
+		"quests": [
+			{"type": "stage", "target": 110, "text": "Kalahkan Ratu Kegelapan Laut Selatan: Tahap 110", "reward": {"gold": 800}},
+			{"type": "rank", "target": 8, "text": "Menjadi Maharaja", "reward": {"gold": 1000}},
+			{"type": "heirs", "target": 3, "text": "Miliki 3 pewaris", "reward": {"items": {"star_stone": 5}}},
+			{"type": "power", "target": 2000000, "text": "Capai kekuatan 2.000.000", "reward": {"items": {"recruit_ticket": 10}}},
+		], "reward": {"gold": 5000, "items": {"star_stone": 10, "recruit_ticket": 20}}},
 ]
 ## Pilihan cerita di akhir bab (kunci: indeks bab). Tiap pilihan memberi hadiah dan
 ## bonus permanen kecil ("effect": {efek: nilai}); bab berikutnya punya dialog sesuai pilihan.
@@ -886,6 +915,7 @@ const STORY_CHOICES := {
 const HONOR_TITLES := [
 	{"chapters": 7, "name": "Patih", "bonus": 0.05},
 	{"chapters": 8, "name": "Mahapatih", "bonus": 0.10},
+	{"chapters": 11, "name": "Pemersatu Nusantara", "bonus": 0.15},
 ]
 const STORY_SPEAKER_NAMES := {"lord": "Anda", "enemy_warlord": "Panglima Lalim"}
 
@@ -894,11 +924,15 @@ const REWARD_NAMES := {"gold": "emas", "silver": "perak", "grain": "pangan", "so
 	"prestige": "prestise"}
 
 
+## Pewaris (penasihat dari anak istana): diisi GameModel dari save (id "heir_N").
+static var heirs := {}
+
+
 static func counselor_def(id: String) -> Dictionary:
 	for c in COUNSELORS:
 		if c["id"] == id:
 			return c
-	return {}
+	return heirs.get(id, {})
 
 
 static func counselors_of_rarity(rarity: String) -> Array:
@@ -994,7 +1028,7 @@ const BATTLE_FULL_EVERY := 5
 
 static func stage_info(index: int) -> Dictionary:
 	var enemy: Dictionary = ENEMIES[index % ENEMIES.size()]
-	return {
+	var info := {
 		"name": "Tahap %d" % (index + 1),
 		"enemy_id": enemy["id"],
 		"enemy_name": enemy["name"],
@@ -1005,6 +1039,16 @@ static func stage_info(index: int) -> Dictionary:
 		# Tiap tahap ke-5 adalah tahap besar dengan bonus emas.
 		"reward_gold": 15 + 3 * int(index / 5.0) + (50 if (index + 1) % 5 == 0 else 0),
 	}
+	# Panglima akhir: tahap 80, 90, 100, ... dijaga musuh bernama yang lebih kuat.
+	if index + 1 >= ENDGAME_BOSS_FROM and (index + 1) % 10 == 0:
+		var b: int = ((index + 1 - ENDGAME_BOSS_FROM) / 10) % ENDGAME_BOSSES.size()
+		info["boss"] = ENDGAME_BOSSES[b]
+		info["enemy_id"] = "enemy_warlord"
+		info["enemy_name"] = ENDGAME_BOSSES[b]
+		info["enemy_soldiers"] = int(info["enemy_soldiers"] * ENDGAME_BOSS_MULT)
+		info["enemy_str"] = int(info["enemy_str"] * ENDGAME_BOSS_MULT)
+		info["reward_gold"] += ENDGAME_BOSS_GOLD
+	return info
 
 
 ## Bangunan kota: naik level dengan perak dan waktu pembangunan (satu pembangunan
@@ -1395,6 +1439,8 @@ const COSMETICS := {
 		"unlock": "month_event"},
 	"frame_acara_samudra": {"type": "frame", "name": "Bingkai Jalur Rempah", "colors": ["#1a4a6e", "#e8c070"],
 		"unlock": "month_event"},
+	"frame_juara_musim": {"type": "frame", "name": "Bingkai Juara Musim", "colors": ["#7a1a1a", "#ffd86b"], "unlock": "season"},
+	"frame_musim": {"type": "frame", "name": "Bingkai Musim Aliansi", "colors": ["#2a3a6e", "#d9c27a"], "unlock": "season"},
 	"costume_lord": {"type": "costume", "name": "Busana Bangsawan", "portrait": "lord", "unlock": "default"},
 	"costume_batik": {"type": "costume", "name": "Busana Batik", "portrait": "lord_batik", "gold": 400},
 	"costume_zirah": {"type": "costume", "name": "Zirah Senapati", "portrait": "lord_zirah", "unlock": "stage:50"},
@@ -1404,7 +1450,7 @@ const COSMETIC_ORDER := ["frame_kayu", "frame_emas", "frame_giok", "frame_menter
 	"frame_ramadan", "frame_merdeka", "frame_sumpah_pemuda", "frame_pahlawan", "frame_silat",
 	"frame_adipati", "frame_sultan", "frame_maharaja", "frame_raja_hari_ini", "frame_wayang_malin",
 	"frame_wayang_sangkuriang", "frame_wayang_roro", "frame_wayang_timun", "frame_acara_gajah_mada",
-	"frame_acara_diponegoro", "frame_acara_samudra",
+	"frame_acara_diponegoro", "frame_acara_samudra", "frame_juara_musim", "frame_musim",
 	"costume_lord", "costume_batik", "costume_zirah", "costume_raja"]
 
 
@@ -1668,6 +1714,16 @@ const FEATURE_HELP := {
 	"Kotak Surat": ["Surat dari istana dan dari pengelola game: pengumuman, hadiah, dan kompensasi.",
 		"Ambil hadiah sebelum surat kedaluwarsa."],
 	"Lemari Busana": ["Kostum mengganti tampilan penasihat di seluruh game tanpa mengubah atributnya."],
+	"Pewaris Istana": ["Anak dewasa berbakat 3 ke atas bisa diangkat menjadi penasihat junior.",
+		"Atribut pewaris mengikuti bakat dan ibunya; pewaris bisa dilatih, diberi bintang, dan dikirim bertugas seperti penasihat lain."],
+	"Dapur Nusantara": ["Masak hidangan khas daerah tiga kali sehari. Ketuk \"Aduk!\" saat penanda ada di zona emas.",
+		"Makin tepat adukan, makin kuat berkahnya. Satu berkah hidangan berlaku 4 jam; memasak lagi menggantinya."],
+	"Musim Aliansi": ["Liga 4 minggu antaraliansi. Poin dari serangan Perang Wilayah dan Bos Dunia anggota aliansi.",
+		"Anggota 3 aliansi teratas mendapat emas, item, dan bingkai musim setelah musim berakhir."],
+	"Pasar Pemain": ["Jual item kepada pemain lain dengan perak. Batas 5 dagangan per hari, pajak 10%.",
+		"Perak hasil penjualan, dagangan yang ditarik, dan dagangan yang tidak laku 3 hari dikirim lewat Kotak Surat."],
+	"Undang Teman": ["Bagikan kode undangan Tuan. Pemain baru memasukkan kode itu dalam 7 hari pertama.",
+		"Saat teman mencapai Tahap 10, Tuan dan teman sama-sama mendapat 100 emas dan 2 Tiket Rekrut lewat Kotak Surat."],
 	"Ensiklopedia Nusantara": ["Kumpulkan semua tokoh, kuda, pusaka, dan wilayah untuk bonus permanen."],
 }
 
@@ -1863,10 +1919,10 @@ const GIFT_CODE_ITEM_LIMIT := 10
 
 ## Kelompok tab di kartu Urusan Kerajaan.
 const HUB_TABS := [
-	{"id": "ekonomi", "name": "Ekonomi", "tiles": ["market", "garden", "fleet", "research", "ceremony"]},
+	{"id": "ekonomi", "name": "Ekonomi", "tiles": ["market", "garden", "fleet", "research", "ceremony", "kitchen"]},
 	{"id": "petualangan", "name": "Petualangan", "tiles": ["hunt", "candi", "race", "quiz", "wayang"]},
-	{"id": "istana", "name": "Istana", "tiles": ["kin", "pets", "forge", "policy", "badges", "wardrobe"]},
-	{"id": "dunia", "name": "Dunia", "tiles": ["diplomacy", "friends", "guildwar", "worldboss", "tourney"]},
+	{"id": "istana", "name": "Istana", "tiles": ["kin", "pets", "forge", "policy", "badges", "wardrobe", "heirs"]},
+	{"id": "dunia", "name": "Dunia", "tiles": ["diplomacy", "friends", "guildwar", "worldboss", "tourney", "season", "bazaar"]},
 ]
 
 ## Wayang & cerita rakyat: tiap lakon 3 babak; satu babak baru per hari.
@@ -1988,3 +2044,122 @@ const COMEBACK_MAIL := {"title": "Rakyat Merindukan Tuan",
 	"body": "Selama Tuan pergi, rakyat menyiapkan bekal agar kerajaan cepat bangkit kembali.",
 	"reward": {"gold": 30, "items": {"energy_tea": 1}}}
 const MAIL_KEEP := 30
+
+
+# --- Batch 8 ----------------------------------------------------------------------------
+
+## Bonus permanen gelar kebangsawanan (indeks jabatan -> efek kingdom_bonus).
+const RANK_PERKS := {
+	6: {"yield_all": 0.10, "combat": 0.05},
+	7: {"yield_all": 0.20, "combat": 0.10},
+	8: {"yield_all": 0.35, "combat": 0.20},
+}
+
+## Panglima musuh akhir: tiap tahap ke-10 mulai tahap 80 dijaga panglima bernama
+## (kekuatan x ENDGAME_BOSS_MULT, emas tambahan).
+const ENDGAME_BOSSES := ["Raja Bajak Laut Selat", "Panglima Topeng Besi", "Datu Gunung Berapi", "Ratu Kegelapan Laut Selatan",
+	"Raksasa Hutan Larangan", "Naga Laut Banda"]
+const ENDGAME_BOSS_FROM := 80
+const ENDGAME_BOSS_MULT := 1.3
+const ENDGAME_BOSS_GOLD := 100
+
+
+## Hari ini dalam sejarah: "BB-HH" -> [tahun, peristiwa]. Hari tanpa catatan memakai
+## peristiwa terdekat sebelumnya ("Kilas Sejarah").
+const HISTORY := {
+	"01-03": [1946, "Kementerian Agama Republik Indonesia dibentuk."],
+	"01-04": [1946, "Ibu kota Republik Indonesia dipindahkan sementara dari Jakarta ke Yogyakarta."],
+	"01-12": [1631, "Sultan Hasanuddin, Ayam Jantan dari Timur, lahir di Gowa."],
+	"01-24": [1916, "Jenderal Sudirman, panglima besar pertama TNI, lahir di Purbalingga."],
+	"01-29": [1950, "Jenderal Sudirman wafat di Magelang setelah memimpin perang gerilya."],
+	"02-09": [1946, "Persatuan Wartawan Indonesia berdiri; tanggal ini diperingati sebagai Hari Pers Nasional."],
+	"02-11": [1899, "Teuku Umar, pahlawan Aceh, gugur di Meulaboh."],
+	"02-14": [1945, "Tentara PETA di Blitar yang dipimpin Supriyadi memberontak melawan Jepang."],
+	"02-23": [1983, "Pemugaran besar Candi Borobudur selesai dan diresmikan."],
+	"03-01": [1949, "Serangan Umum 1 Maret: pasukan Republik menduduki Yogyakarta selama enam jam."],
+	"03-06": [1980, "Taman Nasional Komodo didirikan untuk melindungi komodo."],
+	"03-08": [1942, "Belanda menyerah kepada Jepang di Kalijati, Subang."],
+	"03-09": [1903, "W.R. Supratman, pencipta lagu Indonesia Raya, lahir; kini Hari Musik Nasional."],
+	"03-20": [1602, "Kongsi dagang Belanda VOC didirikan, awal perebutan rempah Nusantara."],
+	"03-24": [1946, "Bandung Lautan Api: warga membakar Bandung selatan agar tidak dipakai Sekutu."],
+	"03-30": [1950, "Pengambilan gambar pertama film Darah dan Doa; kini Hari Film Nasional."],
+	"04-09": [1946, "Angkatan Udara Republik Indonesia dibentuk."],
+	"04-10": [1815, "Gunung Tambora di Sumbawa meletus, letusan terbesar dalam sejarah tercatat."],
+	"04-18": [1955, "Konferensi Asia Afrika dibuka di Gedung Merdeka, Bandung."],
+	"04-21": [1879, "R.A. Kartini, pelopor pendidikan perempuan, lahir di Jepara."],
+	"04-28": [1949, "Penyair Chairil Anwar wafat; tanggal ini dikenang sebagai Hari Puisi."],
+	"05-02": [1889, "Ki Hajar Dewantara, bapak pendidikan nasional, lahir di Yogyakarta."],
+	"05-15": [1817, "Pattimura memimpin rakyat Saparua merebut Benteng Duurstede."],
+	"05-20": [1908, "Budi Utomo berdiri; kini diperingati sebagai Hari Kebangkitan Nasional."],
+	"05-29": [1945, "Sidang pertama BPUPKI dimulai untuk menyiapkan dasar negara."],
+	"05-30": [1619, "Jan Pieterszoon Coen merebut Jayakarta dan mendirikan Batavia."],
+	"06-01": [1945, "Soekarno menyampaikan pidato tentang Pancasila di sidang BPUPKI."],
+	"06-06": [1901, "Soekarno, proklamator kemerdekaan, lahir di Surabaya."],
+	"06-22": [1527, "Fatahillah merebut Sunda Kelapa dan menamainya Jayakarta, cikal bakal Jakarta."],
+	"06-29": [1949, "Belanda mundur dari Yogyakarta; peristiwa Yogya Kembali."],
+	"07-01": [1946, "Kepolisian Negara diresmikan; kini Hari Bhayangkara."],
+	"07-20": [1825, "Perang Jawa yang dipimpin Pangeran Diponegoro dimulai."],
+	"07-23": [1984, "Hari Anak Nasional mulai diperingati setiap 23 Juli."],
+	"08-07": [1945, "Panitia Persiapan Kemerdekaan Indonesia (PPKI) dibentuk."],
+	"08-12": [1902, "Mohammad Hatta, proklamator dan wakil presiden pertama, lahir di Bukittinggi."],
+	"08-14": [1961, "Gerakan Pramuka diperkenalkan ke masyarakat; kini Hari Pramuka."],
+	"08-17": [1945, "Soekarno dan Hatta memproklamasikan kemerdekaan Indonesia di Jakarta."],
+	"08-18": [1945, "UUD 1945 disahkan; Soekarno dan Hatta dipilih menjadi presiden dan wakil presiden."],
+	"08-24": [1962, "Asian Games IV dibuka di Jakarta dengan Stadion Utama Senayan."],
+	"08-27": [1883, "Gunung Krakatau di Selat Sunda meletus dahsyat."],
+	"09-09": [1948, "Pekan Olahraga Nasional pertama dibuka di Solo; kini Hari Olahraga Nasional."],
+	"09-11": [1945, "Radio Republik Indonesia (RRI) didirikan."],
+	"09-19": [1945, "Insiden Hotel Yamato: pemuda Surabaya merobek warna biru bendera Belanda."],
+	"10-02": [2009, "UNESCO mengakui batik Indonesia sebagai warisan budaya dunia; kini Hari Batik Nasional."],
+	"10-03": [1920, "Bung Tomo, pengobar semangat pertempuran Surabaya, lahir."],
+	"10-05": [1945, "Tentara Keamanan Rakyat dibentuk; kini Hari TNI."],
+	"10-22": [1945, "Resolusi Jihad dikeluarkan di Surabaya; kini Hari Santri."],
+	"10-28": [1928, "Sumpah Pemuda diikrarkan dan lagu Indonesia Raya pertama kali diperdengarkan."],
+	"11-06": [1908, "Cut Nyak Dhien, pahlawan perempuan Aceh, wafat di pengasingan di Sumedang."],
+	"11-07": [2003, "UNESCO menetapkan wayang sebagai mahakarya warisan budaya dunia."],
+	"11-10": [1945, "Pertempuran Surabaya; kini diperingati sebagai Hari Pahlawan."],
+	"11-11": [1785, "Pangeran Diponegoro lahir di Yogyakarta."],
+	"11-16": [2010, "UNESCO mengakui angklung sebagai warisan budaya tak benda dunia."],
+	"11-18": [1667, "Perjanjian Bongaya ditandatangani setelah perang Gowa melawan VOC."],
+	"11-25": [2005, "UNESCO mengakui keris sebagai warisan budaya dunia; tanggal ini juga Hari Guru."],
+	"12-04": [1884, "Dewi Sartika, pelopor sekolah perempuan, lahir di Bandung."],
+	"12-13": [1957, "Deklarasi Djuanda menyatukan laut dan pulau Nusantara; kini Hari Nusantara."],
+	"12-16": [1817, "Pattimura dihukum mati oleh Belanda di Ambon."],
+	"12-19": [1948, "Agresi Militer Belanda II: Yogyakarta diserang dan para pemimpin ditawan."],
+	"12-22": [1928, "Kongres Perempuan Indonesia pertama digelar; kini Hari Ibu."],
+	"12-27": [1949, "Belanda mengakui kedaulatan Indonesia."],
+	"12-31": [1799, "VOC resmi dibubarkan karena bangkrut."],
+}
+const HISTORY_REWARD := {"gold": 5}
+const HISTORY_SILVER := 1.0  ## x hasil Tarik Pajak
+
+## Pewaris: anak dewasa yang diangkat menjadi penasihat junior.
+const HEIR_TALENT_MIN := 3  ## bakat minimal (1–5)
+const HEIR_MAX := 5
+const HEIR_COST := {"gold": 100}
+
+## Dapur Nusantara: masak hidangan dengan mini-game aduk; hidangan memberi berkah sementara.
+const KITCHEN_UNLOCK_STAGE := 12
+const KITCHEN_DAILY := 3
+const KITCHEN_HOURS := 4
+const KITCHEN_QUALITY := [0.5, 0.75, 1.0, 1.25]  ## pengali berkah menurut jumlah adukan tepat (0–3)
+const RECIPES := {
+	"rendang": {"name": "Rendang", "origin": "Sumatera Barat", "icon": "dish_rendang", "cost": {"grain": 1.5, "silver": 0.5},
+		"effects": {"combat": 0.08}, "desc": "Daging dimasak lama dengan santan dan rempah. Kekuatan tempur +8%."},
+	"gudeg": {"name": "Gudeg", "origin": "Yogyakarta", "icon": "dish_gudeg", "cost": {"grain": 1.0, "silver": 0.5},
+		"effects": {"yield_grain": 0.15}, "desc": "Nangka muda bergula aren. Hasil Kelola Sawah +15%."},
+	"sate_lilit": {"name": "Sate Lilit", "origin": "Bali", "icon": "dish_sate", "cost": {"grain": 1.0, "silver": 0.5},
+		"effects": {"yield_silver": 0.15}, "desc": "Ikan cincang berbumbu dililit di batang serai. Hasil Tarik Pajak +15%."},
+	"papeda": {"name": "Papeda", "origin": "Maluku & Papua", "icon": "dish_papeda", "cost": {"grain": 1.0, "silver": 0.5},
+		"effects": {"yield_soldiers": 0.15}, "desc": "Bubur sagu dengan kuah ikan kuning. Hasil Rekrut Prajurit +15%."},
+	"soto": {"name": "Soto", "origin": "Nusantara", "icon": "dish_soto", "cost": {"grain": 0.8, "silver": 0.8},
+		"effects": {"yield_all": 0.06}, "desc": "Sup berkuah kuning yang ada di hampir setiap daerah. Semua hasil urusan +6%."},
+}
+const RECIPE_ORDER := ["rendang", "gudeg", "sate_lilit", "papeda", "soto"]
+
+## Pasar Pemain (online): item yang bisa diperdagangkan antarpemain (sama dengan server).
+const BAZAAR_ITEMS := ["scroll_train", "star_stone", "pill_intimacy", "recruit_ticket", "energy_tea", "silver_box",
+	"grain_box", "troop_writ", "besi_tempa", "kayu_cendana", "batu_meteor"]
+
+## Aksesibilitas: palet ramah buta warna merah-hijau (hijau -> biru, merah -> oranye).
+const COLORBLIND_SWAP := {"green": "#2f6fb5", "red": "#d9822b"}

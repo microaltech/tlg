@@ -2069,6 +2069,72 @@ ICONS["month_event"] = icon_doc(
     '<path d="M48 44 L53 56 L66 57 L56 65 L59 78 L48 71 L37 78 L40 65 L30 57 L43 56 Z" fill="#f2c14e" '
     'stroke="#b8862f" stroke-width="2"/>')
 
+# Pewaris istana (anak dewasa yang diangkat jadi penasihat).
+CHARACTERS["heir_m"] = dict(gender="m", skin=SKIN["medium"], hair="#1a110b", hair_style="short", headwear="udeng",
+                            hat_color="#7a1f2b", outfit="#7a1f2b", inner="#f2e2c0", brows="calm", mouth="calm",
+                            extras=["necklace"], bg=("#e0b84a", "#5e3a12"))
+CHARACTERS["heir_f"] = dict(gender="f", skin=SKIN["light"], hair="#140d08", hair_style="bun", headwear="tiara",
+                            gem="#2f6b45", outfit="#2f6b45", inner="#f2e2c0", shawl="#c9963f", brows="soft",
+                            extras=["earrings", "necklace"], bg=("#8fd9b6", "#1f4f3a"))
+
+
+def dish(bowl, food, garnish, steam=True):
+    parts = []
+    if steam:
+        parts.append('<path d="M34 20 C28 12 40 8 34 0 M48 22 C42 14 54 10 48 2 M62 20 C56 12 68 8 62 0" fill="none" '
+                     'stroke="#ffffff" stroke-opacity="0.7" stroke-width="3" stroke-linecap="round"/>')
+    parts.append('<ellipse cx="48" cy="56" rx="40" ry="14" fill="%s"/>' % food)
+    parts.append('<path d="M8 56 Q48 100 88 56 Z" fill="%s" stroke="#3a2412" stroke-width="3"/>' % bowl)
+    parts.append(garnish)
+    return icon_doc("".join(parts))
+
+
+ICONS["dish_rendang"] = dish("#c9963f", "#5e2a12",
+    '<circle cx="34" cy="52" r="7" fill="#7a3a1a"/><circle cx="52" cy="50" r="8" fill="#6b2f12"/>'
+    '<circle cx="66" cy="55" r="6" fill="#7a3a1a"/><path d="M40 58 L58 58" stroke="#c0392b" stroke-width="3"/>')
+ICONS["dish_gudeg"] = dish("#2f6b45", "#8a4a1e",
+    '<ellipse cx="40" cy="54" rx="10" ry="5" fill="#a85a24"/><ellipse cx="58" cy="52" rx="8" ry="4" fill="#f2f2f2"/>'
+    '<circle cx="58" cy="52" r="3" fill="#f2c14e"/>')
+ICONS["dish_sate"] = icon_doc(
+    '<path d="M14 80 L82 14" stroke="#c9a66b" stroke-width="4"/><path d="M26 80 L90 22" stroke="#c9a66b" stroke-width="4"/>'
+    '<ellipse cx="50" cy="44" rx="10" ry="16" transform="rotate(45 50 44)" fill="#d98a3a" stroke="#7a3a1a" stroke-width="2"/>'
+    '<ellipse cx="62" cy="52" rx="10" ry="16" transform="rotate(45 62 52)" fill="#e09a4a" stroke="#7a3a1a" stroke-width="2"/>'
+    '<ellipse cx="36" cy="58" rx="9" ry="14" transform="rotate(45 36 58)" fill="#d98a3a" stroke="#7a3a1a" stroke-width="2"/>')
+ICONS["dish_papeda"] = dish("#efe0bf", "#f2d27a",
+    '<ellipse cx="44" cy="54" rx="16" ry="6" fill="#f7f2e8" stroke="#d9c9a0" stroke-width="2"/>'
+    '<path d="M60 50 L74 54 L60 58 Z" fill="#c9d1da"/>')
+ICONS["dish_soto"] = dish("#c0392b", "#f2c14e",
+    '<path d="M30 52 L44 50 M50 54 L64 50" stroke="#f7f2e8" stroke-width="3"/><circle cx="58" cy="56" r="4" fill="#2f6b45"/>'
+    '<circle cx="38" cy="57" r="4" fill="#f7f2e8"/>')
+ICONS["kitchen"] = dish("#5e3a1e", "#c0392b",
+    '<path d="M22 46 L22 30 M30 44 L30 26" stroke="#c9d1da" stroke-width="4" stroke-linecap="round"/>'
+    '<ellipse cx="48" cy="54" rx="22" ry="6" fill="#e06050"/>')
+ICONS["heir"] = icon_doc(
+    '<circle cx="48" cy="40" r="20" fill="#e0b88a" stroke="#5e3a12" stroke-width="3"/>'
+    '<path d="M18 92 C18 66 78 66 78 92 Z" fill="#7a1f2b"/>'
+    '<path d="M30 22 L36 8 L44 18 L48 4 L52 18 L60 8 L66 22 Z" fill="#f2c14e" stroke="#b8862f" stroke-width="2"/>')
+ICONS["season"] = icon_doc(
+    '<path d="M20 12 L76 12 L72 46 C70 62 58 70 48 70 C38 70 26 62 24 46 Z" fill="#f2c14e" stroke="#b8862f" stroke-width="3"/>'
+    '<path d="M20 18 C4 18 6 44 26 44 M76 18 C92 18 90 44 70 44" fill="none" stroke="#b8862f" stroke-width="4"/>'
+    '<rect x="40" y="70" width="16" height="12" fill="#b8862f"/><rect x="28" y="82" width="40" height="8" rx="3" fill="#7a4b1f"/>'
+    '<path d="M48 26 L52 36 L62 36 L54 42 L57 52 L48 46 L39 52 L42 42 L34 36 L44 36 Z" fill="#fff3d6"/>')
+ICONS["bazaar"] = icon_doc(
+    '<path d="M10 34 L20 12 L76 12 L86 34 Z" fill="#c0392b"/>'
+    '<path d="M10 34 L24 34 L24 40 C24 46 10 46 10 40 Z M38 34 L38 40 C38 46 24 46 24 40 M52 34 L52 40 C52 46 38 46 38 40 '
+    'M66 34 L66 40 C66 46 52 46 52 40 M86 34 L86 40 C86 46 66 46 66 40" fill="#f7f2e8" stroke="#7a1f2b" stroke-width="2"/>'
+    '<rect x="16" y="46" width="64" height="40" fill="#efe0bf" stroke="#7a4b1f" stroke-width="3"/>'
+    '<circle cx="34" cy="64" r="8" fill="#f2c14e" stroke="#b8862f" stroke-width="2"/>'
+    '<path d="M50 72 L74 72 M50 62 L70 62" stroke="#2f6b45" stroke-width="5" stroke-linecap="round"/>')
+ICONS["history"] = icon_doc(
+    '<rect x="16" y="14" width="64" height="70" rx="6" fill="#efe0bf" stroke="#7a4b1f" stroke-width="3"/>'
+    '<path d="M28 32 L68 32 M28 44 L68 44 M28 56 L56 56" stroke="#7a4b1f" stroke-width="4" stroke-linecap="round"/>'
+    '<circle cx="66" cy="68" r="14" fill="#c0392b" stroke="#6b1a12" stroke-width="2"/>'
+    '<path d="M66 60 L66 68 L72 72" stroke="#fff3d6" stroke-width="3" fill="none" stroke-linecap="round"/>')
+ICONS["share"] = icon_doc(
+    '<circle cx="70" cy="20" r="12" fill="#2f6b45"/><circle cx="26" cy="48" r="12" fill="#2f6b45"/>'
+    '<circle cx="70" cy="76" r="12" fill="#2f6b45"/>'
+    '<path d="M36 42 L60 26 M36 54 L60 70" stroke="#2f6b45" stroke-width="6"/>')
+
 
 def main():
     for cid, spec in CHARACTERS.items():

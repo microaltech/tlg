@@ -6,17 +6,20 @@ const { createServer } = require("./server.js");
 
 async function start(opts = {}) {
 	let t = 1_700_000_000_000;
-	const server = createServer({ now: () => t, random: opts.random || (() => 0.5) });
+	const server = createServer({ ...opts, now: () => t, random: opts.random || (() => 0.5) });
 	await new Promise((r) => server.listen(0, r));
 	const base = `http://127.0.0.1:${server.address().port}`;
-	const call = async (method, path, body, token) => {
+	const call = async (method, path, body, token, headers = {}) => {
 		const res = await fetch(base + path, {
 			method, body: body ? JSON.stringify(body) : undefined,
-			headers: token ? { Authorization: `Bearer ${token}` } : {},
+			headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...headers },
 		});
-		return { status: res.status, data: await res.json() };
+		const text = await res.text();
+		let data;
+		try { data = JSON.parse(text); } catch { data = text; }
+		return { status: res.status, data, type: res.headers.get("content-type") };
 	};
-	return { server, call, tick: (ms) => { t += ms; } };
+	return { server, call, tick: (ms) => { t += ms; }, now: () => t };
 }
 
 async function login(call, device, name) {
@@ -362,4 +365,155 @@ test("statistik anonim: tanpa token, dibersihkan, satu per hari", async () => {
 		assert.deepEqual(p.events, { hunt: 3, win: 12 }, "kejadian tak dikenal dibuang");
 		assert.equal(p.email, undefined, "kolom asing dibuang");
 	} finally { server.close(); }
+});
+
+
+test("undang teman: hadiah lewat surat saat yang diundang mencapai tahap 10", async () => {
+	const { server, call, tick } = await start();
+	try {
+		const a = await login(call, "undang-a", "Arya");
+		tick(1000);
+		const b = await login(call, "undang-b", "Bayu");
+		const code = a.player.code;
+		assert.equal((await call("POST", "/v1/referral", { code: b.player.code }, b.token)).status, 400, "kode sendiri");
+		assert.equal((await call("POST", "/v1/referral", { code: b.player.code }, a.token)).status, 400, "pengundang lebih baru");
+		assert.equal((await call("POST", "/v1/referral", { code: "00000000" }, b.token)).status, 404);
+		assert.equal((await call("POST", "/v1/referral", { code }, b.token)).status, 200);
+		assert.equal((await call("POST", "/v1/referral", { code }, b.token)).status, 409, "sekali saja");
+		assert.equal((await call("GET", "/v1/mail", null, a.token)).data.mail.length, 0, "belum tahap 10");
+		await call("POST", "/v1/profile", { stage: 10, power: 50 }, b.token);
+		const ma = (await call("GET", "/v1/mail", null, a.token)).data.mail;
+		const mb = (await call("GET", "/v1/mail", null, b.token)).data.mail;
+		assert.equal(ma.length, 1);
+		assert.equal(mb.length, 1);
+		assert.equal(ma[0].reward.gold, 100);
+		await call("POST", "/v1/profile", { stage: 11 }, b.token);
+		assert.equal((await call("GET", "/v1/mail", null, a.token)).data.mail.length, 1, "hadiah tidak dobel");
+		const info = (await call("GET", "/v1/referral", null, a.token)).data;
+		assert.equal(info.invited, 1);
+		assert.equal(info.rewarded, 1);
+		const c = await login(call, "undang-c", "Citra");
+		tick(8 * 86400000);
+		assert.equal((await call("POST", "/v1/referral", { code }, c.token)).status, 400, "akun lama tidak bisa");
+	} finally { server.close(); }
+});
+
+test("musim aliansi: poin dari perang wilayah & bos, hadiah 3 besar sekali", async () => {
+	const { server, call, tick } = await start();
+	try {
+		const a = await login(call, "musim-a", "Arya");
+		const b = await login(call, "musim-b", "Bayu");
+		await call("POST", "/v1/profile", { power: 10000, alliance: "garuda" }, a.token);
+		await call("POST", "/v1/profile", { power: 100, alliance: "macan" }, b.token);
+		await call("POST", "/v1/guildwar/attack", { territory: 0 }, a.token);
+		await call("POST", "/v1/worldboss/attack", {}, a.token);
+		await call("POST", "/v1/guildwar/attack", { territory: 0 }, b.token);
+		const s = (await call("GET", "/v1/season", null, a.token)).data;
+		assert.equal(s.board[0].alliance, "garuda");
+		assert.ok(s.board[0].points > s.board[1].points);
+		assert.equal((await call("POST", "/v1/season/claim", {}, a.token)).status, 400, "musim belum selesai");
+		tick(s.ends_in + 1000);
+		const s2 = (await call("GET", "/v1/season", null, a.token)).data;
+		assert.equal(s2.last_rank, 1);
+		const claim = await call("POST", "/v1/season/claim", {}, a.token);
+		assert.equal(claim.status, 200);
+		assert.equal(claim.data.frame, "frame_juara_musim");
+		assert.equal((await call("POST", "/v1/season/claim", {}, a.token)).status, 409);
+		assert.equal((await call("POST", "/v1/season/claim", {}, b.token)).data.frame, "frame_musim", "peringkat 2");
+	} finally { server.close(); }
+});
+
+test("pasar: jual, beli, pajak lewat surat, batal, kedaluwarsa, batas harian", async () => {
+	const { server, call, tick } = await start();
+	try {
+		const a = await login(call, "pasar-a", "Arya");
+		const b = await login(call, "pasar-b", "Bayu");
+		assert.equal((await call("POST", "/v1/market/sell", { item: "palsu", qty: 1, price: 10 }, a.token)).status, 400);
+		assert.equal((await call("POST", "/v1/market/sell", { item: "star_stone", qty: 0, price: 10 }, a.token)).status, 400);
+		const s1 = await call("POST", "/v1/market/sell", { item: "star_stone", qty: 2, price: 1000 }, a.token);
+		assert.equal(s1.status, 200);
+		const list = (await call("GET", "/v1/market", null, b.token)).data;
+		assert.equal(list.listings.length, 1);
+		assert.equal(list.listings[0].seller, undefined, "ID penjual tidak dibocorkan");
+		assert.equal((await call("POST", "/v1/market/buy", { id: s1.data.id }, a.token)).status, 400, "beli sendiri");
+		const buy = await call("POST", "/v1/market/buy", { id: s1.data.id }, b.token);
+		assert.deepEqual(buy.data, { item: "star_stone", qty: 2, price: 1000 });
+		assert.equal((await call("POST", "/v1/market/buy", { id: s1.data.id }, b.token)).status, 404, "sudah terjual");
+		const mail = (await call("GET", "/v1/mail", null, a.token)).data.mail;
+		assert.equal(mail[0].reward.silver, 900, "hasil dikurangi pajak 10%");
+		const notices = (await call("GET", "/v1/notices?since=0", null, a.token)).data;
+		assert.equal(notices.sold, 1);
+		assert.equal(notices.mail, 1);
+		const s2 = await call("POST", "/v1/market/sell", { item: "energy_tea", qty: 1, price: 5 }, a.token);
+		assert.equal((await call("POST", "/v1/market/cancel", { id: s2.data.id }, b.token)).status, 404, "bukan miliknya");
+		assert.equal((await call("POST", "/v1/market/cancel", { id: s2.data.id }, a.token)).status, 200);
+		const s3 = await call("POST", "/v1/market/sell", { item: "energy_tea", qty: 1, price: 5 }, a.token);
+		for (let i = 0; i < 2; i++) await call("POST", "/v1/market/sell", { item: "energy_tea", qty: 1, price: 5 }, a.token);
+		assert.equal((await call("POST", "/v1/market/sell", { item: "energy_tea", qty: 1, price: 5 }, a.token)).status, 429);
+		tick(4 * 86400000);
+		await call("GET", "/v1/market", null, b.token);
+		const back = (await call("GET", "/v1/mail", null, a.token)).data.mail.filter((m) => m.title === "Dagangan Kembali");
+		assert.equal(back.length, 3, "dagangan kedaluwarsa dikembalikan");
+		assert.equal((await call("POST", "/v1/market/buy", { id: s3.data.id }, b.token)).status, 404);
+	} finally { server.close(); }
+});
+
+test("dasbor admin: halaman terbuka, API butuh token", async () => {
+	const { server, call } = await start({ adminToken: "rahasia-admin" });
+	try {
+		const page = await call("GET", "/admin");
+		assert.equal(page.status, 200);
+		assert.match(page.type, /text\/html/);
+		assert.equal((await call("GET", "/admin/api/overview")).status, 401);
+		assert.equal((await call("GET", "/admin/api/overview", null, null, { "X-Admin-Token": "salah" })).status, 401);
+		const H = { "X-Admin-Token": "rahasia-admin" };
+		await login(call, "admin-a", "Arya");
+		assert.equal((await call("GET", "/admin/api/overview", null, null, H)).data.players, 1);
+		assert.equal((await call("POST", "/admin/api/mail", { to: "all", title: "Halo", body: "Isi", reward: { gold: 5 } }, null, H)).status, 200);
+		assert.equal((await call("POST", "/admin/api/codes", { code: "ujicoba", reward: { gold: 1 } }, null, H)).data.code, "UJICOBA");
+		assert.equal((await call("GET", "/admin/api/codes", null, null, H)).data.codes.length, 1);
+		assert.ok(Array.isArray((await call("GET", "/admin/api/stats?days=7", null, null, H)).data.days));
+		assert.ok(Array.isArray((await call("GET", "/admin/api/reports", null, null, H)).data.reports));
+	} finally { server.close(); }
+	const off = await start({ adminToken: "" });
+	try {
+		assert.equal((await off.call("GET", "/admin/api/overview", null, null, { "X-Admin-Token": "" })).status, 403);
+	} finally { off.server.close(); }
+});
+
+test("verifikasi pembelian Google Play (dengan Google tiruan)", async () => {
+	const { privateKey } = require("node:crypto").generateKeyPairSync("rsa", { modulusLength: 2048,
+		privateKeyEncoding: { type: "pkcs8", format: "pem" }, publicKeyEncoding: { type: "spki", format: "pem" } });
+	const calls = [];
+	const fakeFetch = async (url, init) => {
+		calls.push(url);
+		if (url.includes("oauth2")) {
+			assert.match(init.body, /assertion=/);
+			return { ok: true, status: 200, json: async () => ({ access_token: "akses", expires_in: 3600 }) };
+		}
+		const token = decodeURIComponent(url.split("/tokens/")[1]);
+		if (token === "token-palsu-xyz") return { ok: false, status: 400, json: async () => ({}) };
+		return { ok: true, status: 200, json: async () => ({ purchaseState: token === "token-batal-xyz" ? 1 : 0, orderId: "GPA.1" }) };
+	};
+	const { server, call } = await start({ iap: { packageName: "com.microaltech.tuannusantara",
+		serviceAccount: { client_email: "uji@x.iam.gserviceaccount.com", private_key: privateKey }, fetch: fakeFetch } });
+	try {
+		const a = await login(call, "iap-a", "Arya");
+		const b = await login(call, "iap-b", "Bayu");
+		const ok = await call("POST", "/v1/iap/verify", { product: "gold_60", token: "token-asli-12345" }, a.token);
+		assert.equal(ok.status, 200);
+		assert.equal(ok.data.valid, true);
+		assert.equal((await call("POST", "/v1/iap/verify", { product: "gold_60", token: "token-asli-12345" }, a.token)).data.repeat, true);
+		assert.equal((await call("POST", "/v1/iap/verify", { product: "gold_60", token: "token-asli-12345" }, b.token)).status, 409);
+		assert.equal((await call("POST", "/v1/iap/verify", { product: "gold_60", token: "token-palsu-xyz" }, a.token)).status, 402);
+		assert.equal((await call("POST", "/v1/iap/verify", { product: "gold_60", token: "token-batal-xyz" }, a.token)).status, 402);
+		assert.equal(calls.filter((u) => u.includes("oauth2")).length, 1, "token akses disimpan");
+	} finally { server.close(); }
+	const off = await start();
+	try {
+		const a = await login(off.call, "iap-c", "Citra");
+		const r = await off.call("POST", "/v1/iap/verify", { product: "gold_60", token: "token-asli-12345" }, a.token);
+		assert.equal(r.status, 503);
+		assert.equal(r.data.disabled, true);
+	} finally { off.server.close(); }
 });

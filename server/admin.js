@@ -10,7 +10,7 @@
 // cleanReward() di server.js: emas maks. 1000, sumber daya maks. 10 juta, item maks. 10.
 "use strict";
 const path = require("node:path");
-const { openDb, addCode, cleanReward, addMail } = require("./server.js");
+const { openDb, addCode, cleanReward, addMail, statsSummary } = require("./server.js");
 
 const db = openDb(process.env.DB_PATH || path.join(__dirname, "data", "tlg.db"));
 const [cmd, ...args] = process.argv.slice(2);
@@ -69,34 +69,15 @@ if (cmd === "add-code" && args[0]) {
 	console.log(`Surat "${title}" untuk ${to === "all" ? "semua pemain" : to}: ${JSON.stringify(cleanReward(reward))}, ${days} hari.`);
 } else if (cmd === "stats") {
 	// Ringkasan statistik anonim: pemasangan aktif, lama main, tahap, retensi, kejadian teratas.
-	const days = Number(args[0] || 14);
-	const today = Math.floor(Date.now() / 86400000);
-	const rows = db.prepare("SELECT install, day, payload FROM stats_reports WHERE day > ?").all(today - days - 30);
-	const first = {};
-	for (const r of db.prepare("SELECT install, MIN(day) AS d FROM stats_reports GROUP BY install").all()) first[r.install] = r.d;
-	const byDay = {};
-	for (const r of rows) (byDay[r.day] ||= []).push({ install: r.install, ...JSON.parse(r.payload) });
+	const sum = statsSummary(db, Number(args[0] || 14));
 	console.log("hari        | aktif | baru | rata sesi | rata menit | median tahap | tutorial");
-	for (let d = today - days + 1; d <= today; d++) {
-		const list = byDay[d] || [];
-		const stages = list.map((x) => x.stage).sort((a, b) => a - b);
-		const avg = (f) => (list.length ? list.reduce((s, x) => s + f(x), 0) / list.length : 0);
-		console.log(`${new Date(d * 86400000).toISOString().slice(0, 10)}  | ${String(list.length).padStart(5)} | `
-			+ `${String(list.filter((x) => first[x.install] === d).length).padStart(4)} | ${avg((x) => x.sessions).toFixed(1).padStart(9)} | `
-			+ `${(avg((x) => x.play_seconds) / 60).toFixed(0).padStart(10)} | ${String(stages[Math.floor(stages.length / 2)] || 0).padStart(12)} | `
-			+ `${Math.round(avg((x) => (x.tutorial_done ? 1 : 0)) * 100)}%`);
+	for (const d of sum.days) {
+		console.log(`${d.date}  | ${String(d.active).padStart(5)} | ${String(d.new).padStart(4)} | `
+			+ `${d.sessions.toFixed(1).padStart(9)} | ${String(d.minutes).padStart(10)} | ${String(d.median_stage).padStart(12)} | `
+			+ `${d.tutorial}%`);
 	}
-	// Retensi: dari pemasangan yang mulai di jendela ini, berapa yang masih melapor di hari ke-1 dan ke-7.
-	const cohort = Object.entries(first).filter(([, d]) => d > today - days && d <= today - 7);
-	const seen = new Set(rows.map((r) => `${r.install}:${r.day}`));
-	const ret = (k) => (cohort.length ? Math.round(cohort.filter(([i, d]) => seen.has(`${i}:${d + k}`)).length / cohort.length * 100) : 0);
-	console.log(`Retensi (${cohort.length} pemasangan): H1 ${ret(1)}%, H7 ${ret(7)}%`);
-	const events = {};
-	for (const list of Object.values(byDay)) {
-		for (const x of list) for (const [k, v] of Object.entries(x.events || {})) events[k] = (events[k] || 0) + v;
-	}
-	console.log("Kejadian teratas:", Object.entries(events).sort((a, b) => b[1] - a[1]).slice(0, 15)
-		.map(([k, v]) => `${k} ${v}`).join(", "));
+	console.log(`Retensi (${sum.retention.cohort} pemasangan): H1 ${sum.retention.d1}%, H7 ${sum.retention.d7}%`);
+	console.log("Kejadian teratas:", sum.events.map(([k, v]) => `${k} ${v}`).join(", "));
 } else {
 	console.log("Pemakaian:\n  node server/admin.js add-code KODE gold=100 items.recruit_ticket=1 --max 1000 --days 30\n"
 		+ "  node server/admin.js list-codes\n"

@@ -14,8 +14,10 @@ static var INPUT_BG := Color("fffaf0")
 static var ALERT_BG := Color("fde2c4")
 static var TRACK_BG := Color("d8c49a")
 static var dark := false
-const RED := Color("a8322d")
-const GREEN := Color("4f9a4a")
+## Merah/hijau berganti oranye/biru di mode ramah buta warna (lihat apply_palette).
+static var RED := Color("a8322d")
+static var GREEN := Color("4f9a4a")
+static var colorblind := false
 const ATTR_COLORS := {
 	"str": Color("c0392b"),
 	"int": Color("2e86c1"),
@@ -29,8 +31,11 @@ static var font_title: Font = load("res://assets/fonts/Cinzel-Bold.woff2")
 
 
 ## Palet terang (perkamen) atau gelap (mode malam).
-static func apply_palette(on: bool) -> void:
+static func apply_palette(on: bool, color_safe := false) -> void:
 	dark = on
+	colorblind = color_safe
+	RED = Color("c46a1c") if color_safe else Color("a8322d")
+	GREEN = Color("2f6fb5") if color_safe else Color("4f9a4a")
 	INK = Color("efe0c0") if on else Color("3b2416")
 	CARD_BG = Color("2a1d14") if on else PARCHMENT
 	CARD_TITLE = GOLD if on else Color("5e2a12")

@@ -39,6 +39,22 @@ func schedule_plan() -> void:
 		return
 	for n in Game.model.notification_plan(Game.now()):
 		_plugin.schedule(int(n["id"]), tr(str(n["title"])), tr(str(n["text"])), int(n["delay"]))
+	_watch_server()
+
+
+## Notifikasi dari server tanpa Firebase: selama game ditutup, plugin memeriksa
+## GET /v1/notices tiap WATCH_MINUTES dan memberi tahu bila ada surat atau dagangan laku.
+const WATCH_MINUTES := 240
+
+
+func _watch_server() -> void:
+	if not _plugin.has_method("start_server_watch"):
+		return
+	if Online.is_online() and Settings.notifications:
+		_plugin.start_server_watch(Online.base_url(), Online.token(), WATCH_MINUTES, tr("Surat baru dari istana"),
+			tr("Dagangan Tuan laku!"), tr("Buka game untuk mengambil hadiahnya."))
+	else:
+		_plugin.stop_server_watch()
 
 
 func cancel_all() -> void:
@@ -54,6 +70,8 @@ func _on_settings_changed() -> void:
 		_request_permission()
 	else:
 		cancel_all()
+		if available() and _plugin.has_method("stop_server_watch"):
+			_plugin.stop_server_watch()
 
 
 ## Android 13+ butuh izin runtime untuk menampilkan notifikasi. Sistem sendiri

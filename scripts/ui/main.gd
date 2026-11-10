@@ -10,6 +10,8 @@ const BattleView := preload("res://scripts/ui/battle_view.gd")
 const DuelView := preload("res://scripts/ui/duel_view.gd")
 const LoginGrid := preload("res://scripts/ui/login_grid.gd")
 const RealmUI := preload("res://scripts/ui/realm_ui.gd")
+const ShareCard := preload("res://scripts/ui/share_card.gd")
+const SkyLayer := preload("res://scripts/ui/sky_layer.gd")
 
 const PAGES := [
 	{"key": "city", "title": "Kota", "icon": "tab_city", "bg": "city"},
@@ -51,6 +53,7 @@ var _login_subtitle: Label
 var _login_next_label: Label
 var _login_prompted_day := -1
 var _realm_ui  ## RealmUI: panel fitur kerajaan (scripts/ui/realm_ui.gd)
+var _sky  ## SkyLayer di spanduk kota (siang/malam & hujan)
 const COUNSELOR_PAGE := 6  ## kartu penasihat yang dibangun sebelum "Tampilkan Semua"
 var _counselors_all := false
 var _display := []  ## [mode malam, skala] saat UI dibangun
@@ -165,7 +168,7 @@ func _ready() -> void:
 	model = Game.model
 	_realm_ui = RealmUI.new(self)
 	Art.warm_up.call_deferred()
-	UI.apply_palette(Settings.dark_mode)
+	UI.apply_palette(Settings.dark_mode, Settings.colorblind)
 	get_tree().root.content_scale_factor = Settings.ui_scale
 	# Agar layar bisa digeser walau jari mulai di atas kartu/tombol: kontrol bawaan
 	# Godot "menelan" sentuhan (MOUSE_FILTER_STOP) sehingga ScrollContainer tidak
@@ -231,9 +234,11 @@ func _ready() -> void:
 			_realm_ui._load_world_boss()
 			_realm_ui._load_tourney()
 			Online.fetch_mail()
+			if not model.alliance.is_empty():
+				_realm_ui._load_season()
 		_queue_rebuild())
 	Online.king_changed.connect(_queue_rebuild)
-	_display = [Settings.dark_mode, Settings.ui_scale]
+	_display = [Settings.dark_mode, Settings.ui_scale, Settings.colorblind]
 	Settings.changed.connect(_on_display_settings)
 	model.badge_earned.connect(func(id):
 		if _startup_prompted:
@@ -432,6 +437,10 @@ func _build_page(p: Dictionary) -> Dictionary:
 	pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	pic.set_anchors_preset(Control.PRESET_FULL_RECT)
 	banner.add_child(pic)
+	if p["key"] == "city":
+		_sky = SkyLayer.new()
+		_sky.season = model.season_id(Game.now())
+		banner.add_child(_sky)
 	var shade := TextureRect.new()
 	var grad := GradientTexture2D.new()
 	grad.gradient = Gradient.new()
@@ -710,6 +719,8 @@ func _rebuild() -> void:
 	_rebuild_queued = false
 	model.memo_begin()
 	Art.skins = model.skin_portraits()
+	if is_instance_valid(_sky):
+		_sky.season = model.season_id(Game.now())
 	var scrolls := {}
 	for k in _pages:
 		scrolls[k] = _pages[k]["scroll"].scroll_vertical
@@ -1505,10 +1516,17 @@ func _show_promotion() -> void:
 			"Kapasitas urusan %d → %d" % [prev["max_charges"], r["max_charges"]],
 			"Pengali hasil urusan x%s → x%s" % [str(prev["mult"]), str(r["mult"])],
 			"Kursi anak %d → %d" % [prev["child_seats"], r["child_seats"]],
-			"+%d emas" % Data.PROMOTE_GOLD]:
+			"+%d emas" % Data.PROMOTE_GOLD] + _rank_perk_lines(model.rank):
 		var l := _label(v, line, "CardLabel")
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.add_theme_color_override("font_color", Color("fff3d6"))
+	var share := _button(v, "Bagikan", func():
+		share_card({"kind": "promotion", "headline": "NAIK JABATAN!", "title": r["name"], "portrait": model.lord_portrait(),
+			"lines": [model.me_name(), tr("Kekuatan %s", "power") % _num(model.power())],
+			"text": "Aku baru naik jabatan di Tuan Nusantara!"})
+		return null, true, "share")
+	share.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	share.custom_minimum_size.x = 260
 	var hint := _label(v, "Ketuk untuk melanjutkan", "SmallLabel")
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint.add_theme_color_override("font_color", Color("c8b89a"))
@@ -1520,6 +1538,15 @@ func _show_promotion() -> void:
 	var tw := create_tween()
 	tw.tween_property(crest, "scale", Vector2.ONE, 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tw.tween_property(v, "modulate:a", 1.0, 0.35)
+
+
+## Baris bonus permanen gelar kebangsawanan (Adipati ke atas).
+func _rank_perk_lines(rank_index: int) -> Array:
+	var perk: Dictionary = Data.RANK_PERKS.get(rank_index, {})
+	if perk.is_empty():
+		return []
+	return [tr("Bonus gelar: semua hasil urusan +%d%%, kekuatan tempur +%d%%") % [roundi(perk["yield_all"] * 100),
+		roundi(perk["combat"] * 100)]]
 
 
 func _big_result(win: bool) -> void:
@@ -1677,7 +1704,7 @@ func _open_panel(title: String, icon_name: String, on_close: Callable, top := 0.
 
 ## Palet & skala dipakai saat UI dibangun: muat ulang adegan utama bila berubah.
 func _on_display_settings() -> void:
-	if _reloading or _display == [Settings.dark_mode, Settings.ui_scale]:
+	if _reloading or _display == [Settings.dark_mode, Settings.ui_scale, Settings.colorblind]:
 		return
 	_reloading = true
 	Game.save_game()
@@ -4963,6 +4990,12 @@ func _show_profile() -> void:
 	_fill_profile()
 
 
+## Buat dan bagikan kartu gambar (lihat share_card.gd).
+func share_card(card: Dictionary) -> void:
+	Audio.play("click")
+	ShareCard.share(self, card)
+
+
 func _close_profile() -> void:
 	if is_instance_valid(_profile_overlay):
 		Audio.play("click")
@@ -5006,6 +5039,13 @@ func _fill_profile() -> void:
 		_show_vip()
 		return null, true, "vip", "GoldButton" if model.vip_daily_can_claim(Game.now()) else "GreenButton")
 	vip.custom_minimum_size.y = 60
+	_button(col, "Bagikan Kerajaan", func():
+		share_card({"kind": "kingdom", "headline": model.rank_info()["name"], "title": model.me_name(),
+			"portrait": model.lord_portrait(), "bg": "city",
+			"lines": [tr("Kekuatan %s", "power") % _num(model.power()), tr("Tahap %d") % (model.stage + 1),
+				tr("%d penasihat") % model.counselors.size()],
+			"text": "Lihat kerajaanku di Tuan Nusantara!"})
+		return null, true, "share").custom_minimum_size.y = 60
 	var album: Array = model.badge_album()
 	if not album.is_empty():
 		var bl := _label(_profile_box, tr("Lencana (%d)") % album.size(), "CardLabel")
@@ -5455,7 +5495,7 @@ func _show_settings() -> void:
 	var scale_row := HBoxContainer.new()
 	scale_row.add_theme_constant_override("separation", 8)
 	device.add_child(scale_row)
-	for opt in [["Kecil", 0.9], ["Normal", 1.0], ["Besar", 1.1]]:
+	for opt in [["Kecil", 0.9], ["Normal", 1.0], ["Besar", 1.1], ["Ekstra", 1.25]]:
 		var sb := Button.new()
 		sb.text = opt[0]
 		sb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -5467,6 +5507,9 @@ func _show_settings() -> void:
 			Audio.play("click")
 			Settings.set_value("ui_scale", value))
 		scale_row.add_child(sb)
+	_setting_toggle(device, "Ramah buta warna", "colorblind",
+		"Ganti merah dan hijau dengan oranye dan biru agar mudah dibedakan (buta warna merah-hijau).")
+	_setting_toggle(device, "Getar", "vibration", "Getar singkat saat menang, naik jabatan, atau mendapat penasihat Legenda.")
 	_setting_toggle(device, "Kalender login teks", "simple_login",
 		"Tampilkan hadiah login sebagai daftar teks. Nyala otomatis bila kalender bergambar membuat game berhenti.")
 	_setting_toggle(device, "Lewati tayangan perang", "skip_battles",
@@ -6094,6 +6137,18 @@ func _show_recruit(results: Array) -> void:
 		Audio.play("click")
 		overlay.queue_free())
 	v.add_child(done)
+	# Penasihat Legenda: tawarkan kartu "Bagikan".
+	var legend := results.filter(func(x): return x["rarity"] == "ssr" and x.get("new", false))
+	if not legend.is_empty():
+		var lid: String = legend[0]["id"]
+		var sb := _button(v, "Bagikan", func():
+			share_card({"kind": "recruit", "headline": "PENASIHAT LEGENDA!", "title": Data.counselor_def(lid)["name"],
+				"portrait": lid, "bg": "gacha", "lines": [], "text": "Aku mendapat penasihat Legenda di Tuan Nusantara!"})
+			return null, true, "share")
+		sb.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		sb.custom_minimum_size.x = 260
+		sb.modulate.a = 0.0
+		done.draw.connect(func(): sb.modulate.a = done.modulate.a)
 
 	var tw := create_tween()
 	scroll.pivot_offset = Vector2(110, 110)

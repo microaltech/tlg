@@ -20,6 +20,8 @@ android {
 }
 
 dependencies {
+    // FileProvider untuk berbagi gambar (androidx.core sudah ikut lewat androidx.fragment di template Godot).
+    compileOnly 'androidx.core:core:1.12.0'
     // Disediakan oleh Godot saat runtime; versinya harus sama dengan editor.
-    compileOnly 'org.godotengine:godot:4.3.stable'
+    compileOnly 'org.godotengine:godot:4.3.0.stable'
 }

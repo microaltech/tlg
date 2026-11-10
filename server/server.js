@@ -1,4 +1,4 @@
-// Server sosial Top Lord Like: akun perangkat, profil pemain, papan peringkat,
+// Server sosial Tuan Nusantara: akun perangkat, profil pemain, papan peringkat,
 // chat aliansi, arena melawan pemain sungguhan, teman & hadiah, Raja Hari Ini,
 // dan Perang Wilayah Aliansi mingguan.
 //

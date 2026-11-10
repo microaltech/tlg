@@ -1,4 +1,4 @@
-# Kebijakan Privasi — Top Lord Like
+# Kebijakan Privasi — Tuan Nusantara
 
 _Berlaku sejak: [isi tanggal rilis] · Pengembang: [nama pengembang] · Kontak: [email dukungan]_
 
@@ -11,7 +11,7 @@ _Berlaku sejak: [isi tanggal rilis] · Pengembang: [nama pengembang] · Kontak: 
 
 ## Ringkasan
 
-Top Lord Like adalah game offline. Game ini tidak punya akun, tidak punya server,
+Tuan Nusantara adalah game offline. Game ini tidak punya akun, tidak punya server,
 dan tidak mengirim data pribadi Anda ke pengembang atau pihak ketiga.
 
 ## Data yang disimpan di perangkat Anda

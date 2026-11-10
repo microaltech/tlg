@@ -219,7 +219,7 @@ func last_crash() -> Dictionary:
 ## Teks laporan masalah untuk disalin pemain dan dikirim ke pengembang.
 func problem_report() -> String:
 	var lines := [
-		"Laporan masalah Top Lord Like",
+		"Laporan masalah Tuan Nusantara",
 		"Versi: %s · %s %s" % [_version(), OS.get_name(), OS.get_version()],
 		"Perangkat: %s" % OS.get_model_name(),
 		"Sesi: %d · Main: %d menit" % [int(stats.get("sessions", 0)), int(stats.get("play_seconds", 0)) / 60],

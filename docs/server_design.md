@@ -6,7 +6,7 @@
 > (`scripts/core/online.gd`). Ekonomi, aliansi dinamis, bos, dan perang di bawah ini
 > masih rencana; Nakama tetap rekomendasi bila fitur-fitur itu dipindahkan ke server.
 
-Saat ini Top Lord Like berjalan sepenuhnya offline. Aliansi, chat, arena, perang
+Saat ini Tuan Nusantara berjalan sepenuhnya offline. Aliansi, chat, arena, perang
 guild, bos, dan peringkat adalah simulasi NPC yang deterministik di
 `game_model.gd`. Dokumen ini merancang cara menggantinya dengan server sungguhan
 tanpa menulis ulang game.

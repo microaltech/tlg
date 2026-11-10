@@ -8,8 +8,8 @@
 # di Google Play kecuali memakai Play App Signing. Jangan commit ke git.
 set -euo pipefail
 
-KEYSTORE="${1:-$HOME/keys/toplordlike-release.keystore}"
-ALIAS="${2:-toplordlike}"
+KEYSTORE="${1:-$HOME/keys/tuannusantara-release.keystore}"
+ALIAS="${2:-tuannusantara}"
 
 if [[ -e "$KEYSTORE" ]]; then
 	echo "Keystore sudah ada: $KEYSTORE (tidak ditimpa)." >&2
@@ -31,7 +31,7 @@ keytool -genkeypair -v \
 	-keystore "$KEYSTORE" -alias "$ALIAS" \
 	-keyalg RSA -keysize 2048 -validity 10000 \
 	-storepass "$PASS" -keypass "$PASS" \
-	-dname "CN=${ORG:-Top Lord Like}, O=${ORG:-Top Lord Like}, C=ID"
+	-dname "CN=${ORG:-Tuan Nusantara}, O=${ORG:-Tuan Nusantara}, C=ID"
 chmod 600 "$KEYSTORE"
 
 cat <<MSG

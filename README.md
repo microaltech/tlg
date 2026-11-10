@@ -1,4 +1,4 @@
-# Top Lord Like — Game Android Idle Strategi Kerajaan (Godot 4)
+# Tuan Nusantara — Game Android Idle Strategi Kerajaan (Godot 4)
 
 Prototipe game bergaya *Top Lord*: Anda seorang Tuan yang mengurus kota,
 melatih penasihat, menaklukkan tahap kampanye, mengurus istana (selir & anak),
@@ -415,9 +415,9 @@ Build lewat editor: **Project → Export → Android → Export Project**, atau
 lewat terminal:
 
 ```bash
-GODOT=/path/ke/godot tools/build_android.sh           # build/top-lord-like-debug.apk
+GODOT=/path/ke/godot tools/build_android.sh           # build/tuan-nusantara-debug.apk
 GODOT=/path/ke/godot tools/build_android.sh release   # APK release
-adb install -r build/top-lord-like-debug.apk          # pasang ke HP via USB
+adb install -r build/tuan-nusantara-debug.apk          # pasang ke HP via USB
 ```
 
 Untuk rilis, buat keystore release sendiri, simpan baik-baik (kalau hilang

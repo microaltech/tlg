@@ -4,20 +4,17 @@ Teks siap tempel untuk **Main store listing**. Batas Play Console: judul 30 kara
 deskripsi singkat 80 karakter, deskripsi lengkap 4.000 karakter. Grafis dibuat dengan
 `tools/store_assets.gd` (lihat `docs/release_checklist.md`).
 
-## Penting: nama aplikasi
+## Nama aplikasi
 
-Nama proyek saat ini, **"Top Lord Like"**, memakai nama game lain ("Top Lord").
-Jangan memakainya sebagai judul di Play Store: bisa dianggap melanggar merek dagang
-dan kebijakan peniruan (impersonation), sehingga aplikasi ditolak atau diturunkan.
-Pilih nama sendiri, misalnya:
+Nama aplikasi: **Tuan Nusantara** (dipakai di `project.godot`, kedua preset ekspor,
+laporan masalah, dan cadangan Google Play Games). Sebelum rilis, cek di Play Store
+dan PDKI (pdki-indonesia.dgip.go.id) bahwa nama ini belum dipakai pihak lain.
 
-- **Tuan Nusantara** (14 karakter)
-- **Kerajaan Nusantara: Strategi** (28 karakter)
-- **Raja Nusantara** (14 karakter)
-
-Cek dulu di Play Store dan PDKI (pdki-indonesia.dgip.go.id) bahwa nama yang dipilih
-belum dipakai. Setelah memilih, ganti `config/name` di `project.godot`, nama aplikasi
-di kedua preset `export_presets.cfg`, dan judul di bawah ini.
+ID paket masih `com.microaltech.toplordlike`. ID paket tidak tampil sebagai nama
+aplikasi, tetapi terlihat di alamat halaman Play Store dan **tidak bisa diganti
+setelah rilis pertama**. Bila ingin menggantinya (mis. `com.microaltech.tuannusantara`),
+lakukan sebelum unggah pertama. Di HP penguji, aplikasi dengan ID baru terpasang
+sebagai aplikasi terpisah, jadi pindahkan progres dulu lewat Pengaturan → kode cadangan.
 
 ## Bahasa Indonesia (utama)
 
@@ -62,7 +59,7 @@ rekrut acak (peluang tiap kelangkaan ditampilkan di dalam game).
 
 ## English
 
-**Title:** Nusantara Lord
+**Title:** Tuan Nusantara
 
 **Short description (≤80):**
 Build your kingdom, recruit legendary advisors, and unite the archipelago!

@@ -32,12 +32,12 @@ rm -f "$TEST_LOG"
 if [[ "$MODE" == "aab" ]]; then
 	# Preset AAB memakai Gradle build: jalankan Project > Install Android Build
 	# Template sekali di editor sebelum perintah ini.
-	"$GODOT" --headless --path . --export-release "Android AAB (Play Store)" build/top-lord-like.aab
+	"$GODOT" --headless --path . --export-release "Android AAB (Play Store)" build/tuan-nusantara.aab
 	ls -lh build/*.aab
 	exit 0
 elif [[ "$MODE" == "release" ]]; then
-	"$GODOT" --headless --path . --export-release "Android" build/top-lord-like.apk
+	"$GODOT" --headless --path . --export-release "Android" build/tuan-nusantara.apk
 else
-	"$GODOT" --headless --path . --export-debug "Android" build/top-lord-like-debug.apk
+	"$GODOT" --headless --path . --export-debug "Android" build/tuan-nusantara-debug.apk
 fi
 ls -lh build/*.apk

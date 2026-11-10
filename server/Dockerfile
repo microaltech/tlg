@@ -1,4 +1,4 @@
-# Server sosial Top Lord Like.
+# Server sosial Tuan Nusantara.
 #   docker build -t tlg-server server/
 #   docker run -d -p 8080:8080 -v tlg-data:/data tlg-server
 FROM node:22-alpine

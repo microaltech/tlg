@@ -60,7 +60,7 @@ func save_cloud(data: String) -> void:
 	if not available():
 		cloud_result.emit(false, "Google Play Games tidak tersedia di versi ini.")
 		return
-	_call("saveGame", [SNAPSHOT_NAME, "Top Lord Like", data])
+	_call("saveGame", [SNAPSHOT_NAME, "Tuan Nusantara", data])
 
 
 func load_cloud() -> void:

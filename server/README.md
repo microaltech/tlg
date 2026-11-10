@@ -1,4 +1,4 @@
-# Server sosial Top Lord Like
+# Server sosial Tuan Nusantara
 
 Server kecil tanpa dependensi luar (Node.js 22.13+, `node:http` dan `node:sqlite`)
 untuk fitur sosial dengan pemain sungguhan:

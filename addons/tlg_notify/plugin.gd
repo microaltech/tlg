@@ -27,5 +27,9 @@ class AndroidExport extends EditorExportPlugin:
 	func _get_android_libraries(_platform: EditorExportPlatform, _debug: bool) -> PackedStringArray:
 		return PackedStringArray([AAR])
 
+	# Ulasan dan update dalam aplikasi Google Play (dipakai TlgNotifyPlugin).
+	func _get_android_dependencies(_platform: EditorExportPlatform, _debug: bool) -> PackedStringArray:
+		return PackedStringArray(["com.google.android.play:review:2.0.1", "com.google.android.play:app-update:2.1.0"])
+
 	func _get_name() -> String:
 		return "TlgNotify"

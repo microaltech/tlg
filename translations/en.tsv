@@ -2832,3 +2832,66 @@ AYO BERGABUNG!	JOIN ME!
 Kode undangan: %s	Invite code: %s
 Gambar disimpan di perangkat dan teks ajakan disalin.	Image saved on the device and the invite text copied.
 Bonus gelar: semua hasil urusan +%d%%, kekuatan tempur +%d%%	Title bonus: all affair yields +%d%%, combat power +%d%%
+# --- Batch 9: dekorasi, sapu tahap, saran, konfigurasi jarak jauh, pindah perangkat ---
+Hias kota dengan gapura, taman, patung, dan pendopo. Tiap dekorasi dibeli sekali dan memberi bonus kecil permanen.	Decorate your city with gates, gardens, statues, and pavilions. Each decoration is bought once and gives a small permanent bonus.
+Dekorasi tampil di spanduk kota dan terlihat saat pemain lain mengunjungi kota Tuan.	Decorations appear on the city banner and are visible when other players visit your city.
+Penasihat menunjukkan hal paling berguna yang bisa Tuan kerjakan sekarang. Ketuk \"Pergi\" untuk langsung ke sana.	Your advisor shows the most useful thing you can do right now. Tap \"Go\" to jump straight there.
+Gapura Bentar	Split Gate
+Gerbang terbelah khas Bali di pintu masuk kota. Semua hasil urusan +1%.	A Balinese split gate at the city entrance. All affair yields +1%.
+Lampion Pasar	Market Lanterns
+Pasar malam makin ramai. Hasil Tarik Pajak +2%.	The night market gets livelier. Tax Collection yield +2%.
+Taman Sari	Water Palace Garden
+Taman air dengan kolam pemandian. Hasil Kelola Sawah +2%.	A water garden with bathing pools. Rice Fields yield +2%.
+Pancuran Naga	Dragon Fountain
+Air pancuran menyegarkan para prajurit. Hasil Rekrut Prajurit +2%.	The fountain refreshes the soldiers. Recruit Soldiers yield +2%.
+Patung Garuda	Garuda Statue
+Lambang keberanian di alun-alun. Kekuatan tempur +2%.	A symbol of courage in the town square. Combat power +2%.
+Pendopo Agung	Grand Pavilion
+Balai terbuka tempat rakyat menghadap. Semua hasil urusan +2%.	An open hall where the people come before you. All affair yields +2%.
+Menangkan satu tahap dulu.	Win a stage first.
+Jatah sapu hari ini habis.	No sweeps left today.
+Sapu %s x%d: -%d prajurit, +%d perak, +%d prestise.	Sweep %s x%d: -%d soldiers, +%d silver, +%d prestige.
+Dekorasi tidak dikenal.	Unknown decoration.
+Dekorasi terbuka di Tahap %d.	Decorations unlock at Stage %d.
+Dekorasi ini sudah terpasang.	This decoration is already placed.
+%s terpasang di kota!	%s placed in the city!
+Ada hadiah di Kotak Surat.	There are gifts in your Mailbox.
+Hadiah misi cerita siap diambil.	Story mission rewards are ready.
+Misi harian selesai, ambil hadiahnya.	Daily missions done, claim the rewards.
+Urusan kota penuh. Kerjakan sebelum terbuang.	City affairs are full. Do them before they go to waste.
+Rekrut gratis hari ini tersedia.	Today's free recruit is available.
+Pasukan cukup untuk menang di %s.	Your army is strong enough to win %s.
+Kebun siap dipanen.	The garden is ready to harvest.
+Ekspedisi sudah kembali.	An expedition has returned.
+Tugas Acara Sejarah siap diklaim.	History Event tasks are ready to claim.
+Dapur siap memasak hidangan berkah.	The kitchen is ready to cook a blessing dish.
+Belum cukup kuat? Sapu tahap lalu untuk perak dan prestise.	Not strong enough yet? Sweep the last stage for silver and prestige.
+Baca kisah sejarah hari ini.	Read today's history story.
+Latih penasihat terkuat untuk menaikkan kekuatan.	Train your strongest advisor to raise your power.
+Sapu %s: sisa %d · %s prajurit/kali	Sweep %s: %d left · %s soldiers each
+Sapu x%d	Sweep x%d
+Papan Peringkat Google Play	Google Play Leaderboards
+Pengumuman	Announcement
+Versi Baru Tersedia	New Version Available
+Perbarui Tuan Nusantara untuk terus bermain. Progres Tuan tetap aman.	Update Tuan Nusantara to keep playing. Your progress is safe.
+Perbarui	Update
+Pindah Perangkat	Move to Another Device
+Di HP lama: buat kode pindah. Di HP baru: sambungkan ke server yang sama lalu masukkan kodenya. Progres disimpan otomatis ke server setiap 10 menit.	On your old phone: create a transfer code. On your new phone: connect to the same server and enter the code. Progress is saved to the server automatically every 10 minutes.
+Buat Kode Pindah	Create Transfer Code
+Kode pindah: %s (berlaku 24 jam)	Transfer code: %s (valid 24 hours)
+Kode pindah disalin. Masukkan di HP baru dalam 24 jam.	Transfer code copied. Enter it on your new phone within 24 hours.
+Kode pindah dari HP lama	Transfer code from old phone
+Pindahkan	Transfer
+Kode pindah terdiri dari 8 huruf/angka.	The transfer code has 8 letters/digits.
+Progres di HP ini akan diganti dengan akun dari HP lama. Lanjutkan?	Progress on this phone will be replaced by the account from your old phone. Continue?
+Sambungkan ke server dulu.	Connect to the server first.
+Akun dan progres berhasil dipindahkan ke perangkat ini.	Account and progress moved to this device.
+Dekorasi	Decor
+Dekorasi Kota	City Decorations
+Saran Penasihat	Advisor's Tip
+Sembunyikan	Hide
+Saran lain (%d)	More tips (%d)
+%d/%d terpasang · terlihat di spanduk kota dan saat dikunjungi	%d/%d placed · shown on the city banner and to visitors
+Biaya: %s perak	Cost: %s silver
+Terpasang	Placed
+Simpan progres ke server dulu (tersambung otomatis), lalu coba lagi.	Save your progress to the server first (connects automatically), then try again.

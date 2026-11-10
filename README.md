@@ -611,6 +611,29 @@ JAVA_HOME=/path/ke/jdk17 gradle assembleRelease
 cp build/outputs/aar/tlg_notify-release.aar ../../addons/tlg_notify/bin/
 ```
 
+## Fitur batch 9
+
+- **Save di server**: saat online, save dicadangkan ke server tiap 10 menit dan saat
+  game dijeda. Pasar Pemain memeriksa item dari save server; lonjakan emas yang tidak
+  wajar ditandai untuk ditinjau di dasbor admin.
+- **Pindah perangkat**: Pengaturan → Server Online → Buat Kode Pindah (HP lama), lalu
+  Pindahkan (HP baru). Kode 8 huruf, sekali pakai, berlaku 24 jam.
+- **Konfigurasi jarak jauh** (dasbor admin → API `/admin/api/config`): bonus hasil,
+  diskon rekrut, Legenda unggulan, event mingguan, pengumuman, dan versi minimum.
+- **Versi minimum**: bila `min_version` server lebih besar dari `Data.VERSION_CODE`
+  (samakan dengan `version/code` preset ekspor), game meminta update lewat Play In-App
+  Updates (atau membuka Play Store).
+- **Laporan crash online** (ikut pilihan Bagikan statistik anonim) → dasbor admin.
+- **Ulasan Play Store**: In-App Review setelah naik jabatan, paling cepat hari ke-2,
+  jeda 30 hari, maks. 3 kali.
+- **Papan peringkat Google Play Games**: isi `LEADERBOARD_IDS` di `play_games.gd`.
+- **Bahasa Melayu (beta)**: `translations/ms.tsv` dibuat `tools/gen_ms.py` dari teks
+  Indonesia; koreksi penutur asli di `translations/ms_override.tsv`.
+- **Saran Penasihat** di halaman Kota, **Sapu Tahap** (10x sehari) di Kampanye, dan
+  **Dekorasi Kota** (6 dekorasi, terlihat di spanduk dan saat dikunjungi).
+- **CI GitHub Actions** (`.github/workflows/ci.yml`): tes game, terjemahan, server,
+  uji ujung-ke-ujung, dan APK arm64 yang bisa diunduh dari tab Actions.
+
 ## Alat tambahan
 
 - `tools/perf_check.gd` — ukur waktu bangun halaman (lihat `docs/performance.md`).

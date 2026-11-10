@@ -143,6 +143,8 @@ var realm := {}
 ## Efek titah Raja Hari Ini dari server ({"yield_silver": 0.05}); tidak disimpan.
 var king_effects := {}
 var rng := RandomNumberGenerator.new()
+## Konfigurasi jarak jauh dari server (lihat apply_remote); tidak disimpan di save.
+var remote := {}
 ## Memo perhitungan berat (atribut, kekuatan, hasil urusan) selama UI dibangun.
 ## Aktif hanya di antara memo_begin() dan memo_end(), saat state tidak berubah.
 var _memo := {}
@@ -767,7 +769,7 @@ func recruit(count: int, now: float, free := false, ticket := false) -> Dictiona
 		if count != 1 or free_pull_eta(now) > 0:
 			return _fail("Rekrut gratis belum tersedia.")
 	else:
-		cost = Data.GACHA_COST if count == 1 else Data.GACHA_COST_10
+		cost = gacha_cost(count)
 		if gold < cost:
 			return _fail("Emas tidak cukup (butuh %d)." % cost)
 	gold -= cost
@@ -806,6 +808,9 @@ func recruit(count: int, now: float, free := false, ticket := false) -> Dictiona
 
 ## Legenda unggulan minggu ini (bergilir di antara semua Legenda).
 func rateup_id(now: float) -> String:
+	var forced := str(remote.get("rateup", ""))
+	if forced != "" and Data.counselor_def(forced).get("rarity", "") == "ssr":
+		return forced
 	var pool := Data.counselors_of_rarity("ssr")
 	return pool[posmod(week_index(now), pool.size())]["id"]
 
@@ -1013,7 +1018,12 @@ func ensure_weekly(now: float) -> bool:
 
 
 func event_def() -> Dictionary:
-	return Data.EVENTS[posmod(int(weekly["week"]), Data.EVENTS.size())]
+	var forced := str(remote.get("event", ""))
+	if forced != "":
+		for ev in Data.EVENTS:
+			if str(ev.get("id", "")) == forced:
+				return ev
+	return Data.EVENTS[posmod(int(weekly.get("week", 0)), Data.EVENTS.size())]
 
 
 ## Besar bonus event untuk efek tertentu (0 bila event minggu ini tidak memilikinya).
@@ -5244,6 +5254,9 @@ func _empty_realm(now: float) -> Dictionary:
 		"heir_seq": 0,
 		"kitchen": {"day": -1, "used": 0, "meal": {"id": "", "until": 0.0, "mult": 1.0}},
 		"season_claimed": [],
+		"sweep": {"day": -1, "used": 0},
+		"decor": [],
+		"review": {"count": 0, "last": 0.0},
 	}
 
 
@@ -5348,6 +5361,9 @@ func kingdom_bonus(effect: String) -> float:
 	total += ceremony_bonus(effect, _last_now)
 	total += float(Data.RANK_PERKS.get(rank, {}).get(effect, 0.0))
 	total += meal_bonus(effect, _last_now)
+	total += decor_bonus(effect)
+	if effect == "yield_all":
+		total += float(remote.get("yield_bonus", 0.0))
 	return total
 
 
@@ -7079,6 +7095,7 @@ func _load_realm6(src: Dictionary) -> void:
 	realm["tourney_claimed"] = int(src.get("tourney_claimed", -1))
 	_load_realm7(src)
 	_load_realm8(src)
+	_load_realm9(src)
 
 
 # --- Gelar kehormatan penasihat ---------------------------------------------------------
@@ -7817,3 +7834,168 @@ func market_bought(item: String, qty: int, price: int) -> Dictionary:
 	_track("bazaar")
 	changed.emit()
 	return _ok("Dibeli: %d %s." % [qty, Data.ITEMS[item]["name"]])
+
+
+
+# --- Batch 9: konfigurasi jarak jauh, sapu tahap, dekorasi, saran, ulasan ----------------
+
+func _load_realm9(src: Dictionary) -> void:
+	var sw = src.get("sweep", {})
+	if sw is Dictionary:
+		realm["sweep"] = {"day": int(sw.get("day", -1)), "used": clampi(int(sw.get("used", 0)), 0, Data.SWEEP_DAILY)}
+	for id in src.get("decor", []):
+		if Data.DECORATIONS.has(str(id)) and not realm["decor"].has(str(id)):
+			realm["decor"].append(str(id))
+	var rv = src.get("review", {})
+	if rv is Dictionary:
+		realm["review"] = {"count": clampi(int(rv.get("count", 0)), 0, Data.REVIEW_MAX), "last": float(rv.get("last", 0.0))}
+
+
+## Terapkan konfigurasi dari server (GET /v1/config) dengan batas aman.
+func apply_remote(cfg: Dictionary) -> void:
+	remote = {
+		"yield_bonus": clampf(float(cfg.get("yield_bonus", 0.0)), 0.0, 1.0),
+		"gacha_discount": clampf(float(cfg.get("gacha_discount", 0.0)), 0.0, 0.5),
+		"rateup": str(cfg.get("rateup", "")),
+		"event": str(cfg.get("event", "")),
+		"min_version": int(cfg.get("min_version", 0)),
+		"announcement": cfg.get("announcement") if cfg.get("announcement") is Dictionary else {},
+	}
+	changed.emit()
+
+
+func gacha_cost(count: int) -> int:
+	var base: int = Data.GACHA_COST if count == 1 else Data.GACHA_COST_10
+	return int(ceil(base * (1.0 - float(remote.get("gacha_discount", 0.0)))))
+
+
+func update_required() -> bool:
+	return int(remote.get("min_version", 0)) > Data.VERSION_CODE
+
+
+# Sapu tahap --------------------------------------------------------------------------
+
+func sweeps_left(now: float) -> int:
+	var sw: Dictionary = realm["sweep"]
+	return Data.SWEEP_DAILY - (int(sw["used"]) if int(sw["day"]) == day_index(now) else 0)
+
+
+## Biaya prajurit satu kali sapu (tahap terakhir yang dimenangkan).
+func sweep_cost() -> int:
+	if stage <= 0:
+		return 0
+	return int(int(Data.stage_info(stage - 1)["enemy_soldiers"]) * Data.SWEEP_LOSSES)
+
+
+func sweep(count: int, now: float) -> Dictionary:
+	if stage <= 0:
+		return _fail("Menangkan satu tahap dulu.")
+	count = mini(count, sweeps_left(now))
+	if count <= 0:
+		return _fail("Jatah sapu hari ini habis.")
+	var cost := sweep_cost() * count
+	if soldiers < cost:
+		return _fail("Prajurit tidak cukup (butuh %d)." % cost)
+	var info := Data.stage_info(stage - 1)
+	soldiers -= cost
+	var got_silver := int(int(info["reward_silver"]) * Data.SWEEP_SILVER) * count
+	var got_prestige := int(int(info["reward_prestige"]) * Data.SWEEP_PRESTIGE) * count
+	silver += got_silver
+	prestige += got_prestige
+	var items := []
+	for i in count:
+		if rng.randf() < Data.SWEEP_ITEM_CHANCE:
+			var it: String = Data.STAGE_ITEM_POOL[rng.randi_range(0, Data.STAGE_ITEM_POOL.size() - 1)]
+			add_item(it)
+			items.append(Data.ITEMS[it]["name"])
+	var sw: Dictionary = realm["sweep"]
+	if int(sw["day"]) != day_index(now):
+		sw["day"] = day_index(now)
+		sw["used"] = 0
+	sw["used"] = int(sw["used"]) + count
+	_track("sweep", count)
+	changed.emit()
+	var msg := "Sapu %s x%d: -%d prajurit, +%d perak, +%d prestise." % [info["name"], count, cost, got_silver, got_prestige]
+	if not items.is_empty():
+		msg += " Rampasan: %s." % ", ".join(items)
+	return _ok(msg)
+
+
+# Dekorasi kota -----------------------------------------------------------------------
+
+func decor_unlocked() -> bool:
+	return stage >= Data.DECOR_UNLOCK_STAGE
+
+
+func decor_cost(id: String) -> int:
+	return int(affair_yield("silver") * float(Data.DECORATIONS[id]["cost"]))
+
+
+func decor_bonus(effect: String) -> float:
+	var total := 0.0
+	for id in realm.get("decor", []):
+		total += float(Data.DECORATIONS[id]["effects"].get(effect, 0.0))
+	return total
+
+
+func buy_decor(id: String) -> Dictionary:
+	if not Data.DECORATIONS.has(id):
+		return _fail("Dekorasi tidak dikenal.")
+	if not decor_unlocked():
+		return _fail("Dekorasi terbuka di Tahap %d." % Data.DECOR_UNLOCK_STAGE)
+	if realm["decor"].has(id):
+		return _fail("Dekorasi ini sudah terpasang.")
+	var cost := decor_cost(id)
+	if silver < cost:
+		return _fail("Perak tidak cukup (butuh %d)." % cost)
+	silver -= cost
+	realm["decor"].append(id)
+	_track("decor")
+	changed.emit()
+	return _ok("%s terpasang di kota!" % Data.DECORATIONS[id]["name"])
+
+
+# Ulasan Play Store ---------------------------------------------------------------------
+
+func review_ready(now: float) -> bool:
+	var rv: Dictionary = realm["review"]
+	return int(rv["count"]) < Data.REVIEW_MAX and day_index(now) - start_day >= Data.REVIEW_MIN_DAYS \
+		and (int(rv["count"]) == 0 or now - float(rv["last"]) >= Data.REVIEW_GAP_DAYS * 86400.0) and not tutorial_active()
+
+
+func mark_review(now: float) -> void:
+	realm["review"]["count"] = int(realm["review"]["count"]) + 1
+	realm["review"]["last"] = now
+
+
+# Saran penasihat -----------------------------------------------------------------------
+
+## Hal paling berguna yang bisa dikerjakan sekarang, berurutan menurut prioritas:
+## [{"text", "target"}]; target: "page:<halaman>", "realm:<panel>", atau nama tindakan UI.
+func advice(now: float) -> Array:
+	var out := []
+	var add := func(cond: bool, text: String, target: String):
+		if cond:
+			out.append({"text": text, "target": target})
+	add.call(login_can_claim(now), "Hadiah login hari ini menunggu.", "login")
+	add.call(mail_unread() > 0, "Ada hadiah di Kotak Surat.", "realm:mail")
+	add.call(story_claimable() > 0, "Hadiah misi cerita siap diambil.", "story")
+	add.call(claimable_count() > 0, "Misi harian selesai, ambil hadiahnya.", "missions")
+	var full := 0
+	for key in ["silver", "grain", "soldiers"]:
+		if charge_full_eta(key, now) == 0:
+			full += 1
+	add.call(full > 0, "Urusan kota penuh. Kerjakan sebelum terbuang.", "page:city")
+	add.call(free_pull_eta(now) == 0, "Rekrut gratis hari ini tersedia.", "page:gacha")
+	add.call(soldiers >= expected_losses(), "Pasukan cukup untuk menang di %s." % current_stage_info()["name"], "page:campaign")
+	add.call(garden_unlocked() and garden_ready_count(now) > 0, "Kebun siap dipanen.", "realm:garden")
+	add.call(expeditions_ready(now) > 0, "Ekspedisi sudah kembali.", "page:counselor")
+	add.call(month_event_claimable(now) > 0, "Tugas Acara Sejarah siap diklaim.", "realm:month_event")
+	add.call(kitchen_unlocked() and cooks_left(now) > 0 and meal_active(now).is_empty(),
+		"Dapur siap memasak hidangan berkah.", "realm:kitchen")
+	add.call(stage > 0 and sweeps_left(now) > 0 and soldiers >= sweep_cost() * 3 and soldiers < expected_losses(),
+		"Belum cukup kuat? Sapu tahap lalu untuk perak dan prestise.", "page:campaign")
+	add.call(history_claimable(now) and not tutorial_active(), "Baca kisah sejarah hari ini.", "page:city")
+	if out.is_empty():
+		out.append({"text": "Latih penasihat terkuat untuk menaikkan kekuatan.", "target": "page:counselor"})
+	return out

@@ -77,10 +77,12 @@ func add_entry(src: String, dst: String) -> void:
 	if _placeholder.search(src) == null:
 		_exact[src] = dst
 		return
+	# Templat juga disimpan apa adanya: kode memanggil tr("... %d ...") % nilai, jadi
+	# templat mentahnya sendiri harus bisa diterjemahkan (bukan hanya teks yang sudah terisi).
+	_exact[src] = dst
 	var pattern := _compile(src, dst)
 	if pattern.is_empty():
-		_exact[src] = dst  # hanya %% di dalam teks
-		return
+		return  # hanya %% di dalam teks
 	# Kelompokkan per 2 huruf awal bila templat diawali bagian tetap.
 	var key := src.substr(0, 2) if _placeholder.search(src).get_start() >= 2 else ""
 	if not _buckets.has(key):

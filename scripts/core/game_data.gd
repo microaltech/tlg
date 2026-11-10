@@ -1722,6 +1722,9 @@ const FEATURE_HELP := {
 		"Anggota 3 aliansi teratas mendapat emas, item, dan bingkai musim setelah musim berakhir."],
 	"Pasar Pemain": ["Jual item kepada pemain lain dengan perak. Batas 5 dagangan per hari, pajak 10%.",
 		"Perak hasil penjualan, dagangan yang ditarik, dan dagangan yang tidak laku 3 hari dikirim lewat Kotak Surat."],
+	"Dekorasi Kota": ["Hias kota dengan gapura, taman, patung, dan pendopo. Tiap dekorasi dibeli sekali dan memberi bonus kecil permanen.",
+		"Dekorasi tampil di spanduk kota dan terlihat saat pemain lain mengunjungi kota Tuan."],
+	"Saran Penasihat": ["Penasihat menunjukkan hal paling berguna yang bisa Tuan kerjakan sekarang. Ketuk \"Pergi\" untuk langsung ke sana."],
 	"Undang Teman": ["Bagikan kode undangan Tuan. Pemain baru memasukkan kode itu dalam 7 hari pertama.",
 		"Saat teman mencapai Tahap 10, Tuan dan teman sama-sama mendapat 100 emas dan 2 Tiket Rekrut lewat Kotak Surat."],
 	"Ensiklopedia Nusantara": ["Kumpulkan semua tokoh, kuda, pusaka, dan wilayah untuk bonus permanen."],
@@ -1919,7 +1922,7 @@ const GIFT_CODE_ITEM_LIMIT := 10
 
 ## Kelompok tab di kartu Urusan Kerajaan.
 const HUB_TABS := [
-	{"id": "ekonomi", "name": "Ekonomi", "tiles": ["market", "garden", "fleet", "research", "ceremony", "kitchen"]},
+	{"id": "ekonomi", "name": "Ekonomi", "tiles": ["market", "garden", "fleet", "research", "ceremony", "kitchen", "decor"]},
 	{"id": "petualangan", "name": "Petualangan", "tiles": ["hunt", "candi", "race", "quiz", "wayang"]},
 	{"id": "istana", "name": "Istana", "tiles": ["kin", "pets", "forge", "policy", "badges", "wardrobe", "heirs"]},
 	{"id": "dunia", "name": "Dunia", "tiles": ["diplomacy", "friends", "guildwar", "worldboss", "tourney", "season", "bazaar"]},
@@ -2163,3 +2166,40 @@ const BAZAAR_ITEMS := ["scroll_train", "star_stone", "pill_intimacy", "recruit_t
 
 ## Aksesibilitas: palet ramah buta warna merah-hijau (hijau -> biru, merah -> oranye).
 const COLORBLIND_SWAP := {"green": "#2f6fb5", "red": "#d9822b"}
+
+
+# --- Batch 9 ----------------------------------------------------------------------------
+
+## Sapu Tahap: ulangi tahap terakhir yang dimenangkan tanpa tayangan perang.
+const SWEEP_DAILY := 10
+const SWEEP_SILVER := 0.6  ## x hadiah perak tahap
+const SWEEP_PRESTIGE := 0.3  ## x hadiah prestise tahap
+const SWEEP_LOSSES := 0.3  ## x prajurit musuh yang harus dikorbankan
+const SWEEP_ITEM_CHANCE := 0.2
+
+## Dekorasi kota: dibeli sekali (kelipatan hasil Tarik Pajak), bonus kecil permanen,
+## terlihat di spanduk kota dan saat kota dikunjungi pemain lain.
+const DECOR_UNLOCK_STAGE := 8
+const DECORATIONS := {
+	"gapura": {"name": "Gapura Bentar", "icon": "decor_gapura", "cost": 15.0, "effects": {"yield_all": 0.01},
+		"desc": "Gerbang terbelah khas Bali di pintu masuk kota. Semua hasil urusan +1%."},
+	"lampion": {"name": "Lampion Pasar", "icon": "decor_lampion", "cost": 20.0, "effects": {"yield_silver": 0.02},
+		"desc": "Pasar malam makin ramai. Hasil Tarik Pajak +2%."},
+	"taman": {"name": "Taman Sari", "icon": "decor_taman", "cost": 25.0, "effects": {"yield_grain": 0.02},
+		"desc": "Taman air dengan kolam pemandian. Hasil Kelola Sawah +2%."},
+	"pancuran": {"name": "Pancuran Naga", "icon": "decor_pancuran", "cost": 30.0, "effects": {"yield_soldiers": 0.02},
+		"desc": "Air pancuran menyegarkan para prajurit. Hasil Rekrut Prajurit +2%."},
+	"patung": {"name": "Patung Garuda", "icon": "decor_patung", "cost": 40.0, "effects": {"combat": 0.02},
+		"desc": "Lambang keberanian di alun-alun. Kekuatan tempur +2%."},
+	"pendopo": {"name": "Pendopo Agung", "icon": "decor_pendopo", "cost": 60.0, "effects": {"yield_all": 0.02},
+		"desc": "Balai terbuka tempat rakyat menghadap. Semua hasil urusan +2%."},
+}
+const DECOR_ORDER := ["gapura", "lampion", "taman", "pancuran", "patung", "pendopo"]
+
+## Ulasan Play Store: diminta di momen menyenangkan, paling cepat hari ke-2, jeda 30 hari, maks. 3 kali.
+const REVIEW_MIN_DAYS := 2
+const REVIEW_GAP_DAYS := 30
+const REVIEW_MAX := 3
+
+## Kode versi aplikasi (samakan dengan version/code di export_presets.cfg).
+const VERSION_CODE := 1

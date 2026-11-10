@@ -15,6 +15,8 @@ const Data := preload("res://scripts/core/game_data.gd")
 signal status_changed
 ## Info Raja Hari Ini berubah (lihat `king`).
 signal king_changed
+## Konfigurasi jarak jauh diterima (pengumuman, versi minimum, bonus).
+signal config_changed
 
 enum Status { OFFLINE, CONNECTING, ONLINE, ERROR }
 
@@ -23,6 +25,7 @@ const PROFILE_SECONDS := 30.0
 const CHAT_SECONDS := 6.0
 const KING_SECONDS := 300.0
 const TIMEOUT := 10.0
+const SAVE_SECONDS := 600.0  ## cadangan save ke server tiap 10 menit saat online
 
 var status := Status.OFFLINE
 var error := ""
@@ -33,6 +36,7 @@ var _profile_timer := 0.0
 var _chat_timer := 0.0
 var _chat_busy := false
 var _king_timer := 0.0
+var _save_timer := 0.0
 ## {"king": {...}, "decree": String|null, "me": bool, "decrees": [...]} dari /v1/king; kosong bila belum ada.
 var king := {}
 ## ID pemain yang diblokir: pesannya tidak ditampilkan (disimpan di online.cfg).
@@ -93,6 +97,8 @@ func connect_server() -> void:
 			cfg.set_value("account", "token", _token)
 			cfg.save(CFG_PATH)
 			_set_status(Status.ONLINE)
+			fetch_config()
+			upload_save()
 			push_profile()
 			poll_chat(), false)
 
@@ -103,6 +109,10 @@ func _process(delta: float) -> void:
 	_profile_timer += delta
 	_chat_timer += delta
 	_king_timer += delta
+	_save_timer += delta
+	if _save_timer >= SAVE_SECONDS:
+		_save_timer = 0.0
+		upload_save()
 	if _king_timer >= KING_SECONDS:
 		_king_timer = 0.0
 		poll_king()
@@ -120,6 +130,7 @@ static func profile_payload(m) -> Dictionary:
 		"alliance": str(m.alliance.get("id", "")) if not m.alliance.is_empty() else "",
 		"power": m.combat_power(), "stage": m.stage, "tower": int(m.tower.get("best", 0)), "prestige": m.prestige,
 		"city": {"rank": m.rank, "buildings": m.buildings["levels"].duplicate(), "kin": m.kin_count(),
+			"decor": m.realm.get("decor", []).duplicate(),
 			"ships": m.ships_owned().size(), "regions": m.territory.get("owned", []).size(),
 			"counselors": m.counselors.size(), "badges": m.badge_album().map(func(b): return b["id"])}}
 
@@ -429,8 +440,17 @@ func fetch_market(callback: Callable) -> void:
 		callback.call(data if code == 200 else {}))
 
 
-## Item dipotong lebih dulu; bila server menolak, item dikembalikan. callback(result)
+## Save dikirim dulu (server memeriksa item dari save itu), lalu item dipotong;
+## bila server menolak, item dikembalikan. callback(result)
 func market_sell(item: String, qty: int, price: int, callback: Callable) -> void:
+	upload_save(func(ok: bool):
+		if not ok:
+			callback.call({"ok": false, "msg": "Tidak bisa terhubung ke server."})
+			return
+		_market_sell(item, qty, price, callback))
+
+
+func _market_sell(item: String, qty: int, price: int, callback: Callable) -> void:
 	var r: Dictionary = Game.model.market_reserve(item, qty)
 	if not r["ok"]:
 		callback.call(r)
@@ -462,3 +482,68 @@ func market_cancel(id: int, callback: Callable) -> void:
 	_request(HTTPClient.METHOD_POST, "/v1/market/cancel", {"id": id}, func(code: int, data: Dictionary):
 		callback.call({"ok": code == 200, "msg": "Dagangan ditarik. Item dikembalikan lewat Kotak Surat." if code == 200
 			else str(data.get("error", "Tidak bisa terhubung ke server."))}))
+
+
+
+# --- Save di server & pindah perangkat ---------------------------------------------------
+
+func _notification(what: int) -> void:
+	if what in [NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_WM_CLOSE_REQUEST] and is_online():
+		upload_save()
+
+
+## Cadangkan save ke server. callback(ok: bool)
+func upload_save(callback: Callable = func(_ok): pass) -> void:
+	if not is_online():
+		callback.call(false)
+		return
+	_request(HTTPClient.METHOD_POST, "/v1/save", {"save": Game.model.to_dict(),
+		"version": str(ProjectSettings.get_setting("application/config/version", ""))}, func(code: int, _d: Dictionary):
+			callback.call(code == 200))
+
+
+## Buat kode pindah perangkat (berlaku 24 jam). callback(code: String, error: String)
+func create_transfer(callback: Callable) -> void:
+	upload_save(func(ok: bool):
+		if not ok:
+			callback.call("", "Sambungkan ke server dulu.")
+			return
+		_request(HTTPClient.METHOD_POST, "/v1/account/transfer", {}, func(code: int, data: Dictionary):
+			callback.call(str(data.get("code", "")) if code == 200 else "", str(data.get("error", "")))))
+
+
+## Tukar kode pindah di HP baru: akun lama terikat ke perangkat ini dan save-nya dipulihkan.
+## callback(result: Dictionary)
+func claim_transfer(code_text: String, callback: Callable) -> void:
+	_request(HTTPClient.METHOD_POST, "/v1/account/claim", {"code": code_text, "device_id": _device_id},
+		func(code: int, data: Dictionary):
+			if code != 200:
+				callback.call({"ok": false, "msg": str(data.get("error", "Tidak bisa terhubung ke server."))})
+				return
+			_token = str(data.get("token", ""))
+			var cfg := ConfigFile.new()
+			cfg.load(CFG_PATH)
+			cfg.set_value("account", "token", _token)
+			cfg.save(CFG_PATH)
+			var save = data.get("save")
+			if save is Dictionary and save.has("version"):
+				Game.model.from_dict(save, Game.now())
+				Game.save_game()
+			connect_server()
+			callback.call({"ok": true, "msg": "Akun dan progres berhasil dipindahkan ke perangkat ini."}), false)
+
+
+# --- Konfigurasi jarak jauh & laporan crash -----------------------------------------------
+
+func fetch_config() -> void:
+	_request(HTTPClient.METHOD_GET, "/v1/config", {}, func(code: int, data: Dictionary):
+		if code == 200:
+			Game.model.apply_remote(data)
+			config_changed.emit(), false)
+
+
+## Kirim laporan crash terakhir (hanya bila pemain mengizinkan statistik anonim).
+func send_crash(report: Dictionary) -> void:
+	if base_url() == "":
+		return
+	_request(HTTPClient.METHOD_POST, "/v1/crash", report, func(_c: int, _d: Dictionary): pass, false)

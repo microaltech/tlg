@@ -428,6 +428,7 @@ test("pasar: jual, beli, pajak lewat surat, batal, kedaluwarsa, batas harian", a
 	try {
 		const a = await login(call, "pasar-a", "Arya");
 		const b = await login(call, "pasar-b", "Bayu");
+		await call("POST", "/v1/save", { save: { inventory: { star_stone: 5, energy_tea: 10 } } }, a.token);
 		assert.equal((await call("POST", "/v1/market/sell", { item: "palsu", qty: 1, price: 10 }, a.token)).status, 400);
 		assert.equal((await call("POST", "/v1/market/sell", { item: "star_stone", qty: 0, price: 10 }, a.token)).status, 400);
 		const s1 = await call("POST", "/v1/market/sell", { item: "star_stone", qty: 2, price: 1000 }, a.token);
@@ -516,4 +517,86 @@ test("verifikasi pembelian Google Play (dengan Google tiruan)", async () => {
 		assert.equal(r.status, 503);
 		assert.equal(r.data.disabled, true);
 	} finally { off.server.close(); }
+});
+
+test("save di server: simpan, ambil, tanda emas mencurigakan, pasar memakai inventaris server", async () => {
+	const { server, call, tick } = await start({ adminToken: "adm" });
+	try {
+		const a = await login(call, "save-a", "Arya");
+		const b = await login(call, "save-b", "Bayu");
+		assert.equal((await call("GET", "/v1/save", null, a.token)).status, 404);
+		assert.equal((await call("POST", "/v1/market/sell", { item: "star_stone", qty: 1, price: 5 }, a.token)).status, 409,
+			"tanpa save server tidak bisa jual");
+		const save = { version: 5, gold: 100, silver: 5000, inventory: { star_stone: 2, "Bad!": 3 } };
+		assert.equal((await call("POST", "/v1/save", { save, version: "0.1.0" }, a.token)).status, 200);
+		const got = await call("GET", "/v1/save", null, a.token);
+		assert.equal(got.data.save.gold, 100);
+		assert.equal((await call("POST", "/v1/market/sell", { item: "star_stone", qty: 3, price: 5 }, a.token)).status, 409,
+			"tidak bisa jual melebihi save server");
+		assert.equal((await call("POST", "/v1/market/sell", { item: "star_stone", qty: 2, price: 5 }, a.token)).status, 200);
+		assert.equal((await call("POST", "/v1/market/sell", { item: "star_stone", qty: 1, price: 5 }, a.token)).status, 409,
+			"item yang sudah dijual tidak bisa dijual lagi");
+		tick(3600000);
+		await call("POST", "/v1/save", { save: { ...save, gold: 999999 } }, a.token);
+		await call("POST", "/v1/save", { save: { gold: 50 } }, b.token);
+		const flags = (await call("GET", "/admin/api/flags", null, null, { "X-Admin-Token": "adm" })).data.flags;
+		assert.equal(flags.length, 1, "lonjakan emas ditandai");
+		assert.equal(flags[0].name, "Arya");
+		const big = { blob: "x".repeat(700 * 1024) };
+		assert.equal((await call("POST", "/v1/save", { save: big }, a.token)).status, 413);
+	} finally { server.close(); }
+});
+
+test("pindah perangkat: kode sekali pakai memindahkan akun dan save", async () => {
+	const { server, call, tick } = await start();
+	try {
+		const a = await login(call, "lama-hp-a", "Arya");
+		await call("POST", "/v1/save", { save: { gold: 77 } }, a.token);
+		const tr = await call("POST", "/v1/account/transfer", {}, a.token);
+		assert.match(tr.data.code, /^[A-Z2-9]{8}$/);
+		// HP baru sempat membuat akun kosong otomatis.
+		const fresh = await login(call, "baru-hp-b", "Tuan");
+		assert.equal((await call("POST", "/v1/account/claim", { code: "SALAHSAL", device_id: "baru-hp-bxxxxxxxx" })).status, 404);
+		const cl = await call("POST", "/v1/account/claim", { code: tr.data.code.toLowerCase(), device_id: "baru-hp-b".padEnd(16, "x") });
+		assert.equal(cl.status, 200);
+		assert.equal(cl.data.player.id, a.player.id);
+		assert.equal(cl.data.save.gold, 77);
+		assert.equal((await call("GET", "/v1/save", null, a.token)).status, 401, "token lama tidak berlaku");
+		assert.equal((await call("GET", "/v1/save", null, cl.data.token)).status, 200);
+		const again = await login(call, "baru-hp-b", "Tuan");
+		assert.equal(again.player.id, a.player.id, "HP baru kini masuk ke akun lama");
+		assert.notEqual(fresh.player.id, a.player.id);
+		assert.equal((await call("POST", "/v1/account/claim", { code: tr.data.code, device_id: "lain-hp-cxxxxxxxx" })).status, 404,
+			"kode sekali pakai");
+		const tr2 = await call("POST", "/v1/account/transfer", {}, cl.data.token);
+		tick(25 * 3600000);
+		assert.equal((await call("POST", "/v1/account/claim", { code: tr2.data.code, device_id: "lain-hp-cxxxxxxxx" })).status, 404,
+			"kode kedaluwarsa");
+	} finally { server.close(); }
+});
+
+test("konfigurasi jarak jauh dan laporan crash", async () => {
+	const { server, call } = await start({ adminToken: "adm" });
+	try {
+		const H = { "X-Admin-Token": "adm" };
+		const def = (await call("GET", "/v1/config")).data;
+		assert.equal(def.yield_bonus, 0);
+		assert.equal(def.announcement, null);
+		await call("POST", "/admin/api/config", { yield_bonus: 5, gacha_discount: 0.2, rateup: "Satria!", min_version: 3,
+			announcement: { id: "a1", title: "Halo", body: "Akhir pekan ganda!" }, palsu: 1 }, null, H);
+		const c = (await call("GET", "/v1/config")).data;
+		assert.equal(c.yield_bonus, 1, "dibatasi");
+		assert.equal(c.gacha_discount, 0.2);
+		assert.equal(c.rateup, "satria");
+		assert.equal(c.min_version, 3);
+		assert.equal(c.announcement.title, "Halo");
+		assert.equal(c.palsu, undefined);
+		assert.equal((await call("POST", "/v1/crash", { install: "pendek" })).status, 400);
+		const rep = { install: "abcdef0123456789abcd", version: "0.1.0", device: "SM-A105F", gpu: "Mali-G71", report: "log" };
+		assert.equal((await call("POST", "/v1/crash", rep)).status, 200);
+		await call("POST", "/v1/crash", rep);
+		const cr = (await call("GET", "/admin/api/crashes", null, null, H)).data;
+		assert.equal(cr.groups[0].n, 2);
+		assert.equal(cr.groups[0].device, "SM-A105F");
+	} finally { server.close(); }
 });

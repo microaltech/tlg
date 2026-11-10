@@ -138,6 +138,14 @@ func _ready() -> void:
 	await get_tree().create_timer(0.5).timeout
 	check(Telemetry.stats.has("sent_day"), "statistik anonim dikirim setelah diizinkan")
 	Settings.share_stats = false
+	# Konfigurasi jarak jauh & save di server (dikirim otomatis saat tersambung).
+	check(m.remote.has("yield_bonus") and is_equal_approx(float(m.remote["yield_bonus"]), 0.25), "konfigurasi jarak jauh diterima")
+	Online.upload_save(func(ok): got["up"] = ok)
+	await get_tree().create_timer(0.5).timeout
+	check(got.get("up", false), "save dicadangkan ke server")
+	Online.create_transfer(func(code, _e): got["tr"] = code)
+	await get_tree().create_timer(0.8).timeout
+	check(str(got.get("tr", "")).length() == 8, "kode pindah perangkat dibuat")
 	# Pasar pemain: beli dagangan "Lawan" (dipasang e2e.sh), lalu jual item sendiri.
 	Online.fetch_market(func(d): got["mk"] = d)
 	await get_tree().create_timer(0.5).timeout

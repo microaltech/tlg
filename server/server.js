@@ -39,6 +39,7 @@ const BOSS_ATTACKS = 3;
 const TOURNEY_SIZE = 16;
 const BADGE_IDS = ["pemburu", "joki", "cendekia", "penjelajah", "diplomat", "empu", "panglima", "dalang"];
 const BOSS_HP_MIN = 200000;
+const DECOR_IDS = ["gapura", "lampion", "taman", "pancuran", "patung", "pendopo"];
 const CODE_LIMITS = { gold: 1000, silver: 10000000, grain: 10000000, soldiers: 10000000, prestige: 2000 };
 const CODE_ITEMS = ["scroll_train", "star_stone", "pill_intimacy", "recruit_ticket", "energy_tea", "silver_box",
 	"grain_box", "troop_writ", "besi_tempa", "kayu_cendana", "batu_meteor"];
@@ -343,6 +344,7 @@ function createServer(opts = {}) {
 			ships: clampInt(c.ships, 0, 10), regions: clampInt(c.regions, 0, 100), counselors: clampInt(c.counselors, 0, 999) };
 		for (const k of ["istana", "pasar", "lumbung", "barak"]) out.buildings[k] = clampInt(c.buildings?.[k], 0, 99);
 		out.badges = Array.isArray(c.badges) ? [...new Set(c.badges.filter((b) => BADGE_IDS.includes(b)))] : [];
+		out.decor = Array.isArray(c.decor) ? [...new Set(c.decor.filter((d) => DECOR_IDS.includes(d)))] : [];
 		return JSON.stringify(out);
 	}
 
@@ -635,8 +637,9 @@ function createServer(opts = {}) {
 	});
 
 	const open = new Set(["GET /health", "POST /v1/auth/device", "GET /v1/alliances", "POST /v1/stats"]);
-	require("./batch8.js").install({ db, routes, open, now, random, opts, h: { dayOf, weekOf, friendCode, addMail,
-		cleanReward, clampInt, addCode, statsSummary, ALLIANCES, CODE_ITEMS } });
+	const h = { dayOf, weekOf, friendCode, addMail, cleanReward, clampInt, addCode, statsSummary, ALLIANCES, CODE_ITEMS };
+	const { admin } = require("./batch8.js").install({ db, routes, open, now, random, opts, h });
+	require("./batch9.js").install({ db, routes, open, now, random, opts, h, admin });
 
 	const handler = async (req, res) => {
 		const url = new URL(req.url, "http://x");

@@ -20,6 +20,12 @@ const ACHIEVEMENT_IDS := {
 	# "conqueror:1": "CgkIxxxxxxxxEAIQAQ",
 }
 
+## Papan peringkat Play Console: kategori -> ID ("CgkI..."). Kosong = tidak dilaporkan.
+const LEADERBOARD_IDS := {
+	"power": "",
+	"stage": "",
+}
+
 var _plugin: Object
 
 
@@ -54,6 +60,30 @@ func _on_achievement(id: String, tier: int) -> void:
 
 func show_achievements() -> void:
 	_call("showAchievements")
+
+
+func leaderboards_ready() -> bool:
+	return available() and LEADERBOARD_IDS.values().any(func(v): return str(v) != "")
+
+
+## Kirim skor kekuatan dan tahap (dipanggil saat game dijeda/ditutup).
+func submit_scores() -> void:
+	if not leaderboards_ready():
+		return
+	var m = Game.model
+	for cat in LEADERBOARD_IDS:
+		var id := str(LEADERBOARD_IDS[cat])
+		if id != "":
+			_call("submitScore", [id, int(m.combat_power() if cat == "power" else m.stage)])
+
+
+func show_leaderboards() -> void:
+	_call("showAllLeaderboards")
+
+
+func _notification(what: int) -> void:
+	if what in [NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_WM_CLOSE_REQUEST]:
+		submit_scores()
 
 
 func save_cloud(data: String) -> void:

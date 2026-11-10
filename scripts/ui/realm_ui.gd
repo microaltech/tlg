@@ -31,6 +31,7 @@ var _hub_tab := "ekonomi"
 var _tourney := {}
 var mail_button: Button  ## disorot tutorial
 var _season := {}
+var _advice_open := false
 var _bazaar := {}
 var _referral := {}
 var _ref_edit: LineEdit
@@ -114,6 +115,7 @@ func _result(r) -> void:
 # --- Kota: kartu & spanduk ------------------------------------------------------------
 
 func build_city_cards(box: VBoxContainer) -> void:
+	_advice_card(box)
 	_king_banner(box)
 	_history_card(box)
 	_comeback_card(box)
@@ -311,6 +313,8 @@ func _hub_tiles(now: float) -> Dictionary:
 			"badge": 1 if model.ceremony_unlocked() and model.ceremony_cooldown_days(now) == 0 else 0, "fn": show_ceremony},
 		"badges": {"name": "Lencana", "icon": "badge", "open": model.stage >= 3, "stage": 3, "badge": 0, "fn": show_badges},
 		"wardrobe": {"name": "Lemari Busana", "icon": "wardrobe", "open": true, "badge": 0, "fn": show_wardrobe},
+		"decor": {"name": "Dekorasi", "icon": "decor_gapura", "open": model.decor_unlocked(), "stage": Data.DECOR_UNLOCK_STAGE,
+			"badge": 0, "fn": show_decor},
 		"kitchen": {"name": "Dapur", "icon": "kitchen", "open": model.kitchen_unlocked(), "stage": Data.KITCHEN_UNLOCK_STAGE,
 			"badge": model.cooks_left(now) if model.kitchen_unlocked() and model.meal_active(now).is_empty() else 0,
 			"fn": show_kitchen},
@@ -983,6 +987,17 @@ func _fill_visit(box: VBoxContainer, subtitle: Label, state: Dictionary) -> void
 			var d: Dictionary = model.badge_def(str(id))
 			if not d.is_empty():
 				flow.add_child(ui._tex(Art.icon(d["icon"]), 52))
+	var decor: Array = city.get("decor", [])
+	if not decor.is_empty():
+		ui._label(box, "Dekorasi Kota", "CardTitle")
+		var dflow := HFlowContainer.new()
+		dflow.add_theme_constant_override("h_separation", 6)
+		box.add_child(dflow)
+		for id in decor:
+			if Data.DECORATIONS.has(str(id)):
+				var t: TextureRect = ui._tex(Art.icon(Data.DECORATIONS[str(id)]["icon"]), 64)
+				t.tooltip_text = tr(Data.DECORATIONS[str(id)]["name"])
+				dflow.add_child(t)
 	ui._label(box, "Bangunan Kota", "CardTitle")
 	var grid := GridContainer.new()
 	grid.columns = 2
@@ -2299,3 +2314,53 @@ func _fill_bazaar(box: VBoxContainer, subtitle: Label) -> void:
 					ui._show(r)
 					_load_bazaar())
 				return null, model.silver >= int(m["price"]), "GoldButton")
+
+
+# --- Saran penasihat ----------------------------------------------------------------------
+
+func _advice_card(box: VBoxContainer) -> void:
+	if model.tutorial_active():
+		return
+	var list: Array = model.advice(Game.now())
+	var card: HBoxContainer = ui._card(box)
+	card.add_child(ui._tex(Art.portrait("sekar"), 64))
+	var col: VBoxContainer = ui._col(card)
+	ui._label(col, "Saran Penasihat", "CardTitle")
+	var shown: Array = list if _advice_open else list.slice(0, 1)
+	for a in shown:
+		var row := _row(col)
+		var l := _small(row, a["text"])
+		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		var target: String = a["target"]
+		_mini(row, "Pergi", func(): ui.goto_target(target), true, "GoldButton").custom_minimum_size.x = 110
+	if list.size() > 1:
+		_mini(col, (tr("Sembunyikan") if _advice_open else tr("Saran lain (%d)") % (list.size() - 1)), func():
+			_advice_open = not _advice_open
+			ui._queue_rebuild(), true, "")
+
+
+# --- Dekorasi kota ---------------------------------------------------------------------------
+
+func show_decor() -> void:
+	_show("decor", "Dekorasi Kota", "decor_gapura", _fill_decor)
+
+
+func _fill_decor(box: VBoxContainer, subtitle: Label) -> void:
+	subtitle.text = tr("%d/%d terpasang · terlihat di spanduk kota dan saat dikunjungi") % [model.realm["decor"].size(),
+		Data.DECOR_ORDER.size()]
+	subtitle.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	for id in Data.DECOR_ORDER:
+		var def: Dictionary = Data.DECORATIONS[id]
+		var card: HBoxContainer = ui._card(box)
+		card.add_child(ui._tex(Art.icon(def["icon"]), 80))
+		var col: VBoxContainer = ui._col(card)
+		ui._label(col, def["name"], "CardTitle")
+		ui._label(col, def["desc"], "CardLabel")
+		var owned: bool = model.realm["decor"].has(id)
+		var cost: int = model.decor_cost(id)
+		if not owned:
+			_small(col, tr("Biaya: %s perak") % ui._num(cost)).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		var did: String = id
+		_side_button(card, "Terpasang" if owned else "Pasang", func(): return model.buy_decor(did),
+			not owned and model.silver >= cost, "GoldButton", "upgrade")

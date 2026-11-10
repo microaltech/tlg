@@ -236,7 +236,9 @@ func _ready() -> void:
 			Online.fetch_mail()
 			if not model.alliance.is_empty():
 				_realm_ui._load_season()
+			Telemetry.send_crash_report()
 		_queue_rebuild())
+	Online.config_changed.connect(_on_remote_config)
 	Online.king_changed.connect(_queue_rebuild)
 	_display = [Settings.dark_mode, Settings.ui_scale, Settings.colorblind]
 	Settings.changed.connect(_on_display_settings)
@@ -721,6 +723,8 @@ func _rebuild() -> void:
 	Art.skins = model.skin_portraits()
 	if is_instance_valid(_sky):
 		_sky.season = model.season_id(Game.now())
+		_sky.decor = model.realm.get("decor", []).map(func(id): return Art.icon(Data.DECORATIONS[id]["icon"]))
+		_sky.queue_redraw()
 	var scrolls := {}
 	for k in _pages:
 		scrolls[k] = _pages[k]["scroll"].scroll_vertical
@@ -1297,6 +1301,23 @@ func _build_campaign(page: Dictionary) -> void:
 	var attack := _button(box, "SERANG!", _attack, true, "", "GoldButton", false, "attack")
 	_attack_button = attack
 	attack.custom_minimum_size.y = 96
+	if model.stage > 0:
+		var sweep_row := HBoxContainer.new()
+		sweep_row.add_theme_constant_override("separation", 8)
+		box.add_child(sweep_row)
+		var left: int = model.sweeps_left(Game.now())
+		var info_l := _label(sweep_row, tr("Sapu %s: sisa %d · %s prajurit/kali") % [tr(Data.stage_info(model.stage - 1)["name"]),
+			left, _num(model.sweep_cost())], "SmallLabel")
+		info_l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		info_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		info_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		info_l.add_theme_color_override("font_color", UI.PARCHMENT)
+		for n in [1, 5]:
+			var cnt: int = n
+			var sb := _button(sweep_row, tr("Sapu x%d") % cnt, func(): return model.sweep(cnt, Game.now()),
+				left >= 1 and model.soldiers >= model.sweep_cost() * mini(cnt, left), "", "GreenButton")
+			sb.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+			sb.custom_minimum_size = Vector2(150, 64)
 	_label(box, "Tips: latih penasihat berkekuatan tinggi agar korban lebih sedikit. "
 		+ "Rekrut prajurit di menu Kota.", "SmallLabel")
 
@@ -1486,7 +1507,8 @@ func _show_promotion() -> void:
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.pressed.connect(func():
 		Audio.play("click")
-		overlay.queue_free())
+		overlay.queue_free()
+		_maybe_review.call_deferred())
 	overlay.add_child(dim)
 	var rays := _tex(Art.icon("rays"), 620)
 	rays.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -3593,6 +3615,11 @@ func _fill_achievements() -> void:
 		_button(_ach_box, "Lihat di Google Play Games", func():
 			PlayGames.show_achievements()
 			return null, true, "trophy", "GreenButton")
+	if PlayGames.leaderboards_ready():
+		_button(_ach_box, "Papan Peringkat Google Play", func():
+			PlayGames.submit_scores()
+			PlayGames.show_leaderboards()
+			return null, true, "trophy", "GreenButton")
 	var list: Array = Data.ACHIEVEMENTS.duplicate()
 	list.sort_custom(func(a, b): return int(model.achievement_claimable(a)) > int(model.achievement_claimable(b)))
 	for a in list:
@@ -4990,6 +5017,90 @@ func _show_profile() -> void:
 	_fill_profile()
 
 
+## Konfigurasi jarak jauh: wajib update bila versi terlalu lama, lalu pengumuman sekali per id.
+func _on_remote_config() -> void:
+	_queue_rebuild()
+	if model.update_required():
+		_show_update_required()
+		return
+	var ann: Dictionary = model.remote.get("announcement", {})
+	var aid := str(ann.get("id", ""))
+	if aid != "" and Settings.announcement_seen != aid and str(ann.get("title", "")) != "":
+		Settings.set_value("announcement_seen", aid)
+		var holder := {}
+		var p := _open_panel(str(ann["title"]), "mail", func():
+			Audio.play("click")
+			holder["o"].queue_free(), 0.3, 0.6)
+		holder["o"] = p["overlay"]
+		p["subtitle"].text = "Pengumuman"
+		var body := _label(p["content"], str(ann.get("body", "")), "CardLabel")
+		body.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+
+
+const STORE_URL := "https://play.google.com/store/apps/details?id=com.microaltech.tuannusantara"
+
+
+## Layar "Perbarui aplikasi" yang tidak bisa ditutup (versi di bawah min_version server).
+func _show_update_required() -> void:
+	if get_tree().get_first_node_in_group("update_gate"):
+		return
+	var overlay := Control.new()
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.add_to_group("update_gate")
+	overlay.add_to_group("modal")
+	add_child(overlay)
+	var shade := ColorRect.new()
+	shade.color = Color(0.05, 0.02, 0.0, 0.95)
+	shade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(shade)
+	var v := VBoxContainer.new()
+	v.set_anchors_preset(Control.PRESET_FULL_RECT)
+	v.alignment = BoxContainer.ALIGNMENT_CENTER
+	v.add_theme_constant_override("separation", 20)
+	overlay.add_child(v)
+	var t := _label(v, "Versi Baru Tersedia", "TitleLabel")
+	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var d := _label(v, "Perbarui Tuan Nusantara untuk terus bermain. Progres Tuan tetap aman.", "CardLabel")
+	d.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	d.add_theme_color_override("font_color", UI.PARCHMENT)
+	var b := _button(v, "Perbarui", func():
+		if Engine.has_singleton("TlgNotify") and Engine.get_singleton("TlgNotify").has_method("start_update"):
+			Engine.get_singleton("TlgNotify").start_update(true, STORE_URL)
+		else:
+			OS.shell_open(STORE_URL)
+		return null, true, "", "GoldButton")
+	b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	b.custom_minimum_size = Vector2(320, 90)
+
+
+## Minta ulasan Play Store di momen menyenangkan (aturan di GameModel.review_ready).
+func _maybe_review() -> void:
+	if not model.review_ready(Game.now()) or not Engine.has_singleton("TlgNotify"):
+		return
+	var plugin = Engine.get_singleton("TlgNotify")
+	if plugin.has_method("request_review"):
+		model.mark_review(Game.now())
+		plugin.request_review()
+
+
+## Buka tujuan saran penasihat: "page:<halaman>", "realm:<panel>", atau tindakan UI.
+func goto_target(target: String) -> void:
+	Audio.play("click")
+	if target.begins_with("page:"):
+		_switch_page(target.substr(5))
+	elif target.begins_with("realm:"):
+		_realm_ui.call("show_" + target.substr(6))
+	else:
+		match target:
+			"login":
+				_show_login()
+			"missions":
+				_show_missions()
+			"story":
+				_show_story()
+
+
 ## Buat dan bagikan kartu gambar (lihat share_card.gd).
 func share_card(card: Dictionary) -> void:
 	Audio.play("click")
@@ -5644,6 +5755,45 @@ func _build_online_section(box: VBoxContainer) -> void:
 			Online.set_server("")
 			url.text = ""
 			return null)
+		_build_transfer_section(sec)
+
+
+## Pindah perangkat lewat server: kode sekali pakai (24 jam) memindahkan akun dan save.
+func _build_transfer_section(sec: VBoxContainer) -> void:
+	_label(sec, "Pindah Perangkat", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	_label(sec, "Di HP lama: buat kode pindah. Di HP baru: sambungkan ke server yang sama lalu masukkan kodenya. "
+		+ "Progres disimpan otomatis ke server setiap 10 menit.", "SmallLabel").add_theme_color_override("font_color", UI.INK)
+	var code_label := _label(sec, "", "CardTitle")
+	code_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_button(sec, "Buat Kode Pindah", func():
+		Online.create_transfer(func(code: String, err: String):
+			if code == "":
+				_show({"ok": false, "msg": err if err != "" else "Tidak bisa terhubung ke server."})
+				return
+			if is_instance_valid(code_label):
+				code_label.text = tr("Kode pindah: %s (berlaku 24 jam)") % code
+			DisplayServer.clipboard_set(code)
+			_show({"ok": true, "msg": "Kode pindah disalin. Masukkan di HP baru dalam 24 jam."}))
+		return null, Online.is_online(), "", "GreenButton")
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	sec.add_child(row)
+	var edit := LineEdit.new()
+	edit.placeholder_text = tr("Kode pindah dari HP lama")
+	edit.max_length = 8
+	edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	edit.custom_minimum_size.y = 60
+	row.add_child(edit)
+	_button(row, "Pindahkan", func():
+		var text := edit.text.strip_edges()
+		if text.length() < 8:
+			return {"ok": false, "msg": "Kode pindah terdiri dari 8 huruf/angka."}
+		_confirm("Progres di HP ini akan diganti dengan akun dari HP lama. Lanjutkan?", "Pindahkan", func():
+			Online.claim_transfer(text, func(r: Dictionary):
+				_show(r)
+				if r["ok"]:
+					_queue_rebuild()))
+		return null, true, "", "GoldButton").custom_minimum_size.x = 170
 
 
 func _build_backup_section(box: VBoxContainer, close: Callable) -> void:
@@ -6028,11 +6178,11 @@ func _build_gacha(page: Dictionary) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	pcol.add_child(row)
-	var one := _button(row, "x1  ·  %d" % Data.GACHA_COST, func(): return _recruit(1, false),
-		model.gold >= Data.GACHA_COST, "gold", "", false, "gacha_roll")
+	var one := _button(row, "x1  ·  %d" % model.gacha_cost(1), func(): return _recruit(1, false),
+		model.gold >= model.gacha_cost(1), "gold", "", false, "gacha_roll")
 	one.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var ten := _button(row, "x10  ·  %d" % Data.GACHA_COST_10, func(): return _recruit(10, false),
-		model.gold >= Data.GACHA_COST_10, "gold", "GoldButton", false, "gacha_roll")
+	var ten := _button(row, "x10  ·  %d" % model.gacha_cost(10), func(): return _recruit(10, false),
+		model.gold >= model.gacha_cost(10), "gold", "GoldButton", false, "gacha_roll")
 	ten.add_theme_font_size_override("font_size", 26)
 	ten.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_label(pcol, ("x10 dijamin minimal satu Epik. Duplikat menambah bintang (+%d%% atribut), "
@@ -6045,7 +6195,7 @@ func _build_gacha(page: Dictionary) -> void:
 				return {"ok": true}
 			return r, true, "ticket_recruit", "GoldButton", false, "gacha_roll").add_theme_font_size_override("font_size", 24)
 	_label(pcol, "Emas didapat dari kampanye (bonus tiap 5 tahap) dan naik jabatan.", "CardLabel")
-	if model.gold < Data.GACHA_COST_10:
+	if model.gold < model.gacha_cost(10):
 		_button(pcol, "Beli Emas di Toko", func():
 			_show_store()
 			return null, true, "store", "GreenButton")

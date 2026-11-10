@@ -7,6 +7,8 @@ const RAIN_DROPS := 70
 const STARS := 40
 
 var season := "kemarau"
+## Dekorasi kota yang terpasang: [Texture2D], digambar di tepi bawah spanduk.
+var decor: Array = []
 var hour_override := -1.0  ## untuk tes/tangkapan layar
 var _rng := RandomNumberGenerator.new()
 var _drops: Array = []
@@ -57,6 +59,11 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var h := hour()
+	var side := 64.0
+	for i in decor.size():
+		var tex: Texture2D = decor[i]
+		if tex:
+			draw_texture_rect(tex, Rect2(size.x - 16 - side * (i + 1) - 4 * i, size.y - side - 8, side, side), false)
 	var c := tint(h)
 	if c.a > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, size), c)

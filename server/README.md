@@ -102,6 +102,25 @@ memakai cek di perangkat seperti sebelumnya.
 - **Pemberitahuan**: `GET /v1/notices?since=` dipakai plugin Android saat game
   ditutup (jumlah surat baru dan dagangan laku).
 
+### Save di server, pindah perangkat, konfigurasi, crash
+
+- `POST/GET /v1/save`: cadangan save (maks. 600 KB). Inventaris dari save ini dipakai
+  Pasar Pemain; kenaikan emas melebihi ±120/jam + 3.000 (di luar pembelian terverifikasi)
+  dicatat di `/admin/api/flags`.
+- `POST /v1/account/transfer` → kode 8 huruf (24 jam). `POST /v1/account/claim`
+  (tanpa token) memindahkan akun ke perangkat baru; token lama tidak berlaku lagi.
+- `GET /v1/config` (tanpa token): `yield_bonus` (0–1), `gacha_discount` (0–0,5),
+  `rateup`, `event`, `min_version`, `announcement {id, title, body}`. Ubah lewat
+  `POST /admin/api/config`, misalnya:
+
+```
+curl -X POST https://server/admin/api/config -H "X-Admin-Token: $ADMIN_TOKEN" \
+  -d '{"yield_bonus":0.5,"announcement":{"id":"libur1","title":"Akhir Pekan Ganda","body":"Hasil urusan +50%!"}}'
+```
+
+- `POST /v1/crash` (opt-in): laporan crash, maks. 20 per pemasangan per hari →
+  `/admin/api/crashes`.
+
 ### Endpoint
 
 | Metode | Jalur | Keterangan |

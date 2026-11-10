@@ -33,7 +33,7 @@ func _init() -> void:
 		"test_troops", "test_seasons", "test_diplomacy", "test_spies", "test_rebellion", "test_race", "test_quiz",
 		"test_candi", "test_forge", "test_pets", "test_comeback", "test_gift_codes", "test_world_boss", "test_realm5_save",
 		"test_intro_update", "test_collect_daily", "test_counselor_titles", "test_wayang", "test_ceremony", "test_badges",
-		"test_tourney_reward", "test_realm6_save", "test_month_event", "test_skins", "test_mail", "test_realm7_save", "test_history", "test_endgame", "test_heirs", "test_kitchen", "test_season_market", "test_realm8_save", "test_share_card",
+		"test_tourney_reward", "test_realm6_save", "test_month_event", "test_skins", "test_mail", "test_realm7_save", "test_history", "test_endgame", "test_heirs", "test_kitchen", "test_season_market", "test_realm8_save", "test_share_card", "test_remote_config", "test_sweep", "test_decor", "test_advice_review", "test_realm9_save", "test_malay",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -3356,3 +3356,133 @@ func test_share_card() -> void:
 	c.free()
 	var sky = load("res://scripts/ui/sky_layer.gd")
 	check(sky.tint(22.0).a > 0.4 and sky.tint(12.0).a == 0.0 and sky.tint(18.0).a > 0.1, "langit malam, siang, senja")
+
+
+func test_remote_config() -> void:
+	var m := _realm_model()
+	var t := 1000.0
+	m.sync(t)
+	var base := m.affair_yield("silver")
+	m.apply_remote({"yield_bonus": 5.0, "gacha_discount": 0.9, "rateup": "satria", "min_version": Data.VERSION_CODE + 1,
+		"announcement": {"id": "a1", "title": "Halo", "body": "Isi"}})
+	check(is_equal_approx(m.remote["yield_bonus"], 1.0) and is_equal_approx(m.remote["gacha_discount"], 0.5), "konfigurasi dibatasi")
+	m.memo_begin()
+	m.memo_end()
+	check(m.affair_yield("silver") > base, "bonus hasil dari server")
+	check(m.gacha_cost(1) == int(ceil(Data.GACHA_COST * 0.5)) and m.gacha_cost(10) < Data.GACHA_COST_10, "diskon rekrut")
+	check(m.rateup_id(t) == "satria", "rate-up dari server")
+	m.apply_remote({"rateup": "arya"})
+	check(m.rateup_id(t) != "arya", "rate-up hanya untuk Legenda")
+	check(not m.update_required(), "tanpa versi minimum tidak wajib update")
+	m.apply_remote({"min_version": Data.VERSION_CODE + 1})
+	check(m.update_required(), "versi minimum memaksa update")
+	var ev: Dictionary = Data.EVENTS[1]
+	m.apply_remote({"event": ev.get("id", "")})
+	check(str(ev.get("id", "")) == "" or m.event_def()["id"] == ev["id"], "event dari server")
+	m.apply_remote({})
+	var gold := m.gold
+	check(m.recruit(1, t)["ok"] and m.gold == gold - Data.GACHA_COST, "tanpa konfigurasi kembali normal")
+
+
+func test_sweep() -> void:
+	var m := _realm_model()
+	var t := 1000.0
+	m.stage = 0
+	check(not m.sweep(1, t)["ok"], "sapu butuh tahap yang dimenangkan")
+	m.stage = 20
+	var silver := m.silver
+	var soldiers := m.soldiers
+	var cost := m.sweep_cost()
+	check(cost > 0 and m.sweep(5, t)["ok"], "sapu x5")
+	check(m.soldiers == soldiers - cost * 5 and m.silver > silver, "biaya prajurit & hadiah perak")
+	check(m.sweeps_left(t) == Data.SWEEP_DAILY - 5 and m.stage == 20, "jatah berkurang, tahap tetap")
+	check(m.sweep(99, t)["ok"] and m.sweeps_left(t) == 0, "sisa jatah dipakai")
+	check(not m.sweep(1, t)["ok"], "jatah habis")
+	check(m.sweeps_left(t + 86400.0) == Data.SWEEP_DAILY, "besok jatah baru")
+	m.soldiers = 0
+	check(not m.sweep(1, t + 86400.0)["ok"], "prajurit kurang")
+
+
+func test_decor() -> void:
+	var m := _realm_model()
+	m.stage = 0
+	check(not m.buy_decor("gapura")["ok"], "dekorasi terkunci")
+	m.stage = Data.DECOR_UNLOCK_STAGE
+	var base := m.kingdom_bonus("yield_all")
+	var silver := m.silver
+	check(m.buy_decor("gapura")["ok"] and m.silver < silver, "pasang gapura")
+	check(is_equal_approx(m.kingdom_bonus("yield_all") - base, 0.01), "bonus dekorasi")
+	check(not m.buy_decor("gapura")["ok"] and not m.buy_decor("palsu")["ok"], "sekali pasang, id dikenal")
+	m.silver = 0
+	check(not m.buy_decor("pendopo")["ok"], "perak kurang")
+	for id in Data.DECOR_ORDER:
+		check(Data.DECORATIONS.has(id) and ResourceLoader.exists("res://assets/icons/%s.svg" % Data.DECORATIONS[id]["icon"]),
+			"ikon dekorasi %s" % id)
+
+
+func test_advice_review() -> void:
+	var m := fresh()
+	var t := 1000.0
+	m.sync(t)
+	var list := m.advice(t)
+	check(not list.is_empty(), "selalu ada saran")
+	for a in list:
+		var target: String = a["target"]
+		check(target.begins_with("page:") or target.begins_with("realm:") or target in ["login", "missions", "story"],
+			"tujuan saran dikenal: %s" % target)
+	check(list.any(func(a): return a["target"] == "page:gacha"), "saran rekrut gratis")
+	m.tutorial["done"] = true
+	check(not m.review_ready(t), "ulasan tidak di hari pertama")
+	var later := t + 3 * 86400.0
+	check(m.review_ready(later), "ulasan setelah 2 hari")
+	m.mark_review(later)
+	check(not m.review_ready(later + 86400.0), "jeda 30 hari")
+	check(m.review_ready(later + 31 * 86400.0), "boleh lagi setelah 30 hari")
+	m.mark_review(later + 31 * 86400.0)
+	m.mark_review(later + 62 * 86400.0)
+	check(not m.review_ready(later + 200 * 86400.0), "maksimal 3 kali")
+
+
+func test_realm9_save() -> void:
+	var m := _realm_model()
+	var t := 1000.0
+	m.sync(t)
+	m.stage = 20
+	m.sweep(2, t)
+	m.buy_decor("lampion")
+	m.mark_review(t)
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
+	m2.sync(t)
+	check(var_to_str(m2.to_dict()["realm"]) == var_to_str(m.to_dict()["realm"]), "simpan/muat batch 9 identik")
+	var bad := m.to_dict()
+	bad["realm"]["decor"] = ["lampion", "palsu", "lampion"]
+	bad["realm"]["sweep"] = {"day": 0, "used": 999}
+	m2.from_dict(bad, t)
+	check(m2.realm["decor"] == ["lampion"] and m2.realm["sweep"]["used"] == Data.SWEEP_DAILY, "batch 9 divalidasi")
+
+
+func test_malay() -> void:
+	var T = preload("res://scripts/core/pattern_translation.gd").new()
+	T.load_tsv("res://translations/ms.tsv")
+	check(T._get_message("Rekrut gratis siap", "") == "Rekrut percuma siap", "Melayu: gratis -> percuma")
+	check(T._get_message("Kirim", "") == "Hantar", "Melayu: kirim -> hantar")
+	var en := FileAccess.get_file_as_string("res://translations/en.tsv")
+	var ms := FileAccess.get_file_as_string("res://translations/ms.tsv")
+	var keys := {}
+	for line in ms.split("\n"):
+		if "\t" in line and not line.begins_with("#"):
+			var parts: PackedStringArray = line.split("\t")
+			keys[parts[0]] = parts[1]
+	var missing := 0
+	var bad := 0
+	var re := RegEx.create_from_string("%[sd%]")
+	for line in en.split("\n"):
+		if "\t" in line and not line.begins_with("#"):
+			var src: String = line.split("\t")[0]
+			if not keys.has(src):
+				missing += 1
+			elif re.search_all(src).map(func(x): return x.get_string()) != re.search_all(keys[src]).map(func(x): return x.get_string()):
+				bad += 1
+	check(missing == 0, "semua teks punya terjemahan Melayu (%d kurang)" % missing)
+	check(bad == 0, "placeholder Melayu sama dengan sumber (%d beda)" % bad)

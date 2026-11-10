@@ -1,0 +1,2894 @@
+# Bahasa Melayu (beta) — dibuat oleh tools/gen_ms.py dari teks sumber Indonesia.
+# Jangan diedit langsung; koreksi ditulis di translations/ms_override.tsv.
+Kekuatan	Kekuatan
+Kecerdasan	Kecerdasan
+Politik	Politik
+Karisma	Karisma
+Kepala Desa	Ketua Kampung
+Camat	Penghulu
+Bupati	Bupati
+Gubernur	Gubernur
+Menteri	Menteri
+Perdana Menteri	Perdana Menteri
+Langka	Langka
+Epik	Epik
+Legenda	Legenda
+Tombak Garuda	Tombak Garuda
+Kitab Pajak	Kitab Cukai
+Irigasi Subur	Irigasi Subur
+Pesona Ratna	Pesona Ratna
+Benteng Baja	Benteng Baja
+Diplomasi Dewi	Diplomasi Dewi
+Panji Satria	Panji Satria
+Panah Lintang	Panah Lintang
+Hemat Bendahara	Hemat Bendahara
+Strategi Wening	Strategi Wening
+Pukulan Bagas	Pukulan Bagas
+Titah Ratu	Titah Ratu
+Kebijaksanaan Resi	Kebijaksanaan Resi
+Pendekar Nusantara	Pendekar Nusantara
+Cendekia Istana	Cendekia Istana
+Penjaga Lumbung	Penjaga Lumbung
+Bunga Keraton	Bunga Keraton
+Busur dan Tinju	Busur dan Tinju
+Hasil Tarik Pajak +%d%%	Hasil Tarik Cukai +%d%%
+Hasil Kelola Sawah +%d%%	Hasil Kelola Sawah +%d%%
+Hasil Rekrut Prajurit +%d%%	Hasil Rekrut Askar +%d%%
+Semua hasil urusan kota +%d%%	Semua hasil urusan bandar +%d%%
+Korban kampanye -%d%%	Korban kampanye -%d%%
+Kekuatan tempur (arena/bos/perang) +%d%%	Kekuatan tempur (arena/bos/perang) +%d%%
+Peluang anak lahir +%d%%	Peluang anak lahir +%d%%
+Biaya latih penasihat -%d%%	Kos latih penasihat -%d%%
+Prestise dari kampanye +%d%%	Prestise dari kampanye +%d%%
+Kepala Begal	Kepala Begal
+Pemimpin Pemberontak	Pemimpin Pemberontak
+Bajak Laut Selat	Bajak Laut Selat
+Panglima Lalim	Panglima Lalim
+Juru Tulis	Juru Tulis
+Hakim	Hakim
+Adipati	Adipati
+Menteri Muda	Menteri Muda
+Jamuan Sederhana	Jamuan Sederhana
+Pesta Agung	Pesta Agung
+Interogasi	Interogasi
+Gertak	Gertak
+Kerjakan urusan kota 10 kali	Laksanakan urusan bandar 10 kali
+Tarik pajak 5 kali	Tarik cukai 5 kali
+Kelola sawah 5 kali	Kelola sawah 5 kali
+Rekrut prajurit 5 kali	Rekrut askar 5 kali
+Latih penasihat 5 kali	Latih penasihat 5 kali
+Menangkan 3 tahap kampanye	Menangkan 3 peringkat kampanye
+Kunjungi selir 3 kali	Kunjungi gundik 3 kali
+Didik anak 3 kali	Didik anak 3 kali
+Rekrut penasihat 1 kali	Rekrut penasihat 1 kali
+Kumpulkan 3000 perak dari pajak	Kumpulkan 3000 perak dari cukai
+Sumbang ke aliansi 1 kali	Sumbang ke pakatan 1 kali
+Serang bos aliansi 2 kali	Serang bos pakatan 2 kali
+Serang benteng dalam perang aliansi 2 kali	Serang benteng dalam perang pakatan 2 kali
+Interogasi tahanan 3 kali	Interogasi tahanan 3 kali
+Adakan perjamuan 1 kali	Adakan perjamuan 1 kali
+Bertarung di arena 3 kali	Bertarung di arena 3 kali
+Festival Panen	Festival Tuai
+Lumbung rakyat penuh! Kelola sawah dan didik anak untuk mengumpulkan poin.	Lumbung rakyat penuh! Kelola sawah dan didik anak untuk mengumpulkan poin.
+Hasil Kelola Sawah +50%	Hasil Kelola Sawah +50%
+Turnamen Ksatria	Turnamen Ksatria
+Para ksatria berlomba di medan laga. Menangkan kampanye dan latih penasihat.	Para ksatria berlomba di medan laga. Menangkan kampanye dan latih penasihat.
+Prajurit gugur di kampanye -20%	Askar gugur di kampanye -20%
+Pasar Malam	Pasar Malam
+Pedagang dari seluruh negeri datang. Tarik pajak dan rekrut prajurit.	Peniaga dari seluruh negeri datang. Tarik cukai dan rekrut askar.
+Hasil Tarik Pajak +50%	Hasil Tarik Cukai +50%
+Pesta Istana	Pesta Istana
+Istana berhias bunga. Kunjungi selir, didik dan nikahkan anak.	Istana berhias bunga. Kunjungi gundik, didik dan nikahkan anak.
+Peluang anak lahir +15%	Peluang anak lahir +15%
+Ritual Purnama	Ritual Purnama
+Bulan purnama memanggil para legenda. Rekrut penasihat dan urus kota.	Bulan purnama memanggil para legenda. Rekrut penasihat dan urus bandar.
+Peluang Legenda di Rekrut 4% menjadi 7%	Peluang Legenda di Rekrut 4% menjadi 7%
+Urusan kota apa saja	Urusan bandar apa sahaja
+Tarik pajak	Tarik cukai
+Kelola sawah	Kelola sawah
+Rekrut prajurit	Rekrut askar
+Latih penasihat	Latih penasihat
+Menang kampanye	Menang kampanye
+Kunjungi selir	Kunjungi gundik
+Didik anak	Didik anak
+Nikahkan anak	Nikahkan anak
+Rekrut penasihat (per tarikan)	Rekrut penasihat (per tarikan)
+Serang bos aliansi	Serang bos pakatan
+Sumbang ke aliansi	Sumbang ke pakatan
+Menang di arena	Menang di arena
+Serang benteng dalam perang aliansi	Serang benteng dalam perang pakatan
+Terbang tinggi bersama!	Terbang tinggi bersama!
+Damai, makmur, sejahtera.	Damai, makmur, sejahtera.
+Kuat di medan laga.	Kuat di medan laga.
+Sumbang Perak	Sumbang Perak
+Sumbang Pangan	Sumbang Makanan
+Sumbang Emas	Sumbang Emas
+Kantong Emas	Beg Emas
+Peti Perak	Peti Perak
+Lumbung Pangan	Lumbung Makanan
+Pasukan Bantuan	Pasukan Bantuan
+Peti Emas Besar	Peti Emas Besar
+Gulungan Latihan	Gulungan Latihan
+Batu Bintang	Batu Bintang
+Buto Ijo	Buto Ijo
+Gerbang Utara	Gerbang Utara
+Menara Timur	Menara Timur
+Benteng Barat	Benteng Barat
+Lumbung Selatan	Lumbung Selatan
+Keraton Inti	Keraton Inti
+Halo semua!	Halo semua!
+Ayo serang bos!	Ayo serang bos!
+Terima kasih!	Terima kasih!
+Siap, gas perang!	Siap, gas perang!
+Selamat pagi semuanya!	Selamat pagi semuanya!
+Halo, para Tuan!	Halo, para Tuan!
+Ada yang sedang main?	Ada yang sedang main?
+Semangat hari ini, kawan!	Semangat hari ini, kawan!
+{boss} tinggal {hp}% lagi, ayo serang!	{boss} tinggal {hp}% lagi, ayo serang!
+Sudah serang {boss} hari ini?	Sudah serang {boss} hari ini?
+Jangan lupa serangan bos ya!	Jangan lupa serangan bos ya!
+{boss} sudah tumbang! Jangan lupa ambil hadiahnya.	{boss} sudah tumbang! Jangan lupa ambil hadiahnya.
+Hebat, {boss} kalah minggu ini!	Hebat, {boss} kalah minggu ini!
+Kita unggul {ours}-{theirs} melawan {enemy}! Pertahankan!	Kita unggul {ours}-{theirs} melawan {enemy}! Pertahankan!
+{enemy} mulai kewalahan, terus tekan!	{enemy} mula kewalahan, terus tekan!
+Kita tertinggal {ours}-{theirs}, ayo serang benteng {enemy}!	Kita tertinggal {ours}-{theirs}, ayo serang benteng {enemy}!
+Butuh bantuan di perang melawan {enemy}!	Butuh bantuan di perang melawan {enemy}!
+Jangan lupa sumbangan harian, aliansi butuh exp.	Jangan lupa sumbangan harian, pakatan butuh exp.
+Sudah sumbang hari ini? Jasanya bisa ditukar di toko.	Sudah sumbang hari ini? Jasanya boleh ditukar di kedai.
+Tips: latih penasihat berkekuatan tinggi untuk kampanye.	Tips: latih penasihat berkekuatan tinggi untuk kampanye.
+Event minggu ini {event}, jangan sampai lewat!	Event minggu ini {event}, jangan sehingga lewat!
+Rekrut gratis tiap hari, jangan lupa ya.	Rekrut percuma setiap hari, jangan lupa ya.
+Misi harian itu sumber emas paling gampang.	Misi harian itu sumber emas paling gampang.
+Ada yang dapat Legenda dari rekrut?	Ada yang dapat Legenda dari rekrut?
+Arena hari ini ramai sekali.	Arena hari ini ramai sekali.
+Siapa yang sudah liga Emas?	Siapa yang sudah liga Emas?
+Panen tahun ini melimpah!	Tuai tahun ini melimpah!
+Istirahat dulu, nanti lanjut lagi.	Istirahat dulu, nanti teruskan lagi.
+Halo juga, {player}!	Halo juga, {player}!
+Hai {player}, selamat datang!	Hai {player}, selamat datang!
+Salam, {player}!	Salam, {player}!
+Sama-sama!	Sama-sama!
+Siap, kapan saja!	Siap, kapan sahaja!
+Kita kan satu aliansi.	Kita kan satu pakatan.
+Ayo, saya baru saja serang {boss}!	Ayo, saya baharu sahaja serang {boss}!
+{boss} tinggal {hp}%, sedikit lagi!	{boss} tinggal {hp}%, sedikit lagi!
+Saya fokus ke benteng berikutnya!	Saya fokus ke benteng seterusnya!
+Skor kita {ours} lawan {theirs}, ayo!	Skor kita {ours} lawan {theirs}, ayo!
+Coba latih penasihat dan rekrut prajurit dulu.	Cuba latih penasihat dan rekrut askar dulu.
+Lihat menu Panduan di Kota, lengkap di sana.	Lihat menu Panduan di Bandar, lengkap di sana.
+Kerjakan misi harian, emasnya lumayan.	Laksanakan misi harian, emasnya boleh tahan.
+Siap!	Siap!
+Setuju!	Setuju!
+Mantap, {player}!	Mantap, {player}!
+Hahaha, betul juga.	Hahaha, betul juga.
+Oke, lanjutkan!	Oke, teruskan!
+Terima kasih atas sumbangannya, {player}!	Terima kasih atas sumbangannya, {player}!
+Mantap sumbangannya!	Mantap sumbangannya!
+Serangan yang hebat!	Serangan yang hebat!
+Bagus, {boss} makin lemah!	Bagus, {boss} makin lemah!
+Benteng direbut! Luar biasa!	Benteng direbut! Luar biasa!
+Hidup {alliance}!	Hidup {alliance}!
+Perunggu	Perunggu
+Perak	Perak
+Emas	Emas
+Berlian	Berlian
+Pasukan Bayaran	Pasukan Bayaran
+Tiket Rekrut	Tiket Rekrut
+Teh Semangat	Teh Semangat
+Selamat datang, Tuan! Saya Sekar Pandita, penasihat Anda. Mari saya tunjukkan cara memimpin kota ini.	Selamat datang, Tuan! Saya Sekar Pandita, penasihat Anda. Mari saya tunjukkan cara memimpin bandar ini.
+Ini sumber daya Anda: Perak, Pangan, Prajurit, dan Emas. Semuanya dibutuhkan untuk membangun kekuatan.	Ini sumber daya Anda: Perak, Makanan, Askar, dan Emas. Semuanya dibutuhkan untuk membangun kekuatan.
+Tarik pajak dari rakyat untuk mendapat perak. Ketuk \"Kerjakan\" pada Tarik Pajak.	Tarik cukai dari rakyat untuk mendapat perak. Ketik \"Laksanakan\" pada Tarik Cukai.
+Bagus! Sekarang rekrut prajurit untuk pasukan Anda.	Bagus! Sekarang rekrut askar untuk pasukan Anda.
+Urusan kota terisi lagi seiring waktu, bahkan saat game ditutup. Sekarang buka menu Penasihat.	Urusan bandar terisi lagi seiring waktu, bahkan saat game ditutup. Sekarang buka menu Penasihat.
+Penasihat adalah kekuatan Anda. Latih penasihat dengan perak untuk menaikkan atributnya.	Penasihat adalah kekuatan Anda. Latih penasihat dengan perak untuk menaikkan atributnya.
+Kekuatan penasihat menentukan hasil pertempuran. Ayo ke medan perang! Buka menu Kampanye.	Kekuatan penasihat menentukan hasil pertempuran. Ayo ke medan perang! Buka menu Kampanye.
+Serang musuh untuk mendapat perak, prestise, dan emas. Ketuk \"SERANG!\".	Serang musuh untuk mendapat perak, prestise, dan emas. Ketik \"SERANG!\".
+Emas bisa dipakai merekrut penasihat baru. Buka menu Rekrut.	Emas boleh digunakan merekrut penasihat baharu. Buka menu Rekrut.
+Anda punya satu rekrut gratis setiap hari. Cobalah sekarang!	Anda punya satu rekrut percuma setiap hari. Cobalah sekarang!
+Di Istana Anda bisa mengunjungi selir dan membesarkan anak. Buka menu Istana.	Di Istana Anda boleh mengunjungi gundik dan membesarkan anak. Buka menu Istana.
+Kunjungi selir untuk menambah keakraban. Siapa tahu seorang anak akan lahir!	Kunjungi gundik untuk menambah keakraban. Siapa tahu seorang anak akan lahir!
+Selesaikan misi harian dan ambil hadiah login setiap hari untuk mendapat Emas. Tombolnya ada di sini.	Selesaikan misi harian dan ambil hadiah login setiap hari untuk mendapat Emas. Tombolnya ada di sini.
+Hebat, Tuan! Anda siap memimpin. Terimalah hadiah dari rakyat: 100 emas dan 2000 perak.	Hebat, Tuan! Anda siap memimpin. Terimalah hadiah dari rakyat: 100 emas dan 2000 perak.
+Aliansi Terbuka!	Pakatan Terbuka!
+Bergabunglah dengan aliansi untuk bonus hasil urusan kota, sumbangan harian, toko aliansi, dan bos mingguan Buto Ijo yang dilawan bersama.	Bergabunglah dengan pakatan untuk bonus hasil urusan bandar, sumbangan harian, kedai pakatan, dan bos mingguan Buto Ijo yang dilawan bersama.
+Arena Terbuka!	Arena Terbuka!
+Tantang para tuan lain di Arena! Naikkan poin untuk mencapai liga lebih tinggi dan raih hadiah musim setiap minggu.	Tantang para tuan lain di Arena! Naikkan poin untuk mencapai liga lebih tinggi dan raih hadiah musim setiap minggu.
+Kota	Bandar
+Kerjakan urusan kota untuk perak, pangan, dan prajurit. Prajurit baru makan pangan, jadi kelola sawah juga. Urusan terisi 1 tiap menit. Kumpulkan prestise untuk naik jabatan: batas level dan hasil meningkat.	Laksanakan urusan bandar untuk perak, makanan, dan askar. Askar baharu makan makanan, jadi kelola sawah juga. Urusan terisi 1 setiap minit. Kumpulkan prestise untuk naik jawatan: batas level dan hasil meningkat.
+Penasihat	Penasihat
+Latih penasihat dengan perak. Kekuatan menentukan kampanye dan arena, Kecerdasan hasil pajak, Politik hasil sawah, Karisma jumlah prajurit.	Latih penasihat dengan perak. Kekuatan menentukan kampanye dan arena, Kecerdasan hasil cukai, Politik hasil sawah, Karisma jumlah askar.
+Rekrut	Rekrut
+Rekrut penasihat dengan emas: Legenda 4%, Epik 21%. x10 dijamin Epik, Legenda dijamin dalam 50 tarikan. Duplikat menambah bintang.	Rekrut penasihat dengan emas: Legenda 4%, Epik 21%. x10 dijamin Epik, Legenda dijamin dalam 50 tarikan. Duplikat menambah bintang.
+Kampanye	Kempen
+Kalahkan musuh tahap demi tahap. Korban bergantung pada kekuatan Anda dibanding musuh. Tiap tahap ke-5 memberi bonus emas.	Kalahkan musuh peringkat demi peringkat. Korban bergantung pada kekuatan Anda dibanding musuh. Setiap peringkat ke-5 memberi bonus emas.
+Istana	Istana
+Kunjungi selir untuk keakraban (+Karisma) dan peluang anak. Didik anak dengan pangan, lalu nikahkan untuk bonus atribut permanen.	Kunjungi gundik untuk keakraban (+Karisma) dan peluang anak. Didik anak dengan makanan, lalu nikahkan untuk bonus atribut permanen.
+Aliansi	Pakatan
+Terbuka di Tahap 5. Sumbang tiap hari, lawan bos mingguan, dan belanja di toko aliansi dengan Jasa.	Terbuka di Peringkat 5. Sumbang setiap hari, lawan bos mingguan, dan belanja di kedai pakatan dengan Jasa.
+Arena	Arena
+Terbuka di Tahap 8. Tantang lawan dengan tiket harian, naik liga, dan tukar koin arena di toko.	Terbuka di Peringkat 8. Tantang lawan dengan tiket harian, naik liga, dan tukar koin arena di kedai.
+Harian & Mingguan	Harian & Mingguan
+Ambil hadiah login, selesaikan misi harian, dan kumpulkan poin event mingguan. Semuanya sumber emas utama.	Ambil hadiah login, selesaikan misi harian, dan kumpulkan poin event mingguan. Semuanya sumber emas utama.
+Paket Pemula	Pakej Pemula
+Sekali beli: 500 emas, 50.000 perak, 20.000 prajurit, dan penasihat Epik Wening Kirana.	Sekali beli: 500 emas, 50.000 perak, 20.000 askar, dan penasihat Epik Wening Kirana.
+Kartu Bulanan	Kad Bulanan
+Langsung 300 emas, lalu ambil 100 emas setiap hari selama 30 hari (total 3.300 emas).	Langsung 300 emas, lalu ambil 100 emas setiap hari selama 30 hari (total 3.300 emas).
+60 Emas	60 Emas
+330 Emas	330 Emas
+680 Emas	680 Emas
+1.380 Emas	1.380 Emas
+3.280 Emas	3.280 Emas
+Hasil urusan kota +%d%%	Hasil urusan bandar +%d%%
+Kapasitas urusan & energi kunjungan +%d	Kapasitas urusan & energi kunjungan +%d
+Tiket arena harian +%d	Tiket arena harian +%d
+Sumbangan aliansi harian +%d	Sumbangan pakatan harian +%d
+Serangan bos aliansi harian +%d	Serangan bos pakatan harian +%d
+Serangan perang aliansi harian +%d	Serangan perang pakatan harian +%d
+Prestise	Prestise
+Top 1%	Top 1%
+Top 5%	Top 5%
+Top 20%	Top 20%
+Top 50%	Top 50%
+Peserta	Peserta
+Penasihat pilihan naik 1 level tanpa biaya (tetap mengikuti batas jabatan).	Penasihat pilihan naik 1 level tanpa kos (tetap mengikuti batas jawatan).
+Penasihat pilihan +1 bintang (+20% atribut).	Penasihat pilihan +1 bintang (+20% atribut).
+Pil Keakraban	Pil Keakraban
+Keakraban selir pilihan +10.	Keakraban gundik pilihan +10.
+Rekrut 1 penasihat tanpa emas (pakai di halaman Rekrut).	Rekrut 1 penasihat tanpa emas (guna di halaman Rekrut).
+Mengisi penuh semua urusan kota dan energi kunjungan.	Mengisi penuh semua urusan bandar dan energi kunjungan.
+Berisi 10.000 perak.	Berisi 10.000 perak.
+Karung Pangan	Karung Makanan
+Berisi 10.000 pangan.	Berisi 10.000 makanan.
+Surat Wajib Militer	Surat Wajib Militer
+Berisi 5.000 prajurit.	Berisi 5.000 askar.
+Kepala Desa yang Baru	Ketua Kampung yang Baharu
+Tuan, desa ini sudah lama tanpa pemimpin. Begal menjarah lumbung, rakyat ketakutan.	Tuan, kampung ini sudah lama tanpa pemimpin. Begal menjarah lumbung, rakyat ketakutan.
+Beri saya prajurit, Tuan. Saya akan mengusir para begal dari perbatasan desa!	Beri saya askar, Tuan. Saya akan mengusir para begal dari perbatasan kampung!
+Mulai hari ini, desa ini di bawah perlindunganku. Kita bangun kembali bersama.	Mula hari ini, kampung ini di bawah perlindunganku. Kita bangun kembali bersama.
+Usir begal: menangkan Tahap 1	Usir begal: menangkan Peringkat 1
+Latih seorang penasihat ke level 3	Latih seorang penasihat ke level 3
+Capai kekuatan 80	Capai kekuatan 80
+Tangan Besi	Tangan Besi
+Kabar Tuan sampai ke kota kecamatan. Para pejabat menunggu bukti kepemimpinan Tuan.	Kabar Tuan sehingga ke bandar kecamatan. Para pegawai menunggu bukti kepemimpinan Tuan.
+Kumpulkan penasihat yang cakap dan buktikan diri di medan perang. Jabatan Camat menanti.	Kumpulkan penasihat yang cakap dan buktikan diri di medan perang. Jawatan Penghulu menanti.
+Taklukkan Tahap 5	Taklukkan Peringkat 5
+Miliki 4 penasihat	Miliki 4 penasihat
+Kumpulkan 300 prestise	Kumpulkan 300 prestise
+Naik jabatan menjadi Camat	Naik jawatan menjadi Penghulu
+Keluarga Bangsawan	Keluarga Bangsawan
+Tuan selalu sibuk dengan urusan negeri. Istana terasa sepi tanpa tawa anak-anak.	Tuan selalu sibuk dengan urusan negeri. Istana terasa sepi tanpa tawa anak-anak.
+Para bangsawan menghormati tuan yang punya keluarga dan sekutu. Aliansi akan memperkuat kita.	Para bangsawan menghormati tuan yang punya keluarga dan sekutu. Pakatan akan memperkuat kita.
+Dikaruniai seorang anak	Dikaruniai seorang anak
+Capai total keakraban 20	Capai total keakraban 20
+Bergabung dengan aliansi	Menyertai dengan pakatan
+Taklukkan Tahap 8	Taklukkan Peringkat 8
+Panggung Bupati	Panggung Bupati
+Kabupaten ini butuh pemimpin yang disegani di arena dan didukung pejabat yang setia.	Kabupaten ini butuh pemimpin yang disegani di arena dan didukung pegawai yang setia.
+Para tuan dari seluruh negeri berlaga di arena. Tunjukkan kekuatan kita, Tuan!	Para tuan dari seluruh negeri berlaga di arena. Tunjukkan kekuatan kita, Tuan!
+Naik jabatan menjadi Bupati	Naik jawatan menjadi Bupati
+Capai kekuatan 1.000	Capai kekuatan 1.000
+Menangi 3 pertarungan arena	Menangi 3 pertarungan arena
+Angkat seorang anak menjadi pejabat	Angkat seorang anak menjadi pegawai
+Badai di Perbatasan	Badai di Perbatasan
+Hahaha! Tanah ini akan menjadi milik Panglima Lalim! Siapa yang berani menghalangiku?	Hahaha! Tanah ini akan menjadi milik Panglima Lalim! Siapa yang berani menghalangiku?
+Saya, Tuan. Bersama pasukan dan para penasihat terbaik, kita hancurkan pemberontakan ini.	Saya, Tuan. Bersama pasukan dan para penasihat terbaik, kita hancurkan pemberontakan ini.
+Hancurkan pemberontakan: Tahap 20	Hancurkan pemberontakan: Peringkat 20
+Naik jabatan menjadi Gubernur	Naik jawatan menjadi Gubernur
+Kumpulkan total 5 bintang penasihat	Kumpulkan total 5 bintang penasihat
+Menuju Istana Raja	Menuju Istana Raja
+Negeri ini menanti pemimpin yang bijak. Jalan menuju istana raja terbuka bagi Tuan.	Negeri ini menanti pemimpin yang bijak. Jalan menuju istana raja terbuka bagi Tuan.
+Buktikan bahwa Tuan layak menjadi tangan kanan raja: Perdana Menteri negeri ini.	Buktikan bahwa Tuan layak menjadi tangan kanan raja: Perdana Menteri negeri ini.
+Taklukkan Tahap 40	Taklukkan Peringkat 40
+Capai kekuatan 10.000	Capai kekuatan 10.000
+Menjadi Perdana Menteri	Menjadi Perdana Menteri
+Anda	Anda
+Data di perangkat Anda	Data di peranti Anda
+Progres game (save.json), pengaturan, statistik bermain, dan laporan crash disimpan hanya di penyimpanan aplikasi pada perangkat ini. Game tidak memiliki akun atau server dan tidak mengirim data ini ke mana pun.	Progres game (save.json), tetapan, statistik bermain, dan laporan crash disimpan hanya di penyimpanan aplikasi pada peranti ini. Game tidak memiliki akaun atau pelayan dan tidak menghantar data ini ke mana pun.
+Pemain lain	Pemain lain
+Anggota aliansi, lawan arena, chat, dan papan peringkat adalah simulasi di perangkat Anda. Pesan chat yang Anda ketik tidak dikirim ke siapa pun.	Ahli pakatan, lawan arena, chat, dan papan kedudukan adalah simulasi di peranti Anda. Mesej chat yang Anda ketik tidak dihantar ke siapa pun.
+Pembelian dalam aplikasi	Pembelian dalam aplikasi
+Pembayaran diproses oleh Google Play. Game hanya menerima konfirmasi pembelian (ID produk dan token), tidak pernah data kartu atau rekening Anda.	Pembayaran diproses oleh Google Play. Game hanya menerima konfirmasi pembelian (ID produk dan token), tidak pernah data kad atau rekening Anda.
+Notifikasi	Pemberitahuan
+Pengingat dijadwalkan secara lokal oleh perangkat. Matikan kapan saja di Pengaturan atau pengaturan Android.	Pengingat dijadwalkan secara lokal oleh peranti. Matikan kapan sahaja di Tetapan atau tetapan Android.
+Laporan masalah	Laporan masalah
+Tombol Salin Laporan hanya menyalin teks ke clipboard. Anda yang memutuskan apakah akan mengirimkannya ke pengembang.	Tombol Salin Laporan hanya menyalin teks ke clipboard. Anda yang memutuskan apakah akan mengirimkannya ke pengembang.
+Menghapus data	Memadam data
+Hapus Statistik menghapus statistik bermain. Mulai Ulang menghapus progres. Menghapus aplikasi menghapus semua data game dari perangkat.	Padam Statistik memadam statistik bermain. Mula Ulang memadam progres. Memadam aplikasi memadam semua data game dari peranti.
+Tarik Pajak	Tarik Cukai
+Kelola Sawah	Kelola Sawah
+Rekrut Prajurit	Rekrut Askar
+Prestise belum cukup untuk naik jabatan.	Prestise belum cukup untuk naik jawatan.
+Selamat! Anda kini menjabat sebagai %s. +%d emas.	Selamat! Anda kini menjabat sebagai %s. +%d emas.
+Penasihat belum direkrut.	Penasihat belum direkrut.
+Level maksimal untuk jabatan ini. Naikkan jabatan!	Level maksimal untuk jawatan ini. Naikkan jawatan!
+Perak tidak cukup (butuh %d).	Perak tidak cukup (butuh %d).
+%s naik ke level %d.	%s naik ke level %d.
+Urusan tidak dikenal.	Urusan tidak dikenal.
+Pangan habis. Kelola sawah dulu untuk memberi makan prajurit baru.	Makanan habis. Kelola sawah dulu untuk memberi makan askar baharu.
+Belum ada urusan baru. Tunggu sebentar.	Belum ada urusan baharu. Tunggu sebentar.
++%d %s, -%d Pangan	+%d %s, -%d Makanan
+Pangan	Makanan
+Prajurit	Askar
+Kalah di %s! %d prajurit gugur. Butuh sekitar %d prajurit.	Kalah di %s! %d askar gugur. Butuh sekitar %d askar.
+Menang di %s! -%d prajurit, +%d perak, +%d prestise, +%d emas.	Menang di %s! -%d askar, +%d perak, +%d prestise, +%d emas.
+Rampasan: %s.	Rampasan: %s.
+Tertangkap: %s!	Tertangkap: %s!
+Jumlah rekrut tidak valid.	Jumlah rekrut tidak valid.
+Tidak punya Tiket Rekrut.	Tidak punya Tiket Rekrut.
+Rekrut gratis belum tersedia.	Rekrut percuma belum tersedia.
+Emas tidak cukup (butuh %d).	Emas tidak cukup (butuh %d).
+Rekrut selesai.	Rekrut selesai.
+Misi tidak ditemukan.	Misi tidak ditemukan.
+Hadiah misi sudah diambil.	Hadiah misi sudah diambil.
+Misi belum selesai.	Misi belum selesai.
+Hadiah misi: %s, +%d poin aktivitas, +%d poin event.	Hadiah misi: %s, +%d poin aktiviti, +%d poin event.
+Peti tidak ditemukan.	Peti tidak ditemukan.
+Peti sudah dibuka.	Peti sudah dibuka.
+Poin aktivitas belum cukup.	Poin aktiviti belum cukup.
+Peti dibuka: %s.	Peti dibuka: %s.
+Hadiah event tidak ditemukan.	Hadiah event tidak ditemukan.
+Hadiah event sudah diambil.	Hadiah event sudah diambil.
+Poin event belum cukup.	Poin event belum cukup.
+Hadiah %s: %s.	Hadiah %s: %s.
+Aliansi tidak ditemukan.	Pakatan tidak ditemukan.
+Menangkan Tahap %d untuk membuka Aliansi.	Menangkan Peringkat %d untuk membuka Pakatan.
+Anda sudah tergabung dalam aliansi.	Anda sudah tergabung dalam pakatan.
+Tunggu jeda setelah keluar aliansi sebelum bergabung lagi.	Tunggu jeda setelah keluar pakatan sebelum menyertai lagi.
+Anda bergabung dengan %s. Selamat datang!	Anda menyertai dengan %s. Selamat datang!
+%s: \"Selamat datang di %s, Tuan!\"	%s: \"Selamat datang di %s, Tuan!\"
+Anda bergabung dengan %s.	Anda menyertai dengan %s.
+Anda bergabung dengan %s!	Anda menyertai dengan %s!
+Anda belum tergabung dalam aliansi.	Anda belum tergabung dalam pakatan.
+Anda keluar dari %s.	Anda keluar dari %s.
+Ketua	Ketua
+Wakil	Wakil
+Anggota	Ahli
+Para anggota menyumbang %d exp sejak kunjungan terakhir Anda.	Para ahli menyumbang %d exp sejak kunjungan terakhir Anda.
+Aliansi naik ke level %d!	Pakatan naik ke level %d!
+Jenis sumbangan tidak dikenal.	Jenis sumbangan tidak dikenal.
+Batas sumbangan hari ini sudah habis.	Batas sumbangan hari ini sudah habis.
+%s tidak cukup.	%s tidak cukup.
+Anda: %s (+%d exp).	Anda: %s (+%d exp).
+%s: +%d exp aliansi, +%d jasa.	%s: +%d exp pakatan, +%d jasa.
+Barang tidak ditemukan.	Barang tidak ditemukan.
+Butuh aliansi level %d.	Butuh pakatan level %d.
+Batas pembelian hari ini sudah habis.	Batas pembelian hari ini sudah habis.
+Jasa tidak cukup (butuh %d).	Jasa tidak cukup (butuh %d).
+Membeli %s: %s.	Membeli %s: %s.
+%s Lv.%d	%s Lv.%d
+%s sudah dikalahkan minggu ini.	%s sudah dikalahkan minggu ini.
+Serangan hari ini sudah habis. Kembali besok!	Serangan hari ini sudah habis. Kembali esok!
+Anda memberi %d kerusakan ke %s! +%d jasa.	Anda memberi %d kerusakan ke %s! +%d jasa.
+Anda menyerang %s: %d kerusakan.	Anda menyerang %s: %d kerusakan.
+%s tumbang!	%s tumbang!
+%s berhasil dikalahkan!	%s berjaya dikalahkan!
+%s belum dikalahkan.	%s belum dikalahkan.
+Hadiah bos sudah diambil.	Hadiah bos sudah diambil.
+Anda harus ikut menyerang untuk mendapat hadiah.	Anda mesti ikut menyerang untuk mendapat hadiah.
+Hadiah kemenangan: +%d emas, +%d jasa.	Hadiah kemenangan: +%d emas, +%d jasa.
+Bergabunglah dengan aliansi untuk chat.	Bergabunglah dengan pakatan untuk chat.
+Pesan kosong.	Mesej kosong.
+Pesan terlalu panjang (maks. %d huruf).	Mesej terlalu panjang (maks. %d huruf).
+Tunggu sebentar sebelum mengirim lagi.	Tunggu sebentar sebelum menghantar lagi.
+Tuan	Tuan
+Perang melawan %s dimulai!	Perang melawan %s dimulakan!
+Pasukan kita merebut %s!	Pasukan kita merebut %s!
+Musuh merebut %s kita!	Musuh merebut %s kita!
+Bergabunglah dengan aliansi untuk ikut perang.	Bergabunglah dengan pakatan untuk ikut perang.
+Benteng tidak ditemukan.	Benteng tidak ditemukan.
+%s sudah direbut.	%s sudah direbut.
+Rebut %d benteng lain dulu untuk menyerang Keraton Inti.	Rebut %d benteng lain dulu untuk menyerang Keraton Inti.
+Serangan perang hari ini sudah habis.	Serangan perang hari ini sudah habis.
+Anda menyerang %s: %d kerusakan, +%d jasa perang.	Anda menyerang %s: %d kerusakan, +%d jasa perang.
+%s berhasil direbut! +%d jasa perang.	%s berjaya direbut! +%d jasa perang.
+Anda merebut %s!	Anda merebut %s!
+Anda menyerang %s (%d kerusakan).	Anda menyerang %s (%d kerusakan).
+Tidak ada hadiah perang.	Tidak ada hadiah perang.
++%d emas	+%d emas
++%d jasa	+%d jasa
+Hadiah perang (%s): %s.	Hadiah perang (%s): %s.
+Selamat datang di Arena! Kalahkan lawan untuk naik liga.	Selamat datang di Arena! Kalahkan lawan untuk naik liga.
+Musim baru dimulai! Liga musim lalu: %s.	Musim baharu dimulakan! Liga musim lalu: %s.
+Batas pembelian tiket hari ini sudah habis.	Batas pembelian tiket hari ini sudah habis.
+Tiket arena +1.	Tiket arena +1.
+Batas menyegarkan lawan hari ini sudah habis.	Batas menyegarkan lawan hari ini sudah habis.
+Daftar lawan diperbarui.	Daftar lawan dikemas kini.
+Menangkan Tahap %d untuk membuka Arena.	Menangkan Peringkat %d untuk membuka Arena.
+Lawan tidak ditemukan.	Lawan tidak ditemukan.
+Tiket arena habis. Beli tiket atau kembali besok.	Tiket arena habis. Beli tiket atau kembali esok.
+Menang	Menang
+Kalah	Kalah
+Tidak ada hadiah musim.	Tidak ada hadiah musim.
+Hadiah musim liga %s: %s.	Hadiah musim liga %s: %s.
+Koin arena tidak cukup (butuh %d).	Koin arena tidak cukup (butuh %d).
+Produk tidak dikenal: %s	Produk tidak dikenal: %s
+Transaksi ini sudah diproses.	Transaksi ini sudah diproses.
+bonus pembelian pertama	bonus pembelian pertama
+kartu aktif %d hari	kad aktif %d hari
+%s hanya bisa dibeli sekali.	%s hanya boleh dibeli sekali.
+%s bergabung	%s menyertai
+%s +1 bintang	%s +1 bintang
++%d poin VIP	+%d poin VIP
+Pembelian %s berhasil: %s.	Pembelian %s berjaya: %s.
+Kartu Bulanan tidak aktif.	Kad Bulanan tidak aktif.
+Emas Kartu Bulanan hari ini sudah diambil.	Emas Kad Bulanan hari ini sudah diambil.
+Kartu Bulanan: +%d emas. Sisa %d hari.	Kad Bulanan: +%d emas. Sisa %d hari.
+naik ke VIP %d (hadiah %s)	naik ke VIP %d (hadiah %s)
+naik ke VIP %d	naik ke VIP %d
+Capai VIP 1 untuk hadiah harian VIP.	Capai VIP 1 untuk hadiah harian VIP.
+Hadiah harian VIP sudah diambil hari ini.	Hadiah harian VIP sudah diambil hari ini.
+Hadiah harian VIP %d: %s.	Hadiah harian VIP %d: %s.
+Paket VIP tidak ditemukan.	Pakej VIP tidak ditemukan.
+Capai VIP %d untuk membeli paket ini.	Capai VIP %d untuk membeli pakej ini.
+Paket VIP %d sudah dibeli.	Pakej VIP %d sudah dibeli.
+Paket VIP %d: %s.	Pakej VIP %d: %s.
+Tidak ada hadiah peringkat.	Tidak ada hadiah kedudukan.
+Hadiah peringkat mingguan (%s, #%d): +%d emas.	Hadiah kedudukan mingguan (%s, #%d): +%d emas.
+Misi utama selesai: %s.	Misi utama selesai: %s.
+Semua bab sudah tamat.	Semua bab sudah tamat.
+Selesaikan semua misi bab ini dulu.	Selesaikan semua misi bab ini dulu.
+Bab \"%s\" tamat! %s.	Bab \"%s\" tamat! %s.
+Anak tidak ditemukan.	Anak tidak ditemukan.
+%s belum dewasa.	%s belum dewasa.
+%s sudah ikut ujian hari ini. Coba lagi besok.	%s sudah ikut ujian hari ini. Cuba lagi esok.
+Kursi pejabat sudah penuh (%d).	Kursi pegawai sudah penuh (%d).
+%s belum lulus ujian. Coba lagi besok, atau nikahkan.	%s belum lulus ujian. Cuba lagi esok, atau nikahkan.
+%s lulus ujian dan menjadi %s! Hasil urusan kota +%d%%.	%s lulus ujian dan menjadi %s! Hasil urusan bandar +%d%%.
+Jenis perjamuan tidak dikenal.	Jenis perjamuan tidak dikenal.
+%s sudah diadakan hari ini.	%s sudah diadakan hari ini.
+%d tamu hadir	%d tamu hadir
++%d prestise	+%d prestise
++%d exp aliansi	+%d exp pakatan
+%s meriah! %s.	%s meriah! %s.
+Undangan tidak ditemukan.	Jemputan tidak ditemukan.
+Anda sudah menghadiri perjamuan ini.	Anda sudah menghadiri perjamuan ini.
+Perak untuk hadiah tidak cukup (butuh %d).	Perak untuk hadiah tidak cukup (butuh %d).
+Anda menghadiri perjamuan %s: -%d perak, +%d prestise.	Anda menghadiri perjamuan %s: -%d perak, +%d prestise.
+Tahanan tidak ditemukan.	Tahanan tidak ditemukan.
+Cara interogasi tidak dikenal.	Cara interogasi tidak dikenal.
+Batas interogasi hari ini sudah habis.	Batas interogasi hari ini sudah habis.
+Pangan tidak cukup (butuh %d).	Makanan tidak cukup (butuh %d).
+%s: %s -%d daya tahan, +%d perak.	%s: %s -%d daya tahan, +%d perak.
++%d perak	+%d perak
+%s mengaku! %s.	%s mengaku! %s.
+%s dibebaskan. Rakyat memuji kemurahan hati Anda: +%d prestise.	%s dibebaskan. Rakyat memuji kemurahan hati Anda: +%d prestise.
+Item tidak ada di tas.	Item tidak ada di beg.
+Pilih penasihat.	Pilih penasihat.
+Level maksimal untuk jabatan ini.	Level maksimal untuk jawatan ini.
+Bintang %s sudah penuh.	Bintang %s sudah penuh.
+Pilih selir.	Pilih gundik.
+Keakraban dengan %s +10.	Keakraban dengan %s +10.
+Semua urusan dan energi kunjungan terisi penuh.	Semua urusan dan energi kunjungan terisi penuh.
+Pakai Tiket Rekrut di halaman Rekrut.	Guna Tiket Rekrut di halaman Rekrut.
+Item ini tidak bisa dipakai.	Item ini tidak boleh digunakan.
+Dibuka: %s.	Dibuka: %s.
+Tutorial sudah selesai.	Tutorial sudah selesai.
+Tutorial selesai! %s.	Tutorial selesai! %s.
+Tutorial dilewati. Buka Panduan di menu Kota kapan saja.	Tutorial dilangkau. Buka Panduan di menu Bandar kapan sahaja.
+Hadiah login hari ini sudah diambil.	Hadiah login hari ini sudah diambil.
+Hadiah login Hari %d: %s, +%d poin VIP%s.	Hadiah login Hari %d: %s, +%d poin VIP%s.
+Belum dikenal.	Belum dikenal.
+Anda lelah. Tunggu energi kunjungan terisi.	Anda lelah. Tunggu energi kunjungan terisi.
+Keakraban dengan %s +%d.	Keakraban dengan %s +%d.
+Seorang anak lahir: %s (bakat %d/5)!	Seorang anak lahir: %s (bakat %d/5)!
+%s sudah dewasa.	%s sudah dewasa.
+%s masih beristirahat. Didik lagi dalam %d menit.	%s masih beristirahat. Didik lagi dalam %d minit.
+%s tumbuh ke level %d.	%s tumbuh ke level %d.
+%s menikah! %s mendapat +%d %s.	%s berkahwin! %s mendapat +%d %s.
+Urusan kota penuh	Urusan bandar penuh
+Pajak, sawah, dan prajurit siap dikerjakan, Tuan.	Cukai, sawah, dan askar siap dilaksanakan, Tuan.
+Energi kunjungan penuh	Energi kunjungan penuh
+Para selir menanti kunjungan Tuan di istana.	Para gundik menanti kunjungan Tuan di istana.
+Rekrut gratis siap	Rekrut percuma siap
+Satu rekrut penasihat gratis menunggu di Balai Rekrut.	Satu rekrut penasihat percuma menunggu di Balai Rekrut.
+Hadiah login menunggu	Hadiah login menunggu
+Ambil hadiah harian dan jaga rangkaian login Tuan.	Ambil hadiah harian dan jaga rangkaian login Tuan.
+Kerajaan merindukan Tuan	Kerajaan merindukan Tuan
+Rakyat menunggu perintah. Urusan dan hadiah sudah menumpuk.	Rakyat menunggu perintah. Urusan dan hadiah sudah menumpuk.
+Nama minimal %d huruf (huruf, angka, spasi).	Nama minimal %d huruf (huruf, angka, spasi).
+Nama tidak berubah.	Nama tidak berubah.
+Mulai sekarang Anda dikenal sebagai %s.	Mula sekarang Anda dikenal sebagai %s.
+Energi kunjungan	Energi kunjungan
+Rekrut gratis sudah siap.	Rekrut percuma sudah siap.
+Hari baru: misi harian dan batas harian telah direset.	Hari baharu: misi harian dan batas harian telah direset.
+Hadiah login hari ini menunggu.	Hadiah login hari ini menunggu.
+Event mingguan baru dimulai: %s.	Event mingguan baharu dimulakan: %s.
+%d pesan baru di chat aliansi.	%d mesej baharu di chat pakatan.
+Perang guild melawan %s berakhir: %s! Ambil hadiahnya.	Perang guild melawan %s berakhir: %s! Ambil hadiahnya.
+Musim arena selesai. Hadiah liga siap diklaim.	Musim arena selesai. Hadiah liga siap diklaim.
+Peringkat global minggu lalu sudah keluar. Ambil hadiahnya.	Kedudukan global minggu lalu sudah keluar. Ambil hadiahnya.
+Kerajaan aman. Semua urusan menunggu perintah Tuan.	Kerajaan aman. Semua urusan menunggu perintah Tuan.
+Anak	Anak
+Misi selesai!	Misi selesai!
+Peringkat	Kedudukan
+Login	Login
+Misi	Misi
+Kekuatan %s	Kekuatan %s
+VIP %d	VIP %d
+Berakhir dalam	Berakhir dalam
+Hadiah berikutnya dalam %02d:%02d:%02d	Hadiah seterusnya dalam %02d:%02d:%02d
+Reset dalam %02d:%02d:%02d	Reset dalam %02d:%02d:%02d
+Rekrut Gratis	Rekrut Percuma
+Gratis lagi %02d:%02d:%02d	Percuma lagi %02d:%02d:%02d
+Istirahat %02d:%02d	Istirahat %02d:%02d
+Didik  %s	Didik  %s
+·  +1 dalam %ds	·  +1 dalam %ds
+%d hari %s	%d hari %s
+Hasil +%d %s · dari %s	Hasil +%d %s · dari %s
+Makan %d pangan	Makan %d makanan
+Urusan	Urusan
+Kerjakan	Laksanakan
+Jabatan: %s	Jawatan: %s
+Anda telah mencapai jabatan tertinggi!	Anda telah mencapai jawatan tertinggi!
+Berikutnya %s · prestise %d/%d	Seterusnya %s · prestise %d/%d
+Naik Jabatan	Naik Jawatan
+Pengaturan	Tetapan
+Panduan	Panduan
+Hapus semua progres dan mulai dari awal?	Padam semua progres dan mula dari awal?
+Hapus	Padam
+Batal	Batal
+Game baru dimulai.	Game baharu dimulakan.
+Level %d / %d	Level %d / %d
+Latih  %s	Latih  %s
+Bergabung setelah Tahap %d, atau lewat Rekrut	Menyertai setelah Peringkat %d, atau lewat Rekrut
+Hanya bisa didapat lewat Rekrut	Hanya boleh didapat lewat Rekrut
+Prajurit musuh: %s	Askar musuh: %s
+Kekuatan musuh %d  ·  Anda %d	Kekuatan musuh %d  ·  Anda %d
+Perkiraan gugur: %s dari %s prajurit	Perkiraan gugur: %s dari %s askar
+Hadiah: %d perak	Hadiah: %d perak
+Hadiah: %d prestise	Hadiah: %d prestise
+Hadiah: %d emas%s	Hadiah: %d emas%s
+(tahap besar!)	(peringkat besar!)
+Tips: latih penasihat berkekuatan tinggi agar korban lebih sedikit. Rekrut prajurit di menu Kota.	Tips: latih penasihat berkekuatan tinggi agar korban lebih sedikit. Rekrut askar di menu Bandar.
+Tutup	Tutup
+Misi Harian	Misi Harian
+Poin Aktivitas: %d / %d	Poin Aktiviti: %d / %d
+%d poin	%d poin
+Dibuka	Dibuka
+Buka	Buka
+%s / %s   ·   %s, +%d poin	%s / %s   ·   %s, +%d poin
+Diambil	Diambil
+Klaim	Klaim
+Pergi	Pergi
+%d hadiah siap diklaim!	%d hadiah siap diklaim!
+Poin event: %s	Poin event: %s
+Lihat	Lihat
+Bonus minggu ini:	Bonus minggu ini:
+•  %s: +%d poin	•  %s: +%d poin
+•  Klaim misi harian: +%d poin	•  Klaim misi harian: +%d poin
+·  %s lagi ke hadiah berikutnya	·  %s lagi ke hadiah seterusnya
+Arena Terkunci	Arena Dikunci
+Menangkan Tahap %d di Kampanye untuk membuka Arena.	Menangkan Peringkat %d di Kampanye untuk membuka Arena.
+Liga	Liga
+Poin arena %d · terbaik %d	Poin arena %d · terbaik %d
+%d poin lagi ke liga %s	%d poin lagi ke liga %s
+Menang %d · Kalah %d	Menang %d · Kalah %d
+Koin arena: %s	Koin arena: %s
+Hadiah akhir musim liga %s: %s	Hadiah akhir musim liga %s: %s
+Klaim hadiah musim lalu (%s)	Klaim hadiah musim lalu (%s)
+Lawan	Lawan
+Toko	Kedai
+Catatan	Catatan
+Catatan Pertarungan	Catatan Pertarungan
++1  %d	+1  %d
+Segarkan (%d)	Segarkan (%d)
+%s · %d poin	%s · %d poin
+Kekuatan %s (Anda %s)	Kekuatan %s (Anda %s)
+Peluang menang %d%% · menang +%d, kalah -%d	Peluang menang %d%% · menang +%d, kalah -%d
+Tantang	Tantang
+Peringkat Anda: #%d dari %d	Kedudukan Anda: #%d dari %d
+%s · sisa %d/%d hari ini	%s · sisa %d/%d hari ini
+Bersiap!	Bersiap!
+Lanjut	Teruskan
+Ronde %d	Ronde %d
+Selesai	Selesai
+%+d poin arena · +%d koin arena%s	%+d poin arena · +%d koin arena%s
+· +%d perak	· +%d perak
+Aliansi Terkunci	Pakatan Dikunci
+Menangkan Tahap %d di Kampanye untuk membuka Aliansi.	Menangkan Peringkat %d di Kampanye untuk membuka Pakatan.
+Markas	Markas
+Bos	Bos
+Perang	Perang
+Chat (%d)	Chat (%d)
+Chat	Chat
+Level %d · exp %s / %s	Level %d · exp %s / %s
+Level %d (maksimal)	Level %d (maksimal)
+Bonus hasil urusan kota +%d%%	Bonus hasil urusan bandar +%d%%
+Jasa: %s	Jasa: %s
+Pilih aliansi untuk bergabung. Anggota aliansi saling membantu: menyumbang, melawan bos mingguan, dan berbelanja di toko aliansi.	Pilih pakatan untuk menyertai. Ahli pakatan saling membantu: menyumbang, melawan bos mingguan, dan berbelanja di kedai pakatan.
+Level %d · %d anggota	Level %d · %d ahli
+Gabung	Sertai
+Bisa bergabung dalam %s	Boleh menyertai dalam %s
+Sumbangan Harian	Sumbangan Harian
+Sisa hari ini: %d / %d	Sisa hari ini: %d / %d
+Biaya %s %s · +%d exp, +%d jasa	Kos %s %s · +%d exp, +%d jasa
+Sumbang	Sumbang
+Kabar Aliansi	Kabar Pakatan
+Keluar dari Aliansi	Keluar dari Pakatan
+Keluar dari aliansi? Jasa dan progres aliansi akan hilang, dan Anda harus menunggu 24 jam untuk bergabung lagi.	Keluar dari pakatan? Jasa dan progres pakatan akan hilang, dan Anda mesti menunggu 24 jam untuk menyertai lagi.
+Keluar	Keluar
+HP %s / %s	HP %s / %s
+%s telah dikalahkan minggu ini! Bos baru muncul hari Senin.	%s telah dikalahkan minggu ini! Bos baharu muncul hari Senin.
+Klaim Hadiah (+%d emas, +%d jasa)	Klaim Hadiah (+%d emas, +%d jasa)
+Hadiah sudah diambil.	Hadiah sudah diambil.
+Anda tidak ikut menyerang, jadi tidak mendapat hadiah.	Anda tidak ikut menyerang, jadi tidak mendapat hadiah.
+Serangan tersisa hari ini: %d / %d	Serangan tersisa hari ini: %d / %d
+Kerusakan Anda: %s · anggota lain: %s	Kerusakan Anda: %s · ahli lain: %s
+Tiap serangan +%d jasa. Bila bos kalah, semua yang ikut menyerang mendapat %d emas dan %d jasa.	Setiap serangan +%d jasa. Bila bos kalah, semua yang ikut menyerang mendapat %d emas dan %d jasa.
+melawan %s	melawan %s
+Skor %d - %d · jasa perang Anda %d	Skor %d - %d · jasa perang Anda %d
+Serangan tersisa %d / %d · jasa perang Anda %d	Serangan tersisa %d / %d · jasa perang Anda %d
+Terkunci	Dikunci
+Direbut	Direbut
+Serang	Serang
+Jatuh	Jatuh
+Tulis pesan...	Tulis mesej...
+Kirim	Hantar
+— %s · %s —	— %s · %s —
+%s · butuh aliansi level %d	%s · butuh pakatan level %d
+%d anggota · diurutkan berdasarkan kekuatan	%d ahli · diurutkan berdasarkan kekuatan
+Kekuatan %s · Kerusakan bos %s	Kekuatan %s · Kerusakan bos %s
+Kisah Tamat	Kisah Tamat
+Bab %d: %s	Bab %d: %s
+Semua misi selesai! Ambil hadiah bab.	Semua misi selesai! Ambil hadiah bab.
+Klaim (%d)	Klaim (%d)
+Misi Utama	Misi Utama
+Kisah dari Kepala Desa menuju Perdana Menteri	Kisah dari Ketua Kampung menuju Perdana Menteri
+Bab %d dari %d: %s	Bab %d dari %d: %s
+Cerita	Cerita
+Tamatkan Bab	Tamatkan Bab
+Bab %d\n%s	Bab %d\n%s
+Mulai Bab	Mula Bab
+Tas (%d)	Beg (%d)
+Tas	Beg
+Item dari misi, event, toko, dan kampanye	Item dari misi, event, kedai, dan kampanye
+Pakai	Guna
+Tas kosong. Item didapat dari misi harian, login, event, toko, dan tahap besar kampanye.	Beg kosong. Item didapat dari misi harian, login, event, kedai, dan peringkat besar kampanye.
+Kembali	Kembali
+%s: pilih %s	%s: pilih %s
+Level %d · bintang %d	Level %d · bintang %d
+Keakraban %d	Keakraban %d
+Pilih	Pilih
+Peringkat Global	Kedudukan Global
+%s pemain · diperbarui tiap hari	%s pemain · dikemas kini setiap hari
+Hadiah peringkat minggu lalu: %s (#%s)	Hadiah kedudukan minggu lalu: %s (#%s)
+Klaim +%d Emas	Klaim +%d Emas
+Mainkan fitur ini untuk masuk peringkat %s.	Mainkan fitur ini untuk masuk kedudukan %s.
+%s %s · Top %s%%	%s %s · Top %s%%
+Hadiah akhir minggu bila bertahan: %s, +%d emas (dihitung dari Kekuatan).	Hadiah akhir minggu bila bertahan: %s, +%d emas (dihitung dari Kekuatan).
+Aliansi Anda di peringkat #%d dari %d	Pakatan Anda di kedudukan #%d dari %d
+%s (%d anggota)	%s (%d ahli)
+Keuntungan khusus para Tuan	Keuntungan khusus para Tuan
+%d / %d poin ke VIP %d	%d / %d poin ke VIP %d
+Level VIP tertinggi!	Level VIP tertinggi!
+1 poin VIP untuk setiap %s pembelian · +%d poin tiap klaim login harian	1 poin VIP untuk setiap %s pembelian · +%d poin setiap klaim login harian
+Hadiah harian mulai VIP 1	Hadiah harian mula VIP 1
+Hadiah Harian	Hadiah Harian
+Sudah diambil hari ini	Sudah diambil hari ini
+Keuntungan VIP %d	Keuntungan VIP %d
+Aktif	Aktif
+Butuh %d poin VIP	Butuh %d poin VIP
+•  Hadiah harian:	•  Hadiah harian:
+•  Hadiah naik level:	•  Hadiah naik level:
+penasihat %s %s	penasihat %s %s
+Dibeli	Dibeli
+Toko Emas	Kedai Emas
+Pembayaran lewat Google Play	Pembayaran lewat Google Play
+MODE UJI · pembayaran disimulasikan	MODE UJI · pembayaran disimulasikan
+Toko belum tersedia	Kedai belum tersedia
+Mode Uji: tidak ada uang sungguhan yang ditagih. Di versi rilis, pembayaran diproses oleh Google Play.	Mode Uji: tidak ada wang sungguhan yang ditagih. Di versi rilis, pembayaran diproses oleh Google Play.
+Toko belum tersedia. Pastikan terhubung ke internet dan Google Play.	Kedai belum tersedia. Pastikan terhubung ke internet dan Google Play.
+%d + bonus %d emas	%d + bonus %d emas
+x2 untuk pembelian pertama! (+%d emas)	x2 untuk pembelian pertama! (+%d emas)
+Aktif · sisa %d hari	Aktif · sisa %d hari
+Ambil %d Emas Hari Ini	Ambil %d Emas Hari Ini
+Pulihkan Pembelian	Pulihkan Pembelian
+Total pembelian: %s	Total pembelian: %s
+Mode Uji	Mode Uji
+Beli %s seharga %s?\n(Mode uji: tidak ada uang sungguhan yang ditagih.)	Beli %s seharga %s?\n(Mode uji: tidak ada wang sungguhan yang ditagih.)
+Beli	Beli
+Fitur baru	Fitur baharu
+Lihat Sekarang	Lihat Sekarang
+Ringkasan semua fitur	Ringkasan semua fitur
+Profil, suara, dan perangkat	Profil, bunyi, dan peranti
+Belum diatur	Belum diatur
+Simpan	Simpan
+Tampil di header, daftar anggota aliansi, arena, dan peringkat.	Dipapar di header, daftar ahli pakatan, arena, dan kedudukan.
+Musik latar	Muzik latar
+Efek suara	Kesan bunyi
+Otomatis	Automatik
+Hemat baterai	Hemat baterai
+Batasi 30 FPS dan gambar ulang layar hanya saat ada perubahan.	Batasi 30 FPS dan gambar ulang skrin hanya saat ada perubahan.
+Pengingat saat urusan kota penuh, rekrut gratis siap, dan hadiah login.	Pengingat saat urusan bandar penuh, rekrut percuma siap, dan hadiah login.
+(Hanya di Android dengan plugin TlgNotify.)	(Hanya di Android dengan plugin TlgNotify.)
+Simpan Sekarang	Simpan Sekarang
+Tersimpan	Tersimpan
+Mulai Ulang	Mula Ulang
+Progres tersimpan otomatis tiap 15 detik dan saat game ditutup. Versi %s.	Progres tersimpan automatik setiap 15 saat dan saat game ditutup. Versi %s.
+Statistik bermain	Statistik bermain
+Jumlah sesi, lama bermain, dan aksi. Hanya disimpan di perangkat ini, tidak dikirim ke mana pun.	Jumlah sesi, lama bermain, dan aksi. Hanya disimpan di peranti ini, tidak dihantar ke mana pun.
+%d sesi · %d jam %d menit · %d hari aktif · %s aksi	%d sesi · %d jam %d minit · %d hari aktif · %s aksi
+Tidak ada crash tercatat.	Tidak ada crash tercatat.
+Game terakhir berhenti tiba-tiba pada %s.	Game terakhir berhenti tiba-tiba pada %s.
+Salin Laporan	Salin Laporan
+Laporan disalin. Tempelkan di email ke pengembang.	Laporan disalin. Tampalkan di email ke pengembang.
+Kebijakan Privasi	Dasar Privasi
+Hapus Statistik	Padam Statistik
+Statistik bermain dihapus.	Statistik bermain dipadam.
+Ringkasan data yang disimpan game ini	Ringkasan data yang disimpan game ini
+Mati	Mati
+Nyala	Hidup
+Selamat Datang Kembali	Selamat Datang Kembali
+Tuan pergi selama	Tuan pergi selama
+Lanjutkan	Teruskan
+%d hari %d jam	%d hari %d jam
+%d jam %d menit	%d jam %d minit
+%d menit	%d minit
+Hadiah Login Harian	Hadiah Login Harian
+Berturut-turut %d hari · Total %d hari	Berturut-turut %d hari · Total %d hari
+Rangkaian login terputus, kalender dimulai lagi dari Hari 1.	Rangkaian login terputus, kalendar dimulakan lagi dari Hari 1.
+Login setiap hari tanpa terputus. Hari 7 berisi hadiah besar!	Login setiap hari tanpa terputus. Hari 7 berisi hadiah besar!
+Klaim Hari %d	Klaim Hari %d
+Hari %d	Hari %d
+Emas: %s	Emas: %s
+Legenda %d%% · Epik %d%% · Langka %d%%	Legenda %d%% · Epik %d%% · Langka %d%%
+Legenda dijamin dalam %d tarikan	Legenda dijamin dalam %d tarikan
+x1  ·  %d	x1  ·  %d
+x10  ·  %d	x10  ·  %d
+x10 dijamin minimal satu Epik. Duplikat menambah bintang (+%d%% atribut),	x10 dijamin minimal satu Epik. Duplikat menambah bintang (+%d%% atribut),
+atau perak bila bintang sudah penuh.	atau perak bila bintang sudah penuh.
+Pakai Tiket Rekrut (%d)	Guna Tiket Rekrut (%d)
+Emas didapat dari kampanye (bonus tiap 5 tahap) dan naik jabatan.	Emas didapat dari kampanye (bonus setiap 5 peringkat) dan naik jawatan.
+Beli Emas di Toko	Beli Emas di Kedai
+Daftar Penasihat	Daftar Penasihat
+Hasil Rekrut	Hasil Rekrut
+Bintang %d	Bintang %d
++%s perak	+%s perak
+Selir	Gundik
+Anak (%d)	Anak (%d)
+Penjara (%d)	Penjara (%d)
+Perjamuan	Perjamuan
+Energi Kunjungan	Energi Kunjungan
+Energi	Energi
+Keakraban %d  ·  +%d Karisma	Keakraban %d  ·  +%d Karisma
+Kunjungi	Kunjungi
+Anak  (%d/%d kursi)	Anak  (%d/%d kursi)
+Belum ada anak. Kunjungi selir untuk kesempatan mendapat keturunan.	Belum ada anak. Kunjungi gundik untuk kesempatan mendapat keturunan.
+Ibu: %s	Ibu: %s
+Nikahkan	Nikahkan
+Ujian %s	Ujian %s
+Peluang lulus ujian %d%%	Peluang lulus ujian %d%%
+Sudah ujian hari ini, coba lagi besok	Sudah ujian hari ini, cuba lagi esok
+Anak yang telah menikah: %d	Anak yang telah berkahwin: %d
+Pejabat (%d/%d) · hasil urusan kota +%d%%	Pegawai (%d/%d) · hasil urusan bandar +%d%%
+Anak dewasa yang lulus Ujian Negara menjadi pejabat dan memberi bonus permanen.	Anak dewasa yang lulus Ujian Negara menjadi pegawai dan memberi bonus permanen.
+Bakat %d/5 · hasil urusan kota +%d%%	Bakat %d/5 · hasil urusan bandar +%d%%
+Penjara (%d/%d)	Penjara (%d/%d)
+Interogasi tersisa hari ini: %d / %d · biaya %d pangan	Interogasi tersisa hari ini: %d / %d · kos %d makanan
+Tahanan ditangkap dari kemenangan kampanye. Patahkan daya tahannya sampai mengaku.	Tahanan ditangkap dari kemenangan kampanye. Patahkan daya tahannya sehingga mengaku.
+Penjara kosong. Menangkan kampanye untuk menangkap tahanan.	Penjara kosong. Menangkan kampanye untuk menangkap tahanan.
+Daya tahan %s / %s · bila mengaku: +%s perak, +%d prestise	Daya tahan %s / %s · bila mengaku: +%s perak, +%d prestise
+%s ~%s	%s ~%s
+Bebaskan (+%d prestise)	Bebaskan (+%d prestise)
+· +%d exp aliansi	· +%d exp pakatan
+Biaya %s · %d+ tamu, %d+ prestise, %d hadiah%s	Kos %s · %d+ tamu, %d+ prestise, %d hadiah%s
+Adakan	Adakan
+Sudah diadakan hari ini	Sudah diadakan hari ini
+Undangan Hari Ini	Jemputan Hari Ini
+Bawa hadiah %s perak · +%d prestise	Bawa hadiah %s perak · +%d prestise
+Hadir	Hadir
+Sudah hadir	Sudah hadir
+Lewati tutorial	Langkau tutorial
+Lewati tutorial? Hadiah tutorial (100 emas dan 2000 perak) tidak akan diberikan.	Langkau tutorial? Hadiah tutorial (100 emas dan 2000 perak) tidak akan diberikan.
+Lewati	Langkau
+Lanjutkan tutorial	Teruskan tutorial
+Pembelian gagal: %s	Pembelian gagal: %s
+Belum terhubung ke Google Play. Coba lagi sebentar.	Belum terhubung ke Google Play. Cuba lagi sebentar.
+Toko belum tersedia di versi ini.	Kedai belum tersedia di versi ini.
+Tidak ada pembelian yang perlu dipulihkan.	Tidak ada pembelian yang perlu dipulihkan.
+(log tidak tersedia)	(log tidak tersedia)
+Laporan masalah Tuan Nusantara	Laporan masalah Tuan Nusantara
+Versi: %s · %s %s	Versi: %s · %s %s
+Perangkat: %s	Peranti: %s
+Sesi: %d · Main: %d menit	Sesi: %d · Main: %d minit
+Crash terakhir: sesi mulai %s (versi %s), total %d crash tercatat	Crash terakhir: sesi mula %s (versi %s), total %d crash tercatat
+Anda menang melawan %s (%+d poin).	Anda menang melawan %s (%+d poin).
+Anda kalah melawan %s (%+d poin).	Anda kalah melawan %s (%+d poin).
+Menang melawan %s! %+d poin arena, +%d koin arena, +%d perak.	Menang melawan %s! %+d poin arena, +%d koin arena, +%d perak.
+Kalah melawan %s! %+d poin arena, +%d koin arena.	Kalah melawan %s! %+d poin arena, +%d koin arena.
+%s menyerang Anda dan kalah (%+d poin).	%s menyerang Anda dan kalah (%+d poin).
+%s menyerang Anda dan menang (%+d poin).	%s menyerang Anda dan menang (%+d poin).
+Cara mendapat poin:	Cara mendapat poin:
+%s poin	%s poin
+Tiket %d	Tiket %d
+Ikatan Penasihat	Ikatan Penasihat
+Benteng %s	Benteng %s
+Direbut!	Direbut!
+Kabar Perang	Kabar Perang
+Rebut %d benteng untuk membuka Keraton Inti. Menang: %d emas + %d jasa; kalah: %d emas + %d jasa; ditambah bonus emas dari jasa perang.	Rebut %d benteng untuk membuka Keraton Inti. Menang: %d emas + %d jasa; kalah: %d emas + %d jasa; ditambah bonus emas dari jasa perang.
+Hadiah tamat bab:	Hadiah tamat bab:
+Belum berperingkat	Belum berperingkat
+Peringkat Anda: #%s	Kedudukan Anda: #%s
+Bergabunglah dengan aliansi untuk ikut peringkat aliansi.	Bergabunglah dengan pakatan untuk ikut kedudukan pakatan.
+Paket Hadiah VIP %d	Pakej Hadiah VIP %d
+· sekali beli	· sekali beli
+Nama Tuan	Nama Tuan
+Suara	Bunyi
+Bahasa / Language	Bahasa / Language
+Perangkat	Peranti
+Data	Data
+Privasi & Laporan Masalah	Privasi & Laporan Masalah
+Perjamuan %s	Perjamuan %s
+Bergabung: %s	Menyertai: %s
+Urusan terisi kembali: %s.	Urusan terisi kembali: %s.
+%s +%d (penuh)	%s +%d (penuh)
+Total bonus: %s	Total bonus: %s
+Tahap %d	Peringkat %d
+x10 dijamin minimal satu Epik. Duplikat menambah bintang (+%d%% atribut), atau perak bila bintang sudah penuh.	x10 dijamin minimal satu Epik. Duplikat menambah bintang (+%d%% atribut), atau perak bila bintang sudah penuh.
++%d %s	+%d %s
+perak	perak
+pangan	makanan
+emas	emas
+prajurit	askar
+jasa	jasa
+prestise	prestise
+EPIK	EPIK
+LANGKA	LANGKA
+LEGENDA	LEGENDA
+KEK	KEK
+KEC	KEC
+KAR	KAR
+SERANG!	SERANG!
+EVENT MINGGUAN	EVENT MINGGUAN
+%s  x%d	%s  x%d
+%s (%s)	%s (%s)
+%s (%d/%d)	%s (%d/%d)
+%s (%d/%d): %s	%s (%d/%d): %s
+%s: %s	%s: %s
+Liga %s	Liga %s
+Berakhir dalam %s	Berakhir dalam %s
+Bonus minggu ini: %s	Bonus minggu ini: %s
+%s lagi ke hadiah berikutnya	%s lagi ke hadiah seterusnya
+Hadiah tamat bab: %s	Hadiah tamat bab: %s
+•  Hadiah harian: %s	•  Hadiah harian: %s
+•  Hadiah naik level: %s	•  Hadiah naik level: %s
+Tuan pergi selama %s	Tuan pergi selama %s
++1 dalam %ds	+1 dalam %ds
+Urusan %d/%d	Urusan %d/%d
+Energi %d/%d	Energi %d/%d
+%s kini bintang %d.	%s kini bintang %d.
+menang	menang
+kalah	kalah
+sekali beli	sekali beli
+Hadiah harian: %s	Hadiah harian: %s
+Hadiah naik level: %s	Hadiah naik level: %s
+Kerjakan Semua	Laksanakan Semua
+Kerjakan Semua terbuka setelah naik jabatan menjadi %s.	Laksanakan Semua terbuka setelah naik jawatan menjadi %s.
+Semua dikerjakan: %s.	Semua dilaksanakan: %s.
+%d kunjungan	%d kunjungan
+%d anak lahir	%d anak lahir
+%d anak dididik	%d anak dididik
+Belum ada yang bisa dikerjakan. Tunggu urusan dan energi terisi.	Belum ada yang boleh dilaksanakan. Tunggu urusan dan energi terisi.
+BANNER MINGGU INI	BANNER MINGGU INI
+Legenda berikutnya dijamin %s!	Legenda seterusnya dijamin %s!
+%d%% Legenda yang didapat adalah %s. Bila meleset, Legenda berikutnya pasti %s.	%d%% Legenda yang didapat adalah %s. Bila meleset, Legenda seterusnya pasti %s.
+Berganti dalam %s	Berganti dalam %s
+Amuk Ranggalawe	Amuk Ranggalawe
+Sawah Tuban	Sawah Tuban
+Kakawin Sutasoma	Kakawin Sutasoma
+Lumbung Kusuma	Lumbung Kusuma
+Banteng Tingkir	Banteng Tingkir
+Selendang Bidadari	Selendang Bidadari
+Laskar Majapahit	Laskar Majapahit
+Putri Kahyangan	Putri Kahyangan
+Para Pujangga	Para Pujangga
+Senjata	Senjata
+Kitab	Kitab
+Perhiasan	Perhiasan
+Keris Besi	Keris Besi
+Tombak Baru Klinting	Tombak Baharu Klinting
+Keris Nagasasra	Keris Nagasasra
+Lontar Kuno	Lontar Kuno
+Kitab Negarakertagama	Kitab Negarakertagama
+Lontar Kalimasada	Lontar Kalimasada
+Cincin Perak	Cincin Perak
+Kalung Kencana	Kalung Kencana
+Mahkota Binokasih	Mahkota Binokasih
+Pusaka: %s.	Pusaka: %s.
+Pusaka tidak ditemukan.	Pusaka tidak ditemukan.
+%s dipakai oleh %s.	%s digunakan oleh %s.
+Pusaka tidak sedang dipakai.	Pusaka tidak sedang digunakan.
+%s dilepas.	%s dilepas.
+Pusaka sudah level maksimal.	Pusaka sudah level maksimal.
+%s naik ke +%d.	%s naik ke +%d.
+%s dilebur: +%d perak.	%s dilebur: +%d perak.
+Pusaka: %s	Pusaka: %s
+Pusaka (%d)	Pusaka (%d)
+Pusaka	Pusaka
+Pasang di penasihat untuk menambah atribut	Pasang di penasihat untuk menambah atribut
+Gudang %d / %d · didapat dari tahap besar kampanye, perang guild, dan Menara Ujian.	Gudang %d / %d · didapat dari peringkat besar kampanye, perang guild, dan Menara Ujian.
+Belum ada pusaka. Menangkan tahap besar (tiap tahap ke-5) untuk peluang mendapatkannya.	Belum ada pusaka. Menangkan peringkat besar (setiap peringkat ke-5) untuk peluang mendapatkannya.
+Dipakai: %s	Digunakan: %s
+Belum dipakai	Belum digunakan
+Pasang	Pasang
+Pindah	Pindah
+Lepas	Lepas
+Maks	Maks
++1 · %s	+1 · %s
+Lebur	Lebur
+slot kosong	slot kosong
+penasihat	penasihat
+selir	gundik
+Menara Ujian Terbuka!	Menara Ujian Terbuka!
+Daki lantai demi lantai dengan kekuatan tempur penasihat. Tiap lantai ke-5 memberi pusaka. Kemajuan direset tiap minggu, rekor terbaik masuk peringkat.	Daki tingkat demi tingkat dengan kekuatan tempur penasihat. Setiap tingkat ke-5 memberi pusaka. Kemajuan direset setiap minggu, rekor terbaik masuk kedudukan.
+Menara	Menara
+Menangkan Tahap %d untuk membuka Menara Ujian.	Menangkan Peringkat %d untuk membuka Menara Ujian.
+Percobaan menara hari ini habis. Kembali besok!	Percobaan menara hari ini habis. Kembali esok!
+Gagal di lantai %d. Perkuat penasihat lalu coba lagi.	Gagal di tingkat %d. Perkuat penasihat lalu cuba lagi.
+Lantai %d ditaklukkan! %s.	Tingkat %d ditaklukkan! %s.
+Menara Ujian	Menara Ujian
+Lantai minggu ini %d · rekor %d	Tingkat minggu ini %d · rekor %d
+Masuk	Masuk
+Terbuka setelah menang Tahap %d.	Terbuka setelah menang Peringkat %d.
+Reset tiap Senin · rekor terbaik masuk peringkat	Reset setiap Senin · rekor terbaik masuk kedudukan
+pusaka langka	pusaka langka
+pusaka	pusaka
+Lantai %d	Tingkat %d
+Kekuatan penjaga %s · kekuatan tempur Anda %s	Kekuatan penjaga %s · kekuatan tempur Anda %s
+Peluang menang %d%%	Peluang menang %d%%
+Hadiah: %s	Hadiah: %s
+Serang Lantai %d  (%d percobaan)	Serang Tingkat %d  (%d percobaan)
+Lantai minggu ini %d · rekor %d · percobaan hari ini %d / %d	Tingkat minggu ini %d · rekor %d · percobaan hari ini %d / %d
+Lantai berikutnya	Tingkat seterusnya
+Lantai %d · kekuatan %s	Tingkat %d · kekuatan %s
+Patih Negeri	Patih Negeri
+Raja mempercayakan urusan seluruh negeri kepada Tuan. Gelar Patih menanti mereka yang teruji.	Raja mempercayakan urusan seluruh negeri kepada Tuan. Gelar Patih menanti mereka yang teruji.
+Ujilah diri Tuan di Menara Ujian, dan kumpulkan pusaka para leluhur.	Ujilah diri Tuan di Menara Ujian, dan kumpulkan pusaka para leluhur.
+Taklukkan Tahap 50	Taklukkan Peringkat 50
+Capai lantai 10 Menara Ujian	Capai tingkat 10 Menara Ujian
+Miliki 3 pusaka	Miliki 3 pusaka
+Sumpah Mahapatih	Sumpah Mahapatih
+Aku bersumpah tidak akan beristirahat sebelum seluruh Nusantara bersatu!	Aku bersumpah tidak akan beristirahat sebelum seluruh Nusantara bersatu!
+Sumpah Tuan menggetarkan para raja. Mari kita wujudkan bersama, Mahapatih!	Sumpah Tuan menggetarkan para raja. Mari kita wujudkan bersama, Mahapatih!
+Taklukkan Tahap 65	Taklukkan Peringkat 65
+Capai lantai 25 Menara Ujian	Capai tingkat 25 Menara Ujian
+Capai kekuatan 100.000	Capai kekuatan 100.000
+Tingkatkan satu pusaka ke +5	Tingkatkan satu pusaka ke +5
+Patih	Patih
+Mahapatih	Mahapatih
+Selamat, seluruh kisah telah tamat!	Selamat, seluruh kisah telah tamat!
+Gelar kehormatan: %s (semua hasil urusan +%d%%).	Gelar kehormatan: %s (semua hasil urusan +%d%%).
+Anda telah menjadi Mahapatih Nusantara. Terima kasih telah bermain!	Anda telah menjadi Mahapatih Nusantara. Terima kasih telah bermain!
+Semua bab telah tamat. Anda adalah Mahapatih Nusantara!	Semua bab telah tamat. Anda adalah Mahapatih Nusantara!
+Isi penuh urusan & energi	Isi penuh urusan & energi
+Emas gratis	Emas percuma
+Batas iklan hadiah hari ini sudah habis.	Batas iklan hadiah hari ini sudah habis.
+Terima kasih telah menonton! Hadiah: %s.	Terima kasih telah menonton! Hadiah: %s.
+semua urusan dan energi terisi penuh	semua urusan dan energi terisi penuh
+Iklan: %s (sisa %d)	Iklan: %s (sisa %d)
+Memutar iklan (mode uji)...	Memutar iklan (mode uji)...
+Iklan belum tersedia. Coba lagi sebentar.	Iklan belum tersedia. Cuba lagi sebentar.
+Iklan ditutup sebelum selesai, hadiah tidak diberikan.	Iklan ditutup sebelum selesai, hadiah tidak diberikan.
+Iklan berhadiah	Iklan berhadiah
+Iklan hanya diputar bila Anda menekan tombol Iklan. Versi dengan Google AdMob dapat memakai ID iklan perangkat untuk menampilkan dan mengukur iklan sesuai kebijakan Google.	Iklan hanya diputar bila Anda menekan tombol Iklan. Versi dengan Google AdMob dapat menggunakan ID iklan peranti untuk memaparkan dan mengukur iklan sesuai dasar Google.
+Tiket Musim Premium	Tiket Musim Premium
+Buka jalur hadiah premium Tiket Musim ini: emas, Batu Bintang, Tiket Rekrut, dan pusaka Legenda.	Buka jalur hadiah premium Tiket Musim ini: emas, Batu Bintang, Tiket Rekrut, dan pusaka Legenda.
+Tiket Musim Premium musim ini sudah aktif.	Tiket Musim Premium musim ini sudah aktif.
+Tiket Musim Premium aktif	Tiket Musim Premium aktif
+Beli Tiket Musim Premium untuk membuka jalur ini.	Beli Tiket Musim Premium untuk membuka jalur ini.
+Hadiah tingkat %d belum bisa diklaim.	Hadiah tingkat %d belum boleh diklaim.
+Tiket Musim tingkat %d: %s.	Tiket Musim tingkat %d: %s.
+Belum ada hadiah Tiket Musim yang bisa diklaim.	Belum ada hadiah Tiket Musim yang boleh diklaim.
+Tiket Musim: %d hadiah diklaim.	Tiket Musim: %d hadiah diklaim.
+Tiket Musim · Tingkat %d / %d	Tiket Musim · Tingkat %d / %d
+%d hari lagi%s	%d hari lagi%s
+· Premium aktif	· Premium aktif
+Tiket Musim	Tiket Musim
+XP dari misi harian, peti, login, menara, arena, dan bos	XP dari misi harian, peti, login, menara, arena, dan bos
+Tingkat %d / %d · XP %d / %d · %d hari lagi	Tingkat %d / %d · XP %d / %d · %d hari lagi
+Beli Premium · %s	Beli Premium · %s
+Premium aktif: hadiah jalur premium terbuka.	Premium aktif: hadiah jalur premium terbuka.
+Klaim Semua (%d)	Klaim Semua (%d)
+GRATIS	PERCUMA
+PREMIUM	PREMIUM
+Paket Naik Jabatan	Pakej Naik Jawatan
+Penawaran terbatas setelah naik jabatan.	Penawaran terbatas setelah naik jawatan.
+Paket Bala Bantuan	Pakej Bala Bantuan
+Penawaran terbatas setelah kalah beruntun di kampanye.	Penawaran terbatas setelah kalah beruntun di kampanye.
+Penawaran %s sudah berakhir.	Penawaran %s sudah berakhir.
+Penawaran Terbatas	Penawaran Terbatas
+Hanya berlaku beberapa jam	Hanya berlaku beberapa jam
+Tidak ada penawaran aktif.	Tidak ada penawaran aktif.
+Beli · %s	Beli · %s
+PENAWARAN TERBATAS	PENAWARAN TERBATAS
+Penakluk	Penakluk
+Menangkan tahap %s	Menangkan peringkat %s
+Kekuatan Besar	Kekuatan Besar
+Capai kekuatan %s	Capai kekuatan %s
+Kolektor Penasihat	Kolektor Penasihat
+Miliki %s penasihat	Miliki %s penasihat
+Bintang Terang	Bintang Terang
+Kumpulkan %s bintang penasihat	Kumpulkan %s bintang penasihat
+Keluarga Besar	Keluarga Besar
+Dikaruniai %s anak	Dikaruniai %s anak
+Pendaki Menara	Pendaki Menara
+Capai lantai %s Menara Ujian	Capai tingkat %s Menara Ujian
+Juara Arena	Juara Arena
+Menangi %s pertarungan arena	Menangi %s pertarungan arena
+Perekrut	Perekrut
+Rekrut %s penasihat	Rekrut %s penasihat
+Pekerja Keras	Pekerja Keras
+Kerjakan %s urusan kota	Laksanakan %s urusan bandar
+Penjaga Pusaka	Penjaga Pusaka
+Miliki %s pusaka	Miliki %s pusaka
+Dermawan	Dermawan
+Sumbang ke aliansi %s kali	Sumbang ke pakatan %s kali
+Pemburu Bos	Pemburu Bos
+Serang bos aliansi %s kali	Serang bos pakatan %s kali
+Pencapaian tidak ditemukan.	Pencapaian tidak ditemukan.
+Belum ada tingkat baru untuk diklaim.	Belum ada tingkat baharu untuk diklaim.
+Pencapaian %s tingkat %d: +%d emas.	Pencapaian %s tingkat %d: +%d emas.
+Pencapaian baru: %s tingkat %d!	Pencapaian baharu: %s tingkat %d!
+Pencapaian · %d / %d	Pencapaian · %d / %d
+Pencapaian	Pencapaian
+Hadiah emas untuk setiap tingkat	Hadiah emas untuk setiap tingkat
+Lihat di Google Play Games	Lihat di Google Play Games
+Semua tingkat selesai!	Semua tingkat selesai!
+Tersimpan ke cloud.	Tersimpan ke cloud.
+Gagal menyimpan ke cloud.	Gagal menyimpan ke cloud.
+Google Play Games tidak tersedia di versi ini.	Google Play Games tidak tersedia di versi ini.
+Pasukan Anda	Pasukan Anda
+Pasukan musuh	Pasukan musuh
+NAIK JABATAN!	NAIK JAWATAN!
+Batas level penasihat %d → %d	Batas level penasihat %d → %d
+Kapasitas urusan %d → %d	Kapasitas urusan %d → %d
+Pengali hasil urusan x%s → x%s	Pengali hasil urusan x%s → x%s
+Kursi anak %d → %d	Kursi anak %d → %d
+Ketuk untuk melanjutkan	Ketik untuk melanjutkan
+Tidak ada save valid di Google Play.	Tidak ada save valid di Google Play.
+Ganti progres sekarang dengan save dari Google Play?	Tukar progres sekarang dengan save dari Google Play?
+Pulihkan	Pulihkan
+Cadangan Save	Sandaran Save
+Pindah HP? Salin kode cadangan lalu simpan di tempat aman (mis. catatan atau email). Tempelkan kode di HP baru untuk memulihkan progres.	Pindah HP? Salin kod sandaran lalu simpan di tempat aman (mis. catatan atau email). Tampalkan kod di HP baharu untuk memulihkan progres.
+Salin Kode Cadangan	Salin Kod Sandaran
+Kode cadangan disalin ke clipboard.	Kod sandaran disalin ke clipboard.
+Tempel kode cadangan di sini	Tampal kod sandaran di sini
+Kode cadangan tidak valid.	Kod sandaran tidak valid.
+Ganti progres sekarang dengan progres dari kode cadangan? Progres saat ini akan hilang.	Tukar progres sekarang dengan progres dari kod sandaran? Progres saat ini akan hilang.
+Simpan ke Google Play	Simpan ke Google Play
+Muat dari Google Play	Muat dari Google Play
+Progres berhasil dipulihkan.	Progres berjaya dipulihkan.
+Seimbang	Seimbang
+Tanpa bonus maupun kelemahan.	Tanpa bonus maupun kelemahan.
+Serbu	Serbu
+Kekuatan tempur +6%, prestise kampanye +10%, tetapi korban +12%.	Kekuatan tempur +6%, prestise kampanye +10%, tetapi korban +12%.
+Bertahan	Bertahan
+Korban kampanye -12%, tetapi kekuatan tempur -6%.	Korban kampanye -12%, tetapi kekuatan tempur -6%.
+Formasi tidak dikenal.	Formasi tidak dikenal.
+Formasi %s dipakai.	Formasi %s digunakan.
+Serangan Pamungkas	Serangan Pamungkas
+Formasi pasukan	Formasi pasukan
+Tahap Besar · %s	Peringkat Besar · %s
+Menara Ujian · Lantai %d	Menara Ujian · Tingkat %d
+Penjaga Lantai %d	Penjaga Tingkat %d
+Lewati tayangan perang	Langkau tayangan perang
+Langsung tampilkan hasil perang tanpa animasi. Hasil pertempuran tetap sama.	Langsung tampilkan hasil perang tanpa animasi. Hasil pertempuran tetap sama.
+Formasi: %s	Formasi: %s
+HP %s	HP %s
+%s prajurit	%s askar
+Kecepatan ×%d	Kelajuan ×%d
+DIREBUT!	DIREBUT!
+SERANGAN BERHASIL!	SERANGAN BERJAYA!
+MENANG!	MENANG!
+KALAH...	KALAH...
+Pesta Tahun Baru	Pesta Tahun Baharu
+Kembang Api	Kembang Api
+Sambut tahun baru dengan pesta kembang api di seluruh negeri!	Sambut tahun baharu dengan pesta kembang api di seluruh negeri!
+Berkah Ramadan & Lebaran	Berkah Ramadan & Lebaran
+Ketupat	Ketupat
+Bulan penuh berkah sampai sepekan setelah Idulfitri. Mohon maaf lahir dan batin!	Bulan penuh berkah sehingga sepekan setelah Idulfitri. Mohon maaf lahir dan batin!
+Pesta Kemerdekaan	Pesta Kemerdekaan
+Bendera	Bendera
+Dirgahayu Republik Indonesia! Ikuti lomba-lomba 17 Agustusan.	Dirgahayu Republik Indonesia! Ikuti lomba-lomba 17 Agustusan.
+Semangat Sumpah Pemuda	Semangat Sumpah Pemuda
+Ikrar	Ikrar
+Satu nusa, satu bangsa, satu bahasa. Kobarkan semangat para pemuda!	Satu nusa, satu bangsa, satu bahasa. Kobarkan semangat para pemuda!
+Hari Pahlawan	Hari Pahlawan
+Bambu Runcing	Bambu Runcing
+Kenang jasa para pahlawan yang berjuang untuk negeri.	Kenang jasa para pahlawan yang berjuang untuk negeri.
+Kerjakan urusan kota 40 kali	Laksanakan urusan bandar 40 kali
+Menangkan 10 tahap kampanye	Menangkan 10 peringkat kampanye
+Latih penasihat 20 kali	Latih penasihat 20 kali
+Kunjungi selir 15 kali	Kunjungi gundik 15 kali
+Rekrut penasihat 10 kali	Rekrut penasihat 10 kali
+Klaim 15 misi harian	Klaim 15 misi harian
+Pusaka Festival	Pusaka Festival
+Bingkai Festival	Bingkai Festival
+Bingkai Kayu	Bingkai Kayu
+Bingkai Emas	Bingkai Emas
+Bingkai Giok	Bingkai Giok
+Bingkai Menteri	Bingkai Menteri
+Bingkai VIP	Bingkai VIP
+Bingkai Kembang Api	Bingkai Kembang Api
+Bingkai Ketupat	Bingkai Ketupat
+Bingkai Merah Putih	Bingkai Merah Putih
+Bingkai Ikrar Pemuda	Bingkai Ikrar Pemuda
+Bingkai Pahlawan	Bingkai Pahlawan
+Busana Bangsawan	Busana Bangsawan
+Busana Batik	Busana Batik
+Zirah Senapati	Zirah Senapati
+Busana Raja	Busana Raja
+Tidak ada festival yang sedang berlangsung.	Tidak ada festival yang sedang berlangsung.
+Hadiah tugas sudah diambil.	Hadiah tugas sudah diambil.
+Tugas festival belum selesai.	Tugas festival belum selesai.
+Tugas tidak ditemukan.	Tugas tidak ditemukan.
+Hadiah festival hari ini sudah diambil.	Hadiah festival hari ini sudah diambil.
+Hadiah festival: +%d %s	Hadiah festival: +%d %s
+Batas pembelian festival sudah habis.	Batas pembelian festival sudah habis.
+%s tidak cukup (butuh %d).	%s tidak cukup (butuh %d).
+Kosmetik tidak ditemukan.	Kosmetik tidak ditemukan.
+Sudah dimiliki.	Sudah dimiliki.
+Kosmetik ini tidak dijual dengan emas.	Kosmetik ini tidak dijual dengan emas.
+%s didapat!	%s didapat!
+Kosmetik belum dimiliki.	Kosmetik belum dimiliki.
+%s dipakai.	%s digunakan.
+%s: %d · berakhir dalam %s	%s: %d · berakhir dalam %s
+%s Anda: %d	%s Anda: %d
+Berakhir dalam %s. %s yang tersisa hangus saat festival selesai.	Berakhir dalam %s. %s yang tersisa hangus saat festival selesai.
+Hadiah harian: +%d %s	Hadiah harian: +%d %s
+Hadiah harian sudah diambil	Hadiah harian sudah diambil
+Tugas festival	Tugas festival
+Toko festival	Kedai festival
+%s (bingkai profil khusus festival ini)	%s (bingkai profil khusus festival ini)
+Pusaka acak dengan peluang Legenda tinggi	Pusaka acak dengan peluang Legenda tinggi
+%s · sisa %d	%s · sisa %d
+Festival berikutnya: %s, %s	Festival seterusnya: %s, %s
+Keraton	Keraton
+Pusat pemerintahan. Semua hasil urusan +1% per level. Bangunan lain tidak bisa melebihi level Keraton.	Pusat pemerintahan. Semua hasil urusan +1% per level. Bangunan lain tidak boleh melebihi level Keraton.
+Pasar	Pasar
+Hasil Tarik Pajak +3% per level.	Hasil Tarik Cukai +3% per level.
+Lumbung	Lumbung
+Hasil Kelola Sawah +3% per level.	Hasil Kelola Sawah +3% per level.
+Barak	Barak
+Hasil Rekrut Prajurit +3% per level.	Hasil Rekrut Askar +3% per level.
+Pembangunan selesai	Pembangunan selesai
+%s sudah selesai dibangun. Mulai pembangunan berikutnya, Tuan.	%s sudah selesai dibangun. Mula pembangunan seterusnya, Tuan.
+Bangunan tidak dikenal.	Bangunan tidak dikenal.
+Tukang sedang membangun %s. Tunggu sampai selesai.	Tukang sedang membangun %s. Tunggu sehingga selesai.
+%s sudah mencapai level tertinggi.	%s sudah mencapai level tertinggi.
+Naikkan jabatan untuk memperluas Keraton.	Naikkan jawatan untuk memperluas Keraton.
+Tingkatkan Keraton dulu agar %s bisa naik level.	Tingkatkan Keraton dulu agar %s boleh naik level.
+Pembangunan %s ke level %d dimulai.	Pembangunan %s ke level %d dimulakan.
+Tidak ada pembangunan yang berjalan.	Tidak ada pembangunan yang berjalan.
+%s selesai dibangun: level %d!	%s selesai dibangun: level %d!
+Selesai dalam %s	Selesai dalam %s
+Percepat · %d	Percepat · %d
+Bangunan Kota	Bangunan Bandar
+Membangun %s ke level %d	Membangun %s ke level %d
+%s · Lv %d / %d	%s · Lv %d / %d
+Level tertinggi	Level tertinggi
+%s perak · %s	%s perak · %s
+Naikkan jabatan dulu	Naikkan jawatan dulu
+Butuh Keraton level %d	Butuh Keraton level %d
+Bangun	Bangun
+Hutan Alas Purwo	Hutan Alas Purwo
+Berburu dan menebang kayu di hutan angker.	Memburu dan menebang kayu di hutan angker.
+Candi Borobudur	Candi Borobudur
+Berziarah dan belajar dari para biksu.	Berziarah dan belajar dari para biksu.
+Pelabuhan Sunda Kelapa	Pelabuhan Sunda Kelapa
+Berdagang rempah dengan saudagar dari seberang.	Berdagang rempah dengan saudagar dari seberang.
+Gunung Merapi	Gunung Merapi
+Mencari pusaka sakti di lereng gunung berapi.	Mencari pusaka sakti di lereng gunung berapi.
+Rombongan ekspedisi kembali	Rombongan ekspedisi kembali
+Penasihat Tuan pulang membawa hasil ekspedisi.	Penasihat Tuan pulang membawa hasil ekspedisi.
+Menangkan Tahap %d untuk membuka Ekspedisi.	Menangkan Peringkat %d untuk membuka Ekspedisi.
+Tujuan tidak dikenal.	Tujuan tidak dikenal.
+%s terbuka setelah Tahap %d.	%s terbuka setelah Peringkat %d.
+%s sedang dalam ekspedisi.	%s sedang dalam ekspedisi.
+Semua rombongan ekspedisi sedang berangkat.	Semua rombongan ekspedisi sedang berangkat.
+%s berangkat ke %s. Kembali dalam %d jam.	%s berangkat ke %s. Kembali dalam %d jam.
+Ekspedisi tidak ditemukan.	Ekspedisi tidak ditemukan.
+Rombongan belum kembali.	Rombongan belum kembali.
+%s kembali dari %s: %s.	%s kembali dari %s: %s.
+Belum ada rombongan yang kembali.	Belum ada rombongan yang kembali.
+Pembangunan %s selesai: level %d.	Pembangunan %s selesai: level %d.
+%d rombongan ekspedisi sudah kembali.	%d rombongan ekspedisi sudah kembali.
+Kembali dalam %s	Kembali dalam %s
+Sudah kembali!	Sudah kembali!
+Ekspedisi	Ekspedisi
+Rombongan %d / %d · %d sudah kembali	Rombongan %d / %d · %d sudah kembali
+Kirim penasihat ke penjuru Nusantara. Atribut yang cocok membawa hasil lebih banyak.	Hantar penasihat ke penjuru Nusantara. Atribut yang cocok membawa hasil lebih banyak.
+Rombongan berjalan (%d / %d)	Rombongan berjalan (%d / %d)
+Belum ada rombongan yang berangkat.	Belum ada rombongan yang berangkat.
+Membawa: %s	Membawa: %s
+Tujuan	Tujuan
+%s · %d jam	%s · %d jam
+Terbuka setelah Tahap %d	Terbuka setelah Peringkat %d
+Cocok: %s · hasil: %s	Cocok: %s · hasil: %s
+Semua rombongan sedang berangkat. Tunggu sampai ada yang kembali.	Semua rombongan sedang berangkat. Tunggu sehingga ada yang kembali.
+%s: pilih penasihat	%s: pilih penasihat
+%s %s · hasil x%.1f	%s %s · hasil x%.1f
+Perkiraan: %s	Perkiraan: %s
+Semua penasihat sedang dalam ekspedisi.	Semua penasihat sedang dalam ekspedisi.
+Kuda Jawa	Kuda Jawa
+Kuda pekerja yang tangguh dari tanah Jawa.	Kuda pekerja yang tangguh dari tanah Jawa.
+Kuda Gayo	Kuda Gayo
+Kuda gunung dari dataran tinggi Gayo, kuat menanjak.	Kuda gunung dari dataran tinggi Gayo, kuat menanjak.
+Kuda Sandel	Kuda Sandel
+Kuda pacu Sumba yang lincah dan tahan lama.	Kuda pacu Sumba yang lincah dan tahan lama.
+Kuda Bima	Kuda Bima
+Kuda perang Bima, berani menerjang barisan musuh.	Kuda perang Bima, berani menerjang barisan musuh.
+Kuda Sembrani	Kuda Sembrani
+Kuda bersayap dalam legenda, melesat di atas awan.	Kuda bersayap dalam legenda, melesat di atas awan.
+Menangkan Tahap %d untuk membuka Kandang Kuda.	Menangkan Peringkat %d untuk membuka Kandang Kuda.
+Kuda tidak dikenal.	Kuda tidak dikenal.
+%s sudah ada di kandang.	%s sudah ada di kandang.
+%s bergabung ke kandang!	%s menyertai ke kandang!
+Kuda belum dimiliki.	Kuda belum dimiliki.
+%s naik ke level %d: atribut penunggang +%d%%.	%s naik ke level %d: atribut penunggang +%d%%.
+%s kembali ke kandang.	%s kembali ke kandang.
+%s kini menunggangi %s.	%s kini menunggangi %s.
+Tunggangan: %s (+%d%% atribut)	Tunggangan: %s (+%d%% atribut)
+Kandang Kuda	Kandang Kuda
+Kuda %d / %d · %d ditunggangi	Kuda %d / %d · %d ditunggangi
+Kuda menambah semua atribut penunggangnya. Beri pakan agar makin kuat.	Kuda menambah semua atribut penunggangnya. Beri pakan agar makin kuat.
+Atribut penunggang +%d%%	Atribut penunggang +%d%%
+Lv %d / %d · atribut +%d%% · %s	Lv %d / %d · atribut +%d%% · %s
+penunggang: %s	penunggang: %s
+belum ditunggangi	belum ditunggangi
+Pakan %s	Pakan %s
+Ganti	Tukar
+Tunggangi	Tunggangi
+%s: pilih penunggang	%s: pilih penunggang
+Turunkan penunggang	Turunkan penunggang
+Atribut total %s · %s	Atribut total %s · %s
+menunggangi %s	menunggangi %s
+tanpa kuda	tanpa kuda
+Bekas begal yang Tuan ampuni kini berlatih keras di barak. Mereka bersumpah membalas budi.	Bekas begal yang Tuan ampuni kini berlatih keras di barak. Mereka bersumpah membalas budi.
+Sejak hukuman di alun-alun, tak ada begal yang berani mendekati desa kita.	Sejak hukuman di alun-alun, tak ada begal yang berani mendekati kampung kita.
+Saudagar dari kadipaten sekutu membanjiri pasar kita. Kas negeri makin penuh.	Saudagar dari kadipaten sekutu membanjiri pasar kita. Kas negeri makin penuh.
+Adipati itu masih tersinggung, tetapi rakyat memuji Tuan yang tidak mudah dibeli.	Adipati itu masih tersinggung, tetapi rakyat memuji Tuan yang tidak mudah dibeli.
+Bekas pengikut Panglima Lalim kini menggarap sawah di perbatasan. Lumbung kita melimpah.	Bekas pengikut Panglima Lalim kini menggarap sawah di perbatasan. Lumbung kita melimpah.
+Kabar runtuhnya benteng Panglima Lalim membuat para pemberontak lain gemetar.	Kabar runtuhnya benteng Panglima Lalim membuat para pemberontak lain gemetar.
+Rakyat yang menerima harta karun itu menyebut nama Tuan dalam doa mereka.	Rakyat yang menerima harta karun itu menyebut nama Tuan dalam doa mereka.
+Pusaka yang ditempa dari harta raja lama kini bersinar di tangan para penasihat Tuan.	Pusaka yang ditempa dari harta raja lama kini bersinar di tangan para penasihat Tuan.
+Para begal yang tertangkap berlutut memohon ampun. Apa keputusan Tuan?	Para begal yang tertangkap berlutut memohon ampun. Apa keputusan Tuan?
+Hukum mereka di alun-alun	Hukum mereka di alun-alun
+Keadilan ditegakkan di depan rakyat. Nama Tuan mulai disegani.	Keadilan ditegakkan di depan rakyat. Nama Tuan mula disegani.
+Ampuni dan jadikan prajurit	Ampuni dan jadikan askar
+Bekas begal itu bersumpah setia dan menjadi barisan terdepan Tuan.	Bekas begal itu bersumpah setia dan menjadi barisan terdepan Tuan.
+Seorang adipati menawarkan persekutuan lewat perjodohan keluarga. Bagaimana jawaban Tuan?	Seorang adipati menawarkan persekutuan lewat perjodohan keluarga. Bagaimana jawaban Tuan?
+Terima persekutuan dagang	Terima persekutuan dagang
+Kafilah dagang adipati mulai singgah di pasar Tuan.	Kafilah dagang adipati mula singgah di pasar Tuan.
+Tolak dengan hormat, tetap mandiri	Tolak dengan hormat, tetap mandiri
+Pasukan Tuan bangga melayani pemimpin yang tidak tunduk kepada siapa pun.	Pasukan Tuan bangga melayani pemimpin yang tidak tunduk kepada siapa pun.
+Cukup! Aku menyerah... Biarkan pasukanku hidup, dan mereka akan menggarap tanah Tuan.	Cukup! Aku menyerah... Biarkan pasukanku hidup, dan mereka akan menggarap tanah Tuan.
+Terima penyerahan, bangun perdamaian	Terima penyerahan, bangun perdamaian
+Bekas pemberontak meletakkan senjata dan mengangkat cangkul.	Bekas pemberontak meletakkan senjata dan mengangkat cangkul.
+Serbu bentengnya sampai tuntas	Serbu bentengnya sehingga tuntas
+Benteng Panglima Lalim rata dengan tanah. Tak ada lagi yang berani melawan.	Benteng Panglima Lalim rata dengan tanah. Tak ada lagi yang berani melawan.
+Di bawah keraton lama ditemukan harta karun raja terdahulu. Untuk apa harta ini, Tuan?	Di bawah keraton lama ditemukan harta karun raja terdahulu. Untuk apa harta ini, Tuan?
+Bagikan kepada rakyat	Kongsi kepada rakyat
+Rakyat bersuka cita. Mereka bekerja lebih giat untuk negeri.	Rakyat bersuka cita. Mereka bekerja lebih giat untuk negeri.
+Tempa menjadi pusaka	Tempa menjadi pusaka
+Para empu menempa harta itu menjadi pusaka yang bertuah.	Para empu menempa harta itu menjadi pusaka yang bertuah.
+Tidak ada pilihan cerita saat ini.	Tidak ada pilihan cerita saat ini.
+Pilihan tidak dikenal.	Pilihan tidak dikenal.
+Tentukan pilihan cerita bab ini dulu.	Tentukan pilihan cerita bab ini dulu.
+Di akhir bab ini Tuan harus mengambil keputusan penting.	Di akhir bab ini Tuan mesti mengambil keputusan penting.
+Tentukan Pilihan	Tentukan Pilihan
+Keputusan Tuan	Keputusan Tuan
+Nanti saja	Nanti sahaja
+Kostum Tuan bermahkota emas. Hanya tampilan, tidak menambah kekuatan.	Kostum Tuan bermahkota emas. Hanya paparan, tidak menambah kekuatan.
+%s sudah dimiliki.	%s sudah dimiliki.
+%s dipakai	%s digunakan
+Kosmetik baru: %s!	Kosmetik baharu: %s!
+Profil	Profil
+Bingkai dan busana hanya mengubah tampilan, tidak menambah kekuatan.	Bingkai dan busana hanya mengubah paparan, tidak menambah kekuatan.
+Hadiah jabatan %s	Hadiah jawatan %s
+Hadiah VIP %d	Hadiah VIP %d
+Hadiah menang Tahap %d	Hadiah menang Peringkat %d
+Toko festival %s	Kedai festival %s
+VIP %d · Lihat Hak VIP	VIP %d · Lihat Hak VIP
+Bingkai Profil	Bingkai Profil
+Busana Tuan	Busana Tuan
+Dipakai	Digunakan
+%s TUMBANG!	%s TUMBANG!
+Meleset!	Meleset!
+Ditangkis!	Ditangkis!
+%d Kombo!	%d Kombo!
+%s membantu:	%s membantu:
+KRITIS!	KRITIS!
+Perempat Final	Perempat Final
+Semifinal	Semifinal
+Final	Final
+Perguruan Merapi	Perguruan Merapi
+Perguruan Lawu	Perguruan Lawu
+Perguruan Bromo	Perguruan Bromo
+Perguruan Rinjani	Perguruan Rinjani
+Perguruan Kerinci	Perguruan Kerinci
+Perguruan Salak	Perguruan Salak
+Perguruan Slamet	Perguruan Slamet
+Bingkai Juara Silat	Bingkai Juara Silat
+Menangkan Tahap %d untuk membuka Turnamen Silat.	Menangkan Peringkat %d untuk membuka Turnamen Silat.
+Anda sudah mendaftar turnamen minggu ini.	Anda sudah mendaftar turnamen minggu ini.
+%s terdaftar di Turnamen Silat!	%s terdaftar di Turnamen Silat!
+Tidak ada pertandingan yang menunggu.	Tidak ada perlawanan yang menunggu.
+%s menjuarai Turnamen Silat! Ambil hadiah juara.	%s menjuarai Turnamen Silat! Ambil hadiah juara.
+%s menang di %s melawan %s!	%s menang di %s melawan %s!
+%s kalah di %s melawan %s.	%s kalah di %s melawan %s.
+Hadiah turnamen belum bisa diambil.	Hadiah turnamen belum boleh diambil.
+Hadiah turnamen: %s.	Hadiah turnamen: %s.
+Turnamen Silat	Turnamen Silat
+Pilih jagoan untuk turnamen minggu ini.	Pilih jagoan untuk turnamen minggu ini.
+Turnamen selesai. Ambil hadiahnya!	Turnamen selesai. Ambil hadiahnya!
+Turnamen minggu ini selesai.	Turnamen minggu ini selesai.
+%s · babak %s	%s · babak %s
+8 pendekar dari perguruan se-Nusantara. Turnamen baru tiap Senin.	8 pendekar dari perguruan se-Nusantara. Turnamen baharu setiap Senin.
+Jagoan: %s	Jagoan: %s
+Kekuatan silat %s	Kekuatan silat %s
+%s melawan %s (%s) · kekuatan %s	%s melawan %s (%s) · kekuatan %s
+Bertanding: %s	Bertanding: %s
+Turnamen Silat · %s	Turnamen Silat · %s
+Hasil: %s	Hasil: %s
+Juara!	Juara!
+gugur di babak %s	gugur di babak %s
+Ambil hadiah: %s	Ambil hadiah: %s
+Turnamen berikutnya dimulai Senin.	Turnamen seterusnya dimulakan Senin.
+Bagan pertandingan	Bagan perlawanan
+Juara (+ %s)	Juara (+ %s)
+Gugur di %s	Gugur di %s
+Pilih jagoan untuk turnamen minggu ini. Kekuatan silat dihitung dari Kekuatan (utama) dan atribut lain. Jagoan tidak bisa diganti sampai turnamen berikutnya.	Pilih jagoan untuk turnamen minggu ini. Kekuatan silat dihitung dari Kekuatan (utama) dan atribut lain. Jagoan tidak boleh ditukar sehingga turnamen seterusnya.
+Daftarkan	Daftarkan
+Hadiah juara Turnamen Silat	Hadiah juara Turnamen Silat
+JUARA!	JUARA!
+GUGUR...	GUGUR...
+Hadiah	Hadiah
+Mataram	Mataram
+Jawa	Jawa
+Ibu kota Tuan di jantung tanah Jawa.	Ibu bandar Tuan di jantung tanah Jawa.
+Pasundan	Pasundan
+Tanah Sunda yang subur dengan sawah bertingkat.	Tanah Sunda yang subur dengan sawah bertingkat.
+Majapahit	Majapahit
+Bekas pusat kerajaan besar dengan prajurit tangguh.	Bekas pusat kerajaan besar dengan askar tangguh.
+Sriwijaya	Sriwijaya
+Sumatra	Sumatra
+Bandar dagang di tepi Sungai Musi.	Bandar dagang di tepi Sungai Musi.
+Bali	Bali
+Pulau seribu pura dengan subak yang tersohor.	Pulau seribu pura dengan subak yang tersohor.
+Kutai	Kutai
+Kalimantan	Kalimantan
+Kerajaan tertua Nusantara di tepi Mahakam.	Kerajaan tertua Nusantara di tepi Mahakam.
+Samudra Pasai	Samudra Pasai
+Pelabuhan ramai di ujung utara Sumatra.	Pelabuhan ramai di ujung utara Sumatra.
+Nusa Tenggara	Nusa Tenggara
+Gugusan pulau dengan padang sabana dan kuda Sandel.	Gugusan pulau dengan padang sabana dan kuda Sandel.
+Gowa	Gowa
+Sulawesi	Sulawesi
+Kerajaan pelaut dengan armada pinisi.	Kerajaan pelaut dengan armada pinisi.
+Ternate	Ternate
+Maluku	Maluku
+Pulau rempah yang diperebutkan bangsa-bangsa.	Pulau rempah yang diperebutkan bangsa-bangsa.
+Belum ada upeti yang terkumpul.	Belum ada upeti yang terkumpul.
+Upeti wilayah: %s.	Upeti wilayah: %s.
+Wilayah tidak dikenal.	Wilayah tidak dikenal.
+%s sudah dikuasai.	%s sudah dikuasai.
+Kuasai %s lebih dulu.	Kuasai %s lebih dulu.
+%s bisa diserang setelah menang Tahap %d.	%s boleh diserang setelah menang Peringkat %d.
+Prajurit tidak cukup (butuh %d).	Askar tidak cukup (butuh %d).
+%s ditaklukkan! -%d prajurit, +%d prestise. Upeti %s bertambah.	%s ditaklukkan! -%d askar, +%d prestise. Upeti %s bertambah.
+Serangan ke %s gagal. %d prajurit gugur. Perkuat pasukan dan coba lagi.	Serangan ke %s gagal. %d askar gugur. Perkuat pasukan dan cuba lagi.
+Peta Nusantara	Peta Nusantara
+Wilayah %d / %d · upeti siap %d jam	Wilayah %d / %d · upeti siap %d jam
+Taklukkan wilayah demi wilayah. Tiap wilayah mengirim upeti tiap jam.	Taklukkan wilayah demi wilayah. Setiap wilayah menghantar upeti setiap jam.
+Upeti per jam: %s	Upeti per jam: %s
+Terkumpul %.1f / %d jam: %s	Terkumpul %.1f / %d jam: %s
+belum ada	belum ada
+Ambil Upeti	Ambil Upeti
+Upeti: %s per jam	Upeti: %s per jam
+Wilayah Tuan.	Wilayah Tuan.
+Garnisun: kekuatan %s · Anda %s	Garnisun: kekuatan %s · Anda %s
+Mengerahkan %s prajurit (Anda punya %s)	Mengerahkan %s askar (Anda punya %s)
+Bisa diserang setelah menang Tahap %d.	Boleh diserang setelah menang Peringkat %d.
+Serang %s	Serang %s
+Penaklukan %s	Penaklukan %s
+Garnisun %s	Garnisun %s
+DITAKLUKKAN!	DITAKLUKKAN!
+Dua petani	Dua petani
+Tuan, kami berselisih soal batas sawah warisan. Mohon keadilan!	Tuan, kami berselisih soalan batas sawah warisan. Mohon keadilan!
+Bagi sawah sama rata	Bagi sawah sama rata
+Menangkan yang membayar upeti	Menangkan yang membayar upeti
+Warga pasar	Warga pasar
+Seorang saudagar ketahuan mengurangi timbangan beras. Apa hukumannya?	Seorang saudagar ketahuan mengurangi timbangan beras. Apa hukumannya?
+Denda berat masuk kas	Denda berat masuk kas
+Usir dari pasar	Usir dari pasar
+Kepala desa	Kepala kampung
+Desa kami gagal panen. Rakyat kelaparan, Tuan.	Kampung kami gagal tuai. Rakyat kelaparan, Tuan.
+Bagikan pangan lumbung	Kongsi makanan lumbung
+Pajak tetap ditagih	Cukai tetap ditagih
+Pengawal	Pengawal
+Pencuri ayam tertangkap. Katanya ia mencuri karena lapar.	Pencuri ayam tertangkap. Katanya ia mencuri kerana lapar.
+Ampuni dan beri pekerjaan	Ampuni dan beri pekerjaan
+Hukum di depan umum	Hukum di depan umum
+Janda prajurit	Janda askar
+Suami saya gugur membela negeri. Saya tak sanggup membayar pajak tahun ini.	Suami saya gugur membela negeri. Saya tak sanggup membayar cukai tahun ini.
+Bebaskan pajaknya	Bebaskan pajaknya
+Pajak tetap berlaku	Cukai tetap berlaku
+Pemuda desa	Pemuda kampung
+Kami ingin menjadi prajurit dan membela negeri, Tuan!	Kami ingin menjadi askar dan membela negeri, Tuan!
+Terima semuanya	Terima semuanya
+Suruh kembali bertani	Suruh kembali bertani
+Dukun hujan	Dukun hujan
+Kemarau panjang! Hamba bisa memanggil hujan, asal ada sesajen yang pantas.	Kemarau panjang! Hamba boleh memanggil hujan, asal ada sesajen yang pantas.
+Bayar sesajen ritual	Bayar sesajen ritual
+Gali saluran irigasi saja	Gali saluran irigasi sahaja
+Rakyat jelata	Rakyat jelata
+Seorang bangsawan merampas tanah kami dengan paksa!	Seorang bangsawan merampas tanah kami dengan paksa!
+Kembalikan tanah rakyat	Kembalikan tanah rakyat
+Terima hadiah sang bangsawan	Terima hadiah sang bangsawan
+Tetua desa	Tetua kampung
+Desa ingin mengadakan pesta panen. Bolehkah kas negeri membantu?	Kampung ingin mengadakan pesta tuai. Bolehkah kas negeri membantu?
+Danai pesta panen	Danai pesta tuai
+Tolak dengan halus	Tolak dengan halus
+Saudagar	Saudagar
+Jembatan menuju pasar runtuh. Dagangan tak bisa lewat.	Jembatan menuju pasar runtuh. Dagangan tak boleh lewat.
+Perbaiki dengan kas negeri	Perbaiki dengan kas negeri
+Warga gotong royong sendiri	Warga gotong royong sendiri
+Telik sandi	Telik sandi
+Seorang pendatang asing dicurigai sebagai mata-mata musuh.	Seorang pendatang asing dicurigai sebagai mata-mata musuh.
+Penjarakan dan interogasi	Penjarakan dan interogasi
+Lepaskan dengan pengawasan	Lepaskan dengan pengawasan
+Saudagar rempah	Saudagar rempah
+Hamba menawarkan kontrak rempah: perak untuk Tuan, pangan untuk kapal hamba.	Hamba menawarkan kontrak rempah: perak untuk Tuan, makanan untuk kapal hamba.
+Terima kontrak	Terima kontrak
+Tolak, utamakan rakyat	Tolak, utamakan rakyat
+Menangkan Tahap %d untuk membuka Sidang Istana.	Menangkan Peringkat %d untuk membuka Sidang Istana.
+Perkara ini tidak ada dalam sidang hari ini.	Perkara ini tidak ada dalam sidang hari ini.
+Perkara ini sudah diputuskan.	Perkara ini sudah diputuskan.
+%+d prestise	%+d prestise
+kesetiaan %+d	kesetiaan %+d
+Keputusan: %s.	Keputusan: %s.
+Sidang (%d)	Sidang (%d)
+Sidang	Sidang
+Sidang Istana	Sidang Istana
+Kesetiaan rakyat %d / 100	Kesetiaan rakyat %d / 100
+Semua hasil urusan %+d%%	Semua hasil urusan %+d%%
+Perkara baru datang setiap hari. Keputusan yang adil menaikkan kesetiaan rakyat; keputusan yang menguntungkan kas kadang membuat rakyat kecewa.	Perkara baharu datang setiap hari. Keputusan yang adil menaikkan kesetiaan rakyat; keputusan yang menguntungkan kas kadang membuat rakyat kecewa.
+Sudah diputuskan: %s.	Sudah diputuskan: %s.
+Sumpah Prajurit	Sumpah Askar
+Anak Pandai Besi	Anak Pandai Besi
+Arya tumbuh di bengkel ayahnya, menempa tombak untuk para prajurit. Ia bersumpah suatu hari akan memakainya sendiri.	Arya tumbuh di bengkel ayahnya, menempa tombak untuk para askar. Ia bersumpah suatu hari akan memakainya sendiri.
+Luka Pertama	Luka Pertama
+Dalam penyerbuan begal, Arya melindungi seorang anak dan mendapat luka di bahu. Sejak itu ia tak pernah mundur.	Dalam penyerbuan begal, Arya melindungi seorang anak dan mendapat luka di bahu. Sejak itu ia tak pernah mundur.
+Panglima Rakyat	Panglima Rakyat
+Kini Arya melatih para pemuda desa. "Tombak hanya setajam hati yang memegangnya," katanya.	Kini Arya melatih para pemuda kampung. "Tombak hanya setajam hati yang memegangnya," katanya.
+Catatan Teliti	Catatan Teliti
+Gadis Penyalin Lontar	Gadis Penyalin Lontar
+Sekar kecil menyalin lontar di pura desa. Ia hafal setiap angka panen sejak sepuluh tahun lalu.	Sekar kecil menyalin lontar di pura kampung. Ia hafal setiap angka tuai sejak sepuluh tahun lalu.
+Bendahara Muda	Bendahara Muda
+Ketika kas desa nyaris kosong, Sekar menemukan pajak yang diselewengkan dan mengembalikannya kepada rakyat.	Ketika kas kampung nyaris kosong, Sekar menemukan cukai yang diselewengkan dan mengembalikannya kepada rakyat.
+Pena yang Adil	Pena yang Adil
+Kini setiap keping perak negeri tercatat rapi. Rakyat percaya, karena Sekar tak pernah salah hitung.	Kini setiap keping perak negeri tercatat rapi. Rakyat percaya, kerana Sekar tak pernah salah hitung.
+Benih Unggul	Benih Unggul
+Anak Petani	Anak Petani
+Bayu belajar membaca musim dari kakeknya: kapan hujan datang, kapan padi harus disemai.	Bayu belajar membaca musim dari kakeknya: kapan hujan datang, kapan padi mesti disemai.
+Kemarau Besar	Kemarau Besar
+Saat kemarau panjang, Bayu menggali saluran dari mata air gunung bersama warga. Desa selamat dari kelaparan.	Saat kemarau panjang, Bayu menggali saluran dari mata air gunung bersama warga. Kampung selamat dari kelaparan.
+Lumbung Penuh	Lumbung Penuh
+Benih unggul yang Bayu kembangkan kini ditanam di seluruh negeri. Lumbung tak pernah kosong lagi.	Benih unggul yang Bayu kembangkan kini ditanam di seluruh negeri. Lumbung tak pernah kosong lagi.
+Senyum Kencana	Senyum Kencana
+Penari Keraton	Penari Keraton
+Ratna menari di keraton sejak belia. Gerakannya membuat para tamu agung terpana.	Ratna menari di keraton sejak belia. Gerakannya membuat para tamu agung terpana.
+Tarian Perdamaian	Tarian Perdamaian
+Di tengah pertikaian dua adipati, Ratna menari hingga amarah mereka luruh. Perang pun urung terjadi.	Di tengah pertikaian dua adipati, Ratna menari hingga amarah mereka luruh. Perang pun urung terjadi.
+Bunga Istana	Bunga Istana
+Kini Ratna mengajar tari kepada putri-putri istana, menjaga keindahan dan keharmonisan negeri.	Kini Ratna mengajar tari kepada putri-putri istana, menjaga keindahan dan keharmonisan negeri.
+Tameng Negeri	Tameng Negeri
+Pengawal Gerbang	Pengawal Gerbang
+Gajah Mandala dulunya penjaga gerbang yang tak pernah tidur saat bertugas. Tak seorang pun lolos darinya.	Gajah Mandala dulunya penjaga gerbang yang tak pernah tidur saat bertugas. Tak seorang pun lolos darinya.
+Benteng Terakhir	Benteng Terakhir
+Ketika gerbang kota diserbu, Gajah bertahan seorang diri hingga bala bantuan tiba. Tiga hari tiga malam.	Ketika gerbang bandar diserbu, Gajah bertahan seorang diri hingga bala bantuan tiba. Tiga hari tiga malam.
+Sumpah Setia	Sumpah Setia
+"Selama aku berdiri, negeri ini tak akan jatuh," ujar Gajah. Para prajurit menjulukinya Benteng Hidup.	"Selama aku berdiri, negeri ini tak akan jatuh," ujar Gajah. Para askar menjulukinya Benteng Hidup.
+Lidah Emas	Lidah Emas
+Putri Duta	Putri Duta
+Dewi adalah putri seorang duta. Ia fasih berbicara dalam lima bahasa sejak usia belasan.	Dewi adalah putri seorang duta. Ia fasih berbicara dalam lima bahasa sejak usia belasan.
+Perjanjian Sungai	Perjanjian Sungai
+Dewi merundingkan pembagian air sungai antara tiga kerajaan. Semuanya pulang dengan senyum.	Dewi merundingkan pembagian air sungai antara tiga kerajaan. Semuanya pulang dengan senyum.
+Suara Negeri	Bunyi Negeri
+Kini para raja tetangga lebih dulu bertanya: "Apakah Dewi Prameswari ikut hadir?"	Kini para raja tetangga lebih dulu bertanya: "Apakah Dewi Prameswari ikut hadir?"
+Semangat Ksatria	Semangat Ksatria
+Putra Mahkota yang Hilang	Putra Mahkota yang Hilang
+Satria dibesarkan di padepokan tanpa tahu asal-usulnya. Hanya sebilah keris tua menjadi petunjuk.	Satria dibesarkan di padepokan tanpa tahu asal-usulnya. Hanya sebilah keris tua menjadi petunjuk.
+Rahasia Keris	Rahasia Keris
+Keris itu ternyata pusaka kerajaan yang runtuh. Satria memilih tidak menuntut takhta, melainkan mengabdi.	Keris itu ternyata pusaka kerajaan yang runtuh. Satria memilih tidak menuntut takhta, melainkan mengabdi.
+Ksatria Sejati	Ksatria Sejati
+"Darah bangsawan tak berarti tanpa pengabdian," kata Satria. Pasukan mengikutinya ke mana pun.	"Darah bangsawan tak berarti tanpa pengabdian," kata Satria. Pasukan mengikutinya ke mana pun.
+Mata Elang	Mata Elang
+Pemburu Rimba	Pemburu Rimba
+Lintang belajar memanah di hutan, berburu rusa untuk keluarganya sejak usia tujuh tahun.	Lintang belajar memanah di hutan, memburu rusa untuk keluarganya sejak usia tujuh tahun.
+Panah di Malam Hari	Panah di Malam Hari
+Dalam gelap, Lintang memanah obor musuh dari jarak seratus langkah. Serangan malam pun gagal total.	Dalam gelap, Lintang memanah obor musuh dari jarak seratus langkah. Serangan malam pun gagal total.
+Bintang Penunjuk	Bintang Penunjuk
+Para pemanah muda kini berguru padanya. "Bidik dengan hati yang tenang," pesannya.	Para pemanah muda kini berguru padanya. "Bidik dengan hati yang tenang," pesannya.
+Pasar Ramai	Pasar Ramai
+Anak Saudagar	Anak Saudagar
+Danu ikut kapal dagang ayahnya ke berbagai bandar. Ia paham harga rempah lebih baik dari siapa pun.	Danu ikut kapal dagang ayahnya ke berbagai bandar. Ia paham harga rempah lebih baik dari siapa pun.
+Kapal Karam	Kapal Karam
+Kapal keluarganya karam. Danu memulai lagi dari nol, berdagang garam di pasar kecil.	Kapal keluarganya karam. Danu memulakan lagi dari nol, berdagang garam di pasar kecil.
+Bendahara Negeri	Bendahara Negeri
+Kini Danu mengatur kas negeri seperti mengatur kapal: tak ada yang terbuang, tak ada yang bocor.	Kini Danu mengatur kas negeri seperti mengatur kapal: tak ada yang terbuang, tak ada yang bocor.
+Siasat Halus	Siasat Halus
+Pemain Dakon	Pemain Dakon
+Wening tak pernah kalah bermain dakon. Ia selalu memikirkan sepuluh langkah ke depan.	Wening tak pernah kalah bermain dakon. Ia selalu memikirkan sepuluh langkah ke depan.
+Peta Rahasia	Peta Rahasia
+Wening menebak rencana musuh dari jejak kaki kuda dan menyiapkan jebakan di lembah. Musuh menyerah tanpa perang.	Wening menebak rencana musuh dari jejak kaki kuda dan menyiapkan jebakan di lembah. Musuh menyerah tanpa perang.
+Ahli Siasat	Ahli Siasat
+Para panglima kini meminta nasihat Wening sebelum setiap pertempuran.	Para panglima kini meminta nasihat Wening sebelum setiap pertempuran.
+Tinju Besi	Tinju Besi
+Kuli Pelabuhan	Kuli Pelabuhan
+Bagas memanggul karung di pelabuhan sejak kecil. Tangannya sekuat palu.	Bagas memanggul karung di pelabuhan sejak kecil. Tangannya sekuat palu.
+Juara Gelanggang	Juara Gelanggang
+Bagas memenangi adu kekuatan di pasar malam dan diangkat menjadi prajurit oleh seorang bangsawan.	Bagas memenangi adu kekuatan di pasar malam dan diangkat menjadi askar oleh seorang bangsawan.
+Pelindung Lemah	Pelindung Lemah
+Kekuatannya kini hanya untuk melindungi mereka yang tak mampu membela diri.	Kekuatannya kini hanya untuk melindungi mereka yang tak mampu membela diri.
+Wibawa Ratu	Wibawa Ratu
+Ratu Muda	Ratu Muda
+Sekar Kedaton naik takhta pada usia enam belas tahun, ketika ayahnya wafat mendadak.	Sekar Kedaton naik takhta pada usia enam belas tahun, ketika ayahnya wafat mendadak.
+Istana yang Retak	Istana yang Retak
+Para menteri berebut kuasa. Ratu menyatukan mereka dengan keadilan dan ketegasan.	Para menteri berebut kuasa. Ratu menyatukan mereka dengan keadilan dan ketegasan.
+Ratu yang Dicintai	Ratu yang Dicintai
+Rakyat menyebutnya Ibu Negeri. Kini ia memilih mendampingi Tuan demi Nusantara yang bersatu.	Rakyat menyebutnya Ibu Negeri. Kini ia memilih mendampingi Tuan demi Nusantara yang bersatu.
+Pencerahan	Pencerahan
+Pertapa Gunung	Pertapa Gunung
+Resi Darma bertapa puluhan tahun di lereng gunung, mempelajari kitab-kitab kuno.	Resi Darma bertapa puluhan tahun di lereng gunung, mempelajari kitab-kitab kuno.
+Murid Seribu	Murid Seribu
+Para pencari ilmu datang dari segala penjuru. Resi mengajar mereka tanpa meminta apa pun.	Para pencari ilmu datang dari segala penjuru. Resi mengajar mereka tanpa meminta apa pun.
+Turun Gunung	Turun Gunung
+"Ilmu yang disimpan sendiri akan membusuk," kata Resi, lalu turun gunung untuk membimbing negeri.	"Ilmu yang disimpan sendiri akan membusuk," kata Resi, lalu turun gunung untuk membimbing negeri.
+Amarah Tuban	Amarah Tuban
+Putra Tuban	Putra Tuban
+Rangga Lawe tumbuh di Tuban, terkenal pemberani dan berterus terang tanpa takut kepada siapa pun.	Rangga Lawe tumbuh di Tuban, terkenal pemberani dan berterus terang tanpa takut kepada siapa pun.
+Kuda Hitam	Kuda Hitam
+Dengan kuda hitamnya, Rangga menerobos barisan musuh dan merebut panji mereka.	Dengan kuda hitamnya, Rangga menerobos barisan musuh dan merebut panji mereka.
+Belajar Sabar	Belajar Sabar
+Tuan mengajarinya bahwa keberanian perlu kebijaksanaan. Kini amarah Rangga hanya untuk musuh negeri.	Tuan mengajarinya bahwa keberanian perlu kebijaksanaan. Kini amarah Rangga hanya untuk musuh negeri.
+Sahabat Setia	Sahabat Setia
+Paman Rangga	Paman Rangga
+Lembu Sora adalah paman Rangga Lawe, prajurit tua yang tenang dan disegani.	Lembu Sora adalah paman Rangga Lawe, askar tua yang tenang dan disegani.
+Pembela Sahabat	Pembela Sahabat
+Sora selalu membela kawannya walau harus menanggung akibatnya sendiri.	Sora selalu membela kawannya walau mesti menanggung akibatnya sendiri.
+Barak yang Ramai	Barak yang Ramai
+Para pemuda berdatangan ingin berlatih di bawah Sora. Barak tak pernah sepi.	Para pemuda berdatangan ingin berlatih di bawah Sora. Barak tak pernah sepi.
+Bhinneka Tunggal Ika	Bhinneka Tunggal Ika
+Pujangga Istana	Pujangga Istana
+Mpu Tantular menulis syair-syair indah di istana, merenungkan perbedaan dan persatuan.	Mpu Tantular menulis syair-syair indah di istana, merenungkan perbedaan dan persatuan.
+Dalam kakawinnya ia menulis: berbeda-beda tetapi tetap satu jua. Kalimat itu menggetarkan seluruh negeri.	Dalam kakawinnya ia menulis: berbeda-beda tetapi tetap satu jua. Kalimat itu menggetarkan seluruh negeri.
+Warisan Abadi	Warisan Abadi
+"Semboyan ini milik Nusantara," kata Tantular. Rakyat dari berbagai suku bekerja bahu-membahu.	"Semboyan ini milik Nusantara," kata Tantular. Rakyat dari berbagai suku bekerja bahu-membahu.
+Tangan Dingin	Tangan Dingin
+Kusuma menjaga lumbung desa dan hafal isi setiap karungnya.	Kusuma menjaga lumbung kampung dan hafal isi setiap karungnya.
+Tikus dan Wereng	Tikus dan Wereng
+Saat hama menyerang, Kusuma menemukan cara alami mengusirnya dengan tanaman serai.	Saat hama menyerang, Kusuma menemukan cara alami mengusirnya dengan tanaman serai.
+Ratu Padi	Ratu Padi
+Rakyat menjulukinya Ratu Padi. Di tangannya, setiap benih tumbuh subur.	Rakyat menjulukinya Ratu Padi. Di tangannya, setiap benih tumbuh subur.
+Penakluk Banteng	Penakluk Banteng
+Pemuda Pengging	Pemuda Pengging
+Jaka Tingkir adalah pemuda desa yang gemar berguru kepada para empu dan pertapa.	Jaka Tingkir adalah pemuda kampung yang gemar berguru kepada para empu dan pertapa.
+Banteng Mengamuk	Banteng Mengamuk
+Seekor banteng mengamuk di alun-alun. Jaka menaklukkannya dengan tangan kosong di hadapan raja.	Seekor banteng mengamuk di alun-alun. Jaka menaklukkannya dengan tangan kosong di hadapan raja.
+Jalan Takdir	Jalan Takdir
+Raja mengangkatnya menjadi prajurit pilihan. Jaka bersumpah menjaga negeri dengan segenap jiwa.	Raja mengangkatnya menjadi askar pilihan. Jaka bersumpah menjaga negeri dengan segenap jiwa.
+Selendang Kayangan	Selendang Kayangan
+Bidadari Telaga	Bidadari Telaga
+Nawang Wulan turun dari kayangan untuk mandi di telaga, hingga selendangnya hilang.	Nawang Wulan turun dari kayangan untuk mandi di telaga, hingga selendangnya hilang.
+Hidup di Bumi	Hidup di Bumi
+Tanpa selendang, Nawang belajar hidup sebagai manusia: menanak nasi, menenun, dan menolong sesama.	Tanpa selendang, Nawang belajar hidup sebagai manusia: menanak nasi, menenun, dan menolong sesama.
+Pilihan Sang Bidadari	Pilihan Sang Bidadari
+Saat selendangnya ditemukan, Nawang memilih tinggal lebih lama untuk membantu negeri yang ia cintai.	Saat selendangnya ditemukan, Nawang memilih tinggal lebih lama untuk membantu negeri yang ia cintai.
+Kisah ini sudah tamat.	Kisah ini sudah tamat.
+Butuh level %d dan %d bintang.	Butuh level %d dan %d bintang.
+Kisah %s tamat! Skill kedua terbuka: %s.	Kisah %s tamat! Skill kedua terbuka: %s.
+Bagian %d kisah %s: %s.	Bagian %d kisah %s: %s.
+Kisah %d/%d	Kisah %d/%d
+Kisah %s	Kisah %s
+Tamatkan ketiga bagian untuk membuka skill kedua.	Tamatkan ketiga bagian untuk membuka skill kedua.
+Skill kedua: %s	Skill kedua: %s
+Aktif!	Aktif!
+Terbuka setelah kisah tamat	Terbuka setelah kisah tamat
+Bagian %d · %s	Bagian %d · %s
+skill kedua %s	skill kedua %s
+Syarat: level %d, %d bintang · Hadiah: %s	Syarat: level %d, %d bintang · Hadiah: %s
+Baca Bagian %d	Baca Bagian %d
+Bagian %d · ???	Bagian %d · ???
+Juru Kunci Lumbung	Juru Kunci Lumbung
+Kuda	Kuda
+Wilayah	Wilayah
+Gadis desa berhati lembut yang pertama kali menyambut Tuan.	Gadis kampung berhati lembut yang pertama kali menyambut Tuan.
+Putri saudagar kain, pandai menenun songket.	Putri saudagar kain, pandai menenun songket.
+Penyanyi tembang dari pesisir utara yang suaranya merdu.	Penyanyi tembang dari pesisir utara yang suaranya merdu.
+Putri bangsawan yang gemar membaca kitab sastra.	Putri bangsawan yang gemar membaca kitab sastra.
+Peracik jamu istana yang menguasai ratusan resep.	Peracik jamu istana yang menguasai ratusan resep.
+Penari topeng misterius dari tanah seberang.	Penari topeng misterius dari tanah seberang.
+Kategori tidak dikenal.	Kategori tidak dikenal.
+Hadiah koleksi ini sudah diambil.	Hadiah koleksi ini sudah diambil.
+Koleksi %s belum lengkap.	Koleksi %s belum lengkap.
+Koleksi %s lengkap! +%d emas dan bonus permanen.	Koleksi %s lengkap! +%d emas dan bonus permanen.
+Ensiklopedia Nusantara	Ensiklopedia Nusantara
+Koleksi %d / %d	Koleksi %d / %d
+Lengkapi tiap koleksi untuk hadiah emas dan bonus permanen.	Lengkapi setiap koleksi untuk hadiah emas dan bonus permanen.
+Bonus koleksi lengkap: %s, +%d emas	Bonus koleksi lengkap: %s, +%d emas
+Bonus aktif!	Bonus aktif!
+Klaim hadiah koleksi	Klaim hadiah koleksi
++1 putaran roda	+1 putaran roda
+20 Emas	20 Emas
+80 Emas	80 Emas
+Putaran gratis hari ini sudah dipakai.	Putaran percuma hari ini sudah digunakan.
+Tidak ada tiket putaran. Tonton iklan untuk mendapatkannya.	Tidak ada tiket putaran. Tonton iklan untuk mendapatkannya.
+Batas putaran dengan emas hari ini sudah habis.	Batas putaran dengan emas hari ini sudah habis.
+Cara putar tidak dikenal.	Cara putar tidak dikenal.
+Roda berhenti di %s: %s.	Roda berhenti di %s: %s.
+1 putaran Roda Keberuntungan	1 putaran Roda Keberuntungan
+Roda Keberuntungan	Roda Keberuntungan
+Putaran gratis siap!	Putaran percuma siap!
+Tiket putaran: %d	Tiket putaran: %d
+Putaran gratis berikutnya besok	Putaran percuma seterusnya esok
+Putar	Putar
+Satu putaran gratis setiap hari. Hadiah sumber daya mengikuti hasil urusan Tuan.	Satu putaran percuma setiap hari. Hadiah sumber daya mengikuti hasil urusan Tuan.
+Putar Gratis	Putar Percuma
+Gratis besok	Percuma esok
+Tiket (%d)	Tiket (%d)
+Putar · %d emas (sisa %d hari ini)	Putar · %d emas (sisa %d hari ini)
+Peluang hadiah	Peluang hadiah
+Pemain	Pemain
+Anda menang melawan %s (online, %+d poin).	Anda menang melawan %s (dalam talian, %+d poin).
+Anda kalah melawan %s (online, %+d poin).	Anda kalah melawan %s (dalam talian, %+d poin).
+Menang melawan %s! %+d poin online, +%d koin arena.	Menang melawan %s! %+d poin dalam talian, +%d koin arena.
+Kalah melawan %s. %+d poin online, +%d koin arena.	Kalah melawan %s. %+d poin dalam talian, +%d koin arena.
+Lawan online (pemain sungguhan)	Lawan dalam talian (pemain sungguhan)
+Cari lawan online	Cari lawan dalam talian
+Belum ada pemain lain di server.	Belum ada pemain lain di pelayan.
+Kekuatan %s · poin %d · peluang %d%%	Kekuatan %s · poin %d · peluang %d%%
+Arena Online	Arena Dalam talian
+Online: pesan Anda dibaca pemain sungguhan di aliansi ini.	Dalam talian: mesej Anda dibaca pemain sungguhan di pakatan ini.
+Seluruh negeri	Seluruh negeri
+Pemain online	Pemain dalam talian
+Memuat peringkat online...	Memuat kedudukan dalam talian...
+Belum ada data dari server.	Belum ada data dari pelayan.
+Peringkat online Anda: #%s dari %s pemain	Kedudukan dalam talian Anda: #%s dari %s pemain
+Server Online	Pelayan Dalam talian
+Isi alamat server untuk chat aliansi, peringkat, dan arena dengan pemain sungguhan. Kosongkan untuk bermain offline.	Isi alamat pelayan untuk chat pakatan, kedudukan, dan arena dengan pemain sungguhan. Kosongkan untuk bermain luar talian.
+Tersambung sebagai %s	Bersambung sebagai %s
+Menyambungkan...	Menyambung...
+Gagal: %s	Gagal: %s
+Offline	Luar talian
+Sambungkan	Sambungkan
+Putuskan (main offline)	Putuskan (main luar talian)
+Server tidak menjawab.	Pelayan tidak menjawab.
+Mode offline.	Mode luar talian.
+Tidak bisa terhubung ke server.	Tidak boleh terhubung ke pelayan.
+Alamat server tidak valid.	Alamat pelayan tidak valid.
+Belum bergabung dengan aliansi.	Belum menyertai dengan pakatan.
+Tunggu sebentar.	Tunggu sebentar.
+Batas serangan harian.	Batas serangan harian.
+Token tidak valid.	Token tidak valid.
+Kesalahan server.	Kesalahan pelayan.
+Mode online	Mode dalam talian
+Bila Anda mengisi alamat server di Pengaturan, nama Tuan, kostum, aliansi, kekuatan, tahap, ringkasan kota, teman, hadiah, dan pesan chat aliansi dikirim ke server itu dan dapat dilihat pemain lain. Kosongkan alamat server untuk berhenti.	Bila Anda mengisi alamat pelayan di Tetapan, nama Tuan, kostum, pakatan, kekuatan, peringkat, ringkasan bandar, rakan, hadiah, dan mesej chat pakatan dihantar ke pelayan itu dan dapat dilihat pemain lain. Kosongkan alamat pelayan untuk berhenti.
+Laporkan	Laporkan
+Blokir	Blokir
+Laporkan pesan dari %s ke pengelola server?	Laporkan mesej dari %s ke pengelola pelayan?
+Pesan dilaporkan. Terima kasih.	Mesej dilaporkan. Terima kasih.
+Gagal melaporkan pesan.	Gagal melaporkan mesej.
+Blokir %s? Pesannya tidak akan tampil lagi di perangkat ini.	Blokir %s? Pesannya tidak akan dipapar lagi di peranti ini.
+%s diblokir.	%s diblokir.
+Pesan tidak ditemukan.	Mesej tidak ditemukan.
+Tidak bisa melaporkan pesan sendiri.	Tidak boleh melaporkan mesej sendiri.
+https://server-anda.contoh.id	https://pelayan-anda.contoh.id
+Keluar dari game? Progres sudah tersimpan.	Keluar dari game? Progres sudah tersimpan.
+Keluar Game	Keluar Game
+Maaf, game sempat berhenti	Maaf, game sempat berhenti
+Progres terakhir sudah tersimpan.	Progres terakhir sudah tersimpan.
+Game tertutup secara tidak normal pada sesi sebelumnya. Bantu kami memperbaikinya: salin laporan lalu kirimkan ke pengembang (mis. lewat WhatsApp atau email).	Game tertutup secara tidak normal pada sesi sebelumnya. Bantu kami memperbaikinya: salin laporan lalu hantarkan ke pengembang (mis. lewat WhatsApp atau email).
+Perangkat grafis: %s	Peranti grafis: %s
+sudah diambil	sudah diambil
+hari ini	hari ini
+Kalender login teks	Kalendar login teks
+Tampilkan hadiah login sebagai daftar teks. Nyala otomatis bila kalender bergambar membuat game berhenti.	Tampilkan hadiah login sebagai daftar teks. Hidup automatik bila kalendar bergambar membuat game berhenti.
+Sultan	Sultan
+Maharaja	Maharaja
+Wilayah dikuasai	Wilayah dikuasai
+Total level riset	Total level riset
+Kapal armada	Kapal armada
+Keluarga besan	Keluarga besan
+Bingkai Adipati	Bingkai Adipati
+Bingkai Sultan	Bingkai Sultan
+Bingkai Maharaja	Bingkai Maharaja
+Bingkai Raja Hari Ini	Bingkai Raja Hari Ini
+Padang Rusa	Padang Rusa
+Rusa	Rusa
+Rawa Celeng	Rawa Celeng
+Babi Hutan	Babi Hutan
+Hutan Harimau	Hutan Harimau
+Harimau	Harimau
+Wangsa Rajasa	Wangsa Rajasa
+Wangsa Sanjaya	Wangsa Sanjaya
+Wangsa Syailendra	Wangsa Syailendra
+Wangsa Isyana	Wangsa Isyana
+Wangsa Warmadewa	Wangsa Warmadewa
+Wangsa Girindra	Wangsa Girindra
+Pemerintahan Seimbang	Pemerintahan Seimbang
+Tanpa bonus maupun beban.	Tanpa bonus maupun beban.
+Pajak Tinggi	Cukai Tinggi
+Perak +15%, pangan -5%, kesetiaan -2/hari.	Perak +15%, makanan -5%, kesetiaan -2/hari.
+Lumbung Rakyat	Lumbung Rakyat
+Pangan +15%, perak -5%, kesetiaan +1/hari.	Makanan +15%, perak -5%, kesetiaan +1/hari.
+Wajib Militer	Wajib Militer
+Prajurit +15%, perak -5%, kesetiaan -1/hari.	Askar +15%, perak -5%, kesetiaan -1/hari.
+Keringanan Rakyat	Keringanan Rakyat
+Semua hasil -5%, kesetiaan +3/hari, bencana lebih jarang.	Semua hasil -5%, kesetiaan +3/hari, bencana lebih jarang.
+Banjir	Banjir
+Sungai meluap dan merendam sawah.	Sungai meluap dan merendam sawah.
+Bangun tanggul	Bangun tanggul
+Bagikan pangan ke pengungsi	Kongsi makanan ke pengungsi
+Biarkan surut sendiri	Biarkan surut sendiri
+Gagal Panen	Gagal Tuai
+Hama wereng menyerang padi.	Hama wereng menyerang padi.
+Beli benih unggul	Beli benih unggul
+Kerahkan prajurit membasmi hama	Kerahkan askar membasmi hama
+Naikkan harga beras	Naikkan harga beras
+Wabah	Wabah
+Penyakit menyebar di barak dan kampung.	Penyakit menyebar di barak dan kampung.
+Datangkan tabib	Datangkan tabib
+Karantina kampung	Karantina kampung
+Abaikan kabar	Abaikan kabar
+Kebakaran Pasar	Kebakaran Pasar
+Api melalap kios-kios pasar.	Api melalap kios-kios pasar.
+Bangun ulang pasar	Bangun ulang pasar
+Kerahkan prajurit memadamkan api	Kerahkan askar memadamkan api
+Pungut pajak pembangunan	Pungut cukai pembangunan
+Gempa Bumi	Gempa Bumi
+Tanah berguncang, rumah-rumah retak.	Tanah berguncang, rumah-rumah retak.
+Bantu rakyat membangun rumah	Bantu rakyat membangun rumah
+Doa bersama di candi	Doa bersama di candi
+Utamakan istana dulu	Utamakan istana dulu
+Ilmu Pertanian	Ilmu Pertanian
+Hasil pangan +4% per level.	Hasil makanan +4% per level.
+Ilmu Perniagaan	Ilmu Perniagaan
+Hasil perak +4% per level.	Hasil perak +4% per level.
+Ilmu Kemiliteran	Ilmu Kemiliteran
+Hasil prajurit +4% per level.	Hasil askar +4% per level.
+Siasat Perang	Siasat Perang
+Kekuatan tempur +3% per level.	Kekuatan tempur +3% per level.
+Arsitektur	Arsitektur
+Waktu pembangunan -6% per level.	Waktu pembangunan -6% per level.
+Ilmu Pelayaran	Ilmu Pelayaran
+Muatan armada +8% per level, risiko bajak laut ikut turun.	Muatan armada +8% per level, risiko bajak laut ikut turun.
+Lancang	Lancang
+Jung Jawa	Jung Jawa
+Pinisi	Pinisi
+Jahe	Jahe
+Kunyit	Kunyit
+Cengkeh	Cengkeh
+Pucuk Teh	Pucuk Teh
+Pala	Pala
+Titah Pasar Ramai	Titah Pasar Ramai
+Semua pemain: perak +5% hari ini.	Semua pemain: perak +5% hari ini.
+Titah Panen Raya	Titah Tuai Raya
+Semua pemain: pangan +5% hari ini.	Semua pemain: makanan +5% hari ini.
+Titah Bela Negara	Titah Bela Negara
+Semua pemain: prajurit +5% hari ini.	Semua pemain: askar +5% hari ini.
+Titah Berkah	Titah Berkah
+Semua pemain: semua hasil +3% hari ini.	Semua pemain: semua hasil +3% hari ini.
+Selat Sunda	Selat Sunda
+Teluk Bone	Teluk Bone
+Laut Banda	Laut Banda
+Tanah Karo	Tanah Karo
+Lembah Baliem	Lembah Baliem
+Danau Toba	Danau Toba
+Pilih penasihat dan medan buruan. Peluang berhasil naik dengan Kekuatan dan Karisma penasihat (kuda ikut membantu).	Pilih penasihat dan medan buruan. Peluang berjaya naik dengan Kekuatan dan Karisma penasihat (kuda ikut membantu).
+Tiga kali berburu per hari. Buruan besar memberi prestise dan kadang Batu Bintang.	Tiga kali memburu per hari. Buruan besar memberi prestise dan kadang Batu Bintang.
+Anak yang sudah dewasa bisa dilamar putra-putri wangsa bangsawan.	Anak yang sudah dewasa boleh dilamar putra-putri wangsa bangsawan.
+Calon berbakat tinggi memberi bonus atribut lebih besar tapi maharnya mahal. Setiap besan mengirim perak tiap hari.	Calon berbakat tinggi memberi bonus atribut lebih besar tapi maharnya mahal. Setiap besan menghantar perak setiap hari.
+Dagangan berganti tiap 4 jam. Tawar sekali per barang: berhasil lebih murah, gagal lebih mahal.	Dagangan berganti setiap 4 jam. Tawar sekali per barang: berjaya lebih murah, gagal lebih mahal.
+Barang dibayar dengan perak, emas, atau prestise.	Barang dibayar dengan perak, emas, atau prestise.
+Kebijakan kota memberi bonus hasil tetapi mengubah kesetiaan rakyat setiap hari.	Dasar bandar memberi bonus hasil tetapi mengubah kesetiaan rakyat setiap hari.
+Bencana menurunkan hasil sampai Tuan menanganinya. Kesetiaan tinggi menambah semua hasil.	Bencana menurunkan hasil sehingga Tuan menanganinya. Kesetiaan tinggi menambah semua hasil.
+Riset memberi bonus permanen. Hanya satu riset berjalan sekaligus; percepat dengan emas.	Riset memberi bonus permanen. Hanya satu riset berjalan sekaligus; percepat dengan emas.
+Beberapa riset butuh riset lain lebih dulu.	Beberapa riset butuh riset lain lebih dulu.
+Beli kapal lalu kirim berdagang ke wilayah yang sudah Tuan kuasai di Peta Nusantara.	Beli kapal lalu hantar berdagang ke wilayah yang sudah Tuan kuasai di Peta Nusantara.
+Bajak laut bisa menyerang; kapal dengan penjaga kuat dan riset Pelayaran lebih aman.	Bajak laut boleh menyerang; kapal dengan penjaga kuat dan riset Pelayaran lebih aman.
+Tanam bibit di petak kosong, lalu panen setelah matang.	Tanam bibit di petak kosong, lalu tuai setelah matang.
+Melati menghasilkan Pil Keakraban, Cengkeh menghasilkan prestise, Pala menghasilkan emas.	Melati menghasilkan Pil Keakraban, Cengkeh menghasilkan prestise, Pala menghasilkan emas.
+Bagikan kode Tuan agar teman bisa menambahkan Tuan. Kirim satu hadiah per teman setiap hari.	Kongsi kod Tuan agar rakan boleh menambahkan Tuan. Hantar satu hadiah per rakan setiap hari.
+Kunjungi kota teman untuk melihat jabatan, kekuatan, dan bangunannya.	Kunjungi bandar rakan untuk melihat jawatan, kekuatan, dan bangunannya.
+Setiap minggu aliansi memperebutkan wilayah. Serang hingga 3 kali sehari; poin mengikuti kekuatan Tuan.	Setiap minggu pakatan memperebutkan wilayah. Serang hingga 3 kali sehari; poin mengikuti kekuatan Tuan.
+Aliansi dengan poin terbanyak di sebuah wilayah menguasainya. Ambil hadiah minggu lalu di panel ini.	Pakatan dengan poin terbanyak di sebuah wilayah menguasainya. Ambil hadiah minggu lalu di panel ini.
+Pemain dengan kekuatan tertinggi di server menjadi Raja Hari Ini.	Pemain dengan kekuatan tertinggi di pelayan menjadi Raja Hari Ini.
+Raja memilih satu titah yang memberi bonus kecil untuk semua pemain hari itu.	Raja memilih satu titah yang memberi bonus kecil untuk semua pemain hari itu.
+Ambil hadiah setiap hari tanpa terputus. Bila terlewat sehari, kalender dimulai lagi dari Hari 1.	Ambil hadiah setiap hari tanpa terputus. Bila terlewat sehari, kalendar dimulakan lagi dari Hari 1.
+Satu putaran gratis setiap hari. Tonton iklan untuk tiket putaran, atau putar dengan emas.	Satu putaran percuma setiap hari. Tonton iklan untuk tiket putaran, atau putar dengan emas.
+Taklukkan wilayah berurutan untuk mendapat upeti setiap jam. Ambil upeti sebelum gudangnya penuh.	Taklukkan wilayah berurutan untuk mendapat upeti setiap jam. Ambil upeti sebelum gudangnya penuh.
+Setiap hari rakyat membawa perkara. Keputusan Tuan mengubah sumber daya dan kesetiaan rakyat.	Setiap hari rakyat membawa perkara. Keputusan Tuan mengubah sumber daya dan kesetiaan rakyat.
+Kirim penasihat ke tujuan selama beberapa jam. Atribut yang cocok memberi hasil lebih besar.	Hantar penasihat ke tujuan selama beberapa jam. Atribut yang cocok memberi hasil lebih besar.
+Kuda menambah atribut penunggangnya. Beri makan untuk menaikkan levelnya.	Kuda menambah atribut penunggangnya. Beri makan untuk menaikkan levelnya.
+Naiki lantai demi lantai melawan penjaga yang makin kuat. Hadiah lantai hanya sekali.	Naiki tingkat demi tingkat melawan penjaga yang makin kuat. Hadiah tingkat hanya sekali.
+Daftarkan jagoan sekali seminggu. Pertandingan berlangsung otomatis setiap hari.	Daftarkan jagoan sekali seminggu. Perlawanan berlangsung automatik setiap hari.
+Kumpulkan semua tokoh, kuda, pusaka, dan wilayah untuk bonus permanen.	Kumpulkan semua tokoh, kuda, pusaka, dan wilayah untuk bonus permanen.
+Syarat gelar %s belum terpenuhi.	Syarat gelar %s belum terpenuhi.
+hadiah login	hadiah login
+putaran roda	putaran roda
+panen kebun	tuai kebun
+kapal dagang	kapal dagang
+Ringkasan Kerajaan	Ringkasan Kerajaan
+Siap untuk Tuan: %s.	Siap untuk Tuan: %s.
+Menangkan Tahap %d untuk membuka Perburuan.	Menangkan Peringkat %d untuk membuka Perburuan.
+Medan buruan tidak dikenal.	Medan buruan tidak dikenal.
+Jatah berburu hari ini habis. Kembali besok.	Jatah memburu hari ini habis. Kembali esok.
+%s berhasil memburu %s! %s.	%s berjaya memburu %s! %s.
+%s gagal, %s lolos ke hutan. Hasil hiburan: %s.	%s gagal, %s lolos ke hutan. Hasil hiburan: %s.
+Calon tidak ditemukan.	Calon tidak ditemukan.
+Belum ada penasihat.	Belum ada penasihat.
+Perak tidak cukup untuk mahar (butuh %d).	Perak tidak cukup untuk mahar (butuh %d).
+%s menikah dengan %s dari %s! %s +%d %s, +%d prestise.	%s berkahwin dengan %s dari %s! %s +%d %s, +%d prestise.
+Belum ada kiriman besan hari ini.	Belum ada kiriman besan hari ini.
+Belum punya besan.	Belum punya besan.
+Kiriman dari %d keluarga besan: +%d perak.	Kiriman dari %d keluarga besan: +%d perak.
+Menangkan Tahap %d untuk membuka Pasar Malam.	Menangkan Peringkat %d untuk membuka Pasar Malam.
+Batas ganti dagangan hari ini sudah habis.	Batas tukar dagangan hari ini sudah habis.
+Pedagang baru menggelar dagangannya.	Peniaga baharu menggelar dagangannya.
+Dagangan tidak ditemukan.	Dagangan tidak ditemukan.
+Dagangan ini sudah terjual.	Dagangan ini sudah terjual.
+Membeli %s seharga %d %s.	Membeli %s seharga %d %s.
+Pedagang tidak mau ditawar lagi.	Peniaga tidak mau ditawar lagi.
+Tawaran diterima! Harga turun menjadi %d.	Tawaran diterima! Harga turun menjadi %d.
+Pedagang tersinggung, harga naik menjadi %d.	Peniaga tersinggung, harga naik menjadi %d.
+Menangkan Tahap %d untuk menetapkan kebijakan.	Menangkan Peringkat %d untuk menetapkan dasar.
+Kebijakan tidak dikenal.	Dasar tidak dikenal.
+Kebijakan ini sudah berlaku.	Dasar ini sudah berlaku.
+Kebijakan baru bisa diganti dalam %d jam.	Dasar baharu boleh ditukar dalam %d jam.
+Kebijakan baru berlaku: %s.	Dasar baharu berlaku: %s.
+Tidak ada bencana saat ini.	Tidak ada bencana saat ini.
+%s ditangani: %s.	%s ditangani: %s.
+Menangkan Tahap %d untuk membuka Perpustakaan Keraton.	Menangkan Peringkat %d untuk membuka Perpustakaan Keraton.
+Riset tidak dikenal.	Riset tidak dikenal.
+Masih ada riset yang berjalan.	Masih ada riset yang berjalan.
+Riset ini sudah tuntas.	Riset ini sudah tuntas.
+Selesaikan riset prasyarat lebih dulu.	Selesaikan riset prasyarat lebih dulu.
+Para pujangga mulai meneliti %s.	Para pujangga mula meneliti %s.
+Tidak ada riset yang berjalan.	Tidak ada riset yang berjalan.
+Kuasai %d wilayah di Peta Nusantara untuk membuka Armada Laut.	Kuasai %d wilayah di Peta Nusantara untuk membuka Armada Laut.
+Kapal tidak dikenal.	Kapal tidak dikenal.
+Kapal ini sudah dimiliki.	Kapal ini sudah dimiliki.
+%s bergabung dengan armada Tuan!	%s menyertai dengan armada Tuan!
+Kapal belum dimiliki.	Kapal belum dimiliki.
+Kapal masih berlayar.	Kapal masih berlayar.
+Tujuan harus wilayah yang sudah dikuasai.	Tujuan mesti wilayah yang sudah dikuasai.
+%s berlayar ke %s.	%s berlayar ke %s.
+Kapal tidak sedang berlayar.	Kapal tidak sedang berlayar.
+Kapal belum kembali.	Kapal belum kembali.
+%s mengalahkan bajak laut dan pulang membawa %d perak, +10 prestise.	%s mengalahkan bajak laut dan pulang membawa %d perak, +10 prestise.
+Bajak laut merampas separuh muatan %s. Sisa %d perak.	Bajak laut merampas separuh muatan %s. Sisa %d perak.
+%s pulang dengan selamat membawa %d perak.	%s pulang dengan selamat membawa %d perak.
+Menangkan Tahap %d untuk membuka Kebun Keraton.	Menangkan Peringkat %d untuk membuka Kebun Keraton.
+Petak tidak ditemukan.	Petak tidak ditemukan.
+Bibit tidak dikenal.	Bibit tidak dikenal.
+Petak ini sudah ditanami.	Petak ini sudah ditanami.
+%s ditanam. Panen dalam %d jam.	%s ditanam. Tuai dalam %d jam.
+Belum ada tanaman yang siap dipanen.	Belum ada tanaman yang siap dituai.
+Panen %d petak: %s.	Tuai %d petak: %s.
+Batas hadiah teman hari ini sudah tercapai.	Batas hadiah rakan hari ini sudah tercapai.
+%d hadiah teman diterima: +%d perak.	%d hadiah rakan diterima: +%d perak.
+Hadiah perang minggu itu sudah diambil.	Hadiah perang minggu itu sudah diambil.
+Aliansi Tuan tidak menguasai wilayah minggu lalu.	Pakatan Tuan tidak menguasai wilayah minggu lalu.
+Hadiah Perang Wilayah (%d wilayah): %s.	Hadiah Perang Wilayah (%d wilayah): %s.
+Panduan singkat	Panduan singkat
+Mode malam	Mode malam
+Tema gelap yang nyaman di mata saat bermain malam hari.	Tema gelap yang nyaman di mata saat bermain malam hari.
+Ukuran tampilan	Saiz paparan
+Kecil	Kecil
+Normal	Normal
+Besar	Besar
+Cari Jodoh	Cari Jodoh
+Belum ada hadiah dari teman.	Belum ada hadiah dari rakan.
+Raja Hari Ini: %s	Raja Hari Ini: %s
+Raja belum bertitah hari ini.	Raja belum bertitah hari ini.
+Bencana: %s	Bencana: %s
+Tangani	Tangani
+Urusan Kerajaan	Urusan Kerajaan
+Perburuan	Perburuan
+Kebijakan	Dasar
+Kebun	Kebun
+Perpustakaan	Perpustakaan
+Armada	Armada
+Besan	Besan
+Teman	Rakan
+Perang Wilayah	Perang Wilayah
+%d wilayah	%d wilayah
+Semua hasil	Semua hasil
+Sisa berburu hari ini: %d / %d	Sisa memburu hari ini: %d / %d
+Pilih pemburu	Pilih pemburu
+%s · Skor buruan %d (Kekuatan + separuh Karisma)	%s · Skor buruan %d (Kekuatan + separuh Karisma)
+Buruan: %s · Peluang %d%%	Buruan: %s · Peluang %d%%
+peluang %s	peluang %s
+Berburu	Memburu
+Dagangan berganti dalam %s	Dagangan berganti dalam %s
+(sudah ditawar)	(sudah ditawar)
+Terjual	Terjual
+Tawar	Tawar
+Ganti Dagangan · %d emas (sisa %d)	Tukar Dagangan · %d emas (sisa %d)
+Kebijakan & Bencana	Dasar & Bencana
+Kesetiaan rakyat %d/100 · bonus hasil %+d%%	Kesetiaan rakyat %d/100 · bonus hasil %+d%%
+Negeri aman. Belum ada bencana di periode ini.	Negeri aman. Belum ada bencana di periode ini.
+berakhir dalam %s	berakhir dalam %s
+Biaya: %s	Kos: %s
+Kebijakan Kota	Dasar Bandar
+Kebijakan bisa diganti lagi dalam %s.	Dasar boleh ditukar lagi dalam %s.
+Berlaku	Berlaku
+Terapkan	Terapkan
+Kebun Keraton	Kebun Keraton
+Tanam bibit, panen setelah matang.	Tanam bibit, tuai setelah matang.
+Pilih bibit	Pilih bibit
+%s: bibit %s perak · %d jam · hasil %s	%s: bibit %s perak · %d jam · hasil %s
+Petak %d · kosong	Petak %d · kosong
+Tanam %s	Tanam %s
+Siap panen!	Siap tuai!
+Matang dalam %s	Matang dalam %s
+Panen Semua	Tuai Semua
+Perpustakaan Keraton	Perpustakaan Keraton
+Total level riset: %d	Total level riset: %d
+Meneliti %s ke level %d	Meneliti %s ke level %d
+Percepat · %d emas	Percepat · %d emas
+%s · Lv %d/%d	%s · Lv %d/%d
+Tuntas	Tuntas
+%s Lv %d	%s Lv %d
+Butuh: %s	Butuh: %s
+Teliti	Teliti
+Armada Laut	Armada Laut
+%d kapal · %d rute dagang	%d kapal · %d rute dagang
+Muatan x%.1f · Penjaga %.1f · %d jam · risiko bajak laut %d%%	Muatan x%.1f · Penjaga %.1f · %d jam · risiko bajak laut %d%%
+Harga: %s	Harga: %s
+Berlayar ke %s · muatan %s perak	Berlayar ke %s · muatan %s perak
+Bongkar	Bongkar
+Kuasai wilayah lain di Peta Nusantara untuk membuka rute dagang.	Kuasai wilayah lain di Peta Nusantara untuk membuka rute dagang.
+Tujuan: %s · %s perak ▸	Tujuan: %s · %s perak ▸
+Berlayar	Berlayar
+Kapal sudah berlabuh!	Kapal sudah berlabuh!
+Tiba dalam %s	Tiba dalam %s
+Serangan Bajak Laut	Serangan Bajak Laut
+Bajak Laut	Bajak Laut
+Pernikahan Antar-Kerajaan	Perkahwinan Antar-Kerajaan
+%d keluarga besan	%d keluarga besan
+Kiriman harian besan: %s perak	Kiriman harian besan: %s perak
+Terima Kiriman	Terima Kiriman
+Anak yang siap menikah	Anak yang siap berkahwin
+Bakat %d/5	Bakat %d/5
+Belum ada anak dewasa. Didik anak di Istana sampai level %d.	Belum ada anak dewasa. Didik anak di Istana sehingga level %d.
+Keluarga Besan	Keluarga Besan
+%s — %s (%s)	%s — %s (%s)
+Anak ini sudah menikah atau belum dewasa.	Anak ini sudah berkahwin atau belum dewasa.
+Lamaran untuk %s (bakat %d/5)	Lamaran untuk %s (bakat %d/5)
+Calon berganti setiap hari. Bonus atribut diberikan kepada penasihat terkuat di atribut itu.	Calon berganti setiap hari. Bonus atribut diberikan kepada penasihat terkuat di atribut itu.
+Bakat %d/5 · +%d %s · mahar %s perak	Bakat %d/5 · +%d %s · mahar %s perak
+Lamar	Lamar
+Fitur ini butuh server. Isi alamat server di Pengaturan.	Fitur ini butuh pelayan. Isi alamat pelayan di Tetapan.
+Memuat...	Memuat...
+Kode Tuan: %s · %d teman	Kod Tuan: %s · %d rakan
+Tambah teman dengan kode	Tambah rakan dengan kod
+Kode 8 karakter	Kod 8 karakter
+Tambah	Tambah
+%s kini teman Tuan.	%s kini rakan Tuan.
+Salin Kode Saya	Salin Kod Saya
+Kode disalin. Bagikan ke teman Tuan.	Kod disalin. Kongsi ke rakan Tuan.
+Terima Hadiah Teman (%d)	Terima Hadiah Rakan (%d)
+Kekuatan %s · Tahap %d	Kekuatan %s · Peringkat %d
+Terkirim	Dihantar
+Kirim Hadiah	Hantar Hadiah
+Hadiah terkirim.	Hadiah dihantar.
+Kunjungan Kota	Kunjungan Bandar
+Pemain tidak ditemukan.	Pemain tidak ditemukan.
+Tahap kampanye %d	Peringkat kampanye %d
+Prestise %s	Prestise %s
+Penasihat %d · Wilayah %d	Penasihat %d · Wilayah %d
+Kapal %d · Besan %d	Kapal %d · Besan %d
+%s · Lv %d	%s · Lv %d
+Belum dikuasai	Belum dikuasai
+Aliansi Tuan: %s · serangan tersisa %d · berakhir dalam %s	Pakatan Tuan: %s · serangan tersisa %d · berakhir dalam %s
+Minggu lalu aliansi Tuan menguasai %d wilayah!	Minggu lalu pakatan Tuan menguasai %d wilayah!
+Ambil Hadiah Perang	Ambil Hadiah Perang
+Bergabunglah dengan aliansi untuk ikut berperang.	Bergabunglah dengan pakatan untuk ikut berperang.
+Penguasa: %s	Penguasa: %s
+Serangan berhasil: +%d poin untuk aliansi.	Serangan berjaya: +%d poin untuk pakatan.
+Raja Hari Ini	Raja Hari Ini
+Belum ada raja hari ini.	Belum ada raja hari ini.
+Pemain terkuat di server hari ini	Pemain terkuat di pelayan hari ini
+Tuan adalah Raja Hari Ini! Pilih satu titah untuk semua pemain:	Tuan adalah Raja Hari Ini! Pilih satu titah untuk semua pemain:
+Titahkan	Titahkan
+Titah diumumkan ke seluruh negeri!	Titah diumumkan ke seluruh negeri!
+BURUAN DIDAPAT!	BURUAN DIDAPAT!
+BURUAN LOLOS...	BURUAN LOLOS...
+Kesetiaan rakyat	Kesetiaan rakyat
+perburuan	perburuan
+riset	riset
+Besi Tempa	Besi Tempa
+Bahan utama menempa pusaka di Besalen.	Bahan utama menempa pusaka di Besalen.
+Kayu Cendana	Kayu Cendana
+Kayu harum untuk gagang dan warangka pusaka.	Kayu harum untuk gagang dan warangka pusaka.
+Batu Meteor	Batu Meteor
+Bahan pamor langka. Menaikkan peluang pusaka Epik dan Legenda.	Bahan pamor langka. Menaikkan peluang pusaka Epik dan Legenda.
+Kirim hadiah untuk memperbaiki hubungan, atau minta upeti bila pasukan Tuan lebih kuat.	Hantar hadiah untuk memperbaiki hubungan, atau minta upeti bila pasukan Tuan lebih kuat.
+Hubungan baik membuka perjanjian dagang (perak) dan persekutuan (kekuatan tempur). Hubungan buruk bisa berujung serangan.	Hubungan baik membuka perjanjian dagang (perak) dan persekutuan (kekuatan tempur). Hubungan buruk boleh berujung serangan.
+Mata-mata memakai Kecerdasan penasihat. Yang tertangkap tidak bisa bertugas lagi hari itu.	Mata-mata menggunakan Kecerdasan penasihat. Yang tertangkap tidak boleh bertugas lagi hari itu.
+Pilih kuda dari kandang. Kecepatan naik dengan kelangkaan dan level kuda.	Pilih kuda dari kandang. Kelajuan naik dengan kelangkaan dan level kuda.
+Tiga pacuan per hari; peringkat menentukan hadiah.	Tiga lumba per hari; kedudukan menentukan hadiah.
+Lima soal setiap hari tentang sejarah dan budaya Indonesia. Tiap jawaban benar berhadiah perak; lima benar menambah emas.	Lima soalan setiap hari tentang sejarah dan budaya Indonesia. Setiap jawaban betul berhadiah perak; lima betul menambah emas.
+Pilih satu dari dua pintu di tiap ruangan. Jebakan dan arca penjaga mengurangi semangat; mata air memulihkannya.	Pilih satu dari dua pintu di setiap ruangan. Jebakan dan arca penjaga mengurangi semangat; mata air memulihkannya.
+Keluar kapan saja dengan semua harta. Bila semangat habis, separuh harta hilang. Ruangan terakhir dijaga Buto penjaga candi.	Keluar kapan sahaja dengan semua harta. Bila semangat habis, separuh harta hilang. Ruangan terakhir dijaga Buto penjaga candi.
+Tempa pusaka dari Besi Tempa dan Kayu Cendana. Batu Meteor menaikkan peluang Epik dan Legenda.	Tempa pusaka dari Besi Tempa dan Kayu Cendana. Batu Meteor menaikkan peluang Epik dan Legenda.
+Bahan didapat dari Penjelajahan Candi dan Pasar Malam.	Bahan didapat dari Penjelajahan Candi dan Pasar Malam.
+Hanya satu hewan yang aktif memberi bonus. Beri pakan untuk menaikkan levelnya.	Hanya satu hewan yang aktif memberi bonus. Beri pakan untuk menaikkan levelnya.
+Seluruh pemain di server menyerang bos yang sama setiap minggu. Serang hingga 3 kali sehari.	Seluruh pemain di pelayan menyerang bos yang sama setiap minggu. Serang hingga 3 kali sehari.
+Hadiah minggu lalu sesuai peringkat kerusakan; bila bos tidak tumbang, hadiah dibagi dua.	Hadiah minggu lalu sesuai kedudukan kerusakan; bila bos tidak tumbang, hadiah dibagi dua.
+Pasukan Tombak	Pasukan Tombak
+Pasukan Berkuda	Pasukan Berkuda
+Pasukan Panah	Pasukan Panah
+Barisan Tombak	Barisan Tombak
+Barisan Berkuda	Barisan Berkuda
+Barisan Panah	Barisan Panah
+Kerajaan Pagaruyung	Kerajaan Pagaruyung
+Kesultanan Banten	Kesultanan Banten
+Kerajaan Kediri	Kerajaan Kediri
+Kerajaan Bone	Kerajaan Bone
+Kesultanan Banjar	Kesultanan Banjar
+Intai	Intai
+Lihat kekuatan pasti kerajaan selama 24 jam.	Lihat kekuatan pasti kerajaan selama 24 jam.
+Curi Perak	Curi Perak
+Bawa pulang perak (2x hasil urusan).	Bawa pulang perak (2x hasil urusan).
+Sabotase	Sabotase
+Kekuatan kerajaan turun 20% (24 jam).	Kekuatan kerajaan turun 20% (24 jam).
+Musim Kemarau	Musim Kemarau
+Pangan -8%, perak +5%. Kebakaran dan gagal panen lebih sering.	Makanan -8%, perak +5%. Kebakaran dan gagal tuai lebih sering.
+Musim Penghujan	Musim Penghujan
+Pangan +8%, prajurit -4%. Banjir dan wabah lebih sering.	Makanan +8%, askar -4%. Banjir dan wabah lebih sering.
+Si Kilat	Si Kilat
+Bayu Angin	Bayu Angin
+Guntur	Guntur
+Mega Mendung	Mega Mendung
+Rajawali	Rajawali
+Sekar Jagad	Sekar Jagad
+Panji Laras	Panji Laras
+Kuda Lumping	Kuda Lumping
+Andaru	Andaru
+Jaladri	Jaladri
+Kapan kemerdekaan Indonesia diproklamasikan?	Kapan kemerdekaan Indonesia diproklamasikan?
+17 Agustus 1945	17 Agustus 1945
+20 Mei 1908	20 Mei 1908
+28 Oktober 1928	28 Oktober 1928
+10 November 1945	10 November 1945
+Sumpah Pemuda diikrarkan pada tanggal?	Sumpah Pemuda diikrarkan pada tanggal?
+1 Juni 1945	1 Juni 1945
+2 Mei 1922	2 Mei 1922
+Siapa patih Majapahit yang terkenal dengan Sumpah Palapa?	Siapa patih Majapahit yang terkenal dengan Sumpah Palapa?
+Gajah Mada	Gajah Mada
+Ken Arok	Ken Arok
+Hayam Wuruk	Hayam Wuruk
+Raden Wijaya	Raden Wijaya
+Siapa pendiri Kerajaan Majapahit?	Siapa pendiri Kerajaan Majapahit?
+Mpu Sindok	Mpu Sindok
+Raja Majapahit pada masa kejayaannya adalah?	Raja Majapahit pada masa kejayaannya adalah?
+Jayanegara	Jayanegara
+Raden Patah	Raden Patah
+Purnawarman	Purnawarman
+Candi Borobudur dibangun oleh wangsa?	Candi Borobudur dibangun oleh wangsa?
+Syailendra	Syailendra
+Sanjaya	Sanjaya
+Rajasa	Rajasa
+Isyana	Isyana
+Candi Borobudur terletak di?	Candi Borobudur terletak di?
+Magelang, Jawa Tengah	Magelang, Jawa Tengah
+Yogyakarta	Yogyakarta
+Mojokerto, Jawa Timur	Mojokerto, Jawa Timur
+Candi Prambanan adalah candi bercorak?	Candi Prambanan adalah candi bercorak?
+Hindu	Hindu
+Buddha	Buddha
+Islam	Islam
+Konghucu	Konghucu
+Kerajaan Hindu tertua di Indonesia adalah?	Kerajaan Hindu tertua di Indonesia adalah?
+Raja Kutai yang terkenal dari prasasti Yupa adalah?	Raja Kutai yang terkenal dari prasasti Yupa adalah?
+Mulawarman	Mulawarman
+Airlangga	Airlangga
+Raja Tarumanegara yang terkenal adalah?	Raja Tarumanegara yang terkenal adalah?
+Balaputradewa	Balaputradewa
+Kertanegara	Kertanegara
+Pusat Kerajaan Sriwijaya diperkirakan di sekitar?	Pusat Kerajaan Sriwijaya diperkirakan di sekitar?
+Palembang	Palembang
+Jakarta	Jakarta
+Makassar	Makassar
+Banjarmasin	Banjarmasin
+Siapa pendiri Kerajaan Singasari?	Siapa pendiri Kerajaan Singasari?
+Jayabaya	Jayabaya
+Kerajaan Islam pertama di Pulau Jawa adalah?	Kerajaan Islam pertama di Pulau Jawa adalah?
+Demak	Demak
+Mataram Islam	Mataram Islam
+Banten	Banten
+Cirebon	Cirebon
+Sultan pertama Kesultanan Demak adalah?	Sultan pertama Kesultanan Demak adalah?
+Sultan Agung	Sultan Agung
+Sultan Hasanuddin	Sultan Hasanuddin
+Pangeran Diponegoro	Pangeran Diponegoro
+Kerajaan Islam pertama di Nusantara adalah?	Kerajaan Islam pertama di Nusantara adalah?
+Malaka	Malaka
+Siapa yang dijuluki Ayam Jantan dari Timur?	Siapa yang dijuluki Ayam Jantan dari Timur?
+Pattimura	Pattimura
+Teuku Umar	Teuku Umar
+Pangeran Diponegoro memimpin perang yang dikenal sebagai?	Pangeran Diponegoro memimpin perang yang dikenal sebagai?
+Perang Jawa	Perang Jawa
+Perang Padri	Perang Padri
+Perang Aceh	Perang Aceh
+Perang Puputan	Perang Puputan
+Cut Nyak Dien adalah pahlawan dari?	Cut Nyak Dien adalah pahlawan dari?
+Aceh	Aceh
+Sulawesi Selatan	Sulawesi Selatan
+Kapitan Pattimura berjuang di daerah?	Kapitan Pattimura berjuang di daerah?
+Jawa Barat	Jawa Barat
+Hari Pahlawan diperingati setiap tanggal?	Hari Pahlawan diperingati setiap tanggal?
+10 November	10 November
+17 Agustus	17 Agustus
+21 April	21 April
+2 Mei	2 Mei
+Siapa yang dijuluki Bapak Pendidikan Nasional?	Siapa yang dijuluki Bapak Pendidikan Nasional?
+Ki Hajar Dewantara	Ki Hajar Dewantara
+R.A. Kartini	R.A. Kartini
+Mohammad Hatta	Mohammad Hatta
+Dewi Sartika	Dewi Sartika
+R.A. Kartini lahir di?	R.A. Kartini lahir di?
+Jepara	Jepara
+Surabaya	Surabaya
+Bandung	Bandung
+Semarang	Semarang
+Pencipta lagu kebangsaan Indonesia Raya adalah?	Pencipta lagu kebangsaan Indonesia Raya adalah?
+W.R. Supratman	W.R. Supratman
+Ismail Marzuki	Ismail Marzuki
+C. Simanjuntak	C. Simanjuntak
+Ibu Sud	Ibu Sud
+Kitab Negarakertagama ditulis oleh?	Kitab Negarakertagama ditulis oleh?
+Mpu Prapanca	Mpu Prapanca
+Mpu Sedah	Mpu Sedah
+Mpu Kanwa	Mpu Kanwa
+Semboyan Bhinneka Tunggal Ika berasal dari kitab?	Semboyan Bhinneka Tunggal Ika berasal dari kitab?
+Sutasoma	Sutasoma
+Negarakertagama	Negarakertagama
+Arjunawiwaha	Arjunawiwaha
+Pararaton	Pararaton
+Hari Lahir Pancasila diperingati setiap tanggal?	Hari Lahir Pancasila diperingati setiap tanggal?
+1 Juni	1 Juni
+1 Oktober	1 Oktober
+28 Oktober	28 Oktober
+Presiden pertama Republik Indonesia adalah?	Presiden pertama Republik Indonesia adalah?
+Soekarno	Soekarno
+Soeharto	Soeharto
+Sutan Sjahrir	Sutan Sjahrir
+Wakil presiden pertama Republik Indonesia adalah?	Wakil presiden pertama Republik Indonesia adalah?
+Adam Malik	Adam Malik
+Siapa yang mengetik naskah proklamasi?	Siapa yang mengetik naskah proklamasi?
+Sayuti Melik	Sayuti Melik
+Fatmawati	Fatmawati
+Bung Tomo dikenal karena pertempuran di kota?	Bung Tomo dikenal kerana pertempuran di bandar?
+Medan	Medan
+Karapan sapi adalah tradisi dari?	Karapan sapi adalah tradisi dari?
+Madura	Madura
+Lombok	Lombok
+Toraja	Toraja
+Tari Kecak berasal dari?	Tari Kecak berasal dari?
+Jawa Tengah	Jawa Tengah
+Papua	Papua
+Rumah Gadang adalah rumah adat suku?	Rumah Gadang adalah rumah adat suku?
+Minangkabau	Minangkabau
+Batak	Batak
+Dayak	Dayak
+Alat musik angklung berasal dari?	Alat muzik angklung berasal dari?
+Sumatera Barat	Sumatera Barat
+Kesenian Reog berasal dari?	Kesenian Reog berasal dari?
+Ponorogo	Ponorogo
+Banyuwangi	Banyuwangi
+Solo	Solo
+Hewan komodo hidup di provinsi?	Hewan komodo hidup di provinsi?
+Nusa Tenggara Timur	Nusa Tenggara Timur
+Sulawesi Utara	Sulawesi Utara
+Danau Toba terletak di provinsi?	Danau Toba terletak di provinsi?
+Sumatera Utara	Sumatera Utara
+Riau	Riau
+Kepulauan Maluku terkenal sejak dulu sebagai penghasil?	Kepulauan Maluku terkenal sejak dulu sebagai penghasil?
+Rempah-rempah	Rempah-rempah
+Teh	Teh
+Batu bara	Batu bara
+Ibu kota Kerajaan Majapahit diperkirakan berada di?	Ibu bandar Kerajaan Majapahit diperkirakan berada di?
+Trowulan	Trowulan
+Kotagede	Kotagede
+Pajajaran	Pajajaran
+Kartasura	Kartasura
+Ruang Harta	Ruang Harta
+Jebakan	Jebakan
+Arca Penjaga	Arca Penjaga
+Mata Air Suci	Mata Air Suci
+Ruang Relik	Ruang Relik
+Elang Jawa	Elang Jawa
+Peluang berburu +%d%%.	Peluang memburu +%d%%.
+Jalak Bali	Jalak Bali
+Hasil perak +%d%%.	Hasil perak +%d%%.
+Kerbau Bule	Kerbau Bule
+Hasil pangan +%d%%.	Hasil makanan +%d%%.
+Macan Tutul	Macan Tutul
+Kekuatan tempur +%d%%.	Kekuatan tempur +%d%%.
+Kerjakan 30 urusan kota	Laksanakan 30 urusan bandar
+Latih penasihat 10 kali	Latih penasihat 10 kali
+Selamat datang kembali! Paket bantuan dan Semangat Kembali (+30% hasil selama 3 hari) menunggu di Kota.	Selamat datang kembali! Pakej bantuan dan Semangat Kembali (+30% hasil selama 3 hari) menunggu di Bandar.
+Susunan pasukan tidak dikenal.	Susunan pasukan tidak dikenal.
+Susunan pasukan: %s.	Susunan pasukan: %s.
+Menangkan Tahap %d untuk membuka Diplomasi.	Menangkan Peringkat %d untuk membuka Diplomasi.
+Kerajaan tidak dikenal.	Kerajaan tidak dikenal.
+Utusan hari ini sudah habis.	Utusan hari ini sudah habis.
+Hadiah diterima %s. Hubungan kini %d.	Hadiah diterima %s. Hubungan kini %d.
+%s menolak dan mengusir utusan Tuan. Hubungan memburuk.	%s menolak dan mengusir utusan Tuan. Hubungan memburuk.
+%s menyerahkan upeti %d perak. Hubungan memburuk.	%s menyerahkan upeti %d perak. Hubungan memburuk.
+Perjanjian tidak dikenal.	Perjanjian tidak dikenal.
+Perjanjian ini sudah berlaku.	Perjanjian ini sudah berlaku.
+Hubungan harus minimal %d.	Hubungan mesti minimal %d.
+Perjanjian dagang dengan %s: perak +2%%.	Perjanjian dagang dengan %s: perak +2%%.
+%s kini sekutu Tuan: kekuatan tempur +2%%.	%s kini sekutu Tuan: kekuatan tempur +2%%.
+Tidak ada ancaman.	Tidak ada ancaman.
+Tuan membayar %d perak. %s menarik pasukannya.	Tuan membayar %d perak. %s menarik pasukannya.
+Pasukan %s dipukul mundur! -%d prajurit, +30 prestise.	Pasukan %s dipukul mundur! -%d askar, +30 prestise.
+Pasukan Tuan kalah melawan %s. -%d prajurit, perak dijarah.	Pasukan Tuan kalah melawan %s. -%d askar, perak dijarah.
+Misi tidak dikenal.	Misi tidak dikenal.
+Mata-mata hari ini sudah habis.	Mata-mata hari ini sudah habis.
+Tidak ada penasihat yang bisa dikirim.	Tidak ada penasihat yang boleh dihantar.
+%s tertangkap di %s! Hubungan memburuk dan %s tidak bisa bertugas lagi hari ini.	%s tertangkap di %s! Hubungan memburuk dan %s tidak boleh bertugas lagi hari ini.
+%s mengintai %s: kekuatan %d.	%s mengintai %s: kekuatan %d.
+%s mencuri %d perak dari %s.	%s mencuri %d perak dari %s.
+%s menyabotase %s: kekuatannya -20%% selama sehari.	%s menyabotase %s: kekuatannya -20%% selama sehari.
+Tidak ada pemberontakan.	Tidak ada pemberontakan.
+Pemberontakan ditumpas. -%d prajurit, +20 prestise. Rakyat takut, kesetiaan %d.	Pemberontakan ditumpas. -%d askar, +20 prestise. Rakyat takut, kesetiaan %d.
+Pemberontak dibujuk dengan %d pangan. Kesetiaan rakyat %d.	Pemberontak dibujuk dengan %d makanan. Kesetiaan rakyat %d.
+Beli kuda di Kandang Kuda dulu.	Beli kuda di Kandang Kuda dulu.
+Pacuan hari ini sudah selesai. Kembali besok.	Lumba hari ini sudah selesai. Kembali esok.
+%s finis di urutan ke-%d! %s.	%s finis di urutan ke-%d! %s.
+Soal tidak ditemukan.	Soalan tidak ditemukan.
+Soal ini sudah dijawab.	Soalan ini sudah dijawab.
+Benar! %s.	Betul! %s.
+Kurang tepat. Jawaban yang benar: %s.	Kurang tepat. Jawaban yang betul: %s.
+Sempurna, lima benar! +%d emas.	Sempurna, lima betul! +%d emas.
+Menangkan Tahap %d untuk membuka Penjelajahan Candi.	Menangkan Peringkat %d untuk membuka Penjelajahan Candi.
+Penjelajahan masih berlangsung.	Penjelajahan masih berlangsung.
+Batas penjelajahan hari ini sudah habis.	Batas penjelajahan hari ini sudah habis.
+Rombongan memasuki candi kuno.	Rombongan memasuki candi kuno.
+Belum masuk candi.	Belum masuk candi.
+Pintu tidak ada.	Pintu tidak ada.
+Ruang harta! Didapat %s.	Ruang harta! Didapat %s.
+Jebakan panah! Semangat -%d.	Jebakan panah! Semangat -%d.
+Arca penjaga dikalahkan! Didapat Besi Tempa dan prajurit tawanan.	Arca penjaga dikalahkan! Didapat Besi Tempa dan askar tawanan.
+Arca penjaga terlalu kuat. Semangat -%d.	Arca penjaga terlalu kuat. Semangat -%d.
+Mata air suci memulihkan semangat +30.	Mata air suci memulihkan semangat +30.
+Relik kuno ditemukan! Didapat %s.	Relik kuno ditemukan! Didapat %s.
+Semangat habis, rombongan mundur dan separuh harta tertinggal.	Semangat habis, rombongan mundur dan separuh harta tertinggal.
+Buto penjaga candi tumbang! Harta disempurnakan.	Buto penjaga candi tumbang! Harta disempurnakan.
+Buto penjaga candi terlalu kuat. Rombongan mundur dengan separuh harta.	Buto penjaga candi terlalu kuat. Rombongan mundur dengan separuh harta.
+Dibawa pulang: %s.	Dibawa pulang: %s.
+Rombongan keluar dari candi dengan selamat.	Rombongan keluar dari candi dengan selamat.
+Menangkan Tahap %d untuk membuka Besalen.	Menangkan Peringkat %d untuk membuka Besalen.
+Jenis pusaka tidak dikenal.	Jenis pusaka tidak dikenal.
+Bahan kurang: butuh %d %s.	Bahan kurang: butuh %d %s.
+Tidak punya Batu Meteor.	Tidak punya Batu Meteor.
+Gudang pusaka penuh.	Gudang pusaka penuh.
+Empu menempa %s (%s)!	Empu menempa %s (%s)!
+Menangkan Tahap %d untuk memelihara hewan.	Menangkan Peringkat %d untuk memelihara hewan.
+Hewan tidak dikenal.	Hewan tidak dikenal.
+Hewan ini sudah dipelihara.	Hewan ini sudah dipelihara.
+%s kini tinggal di istana!	%s kini tinggal di istana!
+Hewan belum dipelihara.	Hewan belum dipelihara.
+%s menemani Tuan.	%s menemani Tuan.
+Paket bantuan tidak tersedia.	Pakej bantuan tidak tersedia.
+Paket bantuan: %s.	Pakej bantuan: %s.
+Misi tidak tersedia.	Misi tidak tersedia.
+Hadiah misi ini sudah diambil.	Hadiah misi ini sudah diambil.
+Misi kembali selesai: %s.	Misi kembali selesai: %s.
+Kode tidak valid.	Kod tidak valid.
+Kode ini sudah dipakai.	Kod ini sudah digunakan.
+Kode tidak dikenal atau sudah kedaluwarsa.	Kod tidak dikenal atau sudah kedaluwarsa.
+Kode berhasil ditukar: %s.	Kod berjaya ditukar: %s.
+Hadiah Bos Dunia minggu itu sudah diambil.	Hadiah Bos Dunia minggu itu sudah diambil.
+Tuan tidak ikut menyerang Bos Dunia minggu lalu.	Tuan tidak ikut menyerang Bos Dunia minggu lalu.
+Hadiah Bos Dunia (peringkat %d dari %d): %s.	Hadiah Bos Dunia (kedudukan %d dari %d): %s.
+Besalen	Besalen
+Diplomasi	Diplomasi
+Pacuan Kuda	Lumba Kuda
+Kuis Sejarah	Kuiz Sejarah
+Candi	Candi
+Peliharaan	Peliharaan
+Bos Dunia	Bos Dunia
+Butuh kuda	Butuh kuda
+Semangat Kembali	Semangat Kembali
+Semua hasil +30%% · berakhir dalam %s	Semua hasil +30%% · berakhir dalam %s
+Ambil Paket Bantuan	Ambil Pakej Bantuan
+Pemberontakan!	Pemberontakan!
+Rakyat yang kecewa angkat senjata. Semua hasil -20%, sampai pemberontakan berakhir.	Rakyat yang kecewa angkat senjata. Semua hasil -20%, sehingga pemberontakan berakhir.
+Tumpas · %s prajurit	Tumpas · %s askar
+Menumpas Pemberontakan	Menumpas Pemberontakan
+Pemberontak	Pemberontak
+Bujuk · %s pangan	Bujuk · %s makanan
+Serangan %s!	Serangan %s!
+Pasukan musuh di perbatasan. Bila dibiarkan sampai besok, mereka menjarah perak.	Pasukan musuh di perbatasan. Bila dibiarkan sehingga esok, mereka menjarah perak.
+Hadapi	Hadapi
+Bayar Damai	Bayar Damai
+Serangan %s	Serangan %s
+Susunan Pasukan	Susunan Pasukan
+Musuh mengandalkan %s. Tombak unggul atas berkuda, berkuda atas panah, panah atas tombak.	Musuh mengandalkan %s. Tombak unggul atas berkuda, berkuda atas panah, panah atas tombak.
+korban %+d%%	korban %+d%%
+Kode Hadiah	Kod Hadiah
+Masukkan kode	Masukkan kod
+Tukar	Tukar
+Kode dibagikan lewat media sosial dan acara game. Tiap kode hanya bisa dipakai sekali.	Kod dikongsi lewat media sosial dan acara game. Setiap kod hanya boleh digunakan sekali.
+Utusan tersisa %d · mata-mata tersisa %d	Utusan tersisa %d · mata-mata tersisa %d
+Kekuatan Tuan %s · agen terbaik: %s	Kekuatan Tuan %s · agen terbaik: %s
+Dagang	Dagang
+Sekutu	Sekutu
+Hubungan %+d · kekuatan %s	Hubungan %+d · kekuatan %s
+Hadiah · %s	Hadiah · %s
+Minta Upeti	Minta Upeti
+Perjanjian Dagang	Perjanjian Dagang
+Persekutuan	Persekutuan
+Pacuan tersisa hari ini: %d / %d	Lumba tersisa hari ini: %d / %d
+Beli kuda di Kandang Kuda (halaman Penasihat) untuk ikut pacuan.	Beli kuda di Kandang Kuda (halaman Penasihat) untuk ikut lumba.
+Level %d · kecepatan %.2f	Level %d · kelajuan %.2f
+Terpilih	Terpilih
+Peringkat %d: %s	Kedudukan %d: %s
+Mulai Pacuan	Mula Lumba
+Kuis Sejarah Nusantara	Kuiz Sejarah Nusantara
+Soal tersisa hari ini: %d / %d	Soalan tersisa hari ini: %d / %d
+%d. %s	%d. %s
+Benar!	Betul!
+Kurang tepat.	Kurang tepat.
+Penjelajahan Candi	Penjelajahan Candi
+Penjelajahan gratis: %d · tambahan: %d	Penjelajahan percuma: %d · tambahan: %d
+Candi Kuno di Tengah Hutan	Candi Kuno di Tengah Hutan
+Enam ruangan berisi harta, jebakan, dan arca penjaga. Di ruangan terakhir, Buto penjaga candi menunggu.	Enam ruangan berisi harta, jebakan, dan arca penjaga. Di ruangan terakhir, Buto penjaga candi menunggu.
+Kekuatan Buto penjaga: %s · Tuan: %s	Kekuatan Buto penjaga: %s · Tuan: %s
+Masuki Candi	Masuki Candi
+Masuki Candi · %d emas	Masuki Candi · %d emas
+Ruangan %d dari %d	Ruangan %d dari %d
+Semangat %d/%d	Semangat %d/%d
+Harta: %s	Harta: %s
+Pilih pintu	Pilih pintu
+Buto Penjaga Candi	Buto Penjaga Candi
+Keluar Membawa Harta	Keluar Membawa Harta
+Buto Penjaga	Buto Penjaga
+Pusaka di gudang: %d / %d	Pusaka di gudang: %d / %d
+Bahan	Bahan
+%s perak	%s perak
+Biaya tempa: %s	Kos tempa: %s
+Pakai Batu Meteor: ya	Guna Batu Meteor: ya
+Pakai Batu Meteor: tidak	Guna Batu Meteor: tidak
+Epik %d%%, Legenda %d%%	Epik %d%%, Legenda %d%%
+Tempa %s	Tempa %s
+Tempa	Tempa
+Hewan Peliharaan	Hewan Peliharaan
+Menemani Tuan: %s	Menemani Tuan: %s
+· Lv %d/%d	· Lv %d/%d
+Pelihara	Pelihara
+Temani	Temani
+Sedang menemani Tuan	Sedang menemani Tuan
+Pakan · %s	Pakan · %s
+Serangan tersisa %d · berakhir dalam %s	Serangan tersisa %d · berakhir dalam %s
+Minggu lalu Tuan di peringkat %d dari %d penyerang.	Minggu lalu Tuan di kedudukan %d dari %d penyerang.
+Ambil Hadiah Bos	Ambil Hadiah Bos
+Buto Ijo Raksasa	Buto Ijo Raksasa
+Nyawa %s / %s	Nyawa %s / %s
+Bos sudah tumbang minggu ini! Serangan tetap menambah peringkat.	Bos sudah tumbang minggu ini! Serangan tetap menambah kedudukan.
+Kerusakan Tuan %s · peringkat %d dari %d	Kerusakan Tuan %s · kedudukan %d dari %d
+Serang Bos	Serang Bos
+-%s NYAWA	-%s NYAWA
+Kerusakan %s untuk Bos Dunia.	Kerusakan %s untuk Bos Dunia.
+Penyerang Teratas	Penyerang Teratas
+%d. %s — %s	%d. %s — %s
+JUARA %d!	JUARA %d!
+PERINGKAT %d	KEDUDUKAN %d
+Bangun kerajaanmu di Nusantara	Bangun kerajaanmu di Nusantara
+Perang kolosal dengan pasukan tombak, berkuda, dan panah	Perang kolosal dengan pasukan tombak, berkuda, dan panah
+Rekrut penasihat legendaris Nusantara	Rekrut penasihat legendaris Nusantara
+Taklukkan wilayah di Peta Nusantara	Taklukkan wilayah di Peta Nusantara
+Jelajahi candi kuno dan kalahkan Buto penjaganya	Jelajahi candi kuno dan kalahkan Buto penjaganya
+Berburu, berpacu kuda, dan tonton wayang	Memburu, berpacu kuda, dan tonton wayang
+Pasar Malam Dibuka!	Pasar Malam Dibuka!
+Pedagang keliling menggelar dagangan langka tiap 4 jam. Jangan lupa menawar!	Peniaga keliling menggelar dagangan langka setiap 4 jam. Jangan lupa menawar!
+Tetapkan kebijakan kota dan tangani bencana yang melanda negeri.	Tetapkan dasar bandar dan tangani bencana yang melanda negeri.
+Tanam jahe, kunyit, melati, dan rempah lain untuk sumber daya dan item.	Tanam jahe, kunyit, melati, dan rempah lain untuk sumber daya dan item.
+Perburuan Dibuka!	Perburuan Dibuka!
+Ajak penasihat berburu rusa, celeng, sampai harimau tiga kali sehari.	Ajak penasihat memburu rusa, celeng, sehingga harimau tiga kali sehari.
+Pelihara elang, jalak, kerbau, atau macan tutul untuk bonus kerajaan.	Pelihara elang, jalak, kerbau, atau macan tutul untuk bonus kerajaan.
+Para pujangga siap meneliti ilmu untuk bonus permanen.	Para pujangga siap meneliti ilmu untuk bonus permanen.
+Diplomasi Dibuka!	Diplomasi Dibuka!
+Kerajaan tetangga mengirim utusan. Jalin persahabatan, minta upeti, atau kirim mata-mata.	Kerajaan tetangga menghantar utusan. Jalin persahabatan, minta upeti, atau hantar mata-mata.
+Candi Kuno Ditemukan!	Candi Kuno Ditemukan!
+Jelajahi candi kuno, kumpulkan harta dan bahan tempa, lalu kalahkan Buto penjaganya.	Jelajahi candi kuno, kumpulkan harta dan bahan tempa, lalu kalahkan Buto penjaganya.
+Pertunjukan Wayang	Pertunjukan Wayang
+Sang dalang siap membawakan cerita rakyat Nusantara. Tamatkan lakon untuk hadiah dan bingkai.	Sang dalang siap membawakan cerita rakyat Nusantara. Tamatkan lakon untuk hadiah dan bingkai.
+Upacara Kerajaan	Upacara Kerajaan
+Gelar satu upacara besar tiap bulan untuk berkah sehari penuh bagi seluruh kerajaan.	Gelar satu upacara besar setiap bulan untuk berkah sehari penuh bagi seluruh kerajaan.
+Bingkai Batu Malin	Bingkai Batu Malin
+Bingkai Tangkuban Parahu	Bingkai Tangkuban Parahu
+Bingkai Seribu Candi	Bingkai Seribu Candi
+Bingkai Timun Emas	Bingkai Timun Emas
+Satu babak baru bisa ditonton setiap hari. Tiap babak berhadiah perak.	Satu babak baharu boleh ditonton setiap hari. Setiap babak berhadiah perak.
+Tamatkan sebuah lakon untuk emas dan bingkai profil khusus.	Tamatkan sebuah lakon untuk emas dan bingkai profil khusus.
+Satu upacara bisa digelar setiap 30 hari. Berkahnya berlaku 24 jam untuk seluruh kerajaan.	Satu upacara boleh digelar setiap 30 hari. Berkahnya berlaku 24 jam untuk seluruh kerajaan.
+Lencana dikumpulkan dari kegiatan selama satu musim (91 hari). Lencana yang didapat tetap tersimpan di profil.	Lencana dikumpulkan dari kegiatan selama satu musim (91 hari). Lencana yang didapat tetap tersimpan di profil.
+Tiap lencana baru memberi emas dan tampil saat pemain lain mengunjungi kota Tuan.	Setiap lencana baharu memberi emas dan dipapar saat pemain lain mengunjungi bandar Tuan.
+Daftarkan diri Senin sampai Sabtu. Pada hari Minggu 16 pesilat terkuat yang mendaftar bertanding.	Daftarkan diri Senin sehingga Sabtu. Pada hari Minggu 16 pesilat terkuat yang mendaftar bertanding.
+Hadiah sesuai babak tercapai, diambil setelah hasil diumumkan.	Hadiah sesuai babak tercapai, diambil setelah hasil diumumkan.
+Ekonomi	Ekonomi
+Petualangan	Petualangan
+Dunia	Dunia
+Malin Kundang	Malin Kundang
+Di pesisir Minangkabau hiduplah seorang janda dan anaknya, Malin Kundang. Malin tumbuh cerdas dan bertekad mengubah nasib. Suatu hari ia berpamitan untuk merantau dengan kapal dagang.	Di pesisir Minangkabau hiduplah seorang janda dan anaknya, Malin Kundang. Malin tumbuh cerdas dan bertekad mengubah nasib. Suatu hari ia berpamitan untuk merantau dengan kapal dagang.
+Bertahun-tahun di rantau, Malin menjadi saudagar kaya dan menikahi putri bangsawan. Kapalnya yang megah suatu hari berlabuh di kampung halamannya.	Bertahun-tahun di rantau, Malin menjadi saudagar kaya dan menikahi putri bangsawan. Kapalnya yang megah suatu hari berlabuh di kampung halamannya.
+Ibunya berlari menyambut, tetapi Malin malu dan menyangkal ibunya sendiri. Sang ibu berdoa dengan hati hancur. Badai datang, dan Malin berubah menjadi batu di tepi pantai. Pesannya: hormati orang tua.	Ibunya berlari menyambut, tetapi Malin malu dan menyangkal ibunya sendiri. Sang ibu berdoa dengan hati hancur. Badai datang, dan Malin berubah menjadi batu di tepi pantai. Pesannya: hormati orang tua.
+Sangkuriang	Sangkuriang
+Dayang Sumbi hidup bersama putranya, Sangkuriang. Karena marah, Dayang Sumbi memukul kepala Sangkuriang dan mengusirnya. Sangkuriang pun mengembara jauh.	Dayang Sumbi hidup bersama putranya, Sangkuriang. Kerana marah, Dayang Sumbi memukul kepala Sangkuriang dan mengusirnya. Sangkuriang pun mengembara jauh.
+Bertahun-tahun kemudian Sangkuriang kembali dan jatuh cinta pada seorang perempuan cantik, tanpa tahu itu ibunya sendiri. Dayang Sumbi mengenali bekas luka di kepala Sangkuriang.	Bertahun-tahun kemudian Sangkuriang kembali dan jatuh cinta pada seorang perempuan cantik, tanpa tahu itu ibunya sendiri. Dayang Sumbi mengenali bekas luka di kepala Sangkuriang.
+Untuk menolak, Dayang Sumbi meminta danau dan perahu besar selesai dalam satu malam. Saat hampir rampung, Dayang Sumbi membuat fajar seolah tiba. Sangkuriang murka dan menendang perahunya, yang menjadi Gunung Tangkuban Parahu.	Untuk menolak, Dayang Sumbi meminta danau dan perahu besar selesai dalam satu malam. Saat hampir rampung, Dayang Sumbi membuat fajar seolah tiba. Sangkuriang murka dan menendang perahunya, yang menjadi Gunung Tangkuban Parahu.
+Roro Jonggrang	Roro Jonggrang
+Bandung Bondowoso menaklukkan Kerajaan Prambanan dan ingin memperistri putri raja, Roro Jonggrang yang jelita.	Bandung Bondowoso menaklukkan Kerajaan Prambanan dan ingin memperistri putri raja, Roro Jonggrang yang jelita.
+Roro Jonggrang tidak ingin menikah dengannya, lalu meminta syarat: seribu candi dalam satu malam. Dibantu makhluk halus, Bandung Bondowoso hampir menyelesaikannya.	Roro Jonggrang tidak ingin berkahwin dengannya, lalu meminta syarat: seribu candi dalam satu malam. Dibantu makhluk halus, Bandung Bondowoso hampir menyelesaikannya.
+Roro Jonggrang membangunkan para gadis desa untuk menumbuk padi agar ayam berkokok. Candi baru berjumlah 999. Bandung Bondowoso murka dan mengubah Roro Jonggrang menjadi arca, yang menurut cerita ada di kompleks Prambanan.	Roro Jonggrang membangunkan para gadis kampung untuk menumbuk padi agar ayam berkokok. Candi baharu berjumlah 999. Bandung Bondowoso murka dan mengubah Roro Jonggrang menjadi arca, yang menurut cerita ada di kompleks Prambanan.
+Timun Mas	Timun Mas
+Mbok Srini mendambakan anak. Raksasa memberinya biji timun dengan syarat anak itu diserahkan saat dewasa. Dari timun emas lahirlah bayi perempuan, Timun Mas.	Mbok Srini mendambakan anak. Raksasa memberinya biji timun dengan syarat anak itu diserahkan saat dewasa. Dari timun emas lahirlah bayi perempuan, Timun Mas.
+Saat raksasa datang menagih, Mbok Srini memberi Timun Mas empat bungkusan dari pertapa: biji timun, jarum, garam, dan terasi. Timun Mas pun berlari.	Saat raksasa datang menagih, Mbok Srini memberi Timun Mas empat bungkusan dari pertapa: biji timun, jarum, garam, dan terasi. Timun Mas pun berlari.
+Biji timun menjadi ladang timun, jarum menjadi hutan bambu, garam menjadi lautan, dan terasi menjadi lumpur mendidih yang menenggelamkan raksasa. Timun Mas selamat berkat kecerdikan dan keberaniannya.	Biji timun menjadi ladang timun, jarum menjadi hutan bambu, garam menjadi lautan, dan terasi menjadi lumpur mendidih yang menenggelamkan raksasa. Timun Mas selamat berkat kecerdikan dan keberaniannya.
+Sekaten	Sekaten
+Perayaan rakyat sepekan dengan gamelan pusaka. Semua hasil naik 10% (sehari).	Perayaan rakyat sepekan dengan gamelan pusaka. Semua hasil naik 10% (sehari).
+Grebeg	Grebeg
+Gunungan hasil bumi dibagikan ke rakyat. Pangan +15%, perak +5%, kesetiaan +10.	Gunungan hasil bumi dikongsi ke rakyat. Makanan +15%, perak +5%, kesetiaan +10.
+Labuhan	Labuhan
+Sesaji dilarung ke laut memohon keselamatan. Kekuatan tempur +5%, prajurit +10%.	Sesaji dilarung ke laut memohon keselamatan. Kekuatan tempur +5%, askar +10%.
+Senopati	Senopati
+Tumenggung	Tumenggung
+Pemburu Ulung	Pemburu Ulung
+Joki Juara	Joki Juara
+Cendekia Nusantara	Cendekia Nusantara
+Penakluk Candi	Penakluk Candi
+Diplomat Ulung	Diplomat Ulung
+Empu Pusaka	Empu Pusaka
+Panglima Perang	Panglima Perang
+Penikmat Wayang	Penikmat Wayang
+Babak 16 Besar	Babak 16 Besar
+Juara	Juara
+Menangkan Tahap %d untuk menonton wayang.	Menangkan Peringkat %d untuk menonton wayang.
+Lakon tidak dikenal.	Lakon tidak dikenal.
+Lakon ini sudah tamat.	Lakon ini sudah tamat.
+Sang dalang beristirahat. Babak berikutnya besok.	Sang dalang beristirahat. Babak seterusnya esok.
+Lakon %s tamat! %s, bingkai baru terbuka.	Lakon %s tamat! %s, bingkai baharu terbuka.
+Babak %d %s: %s.	Babak %d %s: %s.
+Menangkan Tahap %d untuk menggelar upacara.	Menangkan Peringkat %d untuk menggelar upacara.
+Upacara tidak dikenal.	Upacara tidak dikenal.
+Upacara berikutnya bisa digelar dalam %d hari.	Upacara seterusnya boleh digelar dalam %d hari.
+Upacara %s digelar! Berkah berlaku 24 jam.	Upacara %s digelar! Berkah berlaku 24 jam.
+hadiah VIP	hadiah VIP
+kiriman besan	kiriman besan
+kapal %s	kapal %s
+paket bantuan	pakej bantuan
+Belum ada yang bisa diambil. Kembali nanti, Tuan.	Belum ada yang boleh diambil. Kembali nanti, Tuan.
+Diambil: %s.	Diambil: %s.
+Hadiah turnamen minggu itu sudah diambil.	Hadiah turnamen minggu itu sudah diambil.
+Tuan tidak ikut turnamen minggu itu.	Tuan tidak ikut turnamen minggu itu.
+Hadiah Turnamen Silat (%s): %s.	Hadiah Turnamen Silat (%s): %s.
+Lencana baru: %s! +%d emas	Lencana baharu: %s! +%d emas
+Tampilkan Semua Penasihat (%d)	Tampilkan Semua Penasihat (%d)
+Gelar %s (+%d%% atribut)	Gelar %s (+%d%% atribut)
+Belum bergelar	Belum bergelar
+%s di %d tugas (%d)	%s di %d tugas (%d)
+Lencana (%d)	Lencana (%d)
+Ambil Semua Harian (%d)	Ambil Semua Harian (%d)
+Ambil Semua Harian	Ambil Semua Harian
+Fitur berikutnya di tab ini terbuka di Tahap %d.	Fitur seterusnya di tab ini terbuka di Peringkat %d.
+Isi alamat server di Pengaturan untuk membuka fitur online.	Isi alamat pelayan di Tetapan untuk membuka fitur dalam talian.
+Turnamen Online	Turnamen Dalam talian
+Wayang	Wayang
+Upacara	Upacara
+Lencana	Lencana
+Babak baru siap ditonton!	Babak baharu siap ditonton!
+Babak berikutnya besok.	Babak seterusnya esok.
+Cerita rakyat %s · babak %d/%d	Cerita rakyat %s · babak %d/%d
+Tonton Babak %d	Tonton Babak %d
+Tamat	Tamat
+Baca Ulang	Baca Ulang
+Babak %d	Babak %d
+Seluruh babak	Seluruh babak
+Berkah %s berlaku %s lagi	Berkah %s berlaku %s lagi
+Upacara berikutnya dalam %d hari	Upacara seterusnya dalam %d hari
+Upacara bisa digelar sekarang	Upacara boleh digelar sekarang
+Berlangsung	Berlangsung
+Gelar	Gelar
+Lencana Musim	Lencana Musim
+Musim %d · berakhir dalam %d hari	Musim %d · berakhir dalam %d hari
+Didapat! +%d emas	Didapat! +%d emas
+Album Lencana (%d)	Album Lencana (%d)
+Belum ada lencana. Lencana yang didapat tampil di profil dan saat kota Tuan dikunjungi.	Belum ada lencana. Lencana yang didapat dipapar di profil dan saat bandar Tuan dikunjungi.
+Musim %d	Musim %d
+Turnamen Silat Online	Turnamen Silat Dalam talian
+%d pendaftar · hasil diumumkan hari Minggu	%d pendaftar · hasil diumumkan hari Minggu
+Hasil turnamen minggu ini	Hasil turnamen minggu ini
+Minggu lalu Tuan mencapai %s.	Minggu lalu Tuan mencapai %s.
+Ambil Hadiah Turnamen	Ambil Hadiah Turnamen
+Daftarkan diri sebelum hari Minggu. 16 pesilat terkuat yang mendaftar akan bertanding.	Daftarkan diri sebelum hari Minggu. 16 pesilat terkuat yang mendaftar akan bertanding.
+Sudah Terdaftar	Sudah Terdaftar
+Daftar Turnamen	Daftar Turnamen
+Tuan terdaftar di turnamen minggu ini!	Tuan terdaftar di turnamen minggu ini!
+Peserta teratas: %s	Peserta teratas: %s
+Peserta kurang dari dua. Turnamen minggu ini batal.	Peserta kurang dari dua. Turnamen minggu ini batal.
+Tuan mencapai %s!	Tuan mencapai %s!
+%s vs %s → %s	%s vs %s → %s
+(bye)	(bye)
+Selamat datang, Tuan! Saya Sekar Pandita, penasihat Anda. Di atas ini sumber daya Anda: Perak, Pangan, Prajurit, dan Emas.	Selamat datang, Tuan! Saya Sekar Pandita, penasihat Anda. Di atas ini sumber daya Anda: Perak, Makanan, Askar, dan Emas.
+Rakyat mengirim surat sambutan berisi emas dan tiket rekrut. Buka Surat lalu ketuk \"Ambil\".	Rakyat menghantar surat sambutan berisi emas dan tiket rekrut. Buka Surat lalu ketik \"Ambil\".
+Bingkai Sumpah Palapa	Bingkai Sumpah Palapa
+Bingkai Perang Jawa	Bingkai Perang Jawa
+Bingkai Jalur Rempah	Bingkai Jalur Rempah
+Tiap bulan ada acara bertema sejarah Nusantara dengan lima tugas.	Setiap bulan ada acara bertema sejarah Nusantara dengan lima tugas.
+Selesaikan semua tugas untuk emas, kostum penasihat, dan bingkai profil khusus acara itu.	Selesaikan semua tugas untuk emas, kostum penasihat, dan bingkai profil khusus acara itu.
+Surat dari istana dan dari pengelola game: pengumuman, hadiah, dan kompensasi.	Surat dari istana dan dari pengelola game: pengumuman, hadiah, dan kompensasi.
+Ambil hadiah sebelum surat kedaluwarsa.	Ambil hadiah sebelum surat kedaluwarsa.
+Kostum mengganti tampilan penasihat di seluruh game tanpa mengubah atributnya.	Kostum menukar paparan penasihat di seluruh game tanpa mengubah atributnya.
+Sumpah Palapa	Sumpah Palapa
+Gajah Mada bersumpah tidak akan menikmati palapa sebelum Nusantara bersatu. Bantu sang Mahapatih menyatukan negeri!	Gajah Mada bersumpah tidak akan menikmati palapa sebelum Nusantara bersatu. Bantu sang Mahapatih menyatukan negeri!
+Menangkan 30 tahap kampanye	Menangkan 30 peringkat kampanye
+Selesaikan 10 ekspedisi	Selesaikan 10 ekspedisi
+Kirim 15 utusan diplomasi	Hantar 15 utusan diplomasi
+Taklukkan 1 wilayah di Peta Nusantara	Taklukkan 1 wilayah di Peta Nusantara
+Latih penasihat 60 kali	Latih penasihat 60 kali
+Pangeran Diponegoro memimpin perlawanan dari Goa Selarong. Kumpulkan pasukan dan siasat untuk membantunya.	Pangeran Diponegoro memimpin perlawanan dari Goa Selarong. Kumpulkan pasukan dan siasat untuk membantunya.
+Bertempur 40 kali	Bertempur 40 kali
+Berburu 20 kali	Memburu 20 kali
+Kirim 10 mata-mata	Hantar 10 mata-mata
+Tempa 3 pusaka di Besalen	Tempa 3 pusaka di Besalen
+Taklukkan 10 lantai Menara Ujian	Taklukkan 10 tingkat Menara Ujian
+Jalur Rempah	Jalur Rempah
+Kapal-kapal dagang dari berbagai bangsa singgah di bandar Nusantara mencari cengkeh dan pala. Ramaikan jalur rempah!	Kapal-kapal dagang dari berbagai bangsa singgah di bandar Nusantara mencari cengkeh dan pala. Ramaikan jalur rempah!
+Berlayarkan kapal dagang 15 kali	Berlayarkan kapal dagang 15 kali
+Beli 10 dagangan di Pasar Malam	Beli 10 dagangan di Pasar Malam
+Panen 20 petak kebun	Tuai 20 petak kebun
+Jawab benar 20 soal kuis	Jawab betul 20 soalan kuiz
+Ikuti 15 pacuan kuda	Ikuti 15 lumba kuda
+Zirah Emas	Zirah Emas
+Busana Batik Parang	Busana Batik Parang
+Busana Merah Kerajaan	Busana Merah Kerajaan
+Zirah Malam	Zirah Malam
+Kebaya Putih	Kebaya Putih
+Selamat Datang, Tuan!	Selamat Datang, Tuan!
+Rakyat menyambut kepala desa baru dengan suka cita. Terimalah bekal ini untuk membangun negeri.	Rakyat menyambut ketua kampung baharu dengan suka cita. Terimalah bekal ini untuk membangun negeri.
+Rakyat Merindukan Tuan	Rakyat Merindukan Tuan
+Selama Tuan pergi, rakyat menyiapkan bekal agar kerajaan cepat bangkit kembali.	Selama Tuan pergi, rakyat menyiapkan bekal agar kerajaan cepat bangkit kembali.
+Hadiah tugas ini sudah diambil.	Hadiah tugas ini sudah diambil.
+Tugas belum selesai.	Tugas belum selesai.
+Tugas acara selesai: %s.	Tugas acara selesai: %s.
+Hadiah akhir acara sudah diambil.	Hadiah akhir acara sudah diambil.
+Selesaikan semua tugas acara dulu.	Selesaikan semua tugas acara dulu.
+Acara %s tuntas! +%d emas, kostum %s, dan bingkai baru.	Acara %s tuntas! +%d emas, kostum %s, dan bingkai baharu.
+Kostum tidak dikenal.	Kostum tidak dikenal.
+Kostum ini sudah dimiliki.	Kostum ini sudah dimiliki.
+Kostum ini hadiah acara bulanan.	Kostum ini hadiah acara bulanan.
+Kostum %s didapat!	Kostum %s didapat!
+Busana asli dipakai kembali.	Busana asli digunakan kembali.
+Kostum belum dimiliki.	Kostum belum dimiliki.
+Kostum ini bukan untuk penasihat itu.	Kostum ini bukan untuk penasihat itu.
+%s kini memakai %s.	%s kini menggunakan %s.
+Hadiah surat ini sudah diambil.	Hadiah surat ini sudah diambil.
+Isi surat diterima: %s.	Isi surat diterima: %s.
+Surat tidak ditemukan.	Surat tidak ditemukan.
+Tahap dilompati ke %d.	Peringkat dilompati ke %d.
+Sumber daya uji ditambahkan.	Sumber daya uji ditambahkan.
+Bagikan statistik anonim	Kongsi statistik anonim
+Sekali sehari kirim angka ringkas (sesi, menit, tahap, jabatan, jumlah aksi) dengan ID acak ke server pengembang untuk memperbaiki game. Tanpa nama, akun, atau isi chat. Mati sejak awal.	Sekali sehari hantar angka ringkas (sesi, minit, peringkat, jawatan, jumlah aksi) dengan ID acak ke pelayan pengembang untuk memperbaiki game. Tanpa nama, akaun, atau isi chat. Mati sejak awal.
+Uji Cepat (build debug)	Uji Cepat (build debug)
+Jam game maju %d jam %d menit dari jam HP.	Jam game maju %d jam %d minit dari jam HP.
++10 Tahap	+10 Peringkat
++Sumber Daya	+Sumber Daya
+Maju 1 Jam	Maju 1 Jam
+Jam game maju 1 jam.	Jam game maju 1 jam.
+Maju 1 Hari	Maju 1 Hari
+Jam game maju 1 hari.	Jam game maju 1 hari.
+Acara: %s	Acara: %s
+Surat	Surat
+Lemari Busana	Lemari Busana
+Acara Sejarah	Acara Sejarah
+%s · berakhir dalam %d hari	%s · berakhir dalam %d hari
+Hadiah Akhir	Hadiah Akhir
+Kostum %s untuk %s, bingkai profil acara, dan +%d emas.	Kostum %s untuk %s, bingkai profil acara, dan +%d emas.
+Ambil	Ambil
+Kotak Surat	Kotak Surat
+%d surat · %d hadiah belum diambil	%d surat · %d hadiah belum diambil
+Belum ada surat. Surat dari istana dan pengumuman pengembang akan muncul di sini.	Belum ada surat. Surat dari istana dan pengumuman pengembang akan muncul di sini.
+Kostum hanya mengubah tampilan, bukan atribut.	Kostum hanya mengubah paparan, bukan atribut.
+Sedang dipakai	Sedang digunakan
+Dimiliki	Dimiliki
+%d emas	%d emas
+Hadiah akhir acara %s	Hadiah akhir acara %s
+Penasihat ini belum direkrut.	Penasihat ini belum direkrut.
+Kadipaten di Tepi Samudra	Kadipaten di Tepi Samudra
+Raja menganugerahkan sebuah kadipaten kepada Tuan. Namun bajak laut menguasai bandarnya.	Raja menganugerahkan sebuah kadipaten kepada Tuan. Namun bajak laut menguasai bandarnya.
+Raja Bajak Laut Selat bersembunyi di benteng karang. Kita butuh armada dan pasukan terbaik.	Raja Bajak Laut Selat bersembunyi di benteng karang. Kita butuh armada dan pasukan terbaik.
+Kadipaten yang makmur butuh pemimpin muda yang cakap. Didiklah putra-putri istana menjadi pewaris.	Kadipaten yang makmur butuh pemimpin muda yang cakap. Didiklah putra-putri istana menjadi pewaris.
+Kalahkan Raja Bajak Laut Selat: Tahap 80	Kalahkan Raja Bajak Laut Selat: Peringkat 80
+Menjadi Adipati	Menjadi Adipati
+Angkat seorang anak menjadi pewaris	Angkat seorang anak menjadi pewaris
+Masak 10 hidangan di Dapur Nusantara	Masak 10 hidangan di Dapur Nusantara
+Kesultanan Rempah	Kesultanan Rempah
+Para saudagar memohon perlindungan Tuan. Kesultanan yang kuat akan menjaga jalur rempah.	Para saudagar memohon perlindungan Tuan. Kesultanan yang kuat akan menjaga jalur rempah.
+Datu Gunung Berapi menghimpun pasukan di pedalaman. Ia ingin merebut gelar Sultan dari Tuan!	Datu Gunung Berapi menghimpun pasukan di pedalaman. Ia ingin merebut gelar Sultan dari Tuan!
+Taklukkan Datu Gunung Berapi: Tahap 95	Taklukkan Datu Gunung Berapi: Peringkat 95
+Menjadi Sultan	Menjadi Sultan
+Kuasai 8 wilayah di Peta Nusantara	Kuasai 8 wilayah di Peta Nusantara
+Capai lantai 40 Menara Ujian	Capai tingkat 40 Menara Ujian
+Maharaja Nusantara	Maharaja Nusantara
+Ramalan kuno berkata: ketika seorang pemimpin menyatukan seribu pulau, zaman keemasan akan tiba.	Ramalan kuno berkata: ketika seorang pemimpin menyatukan seribu pulau, zaman keemasan akan tiba.
+Sumpah Palapa hampir terwujud, Tuan. Hanya Ratu Kegelapan Laut Selatan yang tersisa.	Sumpah Palapa hampir terwujud, Tuan. Hanya Ratu Kegelapan Laut Selatan yang tersisa.
+Bersama kalian semua, akan kusatukan Nusantara. Bukan dengan rasa takut, melainkan dengan keadilan.	Bersama kalian semua, akan kusatukan Nusantara. Bukan dengan rasa takut, melainkan dengan keadilan.
+Kalahkan Ratu Kegelapan Laut Selatan: Tahap 110	Kalahkan Ratu Kegelapan Laut Selatan: Peringkat 110
+Menjadi Maharaja	Menjadi Maharaja
+Miliki 3 pewaris	Miliki 3 pewaris
+Capai kekuatan 2.000.000	Capai kekuatan 2.000.000
+Pemersatu Nusantara	Pemersatu Nusantara
+Bingkai Juara Musim	Bingkai Juara Musim
+Bingkai Musim Aliansi	Bingkai Musim Pakatan
+Anak dewasa berbakat 3 ke atas bisa diangkat menjadi penasihat junior.	Anak dewasa berbakat 3 ke atas boleh diangkat menjadi penasihat junior.
+Atribut pewaris mengikuti bakat dan ibunya; pewaris bisa dilatih, diberi bintang, dan dikirim bertugas seperti penasihat lain.	Atribut pewaris mengikuti bakat dan ibunya; pewaris boleh dilatih, diberi bintang, dan dihantar bertugas seperti penasihat lain.
+Masak hidangan khas daerah tiga kali sehari. Ketuk \"Aduk!\" saat penanda ada di zona emas.	Masak hidangan khas daerah tiga kali sehari. Ketik \"Aduk!\" saat penanda ada di zona emas.
+Makin tepat adukan, makin kuat berkahnya. Satu berkah hidangan berlaku 4 jam; memasak lagi menggantinya.	Makin tepat adukan, makin kuat berkahnya. Satu berkah hidangan berlaku 4 jam; memasak lagi menggantinya.
+Liga 4 minggu antaraliansi. Poin dari serangan Perang Wilayah dan Bos Dunia anggota aliansi.	Liga 4 minggu antaraliansi. Poin dari serangan Perang Wilayah dan Bos Dunia ahli pakatan.
+Anggota 3 aliansi teratas mendapat emas, item, dan bingkai musim setelah musim berakhir.	Ahli 3 pakatan teratas mendapat emas, item, dan bingkai musim setelah musim berakhir.
+Jual item kepada pemain lain dengan perak. Batas 5 dagangan per hari, pajak 10%.	Jual item kepada pemain lain dengan perak. Batas 5 dagangan per hari, cukai 10%.
+Perak hasil penjualan, dagangan yang ditarik, dan dagangan yang tidak laku 3 hari dikirim lewat Kotak Surat.	Perak hasil penjualan, dagangan yang ditarik, dan dagangan yang tidak laku 3 hari dihantar lewat Kotak Surat.
+Bagikan kode undangan Tuan. Pemain baru memasukkan kode itu dalam 7 hari pertama.	Kongsi kod jemputan Tuan. Pemain baharu memasukkan kod itu dalam 7 hari pertama.
+Saat teman mencapai Tahap 10, Tuan dan teman sama-sama mendapat 100 emas dan 2 Tiket Rekrut lewat Kotak Surat.	Saat rakan mencapai Peringkat 10, Tuan dan rakan sama-sama mendapat 100 emas dan 2 Tiket Rekrut lewat Kotak Surat.
+Raja Bajak Laut Selat	Raja Bajak Laut Selat
+Panglima Topeng Besi	Panglima Topeng Besi
+Datu Gunung Berapi	Datu Gunung Berapi
+Ratu Kegelapan Laut Selatan	Ratu Kegelapan Laut Selatan
+Raksasa Hutan Larangan	Raksasa Hutan Larangan
+Naga Laut Banda	Naga Laut Banda
+Kementerian Agama Republik Indonesia dibentuk.	Kementerian Agama Republik Indonesia dibentuk.
+Ibu kota Republik Indonesia dipindahkan sementara dari Jakarta ke Yogyakarta.	Ibu bandar Republik Indonesia dipindahkan sementara dari Jakarta ke Yogyakarta.
+Sultan Hasanuddin, Ayam Jantan dari Timur, lahir di Gowa.	Sultan Hasanuddin, Ayam Jantan dari Timur, lahir di Gowa.
+Jenderal Sudirman, panglima besar pertama TNI, lahir di Purbalingga.	Jenderal Sudirman, panglima besar pertama TNI, lahir di Purbalingga.
+Jenderal Sudirman wafat di Magelang setelah memimpin perang gerilya.	Jenderal Sudirman wafat di Magelang setelah memimpin perang gerilya.
+Persatuan Wartawan Indonesia berdiri; tanggal ini diperingati sebagai Hari Pers Nasional.	Persatuan Wartawan Indonesia berdiri; tanggal ini diperingati sebagai Hari Pers Nasional.
+Teuku Umar, pahlawan Aceh, gugur di Meulaboh.	Teuku Umar, pahlawan Aceh, gugur di Meulaboh.
+Tentara PETA di Blitar yang dipimpin Supriyadi memberontak melawan Jepang.	Tentara PETA di Blitar yang dipimpin Supriyadi memberontak melawan Jepang.
+Pemugaran besar Candi Borobudur selesai dan diresmikan.	Pemugaran besar Candi Borobudur selesai dan diresmikan.
+Serangan Umum 1 Maret: pasukan Republik menduduki Yogyakarta selama enam jam.	Serangan Umum 1 Maret: pasukan Republik menduduki Yogyakarta selama enam jam.
+Taman Nasional Komodo didirikan untuk melindungi komodo.	Taman Nasional Komodo didirikan untuk melindungi komodo.
+Belanda menyerah kepada Jepang di Kalijati, Subang.	Belanda menyerah kepada Jepang di Kalijati, Subang.
+W.R. Supratman, pencipta lagu Indonesia Raya, lahir; kini Hari Musik Nasional.	W.R. Supratman, pencipta lagu Indonesia Raya, lahir; kini Hari Muzik Nasional.
+Kongsi dagang Belanda VOC didirikan, awal perebutan rempah Nusantara.	Kongsi dagang Belanda VOC didirikan, awal perebutan rempah Nusantara.
+Bandung Lautan Api: warga membakar Bandung selatan agar tidak dipakai Sekutu.	Bandung Lautan Api: warga membakar Bandung selatan agar tidak digunakan Sekutu.
+Pengambilan gambar pertama film Darah dan Doa; kini Hari Film Nasional.	Pengambilan gambar pertama film Darah dan Doa; kini Hari Film Nasional.
+Angkatan Udara Republik Indonesia dibentuk.	Angkatan Udara Republik Indonesia dibentuk.
+Gunung Tambora di Sumbawa meletus, letusan terbesar dalam sejarah tercatat.	Gunung Tambora di Sumbawa meletus, letusan terbesar dalam sejarah tercatat.
+Konferensi Asia Afrika dibuka di Gedung Merdeka, Bandung.	Konferensi Asia Afrika dibuka di Gedung Merdeka, Bandung.
+R.A. Kartini, pelopor pendidikan perempuan, lahir di Jepara.	R.A. Kartini, pelopor pendidikan perempuan, lahir di Jepara.
+Penyair Chairil Anwar wafat; tanggal ini dikenang sebagai Hari Puisi.	Penyair Chairil Anwar wafat; tanggal ini dikenang sebagai Hari Puisi.
+Ki Hajar Dewantara, bapak pendidikan nasional, lahir di Yogyakarta.	Ki Hajar Dewantara, bapak pendidikan nasional, lahir di Yogyakarta.
+Pattimura memimpin rakyat Saparua merebut Benteng Duurstede.	Pattimura memimpin rakyat Saparua merebut Benteng Duurstede.
+Budi Utomo berdiri; kini diperingati sebagai Hari Kebangkitan Nasional.	Budi Utomo berdiri; kini diperingati sebagai Hari Kebangkitan Nasional.
+Sidang pertama BPUPKI dimulai untuk menyiapkan dasar negara.	Sidang pertama BPUPKI dimulakan untuk menyiapkan dasar negara.
+Jan Pieterszoon Coen merebut Jayakarta dan mendirikan Batavia.	Jan Pieterszoon Coen merebut Jayakarta dan mendirikan Batavia.
+Soekarno menyampaikan pidato tentang Pancasila di sidang BPUPKI.	Soekarno menyampaikan pidato tentang Pancasila di sidang BPUPKI.
+Soekarno, proklamator kemerdekaan, lahir di Surabaya.	Soekarno, proklamator kemerdekaan, lahir di Surabaya.
+Fatahillah merebut Sunda Kelapa dan menamainya Jayakarta, cikal bakal Jakarta.	Fatahillah merebut Sunda Kelapa dan menamainya Jayakarta, cikal bakal Jakarta.
+Belanda mundur dari Yogyakarta; peristiwa Yogya Kembali.	Belanda mundur dari Yogyakarta; peristiwa Yogya Kembali.
+Kepolisian Negara diresmikan; kini Hari Bhayangkara.	Kepolisian Negara diresmikan; kini Hari Bhayangkara.
+Perang Jawa yang dipimpin Pangeran Diponegoro dimulai.	Perang Jawa yang dipimpin Pangeran Diponegoro dimulakan.
+Hari Anak Nasional mulai diperingati setiap 23 Juli.	Hari Anak Nasional mula diperingati setiap 23 Juli.
+Panitia Persiapan Kemerdekaan Indonesia (PPKI) dibentuk.	Panitia Persiapan Kemerdekaan Indonesia (PPKI) dibentuk.
+Mohammad Hatta, proklamator dan wakil presiden pertama, lahir di Bukittinggi.	Mohammad Hatta, proklamator dan wakil presiden pertama, lahir di Bukittinggi.
+Gerakan Pramuka diperkenalkan ke masyarakat; kini Hari Pramuka.	Gerakan Pramuka diperkenalkan ke masyarakat; kini Hari Pramuka.
+Soekarno dan Hatta memproklamasikan kemerdekaan Indonesia di Jakarta.	Soekarno dan Hatta memproklamasikan kemerdekaan Indonesia di Jakarta.
+UUD 1945 disahkan; Soekarno dan Hatta dipilih menjadi presiden dan wakil presiden.	UUD 1945 disahkan; Soekarno dan Hatta dipilih menjadi presiden dan wakil presiden.
+Asian Games IV dibuka di Jakarta dengan Stadion Utama Senayan.	Asian Games IV dibuka di Jakarta dengan Stadion Utama Senayan.
+Gunung Krakatau di Selat Sunda meletus dahsyat.	Gunung Krakatau di Selat Sunda meletus dahsyat.
+Pekan Olahraga Nasional pertama dibuka di Solo; kini Hari Olahraga Nasional.	Pekan Olahraga Nasional pertama dibuka di Solo; kini Hari Olahraga Nasional.
+Radio Republik Indonesia (RRI) didirikan.	Radio Republik Indonesia (RRI) didirikan.
+Insiden Hotel Yamato: pemuda Surabaya merobek warna biru bendera Belanda.	Insiden Hotel Yamato: pemuda Surabaya merobek warna biru bendera Belanda.
+UNESCO mengakui batik Indonesia sebagai warisan budaya dunia; kini Hari Batik Nasional.	UNESCO mengakui batik Indonesia sebagai warisan budaya dunia; kini Hari Batik Nasional.
+Bung Tomo, pengobar semangat pertempuran Surabaya, lahir.	Bung Tomo, pengobar semangat pertempuran Surabaya, lahir.
+Tentara Keamanan Rakyat dibentuk; kini Hari TNI.	Tentara Keamanan Rakyat dibentuk; kini Hari TNI.
+Resolusi Jihad dikeluarkan di Surabaya; kini Hari Santri.	Resolusi Jihad dikeluarkan di Surabaya; kini Hari Santri.
+Sumpah Pemuda diikrarkan dan lagu Indonesia Raya pertama kali diperdengarkan.	Sumpah Pemuda diikrarkan dan lagu Indonesia Raya pertama kali diperdengarkan.
+Cut Nyak Dhien, pahlawan perempuan Aceh, wafat di pengasingan di Sumedang.	Cut Nyak Dhien, pahlawan perempuan Aceh, wafat di pengasingan di Sumedang.
+UNESCO menetapkan wayang sebagai mahakarya warisan budaya dunia.	UNESCO menetapkan wayang sebagai mahakarya warisan budaya dunia.
+Pertempuran Surabaya; kini diperingati sebagai Hari Pahlawan.	Pertempuran Surabaya; kini diperingati sebagai Hari Pahlawan.
+Pangeran Diponegoro lahir di Yogyakarta.	Pangeran Diponegoro lahir di Yogyakarta.
+UNESCO mengakui angklung sebagai warisan budaya tak benda dunia.	UNESCO mengakui angklung sebagai warisan budaya tak benda dunia.
+Perjanjian Bongaya ditandatangani setelah perang Gowa melawan VOC.	Perjanjian Bongaya ditandatangani setelah perang Gowa melawan VOC.
+UNESCO mengakui keris sebagai warisan budaya dunia; tanggal ini juga Hari Guru.	UNESCO mengakui keris sebagai warisan budaya dunia; tanggal ini juga Hari Guru.
+Dewi Sartika, pelopor sekolah perempuan, lahir di Bandung.	Dewi Sartika, pelopor sekolah perempuan, lahir di Bandung.
+Deklarasi Djuanda menyatukan laut dan pulau Nusantara; kini Hari Nusantara.	Deklarasi Djuanda menyatukan laut dan pulau Nusantara; kini Hari Nusantara.
+Pattimura dihukum mati oleh Belanda di Ambon.	Pattimura dihukum mati oleh Belanda di Ambon.
+Agresi Militer Belanda II: Yogyakarta diserang dan para pemimpin ditawan.	Agresi Militer Belanda II: Yogyakarta diserang dan para pemimpin ditawan.
+Kongres Perempuan Indonesia pertama digelar; kini Hari Ibu.	Kongres Perempuan Indonesia pertama digelar; kini Hari Ibu.
+Belanda mengakui kedaulatan Indonesia.	Belanda mengakui kedaulatan Indonesia.
+VOC resmi dibubarkan karena bangkrut.	VOC resmi dibubarkan kerana bangkrut.
+Rendang	Rendang
+Daging dimasak lama dengan santan dan rempah. Kekuatan tempur +8%.	Daging dimasak lama dengan santan dan rempah. Kekuatan tempur +8%.
+Gudeg	Gudeg
+Nangka muda bergula aren. Hasil Kelola Sawah +15%.	Nangka muda bergula aren. Hasil Kelola Sawah +15%.
+Sate Lilit	Sate Lilit
+Ikan cincang berbumbu dililit di batang serai. Hasil Tarik Pajak +15%.	Ikan cincang berbumbu dililit di batang serai. Hasil Tarik Cukai +15%.
+Papeda	Papeda
+Maluku & Papua	Maluku & Papua
+Bubur sagu dengan kuah ikan kuning. Hasil Rekrut Prajurit +15%.	Bubur sagu dengan kuah ikan kuning. Hasil Rekrut Askar +15%.
+Soto	Soto
+Nusantara	Nusantara
+Sup berkuah kuning yang ada di hampir setiap daerah. Semua hasil urusan +6%.	Sup berkuah kuning yang ada di hampir setiap daerah. Semua hasil urusan +6%.
+Pewaris	Pewaris
+Kisah hari ini sudah dibaca. Kembali besok untuk kisah berikutnya.	Kisah hari ini sudah dibaca. Kembali esok untuk kisah seterusnya.
+Pengetahuan bertambah: %s.	Pengetahuan bertambah: %s.
+Hanya anak dewasa berbakat %d ke atas yang bisa menjadi pewaris.	Hanya anak dewasa berbakat %d ke atas yang boleh menjadi pewaris.
+Istana sudah punya %d pewaris.	Istana sudah punya %d pewaris.
+%s diangkat menjadi pewaris dan kini bertugas sebagai penasihat!	%s diangkat menjadi pewaris dan kini bertugas sebagai penasihat!
+Dapur terbuka di Tahap %d.	Dapur terbuka di Peringkat %d.
+Resep tidak dikenal.	Resep tidak dikenal.
+Juru masak sudah lelah. Dapur buka lagi besok.	Juru masak sudah lelah. Dapur buka lagi esok.
+Bahan tidak cukup (%s).	Bahan tidak cukup (%s).
+Agak gosong	Agak gosong
+Lumayan	Boleh tahan
+Lezat	Sedap
+Sempurna!	Sempurna!
+%s: %s Berkah hidangan x%s selama %d jam.	%s: %s Berkah hidangan x%s selama %d jam.
+Hadiah musim ini sudah diambil.	Hadiah musim ini sudah diambil.
+Hadiah musim (peringkat %d): %s dan bingkai baru!	Hadiah musim (kedudukan %d): %s dan bingkai baharu!
+Item ini tidak bisa dijual di pasar.	Item ini tidak boleh dijual di pasar.
+Item di tas tidak cukup.	Item di beg tidak cukup.
+Item tidak dikenal.	Item tidak dikenal.
+Dibeli: %d %s.	Dibeli: %d %s.
+Bagikan	Kongsi
+Aku baru naik jabatan di Tuan Nusantara!	Aku baharu naik jawatan di Tuan Nusantara!
+Bagikan Kerajaan	Kongsi Kerajaan
+%d penasihat	%d penasihat
+Lihat kerajaanku di Tuan Nusantara!	Lihat kerajaanku di Tuan Nusantara!
+Ekstra	Ekstra
+Ramah buta warna	Ramah buta warna
+Ganti merah dan hijau dengan oranye dan biru agar mudah dibedakan (buta warna merah-hijau).	Tukar merah dan hijau dengan oranye dan biru agar mudah dibedakan (buta warna merah-hijau).
+Getar	Getaran
+Getar singkat saat menang, naik jabatan, atau mendapat penasihat Legenda.	Getaran singkat saat menang, naik jawatan, atau mendapat penasihat Legenda.
+Aku mendapat penasihat Legenda di Tuan Nusantara!	Aku mendapat penasihat Legenda di Tuan Nusantara!
+Pembelian tidak bisa diverifikasi Google Play. Hubungi pengembang bila saldo terpotong.	Pembelian tidak boleh diverifikasi Google Play. Hubungi pengembang bila saldo terpotong.
+Pembelian sedang diverifikasi. Hadiah diberikan saat koneksi pulih.	Pembelian sedang diverifikasi. Hadiah diberikan saat koneksi pulih.
+Surat baru dari istana	Surat baharu dari istana
+Dagangan Tuan laku!	Dagangan Tuan laku!
+Buka game untuk mengambil hadiahnya.	Buka game untuk mengambil hadiahnya.
+Kode diterima! Hadiah untuk Tuan dan %s dikirim lewat Kotak Surat saat Tuan mencapai Tahap %d.	Kod diterima! Hadiah untuk Tuan dan %s dihantar lewat Kotak Surat saat Tuan mencapai Peringkat %d.
+Dagangan dipasang. Perak hasil penjualan dikirim lewat Kotak Surat.	Dagangan dipasang. Perak hasil penjualan dihantar lewat Kotak Surat.
+Perak tidak cukup.	Perak tidak cukup.
+Dagangan ditarik. Item dikembalikan lewat Kotak Surat.	Dagangan ditarik. Item dikembalikan lewat Kotak Surat.
+Dapur	Dapur
+Musim Aliansi	Musim Pakatan
+Pasar Pemain	Pasar Pemain
+Hari Ini dalam Sejarah	Hari Ini dalam Sejarah
+Kilas Sejarah	Kilas Sejarah
+Baca	Baca
+Januari	Januari
+Februari	Februari
+Maret	Maret
+April	April
+Mei	Mei
+Juni	Juni
+Juli	Juli
+Agustus	Agustus
+September	September
+Oktober	Oktober
+November	November
+Desember	Desember
+Undang Teman	Jemput Rakan
+Saat teman yang Tuan undang mencapai Tahap %d, Tuan dan teman sama-sama mendapat %s.	Saat rakan yang Tuan jemput mencapai Peringkat %d, Tuan dan rakan sama-sama mendapat %s.
+Diundang: %d · berhasil: %d	Dijemput: %d · berjaya: %d
+Bagikan Undangan	Kongsi Jemputan
+Masukkan kode %s di menu Teman	Masukkan kod %s di menu Rakan
+Ayo main Tuan Nusantara bersamaku!	Ayo main Tuan Nusantara bersamaku!
+Tuan bergabung lewat undangan %s.	Tuan menyertai lewat jemputan %s.
+Kode undangan teman	Kod jemputan rakan
+Masukkan	Masukkan
+Dapur Nusantara	Dapur Nusantara
+Sisa memasak hari ini: %d	Sisa memasak hari ini: %d
+Berkah %s (x%s)	Berkah %s (x%s)
+Berlaku %s lagi	Berlaku %s lagi
+Bahan: %s	Bahan: %s
+Masak	Masak
+Pewaris Istana	Pewaris Istana
+%d/%d pewaris · biaya %d emas	%d/%d pewaris · kos %d emas
+Pewaris · level %d · Kekuatan %d, Kecerdasan %d, Politik %d, Karisma %d	Pewaris · level %d · Kekuatan %d, Kecerdasan %d, Politik %d, Karisma %d
+Calon Pewaris	Calon Pewaris
+Didik anak sampai dewasa. Anak berbakat %d ke atas bisa diangkat menjadi pewaris.	Didik anak sehingga dewasa. Anak berbakat %d ke atas boleh diangkat menjadi pewaris.
+Bakat %d/5 · dewasa	Bakat %d/5 · dewasa
+Angkat	Angkat
+Musim %d · berakhir dalam %s	Musim %d · berakhir dalam %s
+Poin dari serangan Perang Wilayah dan Bos Dunia anggota aliansi. 3 besar mendapat hadiah.	Poin dari serangan Perang Wilayah dan Bos Dunia ahli pakatan. 3 besar mendapat hadiah.
+Musim lalu: peringkat %d	Musim lalu: kedudukan %d
+Perak: %s · sisa dagangan hari ini: %d	Perak: %s · sisa dagangan hari ini: %d
+Jual Item	Jual Item
+Tidak ada item yang bisa dijual di tas.	Tidak ada item yang boleh dijual di beg.
+Harga (perak)	Harga (perak)
+Jual	Jual
+Isi harga lebih dari nol.	Isi harga lebih dari nol.
+Pajak %d%%. Perak hasil penjualan dikirim lewat Kotak Surat.	Cukai %d%%. Perak hasil penjualan dihantar lewat Kotak Surat.
+Dagangan	Dagangan
+Belum ada dagangan. Jadilah pedagang pertama!	Belum ada dagangan. Jadilah peniaga pertama!
+Tarik	Tarik
+Aduk!	Aduk!
+Tekan \"Aduk!\" saat penanda di zona emas. Adukan %d/%d · tepat %d	Tekan \"Aduk!\" saat penanda di zona emas. Adukan %d/%d · tepat %d
+PENASIHAT LEGENDA!	PENASIHAT LEGENDA!
+AYO BERGABUNG!	AYO MENYERTAI!
+Kode undangan: %s	Kod jemputan: %s
+Gambar disimpan di perangkat dan teks ajakan disalin.	Gambar disimpan di peranti dan teks ajakan disalin.
+Bonus gelar: semua hasil urusan +%d%%, kekuatan tempur +%d%%	Bonus gelar: semua hasil urusan +%d%%, kekuatan tempur +%d%%
+Hias kota dengan gapura, taman, patung, dan pendopo. Tiap dekorasi dibeli sekali dan memberi bonus kecil permanen.	Hias bandar dengan gapura, taman, patung, dan pendopo. Setiap dekorasi dibeli sekali dan memberi bonus kecil permanen.
+Dekorasi tampil di spanduk kota dan terlihat saat pemain lain mengunjungi kota Tuan.	Dekorasi dipapar di spanduk bandar dan terlihat saat pemain lain mengunjungi bandar Tuan.
+Penasihat menunjukkan hal paling berguna yang bisa Tuan kerjakan sekarang. Ketuk \"Pergi\" untuk langsung ke sana.	Penasihat menunjukkan hal paling berguna yang boleh Tuan laksanakan sekarang. Ketik \"Pergi\" untuk langsung ke sana.
+Gapura Bentar	Gapura Bentar
+Gerbang terbelah khas Bali di pintu masuk kota. Semua hasil urusan +1%.	Gerbang terbelah khas Bali di pintu masuk bandar. Semua hasil urusan +1%.
+Lampion Pasar	Lampion Pasar
+Pasar malam makin ramai. Hasil Tarik Pajak +2%.	Pasar malam makin ramai. Hasil Tarik Cukai +2%.
+Taman Sari	Taman Sari
+Taman air dengan kolam pemandian. Hasil Kelola Sawah +2%.	Taman air dengan kolam pemandian. Hasil Kelola Sawah +2%.
+Pancuran Naga	Pancuran Naga
+Air pancuran menyegarkan para prajurit. Hasil Rekrut Prajurit +2%.	Air pancuran menyegarkan para askar. Hasil Rekrut Askar +2%.
+Patung Garuda	Patung Garuda
+Lambang keberanian di alun-alun. Kekuatan tempur +2%.	Lambang keberanian di alun-alun. Kekuatan tempur +2%.
+Pendopo Agung	Pendopo Agung
+Balai terbuka tempat rakyat menghadap. Semua hasil urusan +2%.	Balai terbuka tempat rakyat menghadap. Semua hasil urusan +2%.
+Menangkan satu tahap dulu.	Menangkan satu peringkat dulu.
+Jatah sapu hari ini habis.	Jatah sapu hari ini habis.
+Sapu %s x%d: -%d prajurit, +%d perak, +%d prestise.	Sapu %s x%d: -%d askar, +%d perak, +%d prestise.
+Dekorasi tidak dikenal.	Dekorasi tidak dikenal.
+Dekorasi terbuka di Tahap %d.	Dekorasi terbuka di Peringkat %d.
+Dekorasi ini sudah terpasang.	Dekorasi ini sudah terpasang.
+%s terpasang di kota!	%s terpasang di bandar!
+Ada hadiah di Kotak Surat.	Ada hadiah di Kotak Surat.
+Hadiah misi cerita siap diambil.	Hadiah misi cerita siap diambil.
+Misi harian selesai, ambil hadiahnya.	Misi harian selesai, ambil hadiahnya.
+Urusan kota penuh. Kerjakan sebelum terbuang.	Urusan bandar penuh. Laksanakan sebelum terbuang.
+Rekrut gratis hari ini tersedia.	Rekrut percuma hari ini tersedia.
+Pasukan cukup untuk menang di %s.	Pasukan cukup untuk menang di %s.
+Kebun siap dipanen.	Kebun siap dituai.
+Ekspedisi sudah kembali.	Ekspedisi sudah kembali.
+Tugas Acara Sejarah siap diklaim.	Tugas Acara Sejarah siap diklaim.
+Dapur siap memasak hidangan berkah.	Dapur siap memasak hidangan berkah.
+Belum cukup kuat? Sapu tahap lalu untuk perak dan prestise.	Belum cukup kuat? Sapu peringkat lalu untuk perak dan prestise.
+Baca kisah sejarah hari ini.	Baca kisah sejarah hari ini.
+Latih penasihat terkuat untuk menaikkan kekuatan.	Latih penasihat terkuat untuk menaikkan kekuatan.
+Sapu %s: sisa %d · %s prajurit/kali	Sapu %s: sisa %d · %s askar/kali
+Sapu x%d	Sapu x%d
+Papan Peringkat Google Play	Papan Kedudukan Google Play
+Pengumuman	Pengumuman
+Versi Baru Tersedia	Versi Baharu Tersedia
+Perbarui Tuan Nusantara untuk terus bermain. Progres Tuan tetap aman.	Kemas kini Tuan Nusantara untuk terus bermain. Progres Tuan tetap aman.
+Perbarui	Kemas kini
+Pindah Perangkat	Pindah Peranti
+Di HP lama: buat kode pindah. Di HP baru: sambungkan ke server yang sama lalu masukkan kodenya. Progres disimpan otomatis ke server setiap 10 menit.	Di HP lama: buat kod pindah. Di HP baharu: sambungkan ke pelayan yang sama lalu masukkan kodenya. Progres disimpan automatik ke pelayan setiap 10 minit.
+Buat Kode Pindah	Buat Kod Pindah
+Kode pindah: %s (berlaku 24 jam)	Kod pindah: %s (berlaku 24 jam)
+Kode pindah disalin. Masukkan di HP baru dalam 24 jam.	Kod pindah disalin. Masukkan di HP baharu dalam 24 jam.
+Kode pindah dari HP lama	Kod pindah dari HP lama
+Pindahkan	Pindahkan
+Kode pindah terdiri dari 8 huruf/angka.	Kod pindah terdiri dari 8 huruf/angka.
+Progres di HP ini akan diganti dengan akun dari HP lama. Lanjutkan?	Progres di HP ini akan ditukar dengan akaun dari HP lama. Teruskan?
+Sambungkan ke server dulu.	Sambungkan ke pelayan dulu.
+Akun dan progres berhasil dipindahkan ke perangkat ini.	Akaun dan progres berjaya dipindahkan ke peranti ini.
+Dekorasi	Dekorasi
+Dekorasi Kota	Dekorasi Bandar
+Saran Penasihat	Saran Penasihat
+Sembunyikan	Sembunyikan
+Saran lain (%d)	Saran lain (%d)
+%d/%d terpasang · terlihat di spanduk kota dan saat dikunjungi	%d/%d terpasang · terlihat di spanduk bandar dan saat dikunjungi
+Biaya: %s perak	Kos: %s perak
+Terpasang	Terpasang
+Simpan progres ke server dulu (tersambung otomatis), lalu coba lagi.	Simpan progres ke pelayan dulu (bersambung automatik), lalu cuba lagi.

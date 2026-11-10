@@ -1,0 +1,118 @@
+# CI Tuan Nusantara: tes game, terjemahan, server, uji ujung-ke-ujung, dan APK uji.
+# APK arm64 (debug) bisa diunduh dari tab Actions → run → Artifacts.
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: "4.3"
+  GODOT_URL: https://github.com/godotengine/godot/releases/download/4.3-stable
+
+jobs:
+  game:
+    name: Tes game & terjemahan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unduh Godot
+        run: |
+          curl -sSL -o godot.zip "$GODOT_URL/Godot_v4.3-stable_linux.x86_64.zip"
+          unzip -q godot.zip -d "$RUNNER_TEMP/godot"
+          echo "GODOT=$RUNNER_TEMP/godot/Godot_v4.3-stable_linux.x86_64" >> "$GITHUB_ENV"
+      - name: Impor aset
+        run: $GODOT --headless --path . --import || true
+      - name: Tes model
+        run: |
+          $GODOT --headless --path . --script res://tests/run_tests.gd 2>&1 | tee test.log
+          grep -q " 0 gagal" test.log
+          ! grep -q "SCRIPT ERROR" test.log
+      - name: Cakupan terjemahan Inggris
+        run: |
+          $GODOT --headless --path . --script res://tools/i18n_extract.gd -- en 2>&1 | tee i18n.log
+          grep -q ", 0 belum" i18n.log
+      - name: Terjemahan Melayu terbaru
+        run: |
+          python3 tools/gen_ms.py
+          git diff --exit-code translations/ms.tsv || (echo "Jalankan python3 tools/gen_ms.py lalu commit ms.tsv" && exit 1)
+      - name: Simulasi ekonomi singkat
+        run: $GODOT --headless --path . --script res://tools/sim_economy.gd -- 7 4 1 2>&1 | grep -E "Tonggak|ERROR" | tee sim.log
+
+  server:
+    name: Tes server & ujung-ke-ujung
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Tes server
+        run: node --test server/server.test.js
+      - name: Unduh Godot
+        run: |
+          curl -sSL -o godot.zip "$GODOT_URL/Godot_v4.3-stable_linux.x86_64.zip"
+          unzip -q godot.zip -d "$RUNNER_TEMP/godot"
+          echo "GODOT=$RUNNER_TEMP/godot/Godot_v4.3-stable_linux.x86_64" >> "$GITHUB_ENV"
+      - name: Uji ujung-ke-ujung (server sungguhan + klien Godot)
+        run: |
+          $GODOT --headless --path . --import || true
+          bash server/e2e.sh
+
+  android:
+    name: APK uji (arm64)
+    runs-on: ubuntu-latest
+    needs: game
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Unduh Godot & templat ekspor
+        run: |
+          curl -sSL -o godot.zip "$GODOT_URL/Godot_v4.3-stable_linux.x86_64.zip"
+          unzip -q godot.zip -d "$RUNNER_TEMP/godot"
+          echo "GODOT=$RUNNER_TEMP/godot/Godot_v4.3-stable_linux.x86_64" >> "$GITHUB_ENV"
+          curl -sSL -o templates.tpz "$GODOT_URL/Godot_v4.3-stable_export_templates.tpz"
+          mkdir -p ~/.local/share/godot/export_templates
+          unzip -q templates.tpz -d "$RUNNER_TEMP/tpl"
+          mv "$RUNNER_TEMP/tpl/templates" ~/.local/share/godot/export_templates/4.3.stable
+      - name: Pasang Android Build Template
+        run: |
+          mkdir -p android/build
+          unzip -q ~/.local/share/godot/export_templates/4.3.stable/android_source.zip -d android/build
+          echo "4.3.stable" > android/.build_version
+          touch android/build/.gdignore
+      - name: Pengaturan editor (SDK, JDK, keystore debug)
+        run: |
+          keytool -genkeypair -v -keystore "$RUNNER_TEMP/debug.keystore" -storepass android -alias androiddebugkey \
+            -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          mkdir -p ~/.config/godot
+          cat > ~/.config/godot/editor_settings-4.3.tres <<EOT
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "$ANDROID_SDK_ROOT"
+          export/android/java_sdk_path = "$JAVA_HOME"
+          export/android/debug_keystore = "$RUNNER_TEMP/debug.keystore"
+          export/android/debug_keystore_user = "androiddebugkey"
+          export/android/debug_keystore_pass = "android"
+          EOT
+          sed -i 's/^          //' ~/.config/godot/editor_settings-4.3.tres
+      - name: Build APK arm64
+        run: |
+          mkdir -p build
+          $GODOT --headless --path . --import || true
+          $GODOT --headless --path . --export-debug "Android arm64" build/tuan-nusantara-arm64.apk
+          ls -lh build/*.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tuan-nusantara-arm64-apk
+          path: build/tuan-nusantara-arm64.apk
+          retention-days: 14

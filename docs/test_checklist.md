@@ -71,6 +71,17 @@ Minimal satu dari tiap kelompok:
 - [ ] Langit kota: malam (setelah 19.30) berbintang, hujan di musim penghujan
 - [ ] APK arm64 terpasang di HP 64-bit; APK universal di HP 32-bit lama
 
+## Batch 9
+
+- [ ] Pindah perangkat: HP A → Buat Kode Pindah; HP B → Pindahkan → progres A muncul
+- [ ] Dasbor: ubah `yield_bonus`, buka ulang game → hasil urusan naik; pengumuman
+      tampil sekali
+- [ ] `min_version` lebih besar dari versi APK → layar "Versi Baru Tersedia"
+- [ ] Bahasa Melayu (Pengaturan → Bahasa) terbaca wajar di semua halaman
+- [ ] Saran Penasihat: tombol Pergi membuka tempat yang benar
+- [ ] Sapu Tahap x1/x5, Dekorasi tampil di spanduk kota
+- [ ] Setelah naik jabatan (hari ke-2+): dialog ulasan Google (hanya di APK dari Play)
+
 ## Ketahanan
 
 - [ ] Tutup paksa saat tayangan perang lalu buka lagi: progres tersimpan

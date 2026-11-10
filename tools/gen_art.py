@@ -2135,6 +2135,44 @@ ICONS["share"] = icon_doc(
     '<circle cx="70" cy="76" r="12" fill="#2f6b45"/>'
     '<path d="M36 42 L60 26 M36 54 L60 70" stroke="#2f6b45" stroke-width="6"/>')
 
+# Dekorasi kota (Data.DECORATIONS).
+ICONS["decor_gapura"] = icon_doc(
+    '<path d="M10 88 L14 30 L22 18 L26 8 L32 18 L38 30 L40 88 Z" fill="#b5651d" stroke="#5e3a12" stroke-width="3"/>'
+    '<path d="M86 88 L82 30 L74 18 L70 8 L64 18 L58 30 L56 88 Z" fill="#b5651d" stroke="#5e3a12" stroke-width="3"/>'
+    '<path d="M16 46 L36 46 M16 64 L38 64 M80 46 L60 46 M80 64 L58 64" stroke="#7a3a12" stroke-width="3"/>'
+    '<rect x="4" y="86" width="88" height="6" fill="#7a4b1f"/>')
+ICONS["decor_lampion"] = icon_doc(
+    '<path d="M8 14 Q48 30 88 14" fill="none" stroke="#5e3a12" stroke-width="3"/>'
+    '<ellipse cx="24" cy="44" rx="13" ry="17" fill="#c0392b" stroke="#7a1a12" stroke-width="2"/>'
+    '<ellipse cx="48" cy="52" rx="14" ry="19" fill="#e0b84a" stroke="#a8742c" stroke-width="2"/>'
+    '<ellipse cx="72" cy="44" rx="13" ry="17" fill="#c0392b" stroke="#7a1a12" stroke-width="2"/>'
+    '<path d="M24 20 L24 27 M48 22 L48 33 M72 20 L72 27" stroke="#5e3a12" stroke-width="2"/>'
+    '<path d="M24 61 L24 70 M48 71 L48 82 M72 61 L72 70" stroke="#f2c14e" stroke-width="3"/>')
+ICONS["decor_taman"] = icon_doc(
+    '<ellipse cx="48" cy="68" rx="40" ry="16" fill="#4f9ad6" stroke="#2c5d8f" stroke-width="3"/>'
+    '<path d="M28 66 Q36 60 44 66 M52 70 Q60 64 68 70" stroke="#d9ecf7" stroke-width="2" fill="none"/>'
+    '<circle cx="18" cy="40" r="14" fill="#2f6b45"/><circle cx="78" cy="38" r="16" fill="#2f6b45"/>'
+    '<path d="M18 54 L18 60 M78 54 L78 58" stroke="#5e3a12" stroke-width="4"/>'
+    '<circle cx="48" cy="30" r="7" fill="#e58fb6"/><circle cx="40" cy="36" r="5" fill="#f2c14e"/>')
+ICONS["decor_pancuran"] = icon_doc(
+    '<rect x="16" y="66" width="64" height="20" rx="4" fill="#9aa3ad" stroke="#5a6470" stroke-width="3"/>'
+    '<rect x="40" y="30" width="16" height="38" fill="#b8c0c8" stroke="#5a6470" stroke-width="3"/>'
+    '<path d="M48 30 C40 18 30 22 28 34 M48 30 C56 18 66 22 68 34" fill="none" stroke="#4f9ad6" stroke-width="4"/>'
+    '<circle cx="48" cy="22" r="8" fill="#2f6b45" stroke="#1f4f3a" stroke-width="2"/>'
+    '<path d="M26 40 L24 66 M70 40 L72 66" stroke="#4f9ad6" stroke-width="3" stroke-dasharray="4 4"/>')
+ICONS["decor_patung"] = icon_doc(
+    '<rect x="28" y="72" width="40" height="16" fill="#9aa3ad" stroke="#5a6470" stroke-width="3"/>'
+    '<path d="M48 18 L56 30 L82 22 L66 44 L60 70 L36 70 L30 44 L14 22 L40 30 Z" fill="#e0b84a" stroke="#a8742c" '
+    'stroke-width="3" stroke-linejoin="round"/>'
+    '<circle cx="48" cy="20" r="7" fill="#e0b84a" stroke="#a8742c" stroke-width="2"/>'
+    '<path d="M44 46 L52 46 L52 58 L44 58 Z" fill="#c0392b"/>')
+ICONS["decor_pendopo"] = icon_doc(
+    '<path d="M6 40 L48 10 L90 40 Z" fill="#7a3a1a" stroke="#4a220e" stroke-width="3"/>'
+    '<path d="M20 40 L48 22 L76 40" fill="#a85a24"/>'
+    '<rect x="16" y="40" width="64" height="6" fill="#5e3a12"/>'
+    '<path d="M22 46 L22 80 M40 46 L40 80 M56 46 L56 80 M74 46 L74 80" stroke="#7a4b1f" stroke-width="5"/>'
+    '<rect x="10" y="80" width="76" height="8" fill="#c9a66b" stroke="#7a4b1f" stroke-width="2"/>')
+
 
 def main():
     for cid, spec in CHARACTERS.items():

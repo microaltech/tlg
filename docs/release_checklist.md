@@ -58,6 +58,9 @@
        (lihat README, bagian Plugin Android TlgNotify).
 5c. [ ] Bila server dipakai: set `ADMIN_TOKEN`, `IAP_PACKAGE`, dan
        `IAP_SERVICE_ACCOUNT` (lihat `server/README.md`).
+5d. [ ] Naikkan `version/code` di ketiga preset **dan** `Data.VERSION_CODE`
+       (game_data.gd) bersamaan. Setelah versi baru tersedia di Play, naikkan
+       `min_version` di dasbor hanya bila versi lama harus berhenti dipakai.
 6. [ ] Uji APK rilis di minimal satu HP sungguhan
        (`tools/build_android.sh release`). Periksa: tutorial, gulir layar,
        pembelian di jalur Internal testing dengan akun penguji lisensi,

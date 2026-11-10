@@ -12,6 +12,14 @@ import android.os.Build;
 
 import androidx.core.content.FileProvider;
 
+import com.google.android.play.core.appupdate.AppUpdateManager;
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory;
+import com.google.android.play.core.appupdate.AppUpdateOptions;
+import com.google.android.play.core.install.model.AppUpdateType;
+import com.google.android.play.core.install.model.UpdateAvailability;
+import com.google.android.play.core.review.ReviewManager;
+import com.google.android.play.core.review.ReviewManagerFactory;
+
 import java.io.File;
 
 import androidx.annotation.NonNull;
@@ -139,6 +147,59 @@ public class TlgNotifyPlugin extends GodotPlugin {
             return true;
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    /** Minta ulasan Play Store (Google memutuskan apakah dialog benar-benar ditampilkan). */
+    @UsedByGodot
+    public void request_review() {
+        final Activity activity = getActivity();
+        if (activity == null) {
+            return;
+        }
+        activity.runOnUiThread(() -> {
+            try {
+                final ReviewManager manager = ReviewManagerFactory.create(activity);
+                manager.requestReviewFlow().addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        manager.launchReviewFlow(activity, task.getResult());
+                    }
+                });
+            } catch (Exception ignored) {
+                // Tanpa Play Store (mis. APK uji di emulator): abaikan.
+            }
+        });
+    }
+
+    /** Mulai update dalam aplikasi; bila tidak tersedia, buka halaman Play Store `storeUrl`. */
+    @UsedByGodot
+    public void start_update(boolean immediate, String storeUrl) {
+        final Activity activity = getActivity();
+        if (activity == null) {
+            return;
+        }
+        activity.runOnUiThread(() -> {
+            try {
+                final AppUpdateManager manager = AppUpdateManagerFactory.create(activity);
+                final int type = immediate ? AppUpdateType.IMMEDIATE : AppUpdateType.FLEXIBLE;
+                manager.getAppUpdateInfo().addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult().updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
+                            && task.getResult().isUpdateTypeAllowed(type)) {
+                        manager.startUpdateFlow(task.getResult(), activity, AppUpdateOptions.newBuilder(type).build());
+                    } else {
+                        openStore(activity, storeUrl);
+                    }
+                });
+            } catch (Exception e) {
+                openStore(activity, storeUrl);
+            }
+        });
+    }
+
+    private static void openStore(Activity activity, String url) {
+        try {
+            activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        } catch (Exception ignored) {
         }
     }
 }

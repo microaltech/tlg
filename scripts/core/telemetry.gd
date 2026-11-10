@@ -219,6 +219,20 @@ func send_daily_stats() -> void:
 		http.queue_free()
 
 
+## Kirim laporan crash sesi sebelumnya ke server pengembang (opt-in, sekali per crash).
+func send_crash_report() -> void:
+	if not Settings.share_stats or crashes.is_empty() or bool(crashes[-1].get("sent", false)):
+		return
+	var c: Dictionary = crashes[-1]
+	c["sent"] = true
+	_write_json(CRASH_PATH, crashes)
+	var online := get_node_or_null("/root/Online")
+	if online:
+		online.send_crash({"install": stats_payload()["install"], "version": str(c.get("version", "")),
+			"device": OS.get_model_name(), "gpu": RenderingServer.get_video_adapter_name(),
+			"report": (str(c.get("trail", "")) + "\n--- log ---\n" + str(c.get("log", ""))).right(8000)})
+
+
 func _record_crash(lock_text: String) -> void:
 	var info = JSON.parse_string(lock_text)
 	var started: float = float(info.get("t", 0.0)) if info is Dictionary else 0.0

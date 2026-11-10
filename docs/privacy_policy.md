@@ -40,7 +40,9 @@ game (mis. berburu, bertempur). Tidak ada nama, isi chat, lokasi, atau kontak.
 Data ini hanya dipakai untuk memperbaiki keseimbangan dan alur game, tidak dijual
 dan tidak dibagikan. **Hapus Statistik** membuat ID pemasangan baru sehingga
 laporan lama tidak bisa dikaitkan lagi dengan Anda. Mematikan pilihan ini
-menghentikan pengiriman.
+menghentikan pengiriman. Bila pilihan ini nyala, laporan crash (versi game, model
+perangkat, nama kartu grafis, jejak kejadian, dan potongan log teknis) juga dikirim
+setelah game berhenti tiba-tiba.
 
 ## Pemain lain, chat, dan peringkat
 
@@ -58,7 +60,8 @@ Wilayah dan Bos Dunia, kode hadiah yang Anda tukar, surat yang hadiahnya Anda am
 dari Kotak Surat, kode undangan yang Anda masukkan, dagangan dan pembelian di Pasar
 Pemain (nama Tuan tampil di dagangan), poin musim aliansi, token pembelian Google
 Play untuk verifikasi, serta hasil arena online. Saat game ditutup, aplikasi
-memeriksa server sekitar 4 jam sekali untuk memberi tahu surat baru atau dagangan
+mencadangkan progres game ke server (dipakai juga untuk Pindah Perangkat dan
+memeriksa kecurangan di Pasar Pemain). Aplikasi juga memeriksa server sekitar 4 jam sekali untuk memberi tahu surat baru atau dagangan
 yang laku (mati bila notifikasi dimatikan atau mode online tidak dipakai).
 
 **Bagikan.** Tombol Bagikan membuat gambar kartu di perangkat lalu membuka menu

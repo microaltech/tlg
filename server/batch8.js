@@ -348,6 +348,7 @@ function install(ctx) {
 		open.add(k);
 		routes[k] = admin(fn);
 	}
+	return { admin };
 }
 
 // Kredensial verifikasi pembelian dari environment:

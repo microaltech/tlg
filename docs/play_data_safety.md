@@ -64,6 +64,7 @@ terkirim setelah pemain menyalakannya, jadi jawab **Ya, mengumpulkan data**:
 
 | Kategori Play Console | Data | Dibagikan | Wajib/Opsional | Tujuan |
 |---|---|---|---|---|
+| Info aplikasi & performa → Log crash, Diagnostik | Laporan crash (versi, model perangkat, GPU, log) | Tidak | Opsional | Analitik |
 | Aktivitas aplikasi → Interaksi aplikasi | Jumlah sesi, lama bermain, hari aktif, hitungan aksi, tahap, jabatan, tutorial selesai | Tidak | Opsional | Analitik |
 | ID perangkat atau lainnya | ID pemasangan acak (bisa direset dengan Hapus Statistik) | Tidak | Opsional | Analitik |
 

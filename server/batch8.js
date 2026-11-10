@@ -15,6 +15,7 @@ const REFERRAL_STAGE = 10;
 const REFERRAL_MAX = 20; // undangan berhadiah per pengundang
 const REFERRAL_REWARD = { gold: 100, items: { recruit_ticket: 2 } };
 const SEASON_WEEKS = 4;
+const SEASON_START = Date.UTC(2026, 0, 5); // Senin pertama 2026
 const SEASON_REWARDS = [
 	{ gold: 300, items: { star_stone: 2 }, frame: "frame_juara_musim" },
 	{ gold: 200, items: { star_stone: 1 }, frame: "frame_musim" },
@@ -69,6 +70,8 @@ function install(ctx) {
 	};
 
 	const seasonOf = (t) => Math.floor(h.weekOf(t) / SEASON_WEEKS);
+	// Nomor musim untuk ditampilkan: musim pertama = musim yang berjalan pada SEASON_START.
+	const seasonNumber = (s) => Math.max(1, s - seasonOf(SEASON_START) + 1);
 	const findByCode = (raw) => {
 		const code = String(raw || "").replace(/[^0-9a-f]/gi, "").toLowerCase();
 		if (code.length !== 8) return null;
@@ -148,7 +151,7 @@ function install(ctx) {
 		const last = seasonBoard(season - 1);
 		const mine = last.find((r) => r.alliance === me.alliance);
 		const lastRank = mine ? mine.rank : 0;
-		return [200, { season, weeks: SEASON_WEEKS, board: seasonBoard(season),
+		return [200, { season, number: seasonNumber(season), weeks: SEASON_WEEKS, board: seasonBoard(season),
 			ends_in: (season + 1) * SEASON_WEEKS * 7 * DAY - 3 * DAY - now(), last_board: last, last_rank: lastRank,
 			last_reward: lastRank >= 1 && lastRank <= 3 ? SEASON_REWARDS[lastRank - 1] : null,
 			last_claimed: !!q.seasonClaimed.get(season - 1, me.id) }];
@@ -309,7 +312,7 @@ function install(ctx) {
 				reports_open: n("SELECT COUNT(DISTINCT message) AS n FROM reports r JOIN chat c ON c.id = r.message WHERE c.hidden = 0"),
 				market_open: n("SELECT COUNT(*) AS n FROM market WHERE status = 'open'"),
 				iap_verified: n("SELECT COUNT(*) AS n FROM iap_tokens"),
-				season: seasonOf(t), season_board: seasonBoard(seasonOf(t)) }];
+				season: seasonNumber(seasonOf(t)), season_board: seasonBoard(seasonOf(t)) }];
 		},
 		"GET /admin/api/stats": (_b, params) => [200, h.statsSummary(db, h.clampInt(params.get("days") || 14, 1, 90), now())],
 		"GET /admin/api/codes": () => [200, { codes: db.prepare("SELECT * FROM codes ORDER BY expires DESC").all()

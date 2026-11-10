@@ -26,7 +26,7 @@
 
         <!-- Berbagi gambar kartu hasil ke WhatsApp/IG. -->
         <provider
-            android:name="androidx.core.content.FileProvider"
+            android:name="com.tlg.notify.TlgShareProvider"
             android:authorities="${applicationId}.tlgshare"
             android:exported="false"
             android:grantUriPermissions="true">

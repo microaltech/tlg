@@ -594,7 +594,7 @@ Catatan penting:
   (merah/hijau → oranye/biru), getar yang bisa dimatikan.
 - **Langit kota** (`sky_layer.gd`): fajar, senja, malam berbintang, dan hujan di musim
   penghujan.
-- **APK lebih kecil**: `tools/build_android.sh arm64` (hanya HP 64-bit) dengan library
+- **APK lebih kecil**: `tools/build_android.sh arm64` (hanya HP 64-bit, ±34 MB dibanding ±60 MB universal) dengan library
   terkompresi; AAB Play Store otomatis dipecah per arsitektur.
 - **Dasbor admin web** dan **verifikasi pembelian Google Play** di server.
 

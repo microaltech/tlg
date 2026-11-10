@@ -2169,7 +2169,7 @@ func _fill_season(box: VBoxContainer, subtitle: Label) -> void:
 	if _season.is_empty():
 		subtitle.text = "Memuat..."
 		return
-	subtitle.text = tr("Musim %d · berakhir dalam %s") % [int(_season["season"]), ui._duration(int(_season["ends_in"]) / 1000)]
+	subtitle.text = tr("Musim %d · berakhir dalam %s") % [int(_season.get("number", _season["season"])), ui._duration(int(_season["ends_in"]) / 1000)]
 	subtitle.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_small(box, "Poin dari serangan Perang Wilayah dan Bos Dunia anggota aliansi. 3 besar mendapat hadiah.")
 	for r in _season.get("board", []):

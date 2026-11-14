@@ -146,6 +146,18 @@ func _ready() -> void:
 	Online.create_transfer(func(code, _e): got["tr"] = code)
 	await get_tree().create_timer(0.8).timeout
 	check(str(got.get("tr", "")).length() == 8, "kode pindah perangkat dibuat")
+	# Umpan balik (dengan gambar kecil) dan raid aliansi.
+	var img := Image.create(64, 64, false, Image.FORMAT_RGB8)
+	img.fill(Color.GOLDENROD)
+	Online.send_feedback("bug", "Uji laporan dari e2e", img.save_jpg_to_buffer(0.7), func(ok, _msg): got["fb"] = ok)
+	await get_tree().create_timer(0.5).timeout
+	check(got.get("fb", false), "laporan masalah terkirim")
+	Online.fetch_raid(func(d): got["raid"] = d)
+	await get_tree().create_timer(0.5).timeout
+	check(int(got.get("raid", {}).get("hp_max", 0)) > 0, "info raid aliansi")
+	Online.raid_attack(func(r): got["ra"] = r)
+	await get_tree().create_timer(0.5).timeout
+	check(got.get("ra", {}).get("ok", false), "serang raid")
 	# Pasar pemain: beli dagangan "Lawan" (dipasang e2e.sh), lalu jual item sendiri.
 	Online.fetch_market(func(d): got["mk"] = d)
 	await get_tree().create_timer(0.5).timeout

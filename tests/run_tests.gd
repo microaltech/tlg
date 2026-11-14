@@ -33,7 +33,7 @@ func _init() -> void:
 		"test_troops", "test_seasons", "test_diplomacy", "test_spies", "test_rebellion", "test_race", "test_quiz",
 		"test_candi", "test_forge", "test_pets", "test_comeback", "test_gift_codes", "test_world_boss", "test_realm5_save",
 		"test_intro_update", "test_collect_daily", "test_counselor_titles", "test_wayang", "test_ceremony", "test_badges",
-		"test_tourney_reward", "test_realm6_save", "test_month_event", "test_skins", "test_mail", "test_realm7_save", "test_history", "test_endgame", "test_heirs", "test_kitchen", "test_season_market", "test_realm8_save", "test_share_card", "test_remote_config", "test_sweep", "test_decor", "test_advice_review", "test_realm9_save", "test_malay",
+		"test_tourney_reward", "test_realm6_save", "test_month_event", "test_skins", "test_mail", "test_realm7_save", "test_history", "test_endgame", "test_heirs", "test_kitchen", "test_season_market", "test_realm8_save", "test_share_card", "test_remote_config", "test_sweep", "test_decor", "test_advice_review", "test_realm9_save", "test_malay", "test_save_signature", "test_ab_groups", "test_active_hour", "test_spend_limit", "test_raid_widget", "test_east_content",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -3248,7 +3248,7 @@ func test_endgame() -> void:
 	check(is_equal_approx(float(Data.RANK_PERKS[8]["combat"]), 0.2) and m.kingdom_bonus("combat") >= 0.2 - 0.0001, "bonus Maharaja")
 	check(m.affair_yield("silver") > base or base == 0, "hasil naik dengan gelar")
 	check(m.combat_power() >= power, "kekuatan naik dengan gelar")
-	check(Data.STORY_CHAPTERS.size() == 11, "tiga bab akhir")
+	check(Data.STORY_CHAPTERS.size() == 12, "bab akhir + Fajar di Timur")
 
 
 func test_heirs() -> void:
@@ -3486,3 +3486,93 @@ func test_malay() -> void:
 				bad += 1
 	check(missing == 0, "semua teks punya terjemahan Melayu (%d kurang)" % missing)
 	check(bad == 0, "placeholder Melayu sama dengan sumber (%d beda)" % bad)
+
+
+func test_save_signature() -> void:
+	var m := _realm_model()
+	var text := Model.signed_text(m.to_dict())
+	check(Model.verify_signed(text).has("counselors"), "save bertanda tangan bisa dibaca")
+	var tampered := text.replace("\"gold\":%d" % m.gold, "\"gold\":%d" % (m.gold + 99999))
+	check(tampered != text and Model.verify_signed(tampered).is_empty(), "save yang diubah ditolak")
+	check(Model.verify_signed("{\"gold\":1}").is_empty() and Model.verify_signed("").is_empty(), "save tanpa tanda tangan ditolak")
+	var code := Model.encode_save(m.to_dict())
+	check(code.begins_with("TN2:") and not Model.decode_save(code).is_empty(), "kode cadangan bertanda tangan")
+	var raw := Marshalls.base64_to_raw(code.substr(4)).decompress_dynamic(32 * 1024 * 1024, FileAccess.COMPRESSION_GZIP)
+	var edited := raw.get_string_from_utf8().replace("\"gold\":%d" % m.gold, "\"gold\":%d" % (m.gold + 5))
+	var forged := "TN2:" + Marshalls.raw_to_base64(edited.to_utf8_buffer().compress(FileAccess.COMPRESSION_GZIP))
+	check(Model.decode_save(forged).is_empty(), "kode cadangan yang diubah ditolak")
+	check(Model.decode_save("TLG1:" + code.substr(4)).is_empty(), "kode format lama tanpa tanda tangan ditolak")
+
+
+func test_ab_groups() -> void:
+	var m := fresh()
+	m.install_id = "abcdef0123456789abcd"
+	var cfg := {"experiments": [{"id": "diskon", "variants": [{"name": "a", "overrides": {}},
+		{"name": "b", "overrides": {"gacha_discount": 0.2}}]}]}
+	m.apply_remote(cfg)
+	var g: String = m.remote["groups"].get("diskon", "")
+	check(g in ["a", "b"], "pemasangan masuk satu kelompok")
+	check((g == "b") == (m.gacha_cost(1) < Data.GACHA_COST), "varian b memberi diskon")
+	m.apply_remote(cfg)
+	check(m.remote["groups"]["diskon"] == g, "kelompok tetap sama")
+	var counts := {"a": 0, "b": 0}
+	for i in 200:
+		var x := fresh()
+		x.install_id = "%016x" % (i * 7919 + 13)
+		x.apply_remote(cfg)
+		counts[x.remote["groups"]["diskon"]] += 1
+	check(counts["a"] > 60 and counts["b"] > 60, "pembagian kelompok seimbang (%d/%d)" % [counts["a"], counts["b"]])
+	var y := fresh()
+	y.apply_remote(cfg)
+	check(y.remote["groups"].is_empty(), "tanpa ID pemasangan tidak ikut eksperimen")
+
+
+func test_active_hour() -> void:
+	var m := fresh()
+	m.tz_bias = 0
+	var t := 1_794_268_800.0 + 10 * 3600.0  # pukul 10.00
+	m.active_hour = -1
+	var plan_default := m.notification_plan(t)
+	m.active_hour = 20
+	var plan := m.notification_plan(t)
+	var login_default: int = plan_default.filter(func(n): return n["id"] == 4)[0]["delay"]
+	var login: int = plan.filter(func(n): return n["id"] == 4)[0]["delay"]
+	check(login - login_default == (20 - Model.NOTIFY_LOGIN_HOUR) * 3600, "pengingat login di jam aktif pemain")
+
+
+func test_spend_limit() -> void:
+	var m := fresh()
+	var t := 1_794_268_800.0
+	check(m.spend_allowed("gold_330", 0, t), "tanpa batas selalu boleh")
+	check(m.spend_allowed("gold_330", 100000, t), "di bawah batas boleh")
+	m.grant_purchase("gold_330", "tok-1", t)
+	check(m.spent_this_month(t) == 75000, "belanja bulan ini tercatat")
+	check(not m.spend_allowed("gold_330", 100000, t), "melewati batas ditolak")
+	check(m.spend_allowed("gold_60", 100000, t), "masih muat produk kecil")
+	check(m.spent_this_month(t + 40 * 86400.0) == 0, "bulan baru mulai dari nol")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
+	check(m2.spent_this_month(t) == 75000, "belanja bulanan tersimpan")
+
+
+func test_raid_widget() -> void:
+	var m := _realm_model()
+	var gold := m.gold
+	check(m.claim_raid_reward(7, {"gold": 150, "items": {"star_stone": 2}})["ok"] and m.gold == gold + 150, "hadiah raid")
+	check(not m.claim_raid_reward(7, {"gold": 150})["ok"], "hadiah raid sekali")
+	var w := m.widget_lines(1000.0)
+	check(w.size() == 4 and str(w[0]).contains(m.me_name()), "teks widget")
+
+
+func test_east_content() -> void:
+	for id in ["banjar", "bone", "tidore", "raja_ampat"]:
+		check(Data.REGIONS.any(func(r): return r["id"] == id), "wilayah %s" % id)
+	for id in ["lanang", "daeng", "malesi", "mambri", "cendana", "kenari"]:
+		check(ResourceLoader.exists("res://assets/portraits/%s.svg" % id), "potret %s" % id)
+	for id in ["lanang", "daeng", "malesi", "mambri"]:
+		check(Data.SKILLS.has(id) and Data.TALES.has(id), "skill & kisah %s" % id)
+	var m := _realm_model()
+	m.stage = 100
+	m._unlock_content()
+	check(m.counselors.has("lanang") and m.counselors.has("daeng") and m.counselors.has("mambri"), "penasihat timur bergabung")
+	check(m.beauties.has("cendana") and m.beauties.has("kenari"), "selir timur bergabung")

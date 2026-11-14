@@ -202,4 +202,17 @@ public class TlgNotifyPlugin extends GodotPlugin {
         } catch (Exception ignored) {
         }
     }
+
+    /** Perbarui teks widget layar beranda (dipanggil game saat dijeda/ditutup). */
+    @UsedByGodot
+    public void update_widget(String title, String line1, String line2, String line3) {
+        Context ctx = context();
+        if (ctx == null) {
+            return;
+        }
+        ctx.getSharedPreferences(TlgWidget.PREFS, Context.MODE_PRIVATE).edit()
+                .putString("title", title).putString("line1", line1).putString("line2", line2)
+                .putString("line3", line3).apply();
+        TlgWidget.refresh(ctx);
+    }
 }

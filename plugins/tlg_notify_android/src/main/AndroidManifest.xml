@@ -24,6 +24,19 @@
             </intent-filter>
         </receiver>
 
+        <!-- Widget layar beranda (ringkasan urusan, rekrut gratis, hadiah login). -->
+        <receiver
+            android:name="com.tlg.notify.TlgWidget"
+            android:exported="false"
+            android:label="Tuan Nusantara">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/tlg_widget_info" />
+        </receiver>
+
         <!-- Berbagi gambar kartu hasil ke WhatsApp/IG. -->
         <provider
             android:name="com.tlg.notify.TlgShareProvider"

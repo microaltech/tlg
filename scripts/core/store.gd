@@ -59,6 +59,10 @@ func price_text(id: String) -> String:
 
 ## Mulai pembelian. Di Mode Uji, UI menampilkan konfirmasi lalu memanggil complete_test_purchase.
 func purchase(id: String) -> void:
+	if not Game.model.spend_allowed(id, Settings.spend_limit, Game.now()):
+		purchase_failed.emit(tr("Batas belanja bulanan Rp%s tercapai. Ubah di Pengaturan → Bermain Sehat.")
+			% str(Settings.spend_limit))
+		return
 	match mode:
 		Mode.PLAY_BILLING:
 			if not connected:

@@ -42,6 +42,33 @@ jobs:
       - name: Simulasi ekonomi singkat
         run: $GODOT --headless --path . --script res://tools/sim_economy.gd -- 7 4 1 2>&1 | grep -E "Tonggak|ERROR" | tee sim.log
 
+  ui:
+    name: Uji tampilan (3 bahasa x 3 layar)
+    runs-on: ubuntu-latest
+    needs: game
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pasang layar virtual
+        run: sudo apt-get update -q && sudo apt-get install -y -q xvfb libgl1-mesa-dri
+      - name: Unduh Godot
+        run: |
+          curl -sSL -o godot.zip "$GODOT_URL/Godot_v4.3-stable_linux.x86_64.zip"
+          unzip -q godot.zip -d "$RUNNER_TEMP/godot"
+          echo "GODOT=$RUNNER_TEMP/godot/Godot_v4.3-stable_linux.x86_64" >> "$GITHUB_ENV"
+      - name: Periksa elemen yang keluar layar
+        run: |
+          $GODOT --headless --path . --import || true
+          xvfb-run -a -s "-screen 0 2000x2600x24" $GODOT --path . --rendering-driver opengl3 --resolution 720x1280 \
+            res://tools/ui_check.tscn -- "$PWD/ui-shots" 2>&1 | tee ui.log
+          grep -q "ui_check: 0 masalah" ui.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tangkapan-layar-ui
+          path: ui-shots/
+          retention-days: 7
+
   server:
     name: Tes server & ujung-ke-ujung
     runs-on: ubuntu-latest

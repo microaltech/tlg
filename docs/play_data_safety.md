@@ -101,6 +101,7 @@ dengan **Ya, mengumpulkan data**:
 | Nama pengguna (nama Tuan) | Ya | Tidak | Wajib untuk mode online | Fungsi aplikasi (peringkat, chat, teman) |
 | Pesan dalam aplikasi (chat aliansi) | Ya | Tidak | Opsional | Fungsi aplikasi |
 | Aktivitas aplikasi lainnya (kekuatan, tahap, ringkasan kota, lencana, serangan Perang Wilayah/Bos Dunia, pendaftaran turnamen, teman, hadiah, kode yang ditukar, kode undangan, dagangan Pasar Pemain) | Ya | Tidak | Wajib untuk mode online | Fungsi aplikasi |
+| Aktivitas aplikasi → Konten buatan pengguna lainnya | Laporan masalah/saran dan tangkapan layar game | Tidak | Opsional | Dukungan pengguna |
 | Info keuangan → Riwayat pembelian (token pembelian untuk verifikasi) | Ya | Tidak | Wajib bila membeli | Fungsi aplikasi, pencegahan penipuan |
 
 - **Enkripsi saat transit:** Ya, asalkan server di-hosting dengan HTTPS (wajib).

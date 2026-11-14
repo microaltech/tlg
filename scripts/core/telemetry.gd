@@ -62,6 +62,8 @@ func _ready() -> void:
 	_prune_logs()
 	_start_session()
 	Game.model.tracked.connect(_on_tracked)
+	# ID pemasangan untuk uji A/B (dibuat bersama ID statistik anonim).
+	Game.model.install_id = stats_payload()["install"]
 
 
 func _process(delta: float) -> void:
@@ -137,6 +139,11 @@ func _start_session() -> void:
 	if not Settings.analytics:
 		return
 	stats["sessions"] = int(stats.get("sessions", 0)) + 1
+	# Jam mulai sesi (lokal) untuk notifikasi di jam pemain biasa bermain.
+	var hours: Dictionary = stats.get("hours", {})
+	var h := str(int(Time.get_datetime_dict_from_system()["hour"]))
+	hours[h] = int(hours.get(h, 0)) + 1
+	stats["hours"] = hours
 	stats["first_t"] = float(stats.get("first_t", _session_start))
 	var day := Time.get_date_string_from_unix_time(int(_session_start))
 	if str(stats.get("last_day", "")) != day:
@@ -166,6 +173,20 @@ func _on_tracked(event: String) -> void:
 	var events: Dictionary = stats.get("events", {})
 	events[event] = int(events.get(event, 0)) + 1
 	stats["events"] = events
+
+
+## Jam lokal paling sering memulai sesi (minimal 5 sesi tercatat), -1 bila belum cukup data.
+func active_hour() -> int:
+	var hours: Dictionary = stats.get("hours", {})
+	var best := -1
+	var best_n := 0
+	var total := 0
+	for h in hours:
+		total += int(hours[h])
+		if int(hours[h]) > best_n:
+			best_n = int(hours[h])
+			best = int(h)
+	return best if total >= 5 else -1
 
 
 func clear_stats() -> void:
@@ -198,7 +219,8 @@ func stats_payload() -> Dictionary:
 	return {"install": Settings.install_id, "version": _version(), "sessions": int(stats.get("sessions", 0)),
 		"play_seconds": int(stats.get("play_seconds", 0)), "days": int(stats.get("active_days", 0)),
 		"stage": int(m.stage), "rank": int(m.rank), "tutorial_done": bool(m.tutorial.get("done", false)),
-		"language": TranslationServer.get_locale().substr(0, 2), "events": stats.get("events", {})}
+		"language": TranslationServer.get_locale().substr(0, 2), "events": stats.get("events", {}),
+		"groups": m.remote.get("groups", {})}
 
 
 ## Kirim sekali sehari bila pemain mengizinkan dan alamat server ada.

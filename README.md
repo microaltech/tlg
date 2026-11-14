@@ -634,6 +634,28 @@ cp build/outputs/aar/tlg_notify-release.aar ../../addons/tlg_notify/bin/
 - **CI GitHub Actions** (`.github/workflows/ci.yml`): tes game, terjemahan, server,
   uji ujung-ke-ujung, dan APK arm64 yang bisa diunduh dari tab Actions.
 
+## Fitur batch 10
+
+- **Laporkan Masalah / Saran** (Pengaturan): teks + tangkapan layar ke server; admin
+  membalas dari dasbor dan balasan masuk ke Kotak Surat pemain.
+- **Uji tampilan otomatis** (`tools/ui_check.tscn`): 7 halaman + Pengaturan dalam
+  bahasa id/en/ms pada 720×1280, 1080×2400, dan 1536×2048; gagal bila ada elemen keluar
+  layar. Berjalan di CI; tangkapan layar diunggah sebagai artifact.
+- **Pengaman save**: save dan kode cadangan ditandatangani (HMAC-SHA256). Save yang
+  diedit di luar game ditolak dan diganti cadangan sah terakhir (`user://save.bak`).
+- **Server**: cadangan database harian, `/status`, peringatan webhook, `docker-compose`
+  dengan HTTPS otomatis (panduan `docs/deploy.md`).
+- **Jadwal acara** dan **uji A/B** dari dasbor (kelompok dipilih tetap per pemasangan,
+  hasil retensi per varian di statistik).
+- **Notifikasi di jam aktif**: pengingat login & ringkasan harian mengikuti jam pemain
+  biasa membuka game.
+- **Widget layar beranda** (plugin TlgNotify): urusan penuh, rekrut gratis, hadiah login.
+- **Fajar di Timur**: wilayah Banjar, Bone, Tidore, Raja Ampat; bab cerita ke-12;
+  penasihat Lanang Mahakam, Daeng Pasau, Kapitan Malesi, Mambri Kawari; selir Cendana dan
+  Kenari; ikatan Laskar Fajar Timur.
+- **Raid aliansi** 3 hari dengan hadiah menurut kontribusi.
+- **Bermain Sehat**: batas belanja bulanan dan pengingat istirahat.
+
 ## Alat tambahan
 
 - `tools/perf_check.gd` — ukur waktu bangun halaman (lihat `docs/performance.md`).

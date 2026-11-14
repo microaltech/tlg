@@ -145,6 +145,8 @@ var king_effects := {}
 var rng := RandomNumberGenerator.new()
 ## Konfigurasi jarak jauh dari server (lihat apply_remote); tidak disimpan di save.
 var remote := {}
+## ID pemasangan acak untuk uji A/B (diisi Telemetry; sama dengan ID statistik anonim).
+var install_id := ""
 ## Memo perhitungan berat (atribut, kekuatan, hasil urusan) selama UI dibangun.
 ## Aktif hanya di antara memo_begin() dan memo_end(), saat state tidak berubah.
 var _memo := {}
@@ -2149,6 +2151,7 @@ func grant_purchase(id: String, token: String, now: float) -> Dictionary:
 		if iap["processed"].size() > 100:
 			iap["processed"] = iap["processed"].slice(-100)
 	iap["spent_idr"] = int(iap["spent_idr"]) + int(def["price_idr"])
+	_record_spend(id, now)
 	var vip_points := int(def["price_idr"]) / Data.VIP_IDR_PER_POINT
 	parts.append("+%d poin VIP" % vip_points)
 	var vip_msg := add_vip_points(vip_points)
@@ -3114,6 +3117,10 @@ func charge_full_eta(key: String, now: float) -> int:
 ## Notifikasi yang dijadwalkan saat pemain meninggalkan game:
 ## [{"id": int, "delay": detik, "title", "text"}]. id tetap per jenis agar
 ## penjadwalan ulang menimpa yang lama.
+## Jam lokal kebiasaan bermain (0–23) dari Telemetry; -1 = belum tahu (pakai jam bawaan).
+var active_hour := -1
+
+
 func notification_plan(now: float) -> Array:
 	var plan := []
 	var city := 0
@@ -3130,7 +3137,7 @@ func notification_plan(now: float) -> Array:
 	if free > 0:
 		plan.append({"id": 3, "delay": free, "title": "Rekrut gratis siap",
 			"text": "Satu rekrut penasihat gratis menunggu di Balai Rekrut."})
-	var login_at := seconds_until_reset(now) + NOTIFY_LOGIN_HOUR * 3600
+	var login_at := seconds_until_reset(now) + (active_hour if active_hour >= 0 else NOTIFY_LOGIN_HOUR) * 3600
 	plan.append({"id": 4, "delay": login_at, "title": "Hadiah login menunggu",
 		"text": "Ambil hadiah harian dan jaga rangkaian login Tuan."})
 	plan.append({"id": 5, "delay": NOTIFY_IDLE_SECONDS, "title": "Kerajaan merindukan Tuan",
@@ -3156,7 +3163,7 @@ func notification_plan(now: float) -> Array:
 ## Ringkasan harian pukul NOTIFY_SUMMARY_HOUR: daftar urusan yang sudah siap saat itu.
 func _daily_summary_plan(now: float) -> Dictionary:
 	var local_s := fposmod(now + tz_bias, 86400.0)
-	var delay := int(NOTIFY_SUMMARY_HOUR * 3600 - local_s)
+	var delay := int((active_hour if active_hour >= 0 else NOTIFY_SUMMARY_HOUR) * 3600 - local_s)
 	if delay <= 60:
 		delay += 86400
 	var at := now + delay
@@ -4708,17 +4715,45 @@ func away_report(snap: Dictionary, now: float) -> Dictionary:
 
 # --- Kode cadangan ----------------------------------------------------------
 
-const SAVE_CODE_PREFIX := "TLG1:"
+const SAVE_CODE_PREFIX := "TN2:"
+## Kunci tanda tangan save. Ini penghalang edit save biasa, bukan rahasia mutlak
+## (aplikasi bisa dibongkar); pertahanan sesungguhnya ada di server (save server,
+## verifikasi pembelian, tanda lonjakan emas).
+const SAVE_SECRET := "tn-nusantara-7f3a9c1e5b2d8046-palapa"
 
 
-## Ubah data save (hasil to_dict) menjadi teks pendek yang bisa disalin:
-## JSON -> gzip -> base64, dengan awalan versi.
+## Tanda tangan HMAC-SHA256 (hex) atas teks save.
+static func sign_text(text: String) -> String:
+	var ctx := HMACContext.new()
+	ctx.start(HashingContext.HASH_SHA256, SAVE_SECRET.to_utf8_buffer())
+	ctx.update(text.to_utf8_buffer())
+	return ctx.finish().hex_encode()
+
+
+## Teks save bertanda tangan: "<tanda tangan>\n<json>".
+static func signed_text(data: Dictionary) -> String:
+	var json := JSON.stringify(data)
+	return sign_text(json) + "\n" + json
+
+
+## Kebalikan signed_text: {} bila format salah atau tanda tangan tidak cocok.
+static func verify_signed(text: String) -> Dictionary:
+	var nl := text.find("\n")
+	if nl != 64:
+		return {}
+	var json := text.substr(65)
+	if sign_text(json) != text.substr(0, 64):
+		return {}
+	var data = JSON.parse_string(json)
+	return data if data is Dictionary else {}
+
+
 static func encode_save(data: Dictionary) -> String:
-	var raw := JSON.stringify(data).to_utf8_buffer()
+	var raw := signed_text(data).to_utf8_buffer()
 	return SAVE_CODE_PREFIX + Marshalls.raw_to_base64(raw.compress(FileAccess.COMPRESSION_GZIP))
 
 
-## Kebalikan encode_save. Kosong bila kode tidak valid atau bukan save game ini.
+## Kebalikan encode_save. Kosong bila kode tidak valid, diubah, atau bukan save game ini.
 static func decode_save(code: String) -> Dictionary:
 	code = code.strip_edges().replace("\n", "").replace(" ", "")
 	if not code.begins_with(SAVE_CODE_PREFIX):
@@ -4729,8 +4764,8 @@ static func decode_save(code: String) -> Dictionary:
 	var raw := packed.decompress_dynamic(32 * 1024 * 1024, FileAccess.COMPRESSION_GZIP)
 	if raw.is_empty():
 		return {}
-	var data = JSON.parse_string(raw.get_string_from_utf8())
-	if not (data is Dictionary) or not data.has("version") or not data.has("counselors"):
+	var data := verify_signed(raw.get_string_from_utf8())
+	if not data.has("version") or not data.has("counselors"):
 		return {}
 	return data
 
@@ -4991,6 +5026,9 @@ func from_dict(d: Dictionary, now: float) -> void:
 			iap[k].append(str(v))
 	for k in ["card_until", "card_claimed", "spent_idr"]:
 		iap[k] = int(src_iap.get(k, iap[k]))
+	var src_spend = src_iap.get("spend", {})
+	if src_spend is Dictionary and not src_spend.is_empty():
+		iap["spend"] = {"month": int(src_spend.get("month", -1)), "amount": maxi(0, int(src_spend.get("amount", 0)))}
 	inventory = {}
 	for id in d.get("inventory", {}):
 		if Data.ITEMS.has(str(id)) and int(d["inventory"][id]) > 0:
@@ -5257,6 +5295,7 @@ func _empty_realm(now: float) -> Dictionary:
 		"sweep": {"day": -1, "used": 0},
 		"decor": [],
 		"review": {"count": 0, "last": 0.0},
+		"raid_claimed": [],
 	}
 
 
@@ -7096,6 +7135,9 @@ func _load_realm6(src: Dictionary) -> void:
 	_load_realm7(src)
 	_load_realm8(src)
 	_load_realm9(src)
+	for v in src.get("raid_claimed", []):
+		if not realm["raid_claimed"].has(int(v)):
+			realm["raid_claimed"].append(int(v))
 
 
 # --- Gelar kehormatan penasihat ---------------------------------------------------------
@@ -7860,7 +7902,21 @@ func apply_remote(cfg: Dictionary) -> void:
 		"event": str(cfg.get("event", "")),
 		"min_version": int(cfg.get("min_version", 0)),
 		"announcement": cfg.get("announcement") if cfg.get("announcement") is Dictionary else {},
+		"groups": {},
 	}
+	# Uji A/B: varian dipilih tetap per pemasangan (hash ID pemasangan + id eksperimen).
+	var exps = cfg.get("experiments", [])
+	if exps is Array and install_id != "":
+		for e in exps:
+			if not (e is Dictionary) or not (e.get("variants") is Array) or e["variants"].size() < 2:
+				continue
+			var v: Dictionary = e["variants"][posmod(hash(install_id + ":" + str(e.get("id", ""))), e["variants"].size())]
+			remote["groups"][str(e.get("id", ""))] = str(v.get("name", ""))
+			var o: Dictionary = v.get("overrides", {}) if v.get("overrides") is Dictionary else {}
+			if o.has("yield_bonus"):
+				remote["yield_bonus"] = clampf(float(o["yield_bonus"]), 0.0, 1.0)
+			if o.has("gacha_discount"):
+				remote["gacha_discount"] = clampf(float(o["gacha_discount"]), 0.0, 0.5)
 	changed.emit()
 
 
@@ -7999,3 +8055,63 @@ func advice(now: float) -> Array:
 	if out.is_empty():
 		out.append({"text": "Latih penasihat terkuat untuk menaikkan kekuatan.", "target": "page:counselor"})
 	return out
+
+
+
+# --- Batch 10: raid aliansi, batas belanja ----------------------------------------------
+
+func claim_raid_reward(raid: int, reward: Dictionary) -> Dictionary:
+	if realm["raid_claimed"].has(raid):
+		return _fail("Hadiah raid sudah diambil.")
+	realm["raid_claimed"].append(raid)
+	while realm["raid_claimed"].size() > 50:
+		realm["raid_claimed"].pop_front()
+	var text := _give_rewards(_safe_reward(reward))
+	_track("raid")
+	changed.emit()
+	return _ok("Hadiah raid: %s." % text)
+
+
+## Kunci bulan (tahun*12+bulan) untuk menghitung belanja bulanan.
+func spend_month(now: float) -> int:
+	return month_index(now)
+
+
+## Rupiah yang sudah dibelanjakan bulan ini (pembelian sungguhan, dicatat grant_purchase).
+func spent_this_month(now: float) -> int:
+	var sp: Dictionary = iap.get("spend", {})
+	return int(sp.get("amount", 0)) if int(sp.get("month", -1)) == spend_month(now) else 0
+
+
+## Boleh membeli produk ini dengan batas belanja bulanan `limit` (0 = tanpa batas)?
+func spend_allowed(id: String, limit: int, now: float) -> bool:
+	if limit <= 0:
+		return true
+	return spent_this_month(now) + int(Data.iap_def(id).get("price_idr", 0)) <= limit
+
+
+func _record_spend(id: String, now: float) -> void:
+	var m := spend_month(now)
+	var sp: Dictionary = iap.get("spend", {})
+	if int(sp.get("month", -1)) != m:
+		sp = {"month": m, "amount": 0}
+	sp["amount"] = int(sp["amount"]) + int(Data.iap_def(id).get("price_idr", 0))
+	iap["spend"] = sp
+
+
+
+## Teks widget layar beranda: [judul, baris1, baris2, baris3] (bahasa sumber; diterjemahkan Notifier).
+func widget_lines(now: float) -> Array:
+	var clock := func(eta: int) -> String:
+		var d := Time.get_datetime_dict_from_unix_time(int(now + eta + tz_bias))
+		return "%02d.%02d" % [int(d["hour"]), int(d["minute"])]
+	var city := 0
+	for key in ["silver", "grain", "soldiers"]:
+		city = maxi(city, charge_full_eta(key, now))
+	var free := free_pull_eta(now)
+	return [
+		"%s · %s" % [me_name(), rank_info()["name"]],
+		"Urusan kota penuh" if city <= 0 else "Urusan kota penuh pukul %s" % clock.call(city),
+		"Rekrut gratis siap" if free <= 0 else "Rekrut gratis pukul %s" % clock.call(free),
+		"Hadiah login menunggu" if login_can_claim(now) else "Hadiah login berikutnya besok",
+	]

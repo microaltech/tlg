@@ -82,6 +82,17 @@ Minimal satu dari tiap kelompok:
 - [ ] Sapu Tahap x1/x5, Dekorasi tampil di spanduk kota
 - [ ] Setelah naik jabatan (hari ke-2+): dialog ulasan Google (hanya di APK dari Play)
 
+## Batch 10
+
+- [ ] Pengaturan → Laporkan Masalah: kirim dengan gambar; dasbor menampilkan gambar;
+      balasan masuk Kotak Surat
+- [ ] Widget: tahan layar beranda → Widget → Tuan Nusantara; tutup game → teks widget
+      terbarui; ketuk widget membuka game
+- [ ] Raid Aliansi (dua HP satu aliansi): serang, kontribusi, ambil hadiah raid lalu
+- [ ] Bermain Sehat: batas 50rb → pembelian Rp75.000 ditolak; pengingat 30 menit muncul
+- [ ] Wilayah timur (Tahap 76+), penasihat & selir baru, bab "Fajar di Timur"
+- [ ] Ubah save.json di HP (adb) → game menolak dan memulihkan cadangan
+
 ## Ketahanan
 
 - [ ] Tutup paksa saat tayangan perang lalu buka lagi: progres tersimpan

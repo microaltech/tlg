@@ -27,7 +27,10 @@ var dark_mode := false  ## tema gelap
 var ui_scale := 1.0  ## ukuran tampilan: 0.9, 1.0, 1.1, atau 1.25 (ekstra besar)
 var colorblind := false  ## palet ramah buta warna merah-hijau
 var vibration := true  ## getar singkat pada momen penting
-var announcement_seen := ""  ## id pengumuman server terakhir yang sudah ditampilkan
+var announcement_seen := ""
+## Batas belanja bulanan dalam rupiah (0 = tanpa batas) dan pengingat istirahat (menit, 0 = mati).
+var spend_limit := 0
+var break_minutes := 0  ## id pengumuman server terakhir yang sudah ditampilkan
 
 
 func _ready() -> void:
@@ -53,6 +56,8 @@ func _ready() -> void:
 		colorblind = bool(cfg.get_value("device", "colorblind", false))
 		vibration = bool(cfg.get_value("device", "vibration", true))
 		announcement_seen = str(cfg.get_value("online", "announcement_seen", ""))
+		spend_limit = maxi(0, int(cfg.get_value("wellbeing", "spend_limit", 0)))
+		break_minutes = clampi(int(cfg.get_value("wellbeing", "break_minutes", 0)), 0, 240)
 	_apply_power()
 
 
@@ -83,6 +88,8 @@ func save() -> void:
 	cfg.set_value("device", "colorblind", colorblind)
 	cfg.set_value("device", "vibration", vibration)
 	cfg.set_value("online", "announcement_seen", announcement_seen)
+	cfg.set_value("wellbeing", "spend_limit", spend_limit)
+	cfg.set_value("wellbeing", "break_minutes", break_minutes)
 	cfg.save(PATH)
 
 

@@ -31,6 +31,7 @@ var _hub_tab := "ekonomi"
 var _tourney := {}
 var mail_button: Button  ## disorot tutorial
 var _season := {}
+var _raid := {}
 var _advice_open := false
 var _bazaar := {}
 var _referral := {}
@@ -323,6 +324,9 @@ func _hub_tiles(now: float) -> Dictionary:
 		"season": {"name": "Musim Aliansi", "icon": "season", "open": has_server and not model.alliance.is_empty(),
 			"badge": 1 if online and _season.get("last_reward") != null and not _season.get("last_claimed", true) else 0,
 			"fn": show_season},
+		"raid": {"name": "Raid Aliansi", "icon": "raid", "open": has_server and not model.alliance.is_empty(),
+			"badge": int(_raid.get("attacks_left", 0)) + (1 if _raid.get("last_reward") != null and not _raid.get("last_claimed", true) else 0)
+				if online else 0, "fn": show_raid},
 		"bazaar": {"name": "Pasar Pemain", "icon": "bazaar", "open": has_server and model.stage >= 10, "stage": 10,
 			"badge": 0, "fn": show_bazaar},
 	}
@@ -2364,3 +2368,68 @@ func _fill_decor(box: VBoxContainer, subtitle: Label) -> void:
 		var did: String = id
 		_side_button(card, "Terpasang" if owned else "Pasang", func(): return model.buy_decor(did),
 			not owned and model.silver >= cost, "GoldButton", "upgrade")
+
+
+# --- Raid aliansi (online) -------------------------------------------------------------------
+
+func show_raid() -> void:
+	if _need_online():
+		return
+	_show("raid", "Raid Aliansi", "raid", _fill_raid)
+	_load_raid()
+
+
+func _load_raid() -> void:
+	Online.fetch_raid(func(d: Dictionary):
+		_raid = d
+		if is_open("raid"):
+			_fill("raid")
+		ui._queue_rebuild())
+
+
+func _fill_raid(box: VBoxContainer, subtitle: Label) -> void:
+	if _raid.is_empty():
+		subtitle.text = "Memuat..."
+		return
+	if _raid.has("error"):
+		subtitle.text = str(_raid["error"])
+		return
+	subtitle.text = tr("Benteng musuh · berakhir dalam %s") % ui._duration(int(_raid.get("ends_in", 0)) / 1000)
+	subtitle.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_small(box, "Anggota aliansi bergantian menyerang benteng selama 3 hari (2 serangan per hari). Hadiah dibagi menurut kontribusi.")
+	var card: HBoxContainer = ui._card(box)
+	card.add_child(ui._tex(Art.icon("raid"), 80))
+	var col: VBoxContainer = ui._col(card)
+	var hp_max := int(_raid.get("hp_max", 1))
+	var dmg := int(_raid.get("damage", 0))
+	ui._label(col, "Runtuh!" if _raid.get("defeated", false) else "Benteng Bertahan", "CardTitle")
+	ui._bar(col, mini(dmg, hp_max), hp_max, Color("c0392b"))
+	_small(col, tr("%s / %s · kontribusi Tuan %d%%") % [ui._num(dmg), ui._num(hp_max),
+		roundi(float(_raid.get("share", 0.0)) * 100)]).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	var left := int(_raid.get("attacks_left", 0))
+	_side_button(card, tr("Serang (%d)") % left, func():
+		Online.raid_attack(func(r: Dictionary):
+			ui._show(r)
+			_load_raid())
+		return null, left > 0 and not _raid.get("defeated", false), "GoldButton", "attack")
+	var reward = _raid.get("last_reward")
+	if reward is Dictionary:
+		var rc: HBoxContainer = ui._card(box)
+		var rcol: VBoxContainer = ui._col(rc)
+		ui._label(rcol, "Hadiah raid sebelumnya", "CardTitle")
+		_small(rcol, ui._reward_text(reward)).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		_side_button(rc, "Diambil" if _raid.get("last_claimed", false) else "Ambil", func():
+			Online.claim_raid(func(r: Dictionary):
+				ui._show(r)
+				_load_raid())
+			return null, not _raid.get("last_claimed", false), "GoldButton")
+	ui._label(box, "Kontribusi Anggota", "CardTitle")
+	var top: Array = _raid.get("top", [])
+	if top.is_empty():
+		_small(box, "Belum ada serangan. Jadilah yang pertama!")
+	for i in top.size():
+		var row := _row(box)
+		var n := _small(row, "%d. %s" % [i + 1, str(top[i]["name"])])
+		n.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_small(row, ui._num(int(top[i]["damage"]))).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED

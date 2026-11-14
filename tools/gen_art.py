@@ -2173,6 +2173,34 @@ ICONS["decor_pendopo"] = icon_doc(
     '<path d="M22 46 L22 80 M40 46 L40 80 M56 46 L56 80 M74 46 L74 80" stroke="#7a4b1f" stroke-width="5"/>'
     '<rect x="10" y="80" width="76" height="8" fill="#c9a66b" stroke="#7a4b1f" stroke-width="2"/>')
 
+# Penasihat & selir Indonesia timur.
+CHARACTERS["lanang"] = dict(gender="m", skin=SKIN["tan"], hair="#120b07", hair_style="long", headwear="udeng",
+                            hat_color="#c0392b", outfit="#2b2b2b", inner="#f2c14e", brows="fierce", mouth="calm",
+                            extras=["necklace"], bg=("#4f9a5a", "#123a1e"))
+CHARACTERS["daeng"] = dict(gender="m", skin=SKIN["medium"], hair="#1a110b", hair_style="short", headwear="round",
+                           hat_color="#1f2f5f", outfit="#2c5d8f", inner="#efe4c4", beard="mustache", brows="calm",
+                           extras=["necklace"], bg=("#5aa0d6", "#0e2a4f"))
+CHARACTERS["malesi"] = dict(gender="m", skin=SKIN["tan"], hair="#120b07", hair_style="short", headwear="udeng",
+                            hat_color="#a8322d", outfit="#7a1f2b", inner="#f7f2e8", beard="full", brows="fierce",
+                            mouth="fierce", extras=["armor", "scar"], bg=("#e06050", "#4a0e0e"))
+CHARACTERS["mambri"] = dict(gender="m", skin=SKIN["deep"], hair="#0f0906", hair_style="short", headwear="crown",
+                            outfit="#c0392b", inner="#f2c14e", trim="#f2c14e", beard="goatee", brows="fierce",
+                            extras=["necklace", "armor"], bg=("#f2a33a", "#6b2f12"))
+CHARACTERS["cendana"] = dict(gender="f", skin=SKIN["medium"], hair="#1a110b", hair_style="bun", outfit="#7a3a1a",
+                             inner="#f2e2c0", shawl="#c0392b", brows="soft", extras=["earrings", "necklace"],
+                             flowers=[(168, 74, "#f2c14e")], bg=("#c98a4a", "#4a2208"))
+CHARACTERS["kenari"] = dict(gender="f", skin=SKIN["tan"], hair="#120b07", hair_style="long", outfit="#1f6f5a",
+                            inner="#f7f2e8", shawl="#e0b84a", brows="soft", extras=["earrings"],
+                            flowers=[(164, 70, "#ffffff"), (176, 86, "#e06050")], bg=("#4fb7a0", "#0e3a32"))
+
+ICONS["raid"] = icon_doc(
+    '<path d="M10 88 L10 40 L20 40 L20 30 L30 30 L30 40 L42 40 L42 30 L54 30 L54 40 L66 40 L66 30 L76 30 L76 40 L86 40 '
+    'L86 88 Z" fill="#7a6a5a" stroke="#3a2e22" stroke-width="3"/>'
+    '<path d="M38 88 L38 66 Q48 54 58 66 L58 88 Z" fill="#2b1d10"/>'
+    '<path d="M60 10 L86 36 M64 6 L90 32" stroke="#c9d1da" stroke-width="5" stroke-linecap="round"/>'
+    '<path d="M80 26 L90 16 M84 36 L94 26" stroke="#7a4b1f" stroke-width="5" stroke-linecap="round"/>'
+    '<path d="M20 52 L28 60 M64 50 L72 58" stroke="#c0392b" stroke-width="4"/>')
+
 
 def main():
     for cid, spec in CHARACTERS.items():

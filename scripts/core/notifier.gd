@@ -35,8 +35,12 @@ func _notification(what: int) -> void:
 
 
 func schedule_plan() -> void:
+	if available() and _plugin.has_method("update_widget"):
+		var w: Array = Game.model.widget_lines(Game.now())
+		_plugin.update_widget(tr_lines(w[0]), tr_lines(w[1]), tr_lines(w[2]), tr_lines(w[3]))
 	if not available() or not Settings.notifications:
 		return
+	Game.model.active_hour = Telemetry.active_hour()
 	for n in Game.model.notification_plan(Game.now()):
 		_plugin.schedule(int(n["id"]), tr(str(n["title"])), tr(str(n["text"])), int(n["delay"]))
 	_watch_server()
@@ -80,3 +84,8 @@ func _request_permission() -> void:
 	if available() and Settings.notifications and OS.get_name() == "Android" \
 			and not PERMISSION in OS.get_granted_permissions():
 		OS.request_permission(PERMISSION)
+
+
+
+func tr_lines(text: String) -> String:
+	return tr(text)

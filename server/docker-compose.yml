@@ -1,0 +1,27 @@
+# Server Tuan Nusantara + HTTPS otomatis (Caddy). Lihat docs/deploy.md.
+#   1. Arahkan domain (mis. tn.contoh.id) ke IP VPS.
+#   2. Salin server/.env.example menjadi server/.env lalu isi.
+#   3. docker compose -f server/docker-compose.yml up -d
+services:
+  server:
+    build: .
+    restart: always
+    env_file: .env
+    volumes:
+      - tlg-data:/data
+      # - ./iap-service-account.json:/secrets/iap.json:ro   # verifikasi pembelian (opsional)
+  caddy:
+    image: caddy:2.8-alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    command: caddy reverse-proxy --from ${DOMAIN:?isi DOMAIN di .env} --to server:8080
+    env_file: .env
+    volumes:
+      - caddy-data:/data
+    depends_on:
+      - server
+volumes:
+  tlg-data:
+  caddy-data:

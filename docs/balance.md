@@ -207,3 +207,11 @@ Bot membaca sejarah harian, memasak sekali tiap berkah habis (rata-rata 2 adukan
 tepat), dan mengangkat pewaris. Hasil seed 1: Menteri di hari ke-20, tahap di hari
 ke-30 adalah 79 (tidak berubah). Bonus gelar Adipati ke atas (`RANK_PERKS`) baru
 terasa setelah hari ke-30 dan menjadi tujuan pemain lama bersama tiga bab akhir.
+
+## Penasihat Indonesia timur
+
+Empat penasihat baru (satu Legenda khusus rekrut) memperbanyak variasi hasil rekrut,
+sehingga penasihat duplikat berkurang dan kekuatan naik sedikit lebih cepat. Seed 1–3:
+Menteri di hari ke-17 sampai 19 (sebelumnya 19–20), tahap di hari ke-30 adalah 80–81.
+Masih dalam rentang yang diinginkan; bila terasa terlalu cepat, naikkan ambang Menteri
+(`RANKS`, 22.000) ke sekitar 24.000.

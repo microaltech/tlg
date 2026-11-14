@@ -56,6 +56,9 @@
 	<button data-tab="mail">Kirim Surat</button>
 	<button data-tab="codes">Kode Hadiah</button>
 	<button data-tab="reports">Laporan Chat</button>
+	<button data-tab="feedback">Umpan Balik</button>
+	<button data-tab="live">Jadwal & Konfigurasi</button>
+	<button data-tab="health">Crash & Kecurangan</button>
 </nav>
 <main>
 	<section id="overview" class="on"><div class="grid" id="ov"></div><h2>Musim aliansi</h2><div id="season"></div></section>
@@ -85,6 +88,29 @@
 		<h2>Daftar kode</h2><div class="scroll"><table id="cl"></table></div>
 	</section>
 	<section id="reports"><div class="scroll"><table id="rp"></table></div></section>
+	<section id="feedback"><div id="fb"></div></section>
+	<section id="live">
+		<h2>Konfigurasi aktif</h2><pre id="cfg" class="muted" style="white-space:pre-wrap"></pre>
+		<h2>Jadwalkan acara</h2>
+		<form id="schf">
+			<label>Judul <input name="title" required placeholder="HUT RI"></label>
+			<label>Mulai <input name="start" type="datetime-local" required></label>
+			<label>Selesai <input name="end" type="datetime-local" required></label>
+			<label>Bonus semua hasil (0–1, mis. 0.5 = +50%) <input name="yield_bonus" type="number" step="0.05" min="0" max="1"></label>
+			<label>Diskon rekrut (0–0.5) <input name="gacha_discount" type="number" step="0.05" min="0" max="0.5"></label>
+			<label>Judul pengumuman <input name="ann_title" maxlength="60"></label>
+			<label>Isi pengumuman <textarea name="ann_body" rows="3" maxlength="500"></textarea></label>
+			<button class="btn">Jadwalkan</button>
+		</form>
+		<h2>Jadwal</h2><div class="scroll"><table id="sch"></table></div>
+		<h2>Eksperimen A/B</h2><p class="muted">Atur lewat konfigurasi <code>experiments</code>; hasil per varian:</p>
+		<div class="scroll"><table id="exp"></table></div>
+	</section>
+	<section id="health">
+		<h2>Status server</h2><pre id="status" class="muted"></pre>
+		<h2>Crash per perangkat</h2><div class="scroll"><table id="cr"></table></div>
+		<h2>Tanda kecurangan</h2><div class="scroll"><table id="fl"></table></div>
+	</section>
 </main>
 <div id="msg"></div>
 <script>
@@ -131,8 +157,64 @@ async function load() {
 		const rp = await api("/admin/api/reports");
 		table($("#rp"), ["Pemain", "Pesan", "Laporan", ""], rp.reports.map((r) => [td(r.name), td(r.text), td(r.n, 1),
 			`<td><button class="btn ${r.hidden ? "" : "red"}" data-hide="${r.id}" data-v="${r.hidden ? 0 : 1}">${r.hidden ? "Tampilkan" : "Sembunyikan"}</button></td>`]));
+		await loadMore(st);
 	} catch (e) { toast("Gagal memuat: " + e.message); }
 }
+async function loadMore(st) {
+	const fb = await api("/admin/api/feedback");
+	$("#fb").innerHTML = fb.feedback.map((f) => `<div class="tile" style="margin-bottom:10px">
+		<b style="font-size:15px">${esc(f.kind === "bug" ? "Masalah" : "Saran")} · ${esc(f.name)}</b>
+		<span>${esc(new Date(f.t).toLocaleString("id-ID"))} · v${esc(f.version)} · ${esc(f.device)} · ${esc(f.lang)}</span>
+		<p>${esc(f.text)}</p>${f.has_shot ? `<button class="btn" data-shot="${f.id}">Lihat gambar</button> <img id="img${f.id}" style="max-width:100%;display:none">` : ""}
+		${f.reply ? `<p class="muted">Dibalas: ${esc(f.reply)}</p>` : `<form data-reply="${f.id}" style="max-width:none;margin-top:8px">
+		<input name="text" placeholder="Balasan (dikirim ke Kotak Surat pemain)"><input name="reward" placeholder="Hadiah opsional, mis. gold=20">
+		<button class="btn">Balas</button></form>`}</div>`).join("") || '<p class="muted">Belum ada umpan balik.</p>';
+	const cfg = await api("/admin/api/config");
+	$("#cfg").textContent = JSON.stringify(cfg.config, null, 2);
+	const sch = await api("/admin/api/schedule");
+	table($("#sch"), ["Judul", "Mulai", "Selesai", "Pengaturan", ""], sch.schedule.map((r) => [td(r.title + (r.active ? " (aktif)" : "")),
+		td(new Date(r.start).toLocaleString("id-ID")), td(new Date(r.end).toLocaleString("id-ID")), td(JSON.stringify(r.overrides)),
+		`<td><button class="btn red" data-del="${r.id}">Hapus</button></td>`]));
+	const rows = [];
+	for (const [exp, vs] of Object.entries(st.experiments || {})) {
+		for (const [v, x] of Object.entries(vs)) rows.push([td(exp), td(v), td(x.installs, 1), td(x.minutes, 1), td(x.d1 ?? "-", 1), td(x.d7 ?? "-", 1)]);
+	}
+	table($("#exp"), ["Eksperimen", "Varian", "Pemasangan", "Menit", "H1 %", "H7 %"], rows);
+	$("#status").textContent = JSON.stringify(await (await fetch("/status")).json(), null, 2);
+	const cr = await api("/admin/api/crashes");
+	table($("#cr"), ["Versi", "Perangkat", "GPU", "Jumlah", "Terakhir"], cr.groups.map((g) => [td(g.version), td(g.device), td(g.gpu),
+		td(g.n, 1), td(new Date(g.last).toLocaleString("id-ID"))]));
+	const fl = await api("/admin/api/flags");
+	table($("#fl"), ["Pemain", "Alasan", "Waktu"], fl.flags.map((f) => [td(f.name), td(f.reason), td(new Date(f.t).toLocaleString("id-ID"))]));
+}
+document.addEventListener("click", async (e) => {
+	const id = e.target.dataset.shot;
+	if (id) {
+		const res = await fetch("/admin/api/feedback/shot?id=" + id, { headers: { "X-Admin-Token": $("#token").value } });
+		const img = $("#img" + id); img.src = URL.createObjectURL(await res.blob()); img.style.display = "block";
+	}
+	const del = e.target.dataset.del;
+	if (del) { try { await api("/admin/api/schedule/delete", { id: Number(del) }); load(); } catch (err) { toast(err.message); } }
+});
+document.addEventListener("submit", async (e) => {
+	const rid = e.target.dataset.reply;
+	if (!rid) return;
+	e.preventDefault(); const f = new FormData(e.target);
+	try { await api("/admin/api/feedback/reply", { id: Number(rid), text: f.get("text"), reward: reward(f.get("reward")) }); toast("Balasan terkirim"); load(); }
+	catch (err) { toast(err.message); }
+});
+$("#schf").addEventListener("submit", async (e) => {
+	e.preventDefault(); const f = new FormData(e.target);
+	const o = {};
+	if (f.get("yield_bonus")) o.yield_bonus = Number(f.get("yield_bonus"));
+	if (f.get("gacha_discount")) o.gacha_discount = Number(f.get("gacha_discount"));
+	if (f.get("ann_title")) o.announcement = { id: "jadwal-" + Date.now(), title: f.get("ann_title"), body: f.get("ann_body") };
+	try {
+		await api("/admin/api/schedule", { title: f.get("title"), start: new Date(f.get("start")).toISOString(),
+			end: new Date(f.get("end")).toISOString(), overrides: o });
+		toast("Acara dijadwalkan"); e.target.reset(); load();
+	} catch (err) { toast(err.message); }
+});
 $("#tabs").addEventListener("click", (e) => {
 	const t = e.target.dataset.tab; if (!t) return;
 	document.querySelectorAll("nav button, section").forEach((n) => n.classList.toggle("on", n.dataset.tab === t || n.id === t));

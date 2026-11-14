@@ -64,6 +64,11 @@ mencadangkan progres game ke server (dipakai juga untuk Pindah Perangkat dan
 memeriksa kecurangan di Pasar Pemain). Aplikasi juga memeriksa server sekitar 4 jam sekali untuk memberi tahu surat baru atau dagangan
 yang laku (mati bila notifikasi dimatikan atau mode online tidak dipakai).
 
+**Laporkan Masalah / Saran.** Bila Anda mengirim laporan, server menerima teks yang Anda
+tulis, tangkapan layar halaman game (bila dicentang), versi game, model perangkat, bahasa,
+dan nama Tuan. Data ini hanya dipakai untuk memperbaiki game dan membalas Anda lewat
+Kotak Surat.
+
 **Bagikan.** Tombol Bagikan membuat gambar kartu di perangkat lalu membuka menu
 bagikan Android. Gambar hanya terkirim ke aplikasi yang Anda pilih sendiri. Data ini dipakai untuk papan peringkat, chat,
 arena, teman, kunjungan kota, Raja Hari Ini, dan Perang Wilayah bersama pemain lain,

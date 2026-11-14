@@ -72,6 +72,11 @@ const COUNSELORS := [
 	{"id": "kusuma", "name": "Kusuma Wardhani", "rarity": "sr", "str": 5, "int": 9, "pol": 15, "cha": 8, "unlock_stage": -1},
 	{"id": "jaka", "name": "Jaka Tingkir", "rarity": "ssr", "str": 20, "int": 9, "pol": 7, "cha": 12, "unlock_stage": -1},
 	{"id": "nawang", "name": "Nawang Wulan", "rarity": "ssr", "str": 6, "int": 12, "pol": 10, "cha": 20, "unlock_stage": -1},
+	# Penasihat dari Indonesia timur (ekspansi Fajar di Timur).
+	{"id": "lanang", "name": "Lanang Mahakam", "rarity": "sr", "str": 17, "int": 6, "pol": 6, "cha": 9, "unlock_stage": 76},
+	{"id": "daeng", "name": "Daeng Pasau", "rarity": "sr", "str": 7, "int": 14, "pol": 13, "cha": 8, "unlock_stage": 84},
+	{"id": "malesi", "name": "Kapitan Malesi", "rarity": "ssr", "str": 19, "int": 10, "pol": 9, "cha": 14, "unlock_stage": -1},
+	{"id": "mambri", "name": "Mambri Kawari", "rarity": "ssr", "str": 18, "int": 11, "pol": 8, "cha": 16, "unlock_stage": 100},
 ]
 
 ## Skill pasif penasihat: nilai = base + per_star x bintang (dalam pecahan, 0.05 = 5%).
@@ -87,6 +92,10 @@ const SKILLS := {
 	"dewi": {"name": "Diplomasi Dewi", "effect": "prestige", "base": 0.10, "per_star": 0.03},
 	"satria": {"name": "Panji Satria", "effect": "combat", "base": 0.10, "per_star": 0.03},
 	"lintang": {"name": "Panah Lintang", "effect": "combat", "base": 0.04, "per_star": 0.02},
+	"lanang": {"name": "Mandau Mahakam", "effect": "battle", "base": 0.07, "per_star": 0.03},
+	"daeng": {"name": "Bintang Pelaut", "effect": "yield_silver", "base": 0.08, "per_star": 0.03},
+	"malesi": {"name": "Salawaku Kapitan", "effect": "combat", "base": 0.08, "per_star": 0.03},
+	"mambri": {"name": "Semangat Mambri", "effect": "yield_soldiers", "base": 0.10, "per_star": 0.03},
 	"danu": {"name": "Hemat Bendahara", "effect": "train_cost", "base": 0.08, "per_star": 0.02},
 	"wening": {"name": "Strategi Wening", "effect": "yield_silver", "base": 0.08, "per_star": 0.03},
 	"bagas": {"name": "Pukulan Bagas", "effect": "combat", "base": 0.06, "per_star": 0.02},
@@ -149,6 +158,7 @@ const BONDS := [
 	{"name": "Bunga Keraton", "members": ["ratna", "wening", "kedaton"], "effect": "prestige", "value": 0.15},
 	{"name": "Busur dan Tinju", "members": ["lintang", "bagas"], "effect": "combat", "value": 0.05},
 	{"name": "Laskar Majapahit", "members": ["gajah", "rangga", "sora"], "effect": "combat", "value": 0.10},
+	{"name": "Laskar Fajar Timur", "members": ["lanang", "daeng", "malesi", "mambri"], "effect": "combat", "value": 0.15},
 	{"name": "Putri Kahyangan", "members": ["dewi", "kedaton", "nawang"], "effect": "visit", "value": 0.10},
 	{"name": "Para Pujangga", "members": ["resi", "tantular", "kusuma"], "effect": "yield_all", "value": 0.05},
 ]
@@ -168,6 +178,8 @@ const BEAUTIES := [
 	{"id": "cempaka", "name": "Cempaka", "unlock_stage": 20},
 	{"id": "kemuning", "name": "Kemuning", "unlock_stage": 28},
 	{"id": "kantil", "name": "Kantil", "unlock_stage": 38},
+	{"id": "cendana", "name": "Cendana", "unlock_stage": 80},
+	{"id": "kenari", "name": "Kenari", "unlock_stage": 92},
 ]
 
 const CHILD_NAMES := {
@@ -872,6 +884,15 @@ const STORY_CHAPTERS := [
 			{"type": "heirs", "target": 3, "text": "Miliki 3 pewaris", "reward": {"items": {"star_stone": 5}}},
 			{"type": "power", "target": 2000000, "text": "Capai kekuatan 2.000.000", "reward": {"items": {"recruit_ticket": 10}}},
 		], "reward": {"gold": 5000, "items": {"star_stone": 10, "recruit_ticket": 20}}},
+	{"title": "Fajar di Timur", "story": [
+		{"speaker": "daeng", "text": "Tuan, angin barat membawa kabar: kerajaan-kerajaan timur menunggu uluran persahabatan."},
+		{"speaker": "lanang", "text": "Sungai Mahakam dan Barito siap mengantar perahu kita. Hutan Borneo akan menjaga Tuan."},
+		{"speaker": "mambri", "text": "Di Raja Ampat matahari Nusantara terbit paling awal. Mari sambut fajar bersama, Tuan."}],
+		"quests": [
+			{"type": "regions", "target": 14, "text": "Kuasai 14 wilayah, termasuk Raja Ampat", "reward": {"gold": 1000}},
+			{"type": "stage", "target": 125, "text": "Taklukkan Tahap 125", "reward": {"items": {"star_stone": 6}}},
+			{"type": "counselors", "target": 25, "text": "Miliki 25 penasihat", "reward": {"items": {"recruit_ticket": 10}}},
+		], "reward": {"gold": 6000, "items": {"star_stone": 12, "recruit_ticket": 20}}},
 ]
 ## Pilihan cerita di akhir bab (kunci: indeks bab). Tiap pilihan memberi hadiah dan
 ## bonus permanen kecil ("effect": {efek: nilai}); bab berikutnya punya dialog sesuai pilihan.
@@ -1173,6 +1194,15 @@ const REGIONS := [
 		"per_hour": 0.1, "desc": "Kerajaan pelaut dengan armada pinisi."},
 	{"id": "ternate", "name": "Ternate", "island": "Maluku", "pos": [0.83, 0.42], "stage": 68, "kind": "silver",
 		"per_hour": 0.1, "desc": "Pulau rempah yang diperebutkan bangsa-bangsa."},
+	# Ekspansi Fajar di Timur.
+	{"id": "banjar", "name": "Banjar", "island": "Kalimantan", "pos": [0.52, 0.52], "stage": 76, "kind": "silver",
+		"per_hour": 0.12, "desc": "Kerajaan sungai dengan pasar terapung dan tambang intan."},
+	{"id": "bone", "name": "Bone", "island": "Sulawesi", "pos": [0.70, 0.66], "stage": 84, "kind": "soldiers",
+		"per_hour": 0.12, "desc": "Tanah Bugis yang terkenal dengan pelaut dan prajurit pemberani."},
+	{"id": "tidore", "name": "Tidore", "island": "Maluku", "pos": [0.86, 0.47], "stage": 92, "kind": "grain",
+		"per_hour": 0.12, "desc": "Pulau bergunung api yang kaya cengkeh dan pala."},
+	{"id": "raja_ampat", "name": "Raja Ampat", "island": "Papua", "pos": [0.92, 0.50], "stage": 100, "kind": "silver",
+		"per_hour": 0.15, "desc": "Empat pulau raja di ujung barat Papua dengan laut paling kaya di dunia."},
 ]
 
 
@@ -1240,6 +1270,22 @@ const COURT_CASES := [
 const TALE_REQS := [{"level": 10, "stars": 0}, {"level": 30, "stars": 1}, {"level": 60, "stars": 2}]
 const TALE_REWARDS := [{"gold": 50}, {"items": {"star_stone": 1}}, {}]
 const TALES := {
+	"lanang": {"skill2": {"name": "Penjaga Hutan", "effect": "combat", "value": 0.04}, "parts": [
+		{"title": "Anak Rumah Panjang", "text": "Lanang dibesarkan di rumah panjang di tepi Mahakam, belajar membaca jejak satwa sebelum bisa membaca aksara."},
+		{"title": "Banjir Besar", "text": "Saat sungai meluap, Lanang mendayung semalaman menyelamatkan seisi kampung. Para tetua memberinya mandau pusaka."},
+		{"title": "Sumpah Hutan", "text": "Kini Lanang bersumpah menjaga hutan dan sungai Borneo. \"Selama hutan berdiri, negeri tak akan lapar,\" katanya."}]},
+	"daeng": {"skill2": {"name": "Navigasi Bintang", "effect": "yield_all", "value": 0.03}, "parts": [
+		{"title": "Lahir di Atas Pinisi", "text": "Daeng lahir di geladak pinisi dalam pelayaran ke Selat Makassar. Ombak adalah buaian pertamanya."},
+		{"title": "Peta Langit", "text": "Dari ayahnya ia belajar membaca bintang. Tanpa kompas, Daeng mampu membawa kapal pulang menembus badai."},
+		{"title": "Bandar yang Adil", "text": "Daeng membuka bandar yang adil bagi semua saudagar. Kapal dari seluruh penjuru datang membawa kemakmuran."}]},
+	"malesi": {"skill2": {"name": "Cakalele", "effect": "battle", "value": 0.05}, "parts": [
+		{"title": "Penari Cakalele", "text": "Malesi muda menari cakalele di setiap pesta negeri. Gerakannya secepat ombak memecah karang."},
+		{"title": "Benteng di Teluk", "text": "Ketika bajak laut menyerbu, Malesi memimpin para pemuda mempertahankan teluk dengan parang dan salawaku."},
+		{"title": "Kapitan Negeri", "text": "Rakyat mengangkatnya menjadi kapitan. Malesi bersumpah tak satu pun pala negeri dirampas orang asing."}]},
+	"mambri": {"skill2": {"name": "Tifa Perang", "effect": "combat", "value": 0.05}, "parts": [
+		{"title": "Pelaut Biak", "text": "Mambri Kawari tumbuh di antara perahu-perahu Biak, menyeberangi laut dengan perahu bercadik sejak kecil."},
+		{"title": "Gelar Mambri", "text": "Karena keberaniannya melindungi kampung dari serangan, para tetua menganugerahkan gelar mambri, sang pahlawan."},
+		{"title": "Tifa Persatuan", "text": "Kini tifa Mambri berbunyi bukan untuk perang, melainkan memanggil kampung-kampung berkumpul dalam damai."}]},
 	"arya": {"skill2": {"name": "Sumpah Prajurit", "effect": "battle", "value": 0.05}, "parts": [
 		{"title": "Anak Pandai Besi", "text": "Arya tumbuh di bengkel ayahnya, menempa tombak untuk para prajurit. Ia bersumpah suatu hari akan memakainya sendiri."},
 		{"title": "Luka Pertama", "text": "Dalam penyerbuan begal, Arya melindungi seorang anak dan mendapat luka di bahu. Sejak itu ia tak pernah mundur."},
@@ -1330,6 +1376,8 @@ const CODEX := [
 ]
 ## Cerita singkat selir untuk ensiklopedia.
 const BEAUTY_LORE := {
+	"cendana": "Penenun ikat dari Nusa Tenggara; harum kayu cendana selalu menyertainya.",
+	"kenari": "Putri bandar rempah Maluku yang pandai berdagang dan bernyanyi.",
 	"melati": "Gadis desa berhati lembut yang pertama kali menyambut Tuan.",
 	"kenanga": "Putri saudagar kain, pandai menenun songket.",
 	"anggrek": "Penyanyi tembang dari pesisir utara yang suaranya merdu.",
@@ -1724,6 +1772,9 @@ const FEATURE_HELP := {
 		"Perak hasil penjualan, dagangan yang ditarik, dan dagangan yang tidak laku 3 hari dikirim lewat Kotak Surat."],
 	"Dekorasi Kota": ["Hias kota dengan gapura, taman, patung, dan pendopo. Tiap dekorasi dibeli sekali dan memberi bonus kecil permanen.",
 		"Dekorasi tampil di spanduk kota dan terlihat saat pemain lain mengunjungi kota Tuan."],
+	"Raid Aliansi": ["Benteng musuh muncul tiap 3 hari untuk setiap aliansi. Tiap anggota menyerang 2 kali sehari.",
+		"Kontribusi 20% ke atas mendapat hadiah terbesar. Bila benteng tidak runtuh, hadiahnya setengah."],
+	"Laporkan Masalah / Saran": ["Tulis masalah atau saran, lampirkan tangkapan layar, lalu kirim. Balasan pengembang masuk ke Kotak Surat."],
 	"Saran Penasihat": ["Penasihat menunjukkan hal paling berguna yang bisa Tuan kerjakan sekarang. Ketuk \"Pergi\" untuk langsung ke sana."],
 	"Undang Teman": ["Bagikan kode undangan Tuan. Pemain baru memasukkan kode itu dalam 7 hari pertama.",
 		"Saat teman mencapai Tahap 10, Tuan dan teman sama-sama mendapat 100 emas dan 2 Tiket Rekrut lewat Kotak Surat."],
@@ -1925,7 +1976,7 @@ const HUB_TABS := [
 	{"id": "ekonomi", "name": "Ekonomi", "tiles": ["market", "garden", "fleet", "research", "ceremony", "kitchen", "decor"]},
 	{"id": "petualangan", "name": "Petualangan", "tiles": ["hunt", "candi", "race", "quiz", "wayang"]},
 	{"id": "istana", "name": "Istana", "tiles": ["kin", "pets", "forge", "policy", "badges", "wardrobe", "heirs"]},
-	{"id": "dunia", "name": "Dunia", "tiles": ["diplomacy", "friends", "guildwar", "worldboss", "tourney", "season", "bazaar"]},
+	{"id": "dunia", "name": "Dunia", "tiles": ["diplomacy", "friends", "guildwar", "worldboss", "tourney", "season", "bazaar", "raid"]},
 ]
 
 ## Wayang & cerita rakyat: tiap lakon 3 babak; satu babak baru per hari.

@@ -600,3 +600,110 @@ test("konfigurasi jarak jauh dan laporan crash", async () => {
 		assert.equal(cr.groups[0].device, "SM-A105F");
 	} finally { server.close(); }
 });
+
+test("umpan balik: teks + gambar, balasan admin lewat surat", async () => {
+	const { server, call } = await start({ adminToken: "adm" });
+	try {
+		const H = { "X-Admin-Token": "adm" };
+		const a = await login(call, "umpan-a", "Arya");
+		assert.equal((await call("POST", "/v1/feedback", { text: "x" }, a.token)).status, 400);
+		const jpg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(100 * 1024, 1)]).toString("base64");
+		assert.equal((await call("POST", "/v1/feedback", { kind: "bug", text: "Tombol terpotong di halaman Istana",
+			screenshot: jpg, version: "0.1.0", device: "SM-A105F", lang: "id" }, a.token)).status, 200, "kiriman ~136 KB diterima");
+		await call("POST", "/v1/feedback", { kind: "saran", text: "Tambah kuda putih", screenshot: "bukan-gambar" }, a.token);
+		const list = (await call("GET", "/admin/api/feedback", null, null, H)).data.feedback;
+		assert.equal(list.length, 2);
+		assert.equal(list[1].has_shot, true);
+		assert.equal(list[0].has_shot, false, "data bukan gambar dibuang");
+		const shot = await call("GET", `/admin/api/feedback/shot?id=${list[1].id}`, null, null, H);
+		assert.match(shot.type, /image\/jpeg/);
+		await call("POST", "/admin/api/feedback/reply", { id: list[1].id, text: "Terima kasih, sudah diperbaiki!",
+			reward: { gold: 20 } }, null, H);
+		const mail = (await call("GET", "/v1/mail", null, a.token)).data.mail;
+		assert.equal(mail[0].title, "Balasan Pengembang");
+		assert.equal(mail[0].reward.gold, 20);
+		for (let i = 0; i < 3; i++) await call("POST", "/v1/feedback", { text: "laporan lagi" }, a.token);
+		assert.equal((await call("POST", "/v1/feedback", { text: "laporan lagi" }, a.token)).status, 429, "batas harian");
+	} finally { server.close(); }
+});
+
+test("jadwal acara dan eksperimen A/B di konfigurasi", async () => {
+	const { server, call, tick, now } = await start({ adminToken: "adm" });
+	try {
+		const H = { "X-Admin-Token": "adm" };
+		const iso = (ms) => new Date(ms).toISOString();
+		const r = await call("POST", "/admin/api/schedule", { title: "HUT RI", start: iso(now() + 3600000),
+			end: iso(now() + 3 * 86400000), overrides: { yield_bonus: 0.5, palsu: 1,
+				announcement: { id: "hutri", title: "Dirgahayu RI", body: "Bonus +50%!" } } }, null, H);
+		assert.equal(r.status, 200);
+		assert.equal(r.data.overrides.palsu, undefined);
+		assert.equal((await call("GET", "/v1/config")).data.yield_bonus, 0, "belum mulai");
+		tick(2 * 3600000);
+		const c = (await call("GET", "/v1/config")).data;
+		assert.equal(c.yield_bonus, 0.5, "acara aktif");
+		assert.equal(c.announcement.id, "hutri");
+		tick(3 * 86400000);
+		assert.equal((await call("GET", "/v1/config")).data.yield_bonus, 0, "acara selesai");
+		assert.equal((await call("POST", "/admin/api/schedule", { start: "x", end: "y", overrides: { yield_bonus: 1 } },
+			null, H)).status, 400);
+		await call("POST", "/admin/api/config", { experiments: [{ id: "Diskon Rekrut", variants: [
+			{ name: "a", overrides: {} }, { name: "b", overrides: { gacha_discount: 0.9, palsu: 3 } }] }, { id: "satu", variants: [] }] },
+		null, H);
+		const exps = (await call("GET", "/v1/config")).data.experiments;
+		assert.equal(exps.length, 1, "eksperimen tanpa 2 varian dibuang");
+		assert.equal(exps[0].id, "diskonrekrut");
+		assert.equal(exps[0].variants[1].overrides.gacha_discount, 0.5, "dibatasi");
+		for (const [i, g] of [["abcdef0123456789aaaa", "a"], ["abcdef0123456789bbbb", "b"]]) {
+			await call("POST", "/v1/stats", { install: i, sessions: 1, play_seconds: 600, groups: { diskonrekrut: g } });
+		}
+		const st = (await call("GET", "/admin/api/stats?days=7", null, null, H)).data;
+		assert.equal(st.experiments.diskonrekrut.a.installs, 1);
+		assert.equal(st.experiments.diskonrekrut.b.minutes, 10);
+	} finally { server.close(); }
+});
+
+test("raid aliansi: serang bergiliran, hadiah menurut kontribusi, sekali", async () => {
+	const { server, call, tick } = await start();
+	try {
+		const a = await login(call, "raid-a", "Arya");
+		const b = await login(call, "raid-b", "Bayu");
+		const c = await login(call, "raid-c", "Citra");
+		await call("POST", "/v1/profile", { power: 400000, alliance: "garuda" }, a.token);
+		await call("POST", "/v1/profile", { power: 10000, alliance: "garuda" }, b.token);
+		assert.equal((await call("GET", "/v1/raid", null, c.token)).status, 400, "tanpa aliansi");
+		const r0 = (await call("GET", "/v1/raid", null, a.token)).data;
+		assert.equal(r0.hp_max, 410000 * 3);
+		assert.equal(r0.attacks_left, 2);
+		await call("POST", "/v1/raid/attack", {}, a.token);
+		await call("POST", "/v1/raid/attack", {}, a.token);
+		assert.equal((await call("POST", "/v1/raid/attack", {}, a.token)).status, 429);
+		await call("POST", "/v1/raid/attack", {}, b.token);
+		tick(86400000);
+		await call("POST", "/v1/raid/attack", {}, a.token);
+		await call("POST", "/v1/raid/attack", {}, a.token);
+		const r1 = (await call("GET", "/v1/raid", null, a.token)).data;
+		assert.ok(r1.damage >= r1.hp_max, "benteng runtuh");
+		assert.equal((await call("POST", "/v1/raid/attack", {}, b.token)).status, 409);
+		assert.equal((await call("POST", "/v1/raid/claim", {}, a.token)).status, 400, "raid belum selesai");
+		tick(r1.ends_in + 1000);
+		const ca = await call("POST", "/v1/raid/claim", {}, a.token);
+		const cb = await call("POST", "/v1/raid/claim", {}, b.token);
+		assert.equal(ca.data.reward.gold, 150, "kontributor besar");
+		assert.equal(cb.data.reward.gold, 40, "kontributor kecil");
+		assert.equal((await call("POST", "/v1/raid/claim", {}, a.token)).status, 409);
+	} finally { server.close(); }
+});
+
+test("status server dan cadangan database", async () => {
+	const os = require("node:os");
+	const fsx = require("node:fs");
+	const dir = fsx.mkdtempSync(require("node:path").join(os.tmpdir(), "tlg-backup-"));
+	const { server, call } = await start({ adminToken: "adm", backupDir: dir });
+	try {
+		const st = (await call("GET", "/status")).data;
+		assert.equal(st.ok, true);
+		assert.ok(st.last_backup.file.startsWith("tlg-"));
+		assert.equal(fsx.readdirSync(dir).length, 1, "cadangan dibuat saat server mulai");
+		assert.equal((await call("POST", "/admin/api/backup", {}, null, { "X-Admin-Token": "adm" })).status, 200);
+	} finally { server.close(); fsx.rmSync(dir, { recursive: true, force: true }); }
+});

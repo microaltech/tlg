@@ -136,6 +136,12 @@ function cleanStats(raw) {
 		play_seconds: clampInt(raw.play_seconds, 0, 1e9), days: clampInt(raw.days, 0, 1e5), stage: clampInt(raw.stage, 0, 1e6),
 		rank: clampInt(raw.rank, 0, 20), tutorial_done: !!raw.tutorial_done, language: String(raw.language || "").slice(0, 5),
 		events: {} };
+	out.groups = {};
+	if (raw.groups && typeof raw.groups === "object") {
+		for (const [k, v] of Object.entries(raw.groups).slice(0, 5)) {
+			if (/^[a-z0-9_]{1,24}$/.test(k)) out.groups[k] = String(v).toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 16);
+		}
+	}
 	if (raw.events && typeof raw.events === "object") {
 		for (const [k, v] of Object.entries(raw.events).slice(0, 100)) if (STAT_EVENTS.test(k)) out.events[k] = clampInt(v, 0, 1e9);
 	}
@@ -637,9 +643,15 @@ function createServer(opts = {}) {
 	});
 
 	const open = new Set(["GET /health", "POST /v1/auth/device", "GET /v1/alliances", "POST /v1/stats"]);
+	// Batas ukuran isi permintaan per rute (lainnya 16 KB).
+	const bodyLimits = { "POST /v1/save": 700 * 1024, "POST /v1/feedback": 520 * 1024, "POST /v1/crash": 32 * 1024 };
+	// Hitungan untuk /status dan peringatan (lihat batch10.js).
+	const metrics = { started: Date.now(), requests: [], errors: [] };
+	const configLayers = [];
 	const h = { dayOf, weekOf, friendCode, addMail, cleanReward, clampInt, addCode, statsSummary, ALLIANCES, CODE_ITEMS };
 	const { admin } = require("./batch8.js").install({ db, routes, open, now, random, opts, h });
-	require("./batch9.js").install({ db, routes, open, now, random, opts, h, admin });
+	require("./batch9.js").install({ db, routes, open, now, random, opts, h, admin, configLayers });
+	require("./batch10.js").install({ db, routes, open, now, random, opts, h, admin, configLayers, metrics });
 
 	const handler = async (req, res) => {
 		const url = new URL(req.url, "http://x");
@@ -655,7 +667,7 @@ function createServer(opts = {}) {
 			let raw = "";
 			for await (const chunk of req) {
 				raw += chunk;
-				if (raw.length > 16384) return send(413, { error: "Terlalu besar." });
+				if (raw.length > (bodyLimits[key] || 16384)) return send(413, { error: "Terlalu besar." });
 			}
 			try {
 				body = raw ? JSON.parse(raw) : {};
@@ -672,9 +684,12 @@ function createServer(opts = {}) {
 		}
 		try {
 			const [code, data, type] = await route(me, body, url.searchParams, req);
+			metrics.requests.push(Date.now());
+			if (code >= 500) metrics.errors.push(Date.now());
 			send(code, data, type);
 		} catch (e) {
 			console.error(e);
+			metrics.errors.push(Date.now());
 			send(500, { error: "Kesalahan server." });
 		}
 	};
@@ -717,6 +732,7 @@ function statsSummary(db, days, nowMs = Date.now()) {
 		for (const x of list) for (const [k, v] of Object.entries(x.events || {})) events[k] = (events[k] || 0) + v;
 	}
 	out.events = Object.entries(events).sort((a, b) => b[1] - a[1]).slice(0, 15);
+	out.experiments = require("./batch10.js").experimentSummary(db, nowMs);
 	return out;
 }
 

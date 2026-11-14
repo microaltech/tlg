@@ -547,3 +547,42 @@ func send_crash(report: Dictionary) -> void:
 	if base_url() == "":
 		return
 	_request(HTTPClient.METHOD_POST, "/v1/crash", report, func(_c: int, _d: Dictionary): pass, false)
+
+
+# --- Umpan balik & raid aliansi ---------------------------------------------------------
+
+## Kirim laporan masalah/saran; screenshot = gambar JPEG (PackedByteArray, boleh kosong).
+## callback(ok: bool, message: String)
+func send_feedback(kind: String, text: String, screenshot: PackedByteArray, callback: Callable) -> void:
+	var body := {"kind": kind, "text": text, "version": str(ProjectSettings.get_setting("application/config/version", "")),
+		"device": OS.get_model_name(), "lang": TranslationServer.get_locale().substr(0, 2)}
+	if not screenshot.is_empty():
+		body["screenshot"] = Marshalls.raw_to_base64(screenshot)
+	_request(HTTPClient.METHOD_POST, "/v1/feedback", body, func(code: int, data: Dictionary):
+		callback.call(code == 200, "Terima kasih! Laporan terkirim; balasan pengembang akan masuk ke Kotak Surat."
+			if code == 200 else str(data.get("error", "Tidak bisa terhubung ke server."))))
+
+
+func fetch_raid(callback: Callable) -> void:
+	_request(HTTPClient.METHOD_GET, "/v1/raid", {}, func(code: int, data: Dictionary):
+		callback.call(data if code == 200 else {"error": str(data.get("error", ""))}))
+
+
+## callback(result: Dictionary) dengan "damage" bila berhasil.
+func raid_attack(callback: Callable) -> void:
+	push_profile()
+	_request(HTTPClient.METHOD_POST, "/v1/raid/attack", {}, func(code: int, data: Dictionary):
+		if code == 200:
+			Game.model._track("raid_attack")
+			callback.call({"ok": true, "damage": int(data.get("damage", 0)),
+				"msg": tr("Serangan raid: %s kerusakan!") % str(int(data.get("damage", 0)))})
+		else:
+			callback.call({"ok": false, "msg": str(data.get("error", "Tidak bisa terhubung ke server."))}))
+
+
+func claim_raid(callback: Callable) -> void:
+	_request(HTTPClient.METHOD_POST, "/v1/raid/claim", {}, func(code: int, data: Dictionary):
+		if code == 200 and data.get("reward") is Dictionary:
+			callback.call(Game.model.claim_raid_reward(int(data.get("raid", 0)), data["reward"]))
+		else:
+			callback.call({"ok": false, "msg": str(data.get("error", "Tidak bisa terhubung ke server."))}))

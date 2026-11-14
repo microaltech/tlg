@@ -155,6 +155,7 @@ function install(ctx) {
 	// --- Konfigurasi jarak jauh -------------------------------------------------------------
 	function cleanConfigValue(key, v) {
 		const spec = CONFIG_SPEC[key];
+		if (spec.list) return spec.clean(v);
 		if (spec.obj) {
 			if (!v || typeof v !== "object") return null;
 			return { id: String(v.id || "").slice(0, 32), title: String(v.title || "").slice(0, 60),
@@ -169,6 +170,8 @@ function install(ctx) {
 		const out = {};
 		for (const [k, spec] of Object.entries(CONFIG_SPEC)) out[k] = spec.def;
 		for (const r of q.cfgAll.all()) if (CONFIG_SPEC[r.key]) out[r.key] = JSON.parse(r.value);
+		// Lapisan tambahan (jadwal acara, eksperimen) dari batch10.js.
+		for (const layer of ctx.configLayers || []) Object.assign(out, layer(out));
 		return out;
 	}
 

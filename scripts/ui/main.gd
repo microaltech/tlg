@@ -236,6 +236,7 @@ func _ready() -> void:
 			Online.fetch_mail()
 			if not model.alliance.is_empty():
 				_realm_ui._load_season()
+				_realm_ui._load_raid()
 			Telemetry.send_crash_report()
 		_queue_rebuild())
 	Online.config_changed.connect(_on_remote_config)
@@ -288,6 +289,9 @@ func _notification(what: int) -> void:
 		_queue_rebuild()
 	elif what == NOTIFICATION_WM_GO_BACK_REQUEST and is_node_ready():
 		_on_back()
+	elif what == NOTIFICATION_APPLICATION_RESUMED:
+		_play_since = Time.get_ticks_msec()  # pengingat istirahat dihitung ulang
+		_break_shown = 0
 
 
 ## Tombol Back Android: tutup jendela teratas; di layar utama, tanya dulu sebelum keluar.
@@ -797,8 +801,25 @@ func _rebuild() -> void:
 		_pages[k]["scroll"].scroll_vertical = scrolls[k]
 
 
+## Pengingat istirahat: detik bermain beruntun sejak dibuka/kembali ke game.
+var _play_since := Time.get_ticks_msec()
+var _break_shown := 0
+
+
+func _check_break() -> void:
+	if Settings.break_minutes <= 0:
+		return
+	var played := int((Time.get_ticks_msec() - _play_since) / 60000)
+	var due := played / Settings.break_minutes
+	if due > _break_shown:
+		_break_shown = due
+		_show({"ok": true, "msg": tr("Tuan sudah bermain %d menit. Saatnya istirahat sejenak, minum air, dan regangkan badan.")
+			% played})
+
+
 func _tick() -> void:
 	var now: float = Game.now()
+	_check_break()
 	_realm_ui.tick()
 	model.sync(now)
 	model.check_achievements()
@@ -1294,7 +1315,7 @@ func _build_campaign(page: Dictionary) -> void:
 	_icon_row(col, "silver", "Hadiah: %d perak" % info["reward_silver"])
 	_icon_row(col, "prestige", "Hadiah: %d prestise" % info["reward_prestige"])
 	_icon_row(col, "gold", "Hadiah: %d emas%s" % [info["reward_gold"],
-		"  (tahap besar!)" if (model.stage + 1) % 5 == 0 else ""])
+		"  " + tr("(tahap besar!)") if (model.stage + 1) % 5 == 0 else ""])
 
 	_build_formation(box)
 	_realm_ui.build_army(box)
@@ -5017,6 +5038,106 @@ func _show_profile() -> void:
 	_fill_profile()
 
 
+## Bermain sehat: batas belanja bulanan dan pengingat istirahat.
+func _build_wellbeing_section(box: VBoxContainer) -> void:
+	var sec := _inner_box(box)
+	_label(sec, "Bermain Sehat", "CardLabel").add_theme_font_override("font", UI.font_bold)
+	var spent: int = model.spent_this_month(Game.now())
+	_label(sec, tr("Belanja bulan ini: Rp%s. Batas belanja menolak pembelian yang melewatinya.") % _num(spent), "SmallLabel") \
+		.add_theme_color_override("font_color", UI.INK)
+	for pair in [["Batas belanja", "spend_limit", [[0, "Tanpa"], [50000, "50rb"], [150000, "150rb"], [500000, "500rb"]]],
+			["Pengingat istirahat", "break_minutes", [[0, "Mati"], [30, "30 mnt"], [60, "60 mnt"], [90, "90 mnt"]]]]:
+		_label(sec, pair[0], "SmallLabel").add_theme_color_override("font_color", UI.INK)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		sec.add_child(row)
+		var key: String = pair[1]
+		for opt in pair[2]:
+			var b := Button.new()
+			b.text = opt[1]
+			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			b.custom_minimum_size.y = 58
+			b.add_theme_font_size_override("font_size", 20)
+			b.theme_type_variation = "GoldButton" if int(Settings.get(key)) == int(opt[0]) else ""
+			var value: int = opt[0]
+			b.pressed.connect(func():
+				Audio.play("click")
+				# Menaikkan batas belanja minta konfirmasi; menurunkannya langsung.
+				if key == "spend_limit" and (value == 0 or value > Settings.spend_limit) and Settings.spend_limit > 0:
+					_confirm("Naikkan atau hapus batas belanja bulanan?", "Ya", func():
+						Settings.set_value(key, value)
+						_show({"ok": true, "msg": "Batas belanja diubah."}))
+				else:
+					Settings.set_value(key, value)
+					for c in row.get_children():
+						c.theme_type_variation = "GoldButton" if c == b else ""
+					_play_since = Time.get_ticks_msec()
+					_break_shown = 0)
+			row.add_child(b)
+
+
+## Formulir laporan masalah/saran ke server, dengan tangkapan layar halaman saat ini.
+func _show_feedback() -> void:
+	# Tangkapan layar diambil sebelum panel dibuka (yang terlihat adalah halaman game).
+	var img := get_viewport().get_texture().get_image()
+	if img.get_width() > 720:
+		img.resize(720, int(img.get_height() * 720.0 / img.get_width()), Image.INTERPOLATE_BILINEAR)
+	var shot := img.save_jpg_to_buffer(0.6)
+	var holder := {}
+	var p := _open_panel("Laporkan Masalah / Saran", "mail", func():
+		Audio.play("click")
+		holder["o"].queue_free(), 0.12, 0.85)
+	holder["o"] = p["overlay"]
+	p["subtitle"].text = "Pengembang membaca setiap laporan. Balasan dikirim ke Kotak Surat."
+	var box: VBoxContainer = p["content"]
+	var kind := {"v": "bug"}
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	box.add_child(row)
+	var buttons := []
+	for k in [["bug", "Masalah"], ["saran", "Saran"]]:
+		var b := Button.new()
+		b.text = k[1]
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.custom_minimum_size.y = 60
+		b.theme_type_variation = "GoldButton" if k[0] == "bug" else ""
+		var kid: String = k[0]
+		b.pressed.connect(func():
+			kind["v"] = kid
+			for x in buttons:
+				x.theme_type_variation = "GoldButton" if x == b else "")
+		buttons.append(b)
+		row.add_child(b)
+	var text := TextEdit.new()
+	text.placeholder_text = tr("Ceritakan apa yang terjadi atau apa yang Tuan inginkan...")
+	text.custom_minimum_size.y = 220
+	text.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	box.add_child(text)
+	var attach := CheckBox.new()
+	attach.text = tr("Lampirkan tangkapan layar halaman tadi")
+	attach.button_pressed = true
+	box.add_child(attach)
+	var thumb := TextureRect.new()
+	thumb.texture = ImageTexture.create_from_image(img)
+	thumb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	thumb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	thumb.custom_minimum_size = Vector2(0, 220)
+	box.add_child(thumb)
+	_label(box, "Versi game, model HP, dan bahasa ikut dikirim.", "SmallLabel").add_theme_color_override("font_color", UI.INK)
+	_button(box, "Kirim", func():
+		if text.text.strip_edges().length() < 5:
+			return {"ok": false, "msg": "Tulis minimal beberapa kata."}
+		if not Online.is_online():
+			DisplayServer.clipboard_set(text.text)
+			return {"ok": false, "msg": "Sambungkan ke server di Pengaturan untuk mengirim. Teks disalin."}
+		Online.send_feedback(kind["v"], text.text, shot if attach.button_pressed else PackedByteArray(),
+			func(ok: bool, msg: String):
+				_show({"ok": ok, "msg": msg})
+				if ok and is_instance_valid(holder["o"]):
+					holder["o"].queue_free())
+		return null, true, "mail", "GoldButton")
+
+
 ## Konfigurasi jarak jauh: wajib update bila versi terlalu lama, lalu pengumuman sekali per id.
 func _on_remote_config() -> void:
 	_queue_rebuild()
@@ -5571,10 +5692,12 @@ func _show_settings() -> void:
 
 	var lang_box := _inner_box(box)
 	_label(lang_box, "Bahasa / Language", "CardLabel").add_theme_font_override("font", UI.font_bold)
-	var lang_row := HBoxContainer.new()
-	lang_row.add_theme_constant_override("separation", 8)
+	var lang_row := GridContainer.new()
+	lang_row.columns = 2
+	lang_row.add_theme_constant_override("h_separation", 8)
+	lang_row.add_theme_constant_override("v_separation", 8)
 	lang_box.add_child(lang_row)
-	for code in ["auto", "id", "en"]:
+	for code in ["auto"] + I18n.LANGUAGES.keys():
 		var b := Button.new()
 		b.text = "Otomatis" if code == "auto" else I18n.LANGUAGES[code]
 		# Nama bahasa selalu ditulis dalam bahasanya sendiri.
@@ -5645,6 +5768,11 @@ func _show_settings() -> void:
 		.add_theme_color_override("font_color", UI.INK)
 
 	_build_backup_section(box, close)
+	_build_wellbeing_section(box)
+	_button(box, "Laporkan Masalah / Saran", func():
+		close.call()
+		_show_feedback.call_deferred()
+		return null, true, "mail", "GreenButton")
 	if Game.debug_enabled():
 		_build_debug_section(box)
 
@@ -5981,6 +6109,9 @@ static func _away_text(seconds: int) -> String:
 
 ## Buka kalender login sekali per hari bila hadiahnya belum diklaim.
 func _maybe_prompt_login() -> void:
+	if Game.load_notice != "":
+		_show({"ok": false, "msg": Game.load_notice})
+		Game.load_notice = ""
 	if model.tutorial_active():
 		Game.away = {}
 		return  # ditampilkan setelah tutorial selesai (tutorial_finished)

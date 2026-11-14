@@ -121,6 +121,20 @@ curl -X POST https://server/admin/api/config -H "X-Admin-Token: $ADMIN_TOKEN" \
 - `POST /v1/crash` (opt-in): laporan crash, maks. 20 per pemasangan per hari →
   `/admin/api/crashes`.
 
+### Umpan balik, jadwal acara, uji A/B, raid, status
+
+- `POST /v1/feedback`: teks + tangkapan layar (JPEG/PNG ≤400 KB), 5 per hari. Dasbor →
+  Umpan Balik untuk melihat gambar dan membalas (balasan + hadiah opsional lewat surat).
+- Jadwal acara: dasbor → Jadwal & Konfigurasi, atau `POST /admin/api/schedule`
+  `{title, start, end, overrides}`. Pengaturan aktif ditumpuk di atas `/v1/config`.
+- Uji A/B: konfigurasi `experiments` = `[{"id":"diskon","variants":[{"name":"a","overrides":{}},
+  {"name":"b","overrides":{"gacha_discount":0.2}}]}]`. Hasil (pemasangan, menit, H1/H7 per
+  varian) di dasbor Statistik bila pemain mengizinkan statistik anonim.
+- Raid aliansi: `GET /v1/raid`, `POST /v1/raid/attack` (2x sehari), `POST /v1/raid/claim`
+  (raid sebelumnya). HP benteng = 3x total kekuatan anggota aktif.
+- `GET /status`, cadangan harian (`BACKUP_DIR`), peringatan `ALERT_WEBHOOK`: lihat
+  `docs/deploy.md`.
+
 ### Endpoint
 
 | Metode | Jalur | Keterangan |

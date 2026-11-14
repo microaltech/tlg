@@ -81,26 +81,56 @@ func _check_return() -> void:
 		returned.emit()
 
 
+const BACKUP_PATH := "user://save.bak"
+## Penanda bahwa save bertanda tangan sudah pernah ditulis: setelah itu save tanpa
+## tanda tangan (format lama) tidak diterima lagi.
+const SIGNED_FLAG := "user://save_signed.flag"
+## Pesan untuk pemain bila save diubah di luar game (ditampilkan main.gd sekali).
+var load_notice := ""
+
+
 func save_game() -> void:
+	var data: Dictionary = model.to_dict()
+	data["away"] = _away_snap if not _away_snap.is_empty() else model.away_snapshot(now())
+	var text: String = model.signed_text(data)
+	# Save sah terakhir disimpan sebagai cadangan sebelum ditimpa.
+	if FileAccess.file_exists(SAVE_PATH):
+		var prev := FileAccess.get_file_as_string(SAVE_PATH)
+		if not model.verify_signed(prev).is_empty():
+			var b := FileAccess.open(BACKUP_PATH, FileAccess.WRITE)
+			if b:
+				b.store_string(prev)
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f == null:
 		push_warning("Gagal menyimpan: %s" % FileAccess.get_open_error())
 		return
-	var data: Dictionary = model.to_dict()
-	data["away"] = _away_snap if not _away_snap.is_empty() else model.away_snapshot(now())
-	f.store_string(JSON.stringify(data))
+	f.store_string(text)
+	if not FileAccess.file_exists(SIGNED_FLAG):
+		var flag := FileAccess.open(SIGNED_FLAG, FileAccess.WRITE)
+		if flag:
+			flag.store_string("1")
 
 
 func load_game() -> void:
 	if not FileAccess.file_exists(SAVE_PATH):
 		model.new_game(now())
 		return
-	var data = JSON.parse_string(FileAccess.get_file_as_string(SAVE_PATH))
-	if data is Dictionary:
+	var text := FileAccess.get_file_as_string(SAVE_PATH)
+	var data: Dictionary = model.verify_signed(text)
+	if data.is_empty() and text.begins_with("{") and not FileAccess.file_exists(SIGNED_FLAG):
+		var legacy = JSON.parse_string(text)  # save lama sebelum ada tanda tangan
+		data = legacy if legacy is Dictionary else {}
+	if data.is_empty():
+		var backup := model.verify_signed(FileAccess.get_file_as_string(BACKUP_PATH)) \
+			if FileAccess.file_exists(BACKUP_PATH) else {}
+		load_notice = "Save diubah di luar game sehingga tidak bisa dipakai. Progres dipulihkan dari cadangan terakhir." \
+			if not backup.is_empty() else "Save rusak atau diubah di luar game. Permainan dimulai dari awal."
+		push_warning(load_notice)
+		data = backup
+	if data.has("version"):
 		model.from_dict(data, now())
 		away = model.away_report(data.get("away", {}), now())
 	else:
-		push_warning("Save rusak, memulai game baru.")
 		model.new_game(now())
 
 

@@ -1,0 +1,125 @@
+# Rilis otomatis: buat tag `v0.1.2` lalu push → AAB & APK rilis bertanda tangan, rilis GitHub,
+# unggah ke jalur Internal Testing Google Play, dan (opsional) uji robo Firebase Test Lab.
+# Langkah sekali saja (secrets & variables): lihat docs/release_checklist.md, bagian "Rilis otomatis".
+name: Rilis
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Nama versi (mis. 0.1.2)"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  GODOT_URL: https://github.com/godotengine/godot/releases/download/4.3-stable
+  PACKAGE: com.microaltech.tuannusantara
+
+jobs:
+  release:
+    name: Build & unggah rilis
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+      HAS_PLAY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+      HAS_TESTLAB: ${{ secrets.GCP_TESTLAB_KEY != '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Nomor versi
+        run: |
+          NAME="${{ github.event.inputs.version }}"
+          [ -z "$NAME" ] && NAME="${GITHUB_REF_NAME#v}"
+          # version/code harus selalu naik: jumlah commit di cabang ini.
+          CODE=$(git rev-list --count HEAD)
+          echo "VERSION_NAME=$NAME" >> "$GITHUB_ENV"
+          echo "VERSION_CODE=$CODE" >> "$GITHUB_ENV"
+          sed -i "s/^version\/code=.*/version\/code=$CODE/; s/^version\/name=.*/version\/name=\"$NAME\"/" export_presets.cfg
+          sed -i "s/^const VERSION_CODE := .*/const VERSION_CODE := $CODE/" scripts/core/game_data.gd
+          sed -i "s/^config\/version=.*/config\/version=\"$NAME\"/" project.godot
+          echo "Versi $NAME (kode $CODE)"
+      - name: Unduh Godot & templat ekspor
+        run: |
+          curl -sSL -o godot.zip "$GODOT_URL/Godot_v4.3-stable_linux.x86_64.zip"
+          unzip -q godot.zip -d "$RUNNER_TEMP/godot"
+          echo "GODOT=$RUNNER_TEMP/godot/Godot_v4.3-stable_linux.x86_64" >> "$GITHUB_ENV"
+          curl -sSL -o templates.tpz "$GODOT_URL/Godot_v4.3-stable_export_templates.tpz"
+          mkdir -p ~/.local/share/godot/export_templates
+          unzip -q templates.tpz -d "$RUNNER_TEMP/tpl"
+          mv "$RUNNER_TEMP/tpl/templates" ~/.local/share/godot/export_templates/4.3.stable
+          mkdir -p android/build
+          unzip -q ~/.local/share/godot/export_templates/4.3.stable/android_source.zip -d android/build
+          echo "4.3.stable" > android/.build_version
+          touch android/build/.gdignore
+      - name: Keystore & pengaturan editor
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          keytool -genkeypair -keystore "$RUNNER_TEMP/debug.keystore" -storepass android -alias androiddebugkey \
+            -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          if [ "$HAS_KEYSTORE" = "true" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          fi
+          mkdir -p ~/.config/godot
+          printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/android_sdk_path = "%s"\nexport/android/java_sdk_path = "%s"\nexport/android/debug_keystore = "%s"\nexport/android/debug_keystore_user = "androiddebugkey"\nexport/android/debug_keystore_pass = "android"\n' \
+            "$ANDROID_SDK_ROOT" "$JAVA_HOME" "$RUNNER_TEMP/debug.keystore" > ~/.config/godot/editor_settings-4.3.tres
+      - name: Tes
+        run: |
+          $GODOT --headless --path . --import || true
+          $GODOT --headless --path . --script res://tests/run_tests.gd 2>&1 | tee test.log
+          grep -q " 0 gagal" test.log && ! grep -q "SCRIPT ERROR" test.log
+      - name: Build AAB & APK rilis
+        env:
+          GODOT_ANDROID_KEYSTORE_RELEASE_PATH: ${{ runner.temp }}/release.keystore
+          GODOT_ANDROID_KEYSTORE_RELEASE_USER: ${{ secrets.ANDROID_KEY_ALIAS }}
+          GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          mkdir -p build
+          if [ "$HAS_KEYSTORE" = "true" ]; then MODE=--export-release; else MODE=--export-debug; echo "::warning::Tanpa keystore rilis: build debug (tidak bisa diunggah ke Play)."; fi
+          $GODOT --headless --path . $MODE "Android AAB (Play Store)" build/tuan-nusantara-$VERSION_NAME.aab
+          $GODOT --headless --path . $MODE "Android arm64" build/tuan-nusantara-$VERSION_NAME-arm64.apk
+          ls -lh build/
+      - name: Rilis GitHub
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            build/*.aab
+            build/*.apk
+      - name: Unggah ke Google Play (Internal Testing)
+        if: env.HAS_PLAY == 'true' && env.HAS_KEYSTORE == 'true'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ${{ env.PACKAGE }}
+          releaseFiles: build/tuan-nusantara-${{ env.VERSION_NAME }}.aab
+          track: internal
+          # Aplikasi yang belum pernah dipublikasikan wajib "draft"; ubah variabel PLAY_RELEASE_STATUS
+          # menjadi "completed" setelah rilis pertama disetujui Google.
+          status: ${{ vars.PLAY_RELEASE_STATUS || 'draft' }}
+          releaseName: ${{ env.VERSION_NAME }}
+      - name: Masuk Google Cloud (Test Lab)
+        if: env.HAS_TESTLAB == 'true'
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_TESTLAB_KEY }}
+      - uses: google-github-actions/setup-gcloud@v2
+        if: env.HAS_TESTLAB == 'true'
+      - name: Uji robo di HP sungguhan (Firebase Test Lab)
+        if: env.HAS_TESTLAB == 'true'
+        run: |
+          # Pixel 5 & Pixel 6. Tambahkan HP kelas bawah (mis. Samsung seri A) dari: gcloud firebase test android models list
+          gcloud firebase test android run --project "${{ vars.FIREBASE_PROJECT }}" --type robo \
+            --app build/tuan-nusantara-$VERSION_NAME-arm64.apk --timeout 5m \
+            --device model=redfin,version=30 --device model=oriole,version=33 \
+            --results-history-name "Tuan Nusantara" 2>&1 | tee testlab.log

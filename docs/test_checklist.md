@@ -93,6 +93,14 @@ Minimal satu dari tiap kelompok:
 - [ ] Wilayah timur (Tahap 76+), penasihat & selir baru, bab "Fajar di Timur"
 - [ ] Ubah save.json di HP (adb) → game menolak dan memulihkan cadangan
 
+## Batch 11
+
+- [ ] Pada tanggal hari besar (atau Maju 1 Hari ke tanggalnya): kartu ucapan, hadiah, bingkai
+- [ ] Perjalanan 7 Hari: hari ke-1 bisa diambil setelah target; hari berikutnya terbuka tiap hari
+- [ ] Chat aliansi: kirim stiker, tampil sebagai gambar; pesan berisi @nama Anda berbingkai emas
+- [ ] Pengaturan → Server Online → Hapus Akun Online; sambung lagi membuat akun baru
+- [ ] Situs: halaman privasi & hapus akun terbuka di HP
+
 ## Ketahanan
 
 - [ ] Tutup paksa saat tayangan perang lalu buka lagi: progres tersimpan

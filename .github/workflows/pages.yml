@@ -1,0 +1,35 @@
+# Situs web (beranda, kebijakan privasi, hapus akun) ke GitHub Pages.
+# Sekali saja: Settings → Pages → Source: "GitHub Actions". Lalu jalankan workflow ini
+# (Actions → Situs web → Run workflow) atau push perubahan site/ ke cabang utama.
+name: Situs web
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths: ["site/**", "docs/privacy_policy.md", "tools/build_site.py"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tools/build_site.py
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/site
+      - id: deployment
+        uses: actions/deploy-pages@v4

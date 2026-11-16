@@ -1,7 +1,8 @@
 extends SceneTree
 ## Buat aset listing Google Play ke build/store/:
 ##   - feature_graphic.png (1024x500)
-##   - screenshot_<n>_<bahasa>.png (ukuran jendela; jalankan dengan 1080x1920)
+##   - screenshot_<ponsel|tablet>_<n>_<bahasa>.png (ukuran jendela: 1080x1920 atau 1600x2560)
+## Semua bahasa & ukuran sekaligus: tools/make_store_assets.sh (juga membuat video promosi).
 ##
 ##   xvfb-run -s "-screen 0 1080x1920x24" godot --path . --resolution 1080x1920 \
 ##       --script res://tools/store_assets.gd -- id
@@ -21,6 +22,8 @@ const SHOTS := [
 	["Taklukkan wilayah di Peta Nusantara", "map"],
 	["Jelajahi candi kuno dan kalahkan Buto penjaganya", "candi"],
 	["Berburu, berpacu kuda, dan tonton wayang", "hub"],
+	["Masak hidangan Nusantara untuk berkah kerajaan", "kitchen"],
+	["Satukan Nusantara dari Mataram sampai Raja Ampat", "east"],
 ]
 
 
@@ -62,6 +65,7 @@ func _prepare_model(m) -> void:
 	for intro in load("res://scripts/core/game_data.gd").FEATURE_INTROS:
 		m.mark_intro_seen(intro["id"])
 	m.stage = 30
+	m.realm["decor"] = ["gapura", "lampion", "patung"]
 	m.rank = 4
 	m.prestige = 21000
 	m.silver = 3500000
@@ -113,6 +117,14 @@ func _shot(i: int, shot: Array, lang: String) -> void:
 		"candi":
 			m.enter_candi(root.get_node("Game").now())
 			r.show_candi()
+		"kitchen":
+			r.show_kitchen()
+		"east":
+			for reg in ["kutai", "gowa", "ternate", "banjar", "bone"]:
+				if not m.territory["owned"].has(reg):
+					m.territory["owned"].append(reg)
+			main._switch_page("campaign", false)
+			main._show_map()
 		"hub":
 			main._switch_page("city", false)
 			r._hub_tab = "petualangan"
@@ -126,7 +138,9 @@ func _shot(i: int, shot: Array, lang: String) -> void:
 	var caption := _caption(tr(shot[0]))
 	await _wait(0.2)
 	await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png(OUT + "screenshot_%d_%s.png" % [i + 1, lang])
+	var size := root.get_texture().get_size()
+	var kind := "tablet" if size.x >= 1400 else "ponsel"
+	root.get_texture().get_image().save_png(OUT + "screenshot_%s_%d_%s.png" % [kind, i + 1, lang])
 	caption.queue_free()
 	for v in current_scene.get_children():
 		if v.has_method("close") and v.is_in_group("modal"):

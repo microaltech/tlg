@@ -586,3 +586,22 @@ func claim_raid(callback: Callable) -> void:
 			callback.call(Game.model.claim_raid_reward(int(data.get("raid", 0)), data["reward"]))
 		else:
 			callback.call({"ok": false, "msg": str(data.get("error", "Tidak bisa terhubung ke server."))}))
+
+
+
+## Hapus akun online dan datanya di server, lalu kembali ke mode offline (progres di HP tetap).
+func delete_account(callback: Callable) -> void:
+	_request(HTTPClient.METHOD_POST, "/v1/account/delete", {"confirm": "HAPUS"}, func(code: int, data: Dictionary):
+		if code == 200:
+			_token = ""
+			var cfg := ConfigFile.new()
+			cfg.load(CFG_PATH)
+			cfg.set_value("account", "token", "")
+			# ID perangkat baru agar sambungan berikutnya membuat akun baru, bukan akun lama.
+			_device_id = "%016x%016x" % [randi() << 32 | randi(), randi() << 32 | randi()]
+			cfg.set_value("account", "device_id", _device_id)
+			cfg.save(CFG_PATH)
+			set_server("")
+			callback.call({"ok": true, "msg": "Akun online dan datanya di server sudah dihapus. Game kembali ke mode offline."})
+		else:
+			callback.call({"ok": false, "msg": str(data.get("error", "Tidak bisa terhubung ke server."))}))

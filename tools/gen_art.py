@@ -2201,6 +2201,37 @@ ICONS["raid"] = icon_doc(
     '<path d="M80 26 L90 16 M84 36 L94 26" stroke="#7a4b1f" stroke-width="5" stroke-linecap="round"/>'
     '<path d="M20 52 L28 60 M64 50 L72 58" stroke="#c0392b" stroke-width="4"/>')
 
+# Hari besar (Data.HOLIDAYS).
+ICONS["holiday_imlek"] = icon_doc(
+    '<ellipse cx="48" cy="52" rx="30" ry="34" fill="#c0392b" stroke="#7a1a12" stroke-width="3"/>'
+    '<path d="M22 40 L74 40 M20 52 L76 52 M22 64 L74 64" stroke="#f2c14e" stroke-width="2"/>'
+    '<rect x="40" y="12" width="16" height="8" fill="#f2c14e"/><rect x="40" y="84" width="16" height="6" fill="#f2c14e"/>'
+    '<path d="M48 90 L48 96" stroke="#f2c14e" stroke-width="3"/>'
+    '<text x="48" y="60" font-size="22" text-anchor="middle" fill="#f2c14e" font-weight="bold">福</text>')
+ICONS["holiday_nyepi"] = icon_doc(
+    '<circle cx="48" cy="48" r="40" fill="#1e1e2e"/>'
+    '<path d="M60 22 A26 26 0 1 0 60 74 A20 20 0 1 1 60 22 Z" fill="#f2e2c0"/>'
+    '<circle cx="26" cy="28" r="2" fill="#fff"/><circle cx="72" cy="40" r="2" fill="#fff"/><circle cx="34" cy="70" r="1.5" fill="#fff"/>')
+ICONS["holiday_waisak"] = icon_doc(
+    '<path d="M48 18 C38 34 38 46 48 60 C58 46 58 34 48 18 Z" fill="#f2c14e" stroke="#b8862f" stroke-width="2"/>'
+    '<path d="M48 60 C34 56 24 44 22 32 C36 34 44 44 48 60 Z M48 60 C62 56 72 44 74 32 C60 34 52 44 48 60 Z" '
+    'fill="#e58fb6" stroke="#a33a6b" stroke-width="2"/>'
+    '<ellipse cx="48" cy="72" rx="30" ry="8" fill="#5aa0d6"/><path d="M48 8 L48 14" stroke="#f2c14e" stroke-width="3"/>')
+ICONS["holiday_iduladha"] = icon_doc(
+    '<path d="M70 14 A30 30 0 1 0 70 82 A24 24 0 1 1 70 14 Z" fill="#f2c14e" stroke="#b8862f" stroke-width="2"/>'
+    '<path d="M72 40 L75 48 L84 48 L77 53 L80 62 L72 56 L64 62 L67 53 L60 48 L69 48 Z" fill="#f2c14e"/>'
+    '<path d="M20 86 L76 86" stroke="#1f6f4a" stroke-width="6" stroke-linecap="round"/>')
+ICONS["holiday_natal"] = icon_doc(
+    '<path d="M48 10 L74 46 L60 46 L80 72 L16 72 L36 46 L22 46 Z" fill="#2f6b45" stroke="#1f4f3a" stroke-width="3"/>'
+    '<rect x="42" y="72" width="12" height="14" fill="#7a4b1f"/>'
+    '<circle cx="40" cy="40" r="4" fill="#c0392b"/><circle cx="56" cy="56" r="4" fill="#f2c14e"/>'
+    '<circle cx="36" cy="62" r="4" fill="#5aa0d6"/><path d="M48 4 L51 10 L48 9 L45 10 Z" fill="#f2c14e"/>')
+ICONS["journey"] = icon_doc(
+    '<path d="M14 80 C30 60 22 44 40 36 C58 28 52 14 72 12" fill="none" stroke="#7a4b1f" stroke-width="5" '
+    'stroke-dasharray="8 6" stroke-linecap="round"/>'
+    '<circle cx="14" cy="80" r="7" fill="#2f6b45"/><path d="M72 4 L72 24 M72 4 L88 10 L72 16" fill="#c0392b" '
+    'stroke="#5e3a12" stroke-width="3"/>')
+
 
 def main():
     for cid, spec in CHARACTERS.items():

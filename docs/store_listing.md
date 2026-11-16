@@ -13,6 +13,13 @@ dan PDKI (pdki-indonesia.dgip.go.id) bahwa nama ini belum dipakai pihak lain.
 ID paket: `com.microaltech.tuannusantara`. ID ini terlihat di alamat halaman Play Store
 dan **tidak bisa diganti setelah rilis pertama**.
 
+## Aset grafis & video
+
+`tools/make_store_assets.sh` (butuh xvfb & ffmpeg) membuat di `build/store/`:
+feature graphic 1024×500, 8 tangkapan layar ponsel (1080×1920) dan tablet (1600×2560)
+untuk tiap bahasa (id, en, ms), serta video promosi `promo_id.mp4` dan `promo_en.mp4`
+(±24 detik, 1080×1920). Video diunggah ke YouTube lalu tautannya diisi di Play Console.
+
 ## Bahasa Indonesia (utama)
 
 **Judul:** Tuan Nusantara

@@ -87,6 +87,30 @@
 9. [ ] Periksa **App content**: Data safety (`docs/play_data_safety.md`),
        rating konten, target audiens, dan iklan.
 
+## Rilis otomatis (GitHub Actions)
+
+Sekali saja, di GitHub repo → **Settings → Secrets and variables → Actions**:
+
+| Nama | Jenis | Isi |
+|---|---|---|
+| `ANDROID_KEYSTORE_BASE64` | Secret | `base64 -w0 release.keystore` (keystore dari `tools/make_keystore.sh`) |
+| `ANDROID_KEYSTORE_PASSWORD` | Secret | Kata sandi keystore |
+| `ANDROID_KEY_ALIAS` | Secret | Alias kunci (mis. `tuannusantara`) |
+| `PLAY_SERVICE_ACCOUNT_JSON` | Secret | Isi JSON service account Play Console (izin "Release to testing tracks") |
+| `PLAY_RELEASE_STATUS` | Variable | `draft` sampai rilis pertama disetujui, lalu `completed` |
+| `GCP_TESTLAB_KEY` | Secret (opsional) | JSON service account Google Cloud dengan peran Firebase Test Lab Admin |
+| `FIREBASE_PROJECT` | Variable (opsional) | ID proyek Firebase untuk Test Lab |
+
+Catatan:
+- Unggahan AAB **pertama** ke aplikasi baru harus manual lewat Play Console (Google belum
+  mengizinkan API sebelum ada rilis pertama). Setelah itu cukup:
+  `git tag v0.1.2 && git push origin v0.1.2`.
+- `version/code` diisi otomatis dari jumlah commit, `version/name` dari tag.
+- Tanpa secret keystore, workflow tetap membuat build debug (tidak diunggah ke Play).
+- Situs web: Settings → Pages → Source "GitHub Actions", lalu jalankan workflow
+  "Situs web". URL `https://<akun>.github.io/<repo>/privasi.html` dan `.../hapus-akun.html`
+  diisi di Play Console (App content → Privacy policy dan Data deletion).
+
 ## Setelah rilis
 
 - [ ] Pantau **Android vitals** (crash & ANR) di Play Console. Minta pemain yang

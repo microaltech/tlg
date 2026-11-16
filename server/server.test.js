@@ -707,3 +707,25 @@ test("status server dan cadangan database", async () => {
 		assert.equal((await call("POST", "/admin/api/backup", {}, null, { "X-Admin-Token": "adm" })).status, 200);
 	} finally { server.close(); fsx.rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("hapus akun: data pemain terhapus, chat dianonimkan", async () => {
+	const { server, call } = await start({ adminToken: "adm" });
+	try {
+		const a = await login(call, "hapus-a", "Arya");
+		const b = await login(call, "hapus-b", "Bayu");
+		await call("POST", "/v1/profile", { power: 100, alliance: "garuda" }, a.token);
+		await call("POST", "/v1/profile", { power: 100, alliance: "garuda" }, b.token);
+		await call("POST", "/v1/chat", { text: "Halo semua" }, a.token);
+		await call("POST", "/v1/save", { save: { gold: 5 } }, a.token);
+		await call("POST", "/v1/friends/add", { code: b.player.code }, a.token);
+		assert.equal((await call("POST", "/v1/account/delete", {}, a.token)).status, 400, "butuh konfirmasi");
+		assert.equal((await call("POST", "/v1/account/delete", { confirm: "HAPUS" }, a.token)).status, 200);
+		assert.equal((await call("GET", "/v1/save", null, a.token)).status, 401, "token tidak berlaku lagi");
+		assert.equal((await call("GET", "/v1/friends", null, b.token)).data.friends.length, 0, "pertemanan terhapus");
+		const chat = (await call("GET", "/v1/chat?since=0", null, b.token)).data.messages;
+		assert.equal(chat[0].name, "Pemain dihapus");
+		const c = await login(call, "hapus-c", "Citra");
+		assert.equal((await call("POST", "/admin/api/account/delete", { code: c.player.code }, null, { "X-Admin-Token": "adm" })).status, 200);
+		assert.equal((await call("GET", "/v1/save", null, c.token)).status, 401, "hapus lewat dasbor");
+	} finally { server.close(); }
+});

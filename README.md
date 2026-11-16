@@ -313,7 +313,9 @@ penting (hadiah, pembelian) di server agar tidak bisa dicurangi.
 project.godot              Konfigurasi (portrait 720x1280, renderer mobile)
 scenes/main.tscn           Scene utama
 scripts/core/game_data.gd  Data & angka balancing (jabatan, penasihat, tahap)
-scripts/core/game_model.gd Semua logika game, tanpa UI (mudah diuji)
+scripts/core/game_model.gd Semua logika game, tanpa UI (mudah diuji). Dipecah menjadi
+                           game_model_core.gd (inti) <- game_model_realm.gd (fitur
+                           kerajaan) <- game_model.gd (fitur tambahan); selalu pakai game_model.gd
 scripts/core/game.gd       Autoload "Game": simpan/muat & autosave
 scripts/core/settings.gd   Autoload "Settings": volume, hemat baterai, notifikasi
 scripts/core/notifier.gd   Autoload "Notifier": notifikasi lokal Android (via plugin)
@@ -325,7 +327,8 @@ scripts/core/pattern_translation.gd  Penerjemah kamus + templat (lihat "Bahasa")
 translations/en.tsv        Kamus bahasa Inggris
 scripts/core/audio.gd      Autoload "Audio": musik latar & efek suara
 scripts/core/store.gd      Autoload "Store": Google Play Billing / Mode Uji
-scripts/ui/main.gd         UI dibangun lewat kode (header, 4 halaman, navigasi bawah)
+scripts/ui/main.gd         UI dibangun lewat kode. main_base.gd: header, halaman, navigasi,
+                           helper UI; main.gd (turunannya): Pengaturan, login, panel lain
 scripts/ui/ui_theme.gd     Tema visual (warna, tombol, kartu, font)
 scripts/ui/art.gd          Pemuat gambar (PNG diutamakan, lalu SVG)
 scripts/ui/tutorial_layer.gd  Lapisan tutorial (sorotan, dialog, panah)
@@ -655,6 +658,26 @@ cp build/outputs/aar/tlg_notify-release.aar ../../addons/tlg_notify/bin/
   Kenari; ikatan Laskar Fajar Timur.
 - **Raid aliansi** 3 hari dengan hadiah menurut kontribusi.
 - **Bermain Sehat**: batas belanja bulanan dan pengingat istirahat.
+
+## Batch 11: menuju rilis
+
+- **Rilis otomatis** (`.github/workflows/release.yml`): tag `v0.1.2` → tes → AAB & APK rilis
+  bertanda tangan → rilis GitHub → jalur Internal Testing Google Play → uji robo Firebase
+  Test Lab (opsional). Penyiapan sekali: `docs/release_checklist.md`, bagian "Rilis otomatis".
+- **Situs web** (`site/`, `tools/build_site.py`, workflow "Situs web"): beranda, kebijakan
+  privasi (dari `docs/privacy_policy.md`), dan halaman hapus akun yang diwajibkan Google.
+  Isi nama & email di `site/site.json`.
+- **Hapus akun online**: Pengaturan → Server Online → Hapus Akun Online
+  (`POST /v1/account/delete`), dan dasbor admin untuk permintaan lewat email.
+- **Aset Play Store**: `tools/make_store_assets.sh` → 8 tangkapan layar ponsel & tablet
+  dalam 3 bahasa, feature graphic, dan video promosi `promo_id.mp4` / `promo_en.mp4`.
+- **Refaktor**: model & layar utama dipecah per bagian (lihat struktur di atas).
+- **Performa**: penerjemah berpola menyimpan daftar templat terurut; halaman bahasa
+  Inggris pertama kali dibuka 2–3x lebih cepat (`docs/performance.md`).
+- **Hari besar**: Imlek, Nyepi, Waisak, Iduladha, Natal (ucapan, hadiah, bingkai).
+  Tanggal 2028–2030 untuk hari besar berpindah perlu ditambah dari SKB 3 Menteri.
+- **Perjalanan 7 Hari** untuk pemain baru, **stiker Nusantara** dan **@sebutan** di chat
+  aliansi.
 
 ## Alat tambahan
 

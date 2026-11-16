@@ -159,6 +159,7 @@ curl -X POST https://server/admin/api/config -H "X-Admin-Token: $ADMIN_TOKEN" \
 | GET/POST | `/v1/market`, `/v1/market/sell`, `/v1/market/buy`, `/v1/market/cancel` | Pasar pemain |
 | GET | `/v1/notices?since=` | Ringkasan untuk notifikasi saat game ditutup |
 | POST | `/v1/iap/verify` | Verifikasi pembelian Google Play |
+| POST | `/v1/account/delete` | Hapus akun & data (`{"confirm": "HAPUS"}`); admin: `/admin/api/account/delete` dengan kode teman |
 | GET | `/admin`, `/admin/api/*` | Dasbor admin (header `X-Admin-Token`) |
 | GET/POST | `/v1/tourney`, `/v1/tourney/join` | Turnamen silat online (daftar Senin–Sabtu, hasil Minggu) |
 

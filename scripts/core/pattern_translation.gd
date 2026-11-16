@@ -36,6 +36,7 @@ var _exact := {}
 ## Templat per kunci awalan (2 huruf pertama bagian tetap; "" bila diawali placeholder).
 var _buckets := {}
 var _cache := {}
+var _cand_cache := {}
 ## konteks -> PatternTranslation berisi entri khusus konteks itu
 var _contexts := {}
 var _placeholder := RegEx.create_from_string("%%|%[-+0 #]*\\d*(?:\\.\\d+)?[dfsx]|\\{[a-z_]+\\}")
@@ -74,6 +75,7 @@ func load_tsv(path: String) -> int:
 
 func add_entry(src: String, dst: String) -> void:
 	_cache.clear()
+	_cand_cache.clear()
 	if _placeholder.search(src) == null:
 		_exact[src] = dst
 		return
@@ -187,12 +189,14 @@ func _split(text: String) -> Array:
 ## Pilih templat terbaik: yang menyisakan paling sedikit argumen teks tak
 ## terterjemahkan, lalu tingkat pencocokan paling ketat, lalu bagian tetap terpanjang.
 func _match_pattern(text: String, depth: int) -> String:
-	var candidates: Array = _buckets.get(text.substr(0, 2), []) + _buckets.get("", [])
+	var candidates: Array = _candidates(text.substr(0, 2))
 	var best := ""
 	var best_score := -INF
 	for level in 2:
 		var mode: String = ["strict", "medium"][level]
 		for p in candidates:
+			if not _has_pieces(text, p):
+				continue
 			var m: RegExMatch = p[mode].search(text)
 			if m == null:
 				continue
@@ -203,14 +207,34 @@ func _match_pattern(text: String, depth: int) -> String:
 				best = r[0]
 	if best_score > -INF:
 		return best
-	candidates.sort_custom(func(a, b): return a["weight"] > b["weight"])
-	for p in candidates:
-		if not p["container"]:
+	for p in candidates:  # sudah terurut menurut bobot (lihat _candidates)
+		if not p["container"] or not _has_pieces(text, p):
 			continue
 		var m: RegExMatch = p["loose"].search(text)
 		if m:
 			return _apply(p, m, depth)[0]
 	return ""
+
+
+## Saringan cepat sebelum regex: semua bagian tetap templat harus ada di teks.
+static func _has_pieces(text: String, p: Dictionary) -> bool:
+	for piece in p["pieces"]:
+		if not text.contains(piece):
+			return false
+	return true
+
+
+## Templat yang mungkin cocok untuk teks berawalan `key`: kelompok 2 huruf itu ditambah
+## templat yang diawali placeholder. Digabung dan diurutkan sekali lalu disimpan (dulu
+## dibuat dan diurutkan ulang pada setiap pencarian, penyebab halaman bahasa Inggris
+## lambat saat pertama dibuka).
+func _candidates(key: String) -> Array:
+	var c = _cand_cache.get(key)
+	if c == null:
+		c = _buckets.get(key, []) + _buckets.get("", [])
+		c.sort_custom(func(a, b): return a["weight"] > b["weight"])
+		_cand_cache[key] = c
+	return c
 
 
 ## Isi templat terjemahan dari hasil regex. Mengembalikan [teks, jumlah argumen
@@ -296,7 +320,7 @@ func _compile(src: String, dst: String) -> Dictionary:
 			container = container or src.ends_with("%s" + mark)
 	return {"strict": RegEx.create_from_string(regex["strict"]), "medium": RegEx.create_from_string(regex["medium"]),
 		"loose": RegEx.create_from_string(regex["loose"]), "container": container, "slots": slots, "dst": dst,
-		"weight": fixed.length()}
+		"weight": fixed.length(), "pieces": Array(literal.split("\u0001", false))}
 
 
 static func _escape(s: String) -> String:

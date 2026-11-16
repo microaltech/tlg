@@ -27,10 +27,22 @@ Muat adegan utama: sekitar 1 detik. Memori statis: sekitar 80 MB.
   hasil urusan dihitung sekali per pembangunan halaman.
 - Hanya halaman yang terlihat yang dibangun ulang (sudah ada sejak sebelumnya).
 
+## Pengukuran November 2026 (setelah batch 11)
+
+| Halaman (bahasa Inggris, pertama dibuka) | Sebelum | Sesudah |
+|---|---|---|
+| Penasihat | 284 ms | 127–145 ms |
+| Kampanye | 247 ms | 82–91 ms |
+| Rekrut | 124 ms | 38–47 ms |
+| Arena | 73 ms | 37 ms |
+
+Penyebab: penerjemah berpola menggabungkan dan mengurutkan ulang daftar templat pada
+setiap pencarian. Sekarang daftar per awalan disimpan sekali (`_candidates`) dan templat
+disaring dengan potongan teks tetapnya sebelum regex dijalankan. Bahasa Indonesia tidak
+berubah (tanpa terjemahan): 9–45 ms per halaman. Muat adegan utama sekitar 1,2–1,4 detik.
+
 ## Yang masih bisa diperbaiki
 
-- **Terjemahan pertama kali (bahasa Inggris).** Halaman Penasihat butuh 286 ms saat
-  pertama dibuka karena tiap teks dinamis dicocokkan dengan templat kamus. Setelah
-  itu cache terjemahan membuatnya 40 ms. Bila terasa tersendat di HP, cache bisa
-  dipanaskan saat layar pembuka, atau teks dinamis bisa diterjemahkan per bagian
-  (`tr()` pada potongan tetap) alih-alih seluruh kalimat.
+- **Halaman Penasihat dalam bahasa Inggris** masih 127+ ms saat pertama dibuka (347
+  node). Bisa dipercepat dengan memanaskan cache terjemahan di layar pembuka, atau
+  menerjemahkan potongan tetap (`tr()` per bagian) alih-alih seluruh kalimat dinamis.

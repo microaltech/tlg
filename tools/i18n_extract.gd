@@ -16,6 +16,11 @@ const CODE := [
 	"res://scripts/core/online.gd",
 	"res://scripts/ui/battle_view.gd", "res://scripts/ui/duel_view.gd", "res://scripts/ui/realm_ui.gd",
 	"res://scripts/ui/hunt_view.gd", "res://scripts/ui/login_grid.gd", "res://scripts/ui/race_view.gd",
+	# Pecahan model & layar utama, serta modul UI yang lebih baru.
+	"res://scripts/core/game_model_core.gd", "res://scripts/core/game_model_realm.gd", "res://scripts/ui/main_base.gd",
+	"res://scripts/ui/share_card.gd", "res://scripts/ui/cook_view.gd", "res://scripts/ui/sky_layer.gd",
+	"res://scripts/core/i18n.gd", "res://scripts/core/settings.gd", "res://scripts/core/audio.gd",
+	"res://tools/store_assets.gd", "res://tools/promo_video.gd",
 ]
 ## Bidang data yang bukan teks tampilan (ID, ikon, kunci internal).
 const SKIP_FIELDS := ["id", "icon", "event", "type", "wait", "target", "speaker", "effect", "rarity", "members",
@@ -27,7 +32,7 @@ const SKIP_CONSTS := ["NPC_NAMES", "CHILD_NAMES", "ARENA_AVATARS", "ITEM_ORDER",
 ## Literal kode yang bukan teks tampilan.
 const SKIP_LINE := "push_warning|push_error|print\\(|printerr|assert|\\.connect\\(|has_signal|\\.bus =|mark\\(|_beat = "
 ## Nama teknis atau teks yang sengaja tidak diterjemahkan.
-const THEME_NAMES := ["Rp", "--- jejak ---", "Content-Type: application/json", "Authorization: Bearer", "AdMob", "Tuan Nusantara", "GodotPlayGameServices", "ProgressBar", "Button", "ScrollContainer", "LineEdit", "Label", "GodotGooglePlayBilling", "TlgNotify", "Android", "--- log ---","CardLabel", "CardTitle", "TitleLabel", "SmallLabel", "BigLabel", "GoldButton",
+const THEME_NAMES := ["Rp", "Settings", "I18n", "Wiratama", "Online", "Telemetry", "Game", "Bahasa Indonesia", "English", "Bahasa Melayu (beta)", "--- jejak ---", "Content-Type: application/json", "Authorization: Bearer", "AdMob", "Tuan Nusantara", "GodotPlayGameServices", "ProgressBar", "Button", "ScrollContainer", "LineEdit", "Label", "GodotGooglePlayBilling", "TlgNotify", "Android", "--- log ---","CardLabel", "CardTitle", "TitleLabel", "SmallLabel", "BigLabel", "GoldButton",
 	"GreenButton", "NavButton", "DarkPanel", "Chip", "Toast", "Music", "SFX", "Master"]
 
 var found := {}  ## teks -> lokasi

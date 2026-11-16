@@ -192,6 +192,31 @@ function install(ctx) {
 		return [200, { raid, reward: h.cleanReward(reward) }];
 	};
 
+	// --- Hapus akun (wajib Google Play) --------------------------------------------------------
+	// Menghapus akun dan data terkait; pesan chat dianonimkan (percakapan orang lain tetap utuh).
+	routes["POST /v1/account/delete"] = (me, body) => {
+		if (body.confirm !== "HAPUS") return [400, { error: "Konfirmasi tidak sesuai." }];
+		deleteAccount(me.id);
+		return [200, { ok: true }];
+	};
+
+	function deleteAccount(id) {
+		const run = (sql, ...a) => {
+			try { db.prepare(sql).run(...a); } catch (e) { if (!/no such table/.test(e.message)) throw e; }
+		};
+		run("UPDATE market SET status = 'deleted' WHERE seller = ? AND status = 'open'", id);
+		run("UPDATE chat SET player = 'dihapus', name = 'Pemain dihapus', portrait = 'lord' WHERE player = ?", id);
+		for (const [table, col] of [["saves", "player"], ["friends", "a"], ["friends", "b"], ["gifts", "sender"],
+			["gifts", "receiver"], ["mail", "target"], ["mail_claims", "player"], ["feedback", "player"],
+			["referrals", "invitee"], ["referrals", "inviter"], ["redemptions", "player"], ["transfers", "player"],
+			["flags", "player"], ["raid_hits", "player"], ["raid_claims", "player"], ["season_claims", "player"],
+			["tourney_entries", "player"], ["world_boss_hits", "player"], ["guildwar_attacks", "player"],
+			["arena_log", "attacker"], ["arena_log", "defender"], ["iap_tokens", "player"], ["reports", "reporter"]]) {
+			run(`DELETE FROM ${table} WHERE ${col} = ?`, id);
+		}
+		run("DELETE FROM players WHERE id = ?", id);
+	}
+
 	// --- Cadangan, status, dan peringatan -------------------------------------------------------
 	const backupDir = ctx.opts.backupDir ?? process.env.BACKUP_DIR ?? "";
 	let lastBackup = null;
@@ -273,6 +298,14 @@ function install(ctx) {
 			return [200, { ok: true }];
 		},
 		"POST /admin/api/backup": () => (backupDir ? [200, backup()] : [400, { error: "Set BACKUP_DIR untuk cadangan." }]),
+		// Permintaan hapus lewat email: cari dengan kode teman lalu hapus.
+		"POST /admin/api/account/delete": (body) => {
+			const code = String(body.code || "").replace(/[^0-9a-f]/gi, "").toLowerCase();
+			const found = code.length === 8 ? db.prepare("SELECT id FROM players WHERE id LIKE ? LIMIT 2").all(code + "%") : [];
+			if (found.length !== 1) return [404, { error: "Pemain dengan kode itu tidak ditemukan." }];
+			deleteAccount(found[0].id);
+			return [200, { ok: true }];
+		},
 	};
 	for (const [k, fn] of Object.entries(adminRoutes)) {
 		open.add(k);

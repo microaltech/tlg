@@ -110,6 +110,9 @@
 		<h2>Status server</h2><pre id="status" class="muted"></pre>
 		<h2>Crash per perangkat</h2><div class="scroll"><table id="cr"></table></div>
 		<h2>Tanda kecurangan</h2><div class="scroll"><table id="fl"></table></div>
+		<h2>Hapus akun (permintaan lewat email)</h2>
+		<form id="delf"><label>Kode teman pemain (8 huruf) <input name="code" required maxlength="8"></label>
+		<button class="btn red">Hapus akun</button></form>
 	</section>
 </main>
 <div id="msg"></div>
@@ -202,6 +205,11 @@ document.addEventListener("submit", async (e) => {
 	e.preventDefault(); const f = new FormData(e.target);
 	try { await api("/admin/api/feedback/reply", { id: Number(rid), text: f.get("text"), reward: reward(f.get("reward")) }); toast("Balasan terkirim"); load(); }
 	catch (err) { toast(err.message); }
+});
+$("#delf").addEventListener("submit", async (e) => {
+	e.preventDefault(); const code = new FormData(e.target).get("code");
+	if (!confirm("Hapus akun " + code + " beserta datanya? Tidak bisa dibatalkan.")) return;
+	try { await api("/admin/api/account/delete", { code }); toast("Akun dihapus"); e.target.reset(); } catch (err) { toast(err.message); }
 });
 $("#schf").addEventListener("submit", async (e) => {
 	e.preventDefault(); const f = new FormData(e.target);

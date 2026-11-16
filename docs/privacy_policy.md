@@ -11,8 +11,14 @@ _Berlaku sejak: [isi tanggal rilis] · Pengembang: [nama pengembang] · Kontak: 
 
 ## Ringkasan
 
-Tuan Nusantara adalah game offline. Game ini tidak punya akun, tidak punya server,
-dan tidak mengirim data pribadi Anda ke pengembang atau pihak ketiga.
+Tuan Nusantara bisa dimainkan sepenuhnya offline. Tanpa mode online, game tidak punya
+akun dan tidak mengirim data pribadi Anda ke mana pun. Fitur online (chat aliansi, teman,
+pasar, raid, pindah perangkat) dan statistik anonim hanya aktif bila Anda menyalakannya;
+rinciannya ada di bawah. Data tidak pernah dijual.
+
+**Menghapus data.** Pengaturan → Server Online → **Hapus Akun Online** menghapus akun dan
+data Anda di server seketika. Bisa juga lewat permintaan email; lihat halaman
+"Hapus Akun" di situs game.
 
 ## Data yang disimpan di perangkat Anda
 

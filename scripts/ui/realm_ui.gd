@@ -116,6 +116,8 @@ func _result(r) -> void:
 # --- Kota: kartu & spanduk ------------------------------------------------------------
 
 func build_city_cards(box: VBoxContainer) -> void:
+	_holiday_card(box)
+	_journey_card(box)
 	_advice_card(box)
 	_king_banner(box)
 	_history_card(box)
@@ -2433,3 +2435,66 @@ func _fill_raid(box: VBoxContainer, subtitle: Label) -> void:
 		n.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_small(row, ui._num(int(top[i]["damage"]))).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+
+
+# --- Hari besar & perjalanan 7 hari pertama -------------------------------------------------
+
+func _holiday_card(box: VBoxContainer) -> void:
+	var now: float = Game.now()
+	var hol: Dictionary = model.holiday_active(now)
+	if hol.is_empty() or model.realm["holidays"].has(hol["key"]):
+		return
+	var card: HBoxContainer = ui._card(box)
+	card.add_child(ui._tex(Art.icon(hol["def"]["icon"]), 80))
+	var col: VBoxContainer = ui._col(card)
+	ui._label(col, hol["def"]["name"], "CardTitle")
+	ui._label(col, hol["def"]["greeting"], "CardLabel")
+	_small(col, ui._reward_text(Data.HOLIDAY_REWARD) + " · " + tr("bingkai khusus")).auto_translate_mode = \
+		Node.AUTO_TRANSLATE_MODE_DISABLED
+	_side_button(card, "Terima", func(): return model.claim_holiday(Game.now()), true, "GoldButton", "reveal_sr")
+
+
+func _journey_card(box: VBoxContainer) -> void:
+	var now: float = Game.now()
+	if model.tutorial_active() or not model.journey_active(now):
+		return
+	var card: HBoxContainer = ui._card(box)
+	card.add_child(ui._tex(Art.icon("journey"), 72))
+	var col: VBoxContainer = ui._col(card)
+	ui._label(col, "Perjalanan 7 Hari", "CardTitle")
+	_small(col, tr("Hari ke-%d · %d/%d hadiah diambil · hadiah besar di hari ke-7") % [mini(model.play_day(now), 7),
+		model.realm["journey"].size(), Data.JOURNEY.size()]).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	var n: int = model.journey_claimable(now)
+	_side_button(card, tr("Lihat (%d)") % n if n > 0 else tr("Lihat"), func():
+		show_journey()
+		return null, true, "GoldButton" if n > 0 else "")
+
+
+func show_journey() -> void:
+	_show("journey", "Perjalanan 7 Hari", "journey", _fill_journey)
+
+
+func _fill_journey(box: VBoxContainer, subtitle: Label) -> void:
+	var now: float = Game.now()
+	subtitle.text = "Satu halaman target terbuka setiap hari. Selesaikan semuanya untuk hadiah besar hari ke-7!"
+	for d in Data.JOURNEY.size():
+		var def: Dictionary = Data.JOURNEY[d]
+		var card: HBoxContainer = ui._card(box)
+		var col: VBoxContainer = ui._col(card)
+		var title: Label = ui._label(col, tr("Hari ke-%d") % (d + 1), "CardTitle")
+		title.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		var open: bool = model.journey_unlocked(d, now)
+		if not open:
+			_small(col, "Terbuka di hari bermain berikutnya.")
+			card.modulate = Color(1, 1, 1, 0.6)
+			continue
+		for i in def["tasks"].size():
+			var t: Dictionary = def["tasks"][i]
+			var prog: int = model.journey_progress(d, i)
+			_small(col, "%s · %d/%d" % [tr(t["text"]), prog, t["target"]],
+				UI.GREEN.darkened(0.2) if prog >= int(t["target"]) else UI.INK).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		_small(col, ui._reward_text(def["reward"])).auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		var claimed: bool = model.realm["journey"].has(d)
+		var day: int = d
+		_side_button(card, "Diambil" if claimed else "Ambil", func(): return model.claim_journey(day, Game.now()),
+			not claimed and model.journey_day_done(d), "GoldButton" if d == 6 else "GreenButton", "reveal_sr")

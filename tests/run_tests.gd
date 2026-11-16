@@ -33,7 +33,7 @@ func _init() -> void:
 		"test_troops", "test_seasons", "test_diplomacy", "test_spies", "test_rebellion", "test_race", "test_quiz",
 		"test_candi", "test_forge", "test_pets", "test_comeback", "test_gift_codes", "test_world_boss", "test_realm5_save",
 		"test_intro_update", "test_collect_daily", "test_counselor_titles", "test_wayang", "test_ceremony", "test_badges",
-		"test_tourney_reward", "test_realm6_save", "test_month_event", "test_skins", "test_mail", "test_realm7_save", "test_history", "test_endgame", "test_heirs", "test_kitchen", "test_season_market", "test_realm8_save", "test_share_card", "test_remote_config", "test_sweep", "test_decor", "test_advice_review", "test_realm9_save", "test_malay", "test_save_signature", "test_ab_groups", "test_active_hour", "test_spend_limit", "test_raid_widget", "test_east_content",
+		"test_tourney_reward", "test_realm6_save", "test_month_event", "test_skins", "test_mail", "test_realm7_save", "test_history", "test_endgame", "test_heirs", "test_kitchen", "test_season_market", "test_realm8_save", "test_share_card", "test_remote_config", "test_sweep", "test_decor", "test_advice_review", "test_realm9_save", "test_malay", "test_save_signature", "test_ab_groups", "test_active_hour", "test_spend_limit", "test_raid_widget", "test_east_content", "test_holidays", "test_journey", "test_stickers",
 	]:
 		call(t)
 	print("%d cek, %d gagal" % [_count, _failures])
@@ -3576,3 +3576,52 @@ func test_east_content() -> void:
 	m._unlock_content()
 	check(m.counselors.has("lanang") and m.counselors.has("daeng") and m.counselors.has("mambri"), "penasihat timur bergabung")
 	check(m.beauties.has("cendana") and m.beauties.has("kenari"), "selir timur bergabung")
+
+
+func test_holidays() -> void:
+	var m := fresh()
+	m.tz_bias = 0
+	var imlek := float(Time.get_unix_time_from_datetime_dict({"year": 2026, "month": 2, "day": 17, "hour": 9}))
+	var h := m.holiday_active(imlek)
+	check(not h.is_empty() and h["def"]["id"] == "imlek" and h["key"] == "imlek:2026", "Imlek 2026 aktif")
+	check(m.holiday_active(imlek + 3 * 86400.0).is_empty(), "Imlek berakhir setelah 3 hari")
+	var natal := float(Time.get_unix_time_from_datetime_dict({"year": 2026, "month": 12, "day": 25, "hour": 10}))
+	check(m.holiday_active(natal)["def"]["id"] == "natal", "Natal tanggal tetap")
+	check(m.holiday_active(float(Time.get_unix_time_from_datetime_dict({"year": 2026, "month": 7, "day": 1}))).is_empty(),
+		"tanpa hari besar di tanggal biasa")
+	var gold := m.gold
+	check(m.claim_holiday(imlek)["ok"] and m.gold == gold + 50 and m.cosmetics["owned"].has("frame_imlek"), "hadiah Imlek")
+	check(not m.claim_holiday(imlek + 3600)["ok"], "sekali per hari raya")
+	for hol in Data.HOLIDAYS:
+		check(Data.COSMETICS.has(hol["frame"]) and ResourceLoader.exists("res://assets/icons/%s.svg" % hol["icon"]),
+			"bingkai & ikon %s" % hol["id"])
+
+
+func test_journey() -> void:
+	var m := fresh()
+	var t := 1000.0
+	m.sync(t)
+	check(m.journey_active(t) and m.play_day(t) == 1, "perjalanan aktif di hari pertama")
+	check(m.journey_unlocked(0, t) and not m.journey_unlocked(1, t), "hari ke-2 belum terbuka")
+	check(not m.claim_journey(0, t)["ok"], "target belum selesai")
+	for task in Data.JOURNEY[0]["tasks"]:
+		for i in int(task["target"]):
+			m._track(task["event"])
+	check(m.journey_claimable(t) == 1 and m.claim_journey(0, t)["ok"], "ambil hadiah hari ke-1")
+	check(not m.claim_journey(0, t)["ok"], "hadiah hari sekali")
+	check(not m.claim_journey(1, t)["ok"], "hari ke-2 dikunci")
+	check(m.journey_unlocked(6, t + 6 * 86400.0), "hari ke-7 terbuka di hari ketujuh")
+	check(not m.journey_active(t + 20 * 86400.0), "perjalanan berakhir setelah 2 minggu")
+	var m2 := Model.new()
+	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), t)
+	check(m2.realm["journey"] == [0], "perjalanan tersimpan")
+	for d in Data.JOURNEY:
+		for task in d["tasks"]:
+			check(Data.TUTORIAL_STEPS.size() > 0 and str(task["event"]) != "", "tugas perjalanan punya penghitung")
+
+
+func test_stickers() -> void:
+	for code in Data.CHAT_STICKERS:
+		check(code.begins_with(":") and code.ends_with(":") and code.length() <= 16, "kode stiker %s" % code)
+		check(ResourceLoader.exists("res://assets/icons/%s.svg" % Data.CHAT_STICKERS[code]), "gambar stiker %s" % code)
+	check(Data.CHAT_MAX_LENGTH >= 12, "stiker muat di batas chat")

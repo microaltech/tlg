@@ -1487,6 +1487,11 @@ const COSMETICS := {
 		"unlock": "month_event"},
 	"frame_acara_samudra": {"type": "frame", "name": "Bingkai Jalur Rempah", "colors": ["#1a4a6e", "#e8c070"],
 		"unlock": "month_event"},
+	"frame_imlek": {"type": "frame", "name": "Bingkai Imlek", "colors": ["#a8121a", "#f2c14e"], "unlock": "holiday"},
+	"frame_nyepi": {"type": "frame", "name": "Bingkai Nyepi", "colors": ["#2b2b3a", "#e9e4dc"], "unlock": "holiday"},
+	"frame_waisak": {"type": "frame", "name": "Bingkai Waisak", "colors": ["#c9963f", "#fff3c8"], "unlock": "holiday"},
+	"frame_iduladha": {"type": "frame", "name": "Bingkai Iduladha", "colors": ["#1f6f4a", "#f2e2c0"], "unlock": "holiday"},
+	"frame_natal": {"type": "frame", "name": "Bingkai Natal", "colors": ["#1f5f3a", "#c0392b"], "unlock": "holiday"},
 	"frame_juara_musim": {"type": "frame", "name": "Bingkai Juara Musim", "colors": ["#7a1a1a", "#ffd86b"], "unlock": "season"},
 	"frame_musim": {"type": "frame", "name": "Bingkai Musim Aliansi", "colors": ["#2a3a6e", "#d9c27a"], "unlock": "season"},
 	"costume_lord": {"type": "costume", "name": "Busana Bangsawan", "portrait": "lord", "unlock": "default"},
@@ -1499,6 +1504,7 @@ const COSMETIC_ORDER := ["frame_kayu", "frame_emas", "frame_giok", "frame_menter
 	"frame_adipati", "frame_sultan", "frame_maharaja", "frame_raja_hari_ini", "frame_wayang_malin",
 	"frame_wayang_sangkuriang", "frame_wayang_roro", "frame_wayang_timun", "frame_acara_gajah_mada",
 	"frame_acara_diponegoro", "frame_acara_samudra", "frame_juara_musim", "frame_musim",
+	"frame_imlek", "frame_nyepi", "frame_waisak", "frame_iduladha", "frame_natal",
 	"costume_lord", "costume_batik", "costume_zirah", "costume_raja"]
 
 
@@ -2254,3 +2260,55 @@ const REVIEW_MAX := 3
 
 ## Kode versi aplikasi (samakan dengan version/code di export_presets.cfg).
 const VERSION_CODE := 1
+
+
+# --- Batch 11 ---------------------------------------------------------------------------
+
+## Hari besar keagamaan & budaya (di luar festival panjang): kartu ucapan di Kota dan
+## hadiah sekali per hari raya, berlaku `days` hari mulai tanggalnya. Tanggal yang
+## berpindah tiap tahun mengikuti SKB 3 Menteri; perbarui tiap tahun (atau timpa lewat
+## konfigurasi server "holidays").
+const HOLIDAYS := [
+	{"id": "imlek", "name": "Tahun Baru Imlek", "icon": "holiday_imlek", "days": 3, "frame": "frame_imlek",
+		"greeting": "Gong Xi Fa Cai! Semoga tahun yang baru membawa rezeki dan kesehatan.",
+		"dates": {2026: [2, 17], 2027: [2, 6], 2028: [1, 26], 2029: [2, 13], 2030: [2, 3]}},
+	{"id": "nyepi", "name": "Hari Raya Nyepi", "icon": "holiday_nyepi", "days": 2, "frame": "frame_nyepi",
+		"greeting": "Selamat Hari Raya Nyepi. Hening sejenak untuk menyambut tahun baru Saka.",
+		"dates": {2026: [3, 19], 2027: [3, 8]}},
+	{"id": "waisak", "name": "Hari Raya Waisak", "icon": "holiday_waisak", "days": 2, "frame": "frame_waisak",
+		"greeting": "Selamat Hari Raya Waisak. Semoga semua makhluk berbahagia.",
+		"dates": {2026: [5, 31], 2027: [5, 20]}},
+	{"id": "iduladha", "name": "Hari Raya Iduladha", "icon": "holiday_iduladha", "days": 3, "frame": "frame_iduladha",
+		"greeting": "Selamat Hari Raya Iduladha. Semoga semangat berbagi selalu menyertai kita.",
+		"dates": {2026: [5, 27], 2027: [5, 16]}},
+	{"id": "natal", "name": "Hari Natal", "icon": "holiday_natal", "days": 3, "frame": "frame_natal",
+		"greeting": "Selamat Natal! Damai dan sukacita bagi Tuan sekeluarga.", "fixed": [12, 24]},
+]
+const HOLIDAY_REWARD := {"gold": 50, "items": {"recruit_ticket": 1}}
+
+## Perjalanan 7 hari pertama: tiap hari terbuka satu halaman target (dihitung dari
+## penghitung aksi sejak game baru); hadiah hari ke-7 paling besar.
+const JOURNEY := [
+	{"tasks": [{"event": "affair", "target": 10, "text": "Kerjakan urusan kota 10 kali"},
+		{"event": "win", "target": 3, "text": "Menangkan 3 tahap"}], "reward": {"gold": 50, "items": {"recruit_ticket": 1}}},
+	{"tasks": [{"event": "upgrade", "target": 10, "text": "Latih penasihat 10 kali"},
+		{"event": "visit", "target": 3, "text": "Kunjungi selir 3 kali"}], "reward": {"gold": 60, "items": {"energy_tea": 1}}},
+	{"tasks": [{"event": "win", "target": 10, "text": "Menangkan 10 tahap"},
+		{"event": "recruit", "target": 2, "text": "Rekrut penasihat 2 kali"}], "reward": {"gold": 70, "items": {"scroll_train": 2}}},
+	{"tasks": [{"event": "mission", "target": 10, "text": "Klaim 10 misi harian"},
+		{"event": "affair", "target": 80, "text": "Kerjakan urusan kota 80 kali"}], "reward": {"gold": 80, "items": {"recruit_ticket": 1}}},
+	{"tasks": [{"event": "win", "target": 18, "text": "Menangkan 18 tahap"},
+		{"event": "train", "target": 3, "text": "Didik anak istana 3 kali"}], "reward": {"gold": 90, "items": {"star_stone": 1}}},
+	{"tasks": [{"event": "upgrade", "target": 50, "text": "Latih penasihat 50 kali"},
+		{"event": "expedition", "target": 1, "text": "Selesaikan 1 ekspedisi"}], "reward": {"gold": 100, "items": {"energy_tea": 2}}},
+	{"tasks": [{"event": "win", "target": 25, "text": "Menangkan 25 tahap"},
+		{"event": "recruit", "target": 10, "text": "Rekrut penasihat 10 kali"}],
+		"reward": {"gold": 300, "items": {"recruit_ticket": 5, "star_stone": 2}}},
+]
+
+## Stiker chat aliansi: kode yang dikirim -> ikon. Pesan yang hanya berisi satu kode
+## tampil sebagai gambar besar.
+const CHAT_STICKERS := {
+	":wayang:": "wayang", ":garuda:": "emblem_garuda", ":rendang:": "dish_rendang", ":merdeka:": "fest_merdeka",
+	":hati:": "heart", ":juara:": "trophy", ":jalak:": "pet_jalak", ":macan:": "animal_harimau",
+}

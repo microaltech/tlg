@@ -277,6 +277,7 @@ func _ready() -> void:
 	timer.timeout.connect(_tick)
 	add_child(timer)
 	_switch_page("city", false)
+	_prewarm_pages.call_deferred()
 	_rebuild()
 	Game.returned.connect(func():
 		if get_tree().get_nodes_in_group("modal").is_empty():
@@ -938,6 +939,21 @@ func _tick_ui(now: float) -> void:
 		w["label"].text = "%s %d/%d%s" % [w["prefix"], model.charge_value(key, now), model.max_charges(),
 			"" if eta == 0 else "  ·  +1 dalam %ds" % eta]
 		w["bar"].value = model.CHARGE_SECONDS - eta if eta > 0 else model.CHARGE_SECONDS
+
+
+## Bangun halaman lain diam-diam satu per satu setelah game terbuka, saat tidak ada
+## panel. Cache terjemahan & tekstur ikut terisi, jadi halaman yang pertama kali diketuk
+## tidak tersendat (terutama di bahasa Inggris/Melayu).
+func _prewarm_pages() -> void:
+	await get_tree().create_timer(2.5).timeout
+	for key in _pages:
+		if not is_inside_tree():
+			return
+		await get_tree().create_timer(0.4).timeout
+		if key == _current or not _dirty_pages.has(key) or not get_tree().get_nodes_in_group("modal").is_empty():
+			continue
+		_build_page_content(key)
+		_dirty_pages.erase(key)
 
 
 func _build_page_content(key: String) -> void:

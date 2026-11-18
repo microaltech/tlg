@@ -7,7 +7,8 @@
 #   GODOT=/path/ke/godot tools/build_android.sh aab      # AAB untuk Google Play (butuh Gradle build)
 #
 # Semua preset memakai Gradle build (plugin TlgNotify: notifikasi, bagikan, pemantau server),
-# jadi jalankan Project > Install Android Build Template sekali. Butuh JDK 17.
+# jadi jalankan Project > Install Android Build Template sekali. Butuh Godot 4.7.2, JDK 17,
+# dan Android SDK platform 36 + build-tools 36.1.0 (target API 36, pustaka 16 KB).
 # Path Android SDK, JDK, dan debug keystore diatur sekali di Godot:
 # Editor > Editor Settings > Export > Android.
 # Untuk release/aab, buat keystore sekali dengan tools/make_keystore.sh, lalu isi

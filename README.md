@@ -382,7 +382,8 @@ yang sama. Musik otomatis di-loop.
 
 ## Menjalankan
 
-1. Unduh [Godot 4.3+](https://godotengine.org/download) (versi standar, bukan .NET).
+1. Unduh [Godot 4.7.2](https://godotengine.org/download) (versi standar, bukan .NET). Versi ini menargetkan
+   Android API 36 dan pustaka 16 KB yang diwajibkan Google Play untuk aplikasi baru.
 2. Buka Godot → **Import** → pilih `project.godot` → **Run** (F5).
 
 Menjalankan tes:
@@ -401,7 +402,7 @@ aplikasi di-minimize.
 
 Persiapan sekali saja:
 
-1. Di Godot: **Editor → Manage Export Templates → Download and Install** (4.3).
+1. Di Godot: **Editor → Manage Export Templates → Download and Install** (4.7.2).
 2. Pasang Android SDK (cukup *build-tools* dan *platform-tools*, misalnya lewat
    Android Studio) dan JDK 17+.
 3. **Editor → Editor Settings → Export → Android**: isi `Android SDK Path`,
@@ -439,7 +440,7 @@ tidak bermain. Saat game dibuka lagi, semua jadwal dibatalkan. Pemain bisa
 mematikannya di Pengaturan; di Android 13+ izin notifikasi diminta saat pertama
 kali dibuka.
 
-Godot 4.3 tidak punya notifikasi lokal bawaan, jadi dipakai plugin Android kecil
+Godot tidak punya notifikasi lokal bawaan, jadi dipakai plugin Android kecil
 `TlgNotify` (Java, AlarmManager + BroadcastReceiver):
 
 1. Build AAR (butuh Android SDK dan akses ke Maven Google/Central):
@@ -532,7 +533,7 @@ fase pengerjaan.
 Mengaktifkan pembayaran sungguhan:
 
 1. Unduh plugin dari <https://github.com/godotengine/godot-google-play-billing> (versi
-   yang cocok dengan Godot 4.3), lalu **Project → Install Android Build Template** dan
+   yang cocok dengan Godot 4.7), lalu **Project → Install Android Build Template** dan
    pasang plugin sesuai petunjuknya. Aktifkan `gradle_build/use_gradle_build` dan
    centang plugin di preset ekspor Android. Izin BILLING ditambahkan oleh plugin.
 2. Di Google Play Console buat produk dalam aplikasi dengan ID yang sama seperti
@@ -597,8 +598,9 @@ Catatan penting:
   (merah/hijau → oranye/biru), getar yang bisa dimatikan.
 - **Langit kota** (`sky_layer.gd`): fajar, senja, malam berbintang, dan hujan di musim
   penghujan.
-- **APK lebih kecil**: `tools/build_android.sh arm64` (hanya HP 64-bit, ±34 MB dibanding ±60 MB universal) dengan library
-  terkompresi; AAB Play Store otomatis dipecah per arsitektur.
+- **APK arm64**: `tools/build_android.sh arm64` (hanya HP 64-bit). Sejak Godot 4.7.2 pustaka
+  native tidak lagi dikompresi (syarat halaman memori 16 KB), jadi berkas APK ±88 MB; unduhan
+  dari Play Store tetap kecil karena AAB dikompresi dan dipecah per arsitektur oleh Google.
 - **Dasbor admin web** dan **verifikasi pembelian Google Play** di server.
 
 ### Plugin Android TlgNotify

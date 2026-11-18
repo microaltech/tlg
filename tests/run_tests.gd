@@ -1011,7 +1011,7 @@ func test_chat_save_leave() -> void:
 	m.chat_messages(2010.0)
 	var m2 := Model.new()
 	m2.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())), 2010.0)
-	check(var_to_str(m2.alliance["chat"]) == var_to_str(m.alliance["chat"]), "simpan/muat chat")
+	check(JSON.stringify(m2.alliance["chat"]) == JSON.stringify(m.alliance["chat"]), "simpan/muat chat")
 	m.leave_alliance(3000.0)
 	check(m.chat_messages(3000.0).is_empty(), "keluar aliansi mengosongkan chat")
 
@@ -3592,6 +3592,11 @@ func test_holidays() -> void:
 	var gold := m.gold
 	check(m.claim_holiday(imlek)["ok"] and m.gold == gold + 50 and m.cosmetics["owned"].has("frame_imlek"), "hadiah Imlek")
 	check(not m.claim_holiday(imlek + 3600)["ok"], "sekali per hari raya")
+	var nyepi28 := float(Time.get_unix_time_from_datetime_dict({"year": 2028, "month": 3, "day": 28, "hour": 9}))
+	check(m.holiday_active(nyepi28).is_empty(), "perkiraan Nyepi 2028 (26–27 Maret) sudah lewat")
+	m.apply_remote({"holidays": {"nyepi": {"2028": [3, 27]}}})
+	check(m.holiday_active(nyepi28)["def"]["id"] == "nyepi", "tanggal hari besar dikoreksi dari server")
+	m.apply_remote({})
 	for hol in Data.HOLIDAYS:
 		check(Data.COSMETICS.has(hol["frame"]) and ResourceLoader.exists("res://assets/icons/%s.svg" % hol["icon"]),
 			"bingkai & ikon %s" % hol["id"])

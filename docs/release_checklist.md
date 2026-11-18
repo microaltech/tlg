@@ -46,13 +46,12 @@
        `godot --headless --path . --script res://tools/sim_economy.gd -- 30 4 1`
        lalu bandingkan dengan `docs/balance.md`.
 4. [ ] Set environment keystore (`GODOT_ANDROID_KEYSTORE_RELEASE_*`).
-5. [ ] Build: `GODOT=/path/ke/godot tools/build_android.sh aab`. Butuh Android Build
-       Template terpasang, **JDK 17** (Godot 4.3 menolak Java 21; set
-       `export/android/java_sdk_path` di Editor Settings ke JDK 17), Android SDK
-       platform 34 + build-tools 34, dan akses internet ke repositori Google Maven
-       (dl.google.com) serta Maven Central untuk Gradle. Bila Maven Central
-       membalas 429 (terlalu banyak permintaan), tunggu semenit lalu ulangi;
-       unduhan yang sudah selesai tersimpan di cache Gradle.
+5. [ ] Build: `GODOT=/path/ke/godot tools/build_android.sh aab` dengan **Godot 4.7.2**. Butuh
+       Android Build Template 4.7.2 terpasang, **JDK 17**, Android SDK **platform 36** +
+       **build-tools 36.1.0**, dan akses ke Google Maven (dl.google.com) serta Maven
+       Central. Bila Maven Central membalas 429, tunggu semenit lalu ulangi.
+       Periksa hasil: `aapt2 dump badging <apk> | grep targetSdk` harus `36`, dan
+       `zipalign -c -P 16 -v 4 <apk>` harus "Verification successful" (pustaka 16 KB).
 5b. [ ] Semua preset Android memakai Gradle build agar plugin TlgNotify (notifikasi,
        bagikan, pemantau server) ikut. Bila Java plugin diubah, bangun ulang AAR
        (lihat README, bagian Plugin Android TlgNotify).

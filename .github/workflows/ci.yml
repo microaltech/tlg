@@ -9,8 +9,8 @@ on:
   workflow_dispatch:
 
 env:
-  GODOT_VERSION: "4.3"
-  GODOT_URL: https://github.com/godotengine/godot/releases/download/4.3-stable
+  GODOT_VERSION: "4.7.2"
+  GODOT_URL: https://github.com/godotengine/godot/releases/download/4.7.2-stable
 
 jobs:
   game:
@@ -21,9 +21,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Unduh Godot
         run: |
-          curl -sSL -o godot.zip "$GODOT_URL/Godot_v4.3-stable_linux.x86_64.zip"
+          curl -sSL -o godot.zip "$GODOT_URL/Godot_v4.7.2-stable_linux.x86_64.zip"
           unzip -q godot.zip -d "$RUNNER_TEMP/godot"
-          echo "GODOT=$RUNNER_TEMP/godot/Godot_v4.3-stable_linux.x86_64" >> "$GITHUB_ENV"
+          echo "GODOT=$RUNNER_TEMP/godot/Godot_v4.7.2-stable_linux.x86_64" >> "$GITHUB_ENV"
       - name: Impor aset
         run: $GODOT --headless --path . --import || true
       - name: Tes model
@@ -53,9 +53,9 @@ jobs:
         run: sudo apt-get update -q && sudo apt-get install -y -q xvfb libgl1-mesa-dri
       - name: Unduh Godot
         run: |
-          curl -sSL -o godot.zip "$GODOT_URL/Godot_v4.3-stable_linux.x86_64.zip"
+          curl -sSL -o godot.zip "$GODOT_URL/Godot_v4.7.2-stable_linux.x86_64.zip"
           unzip -q godot.zip -d "$RUNNER_TEMP/godot"
-          echo "GODOT=$RUNNER_TEMP/godot/Godot_v4.3-stable_linux.x86_64" >> "$GITHUB_ENV"
+          echo "GODOT=$RUNNER_TEMP/godot/Godot_v4.7.2-stable_linux.x86_64" >> "$GITHUB_ENV"
       - name: Periksa elemen yang keluar layar
         run: |
           $GODOT --headless --path . --import || true
@@ -82,9 +82,9 @@ jobs:
         run: node --test server/server.test.js
       - name: Unduh Godot
         run: |
-          curl -sSL -o godot.zip "$GODOT_URL/Godot_v4.3-stable_linux.x86_64.zip"
+          curl -sSL -o godot.zip "$GODOT_URL/Godot_v4.7.2-stable_linux.x86_64.zip"
           unzip -q godot.zip -d "$RUNNER_TEMP/godot"
-          echo "GODOT=$RUNNER_TEMP/godot/Godot_v4.3-stable_linux.x86_64" >> "$GITHUB_ENV"
+          echo "GODOT=$RUNNER_TEMP/godot/Godot_v4.7.2-stable_linux.x86_64" >> "$GITHUB_ENV"
       - name: Uji ujung-ke-ujung (server sungguhan + klien Godot)
         run: |
           $GODOT --headless --path . --import || true
@@ -103,25 +103,25 @@ jobs:
           java-version: "17"
       - name: Unduh Godot & templat ekspor
         run: |
-          curl -sSL -o godot.zip "$GODOT_URL/Godot_v4.3-stable_linux.x86_64.zip"
+          curl -sSL -o godot.zip "$GODOT_URL/Godot_v4.7.2-stable_linux.x86_64.zip"
           unzip -q godot.zip -d "$RUNNER_TEMP/godot"
-          echo "GODOT=$RUNNER_TEMP/godot/Godot_v4.3-stable_linux.x86_64" >> "$GITHUB_ENV"
-          curl -sSL -o templates.tpz "$GODOT_URL/Godot_v4.3-stable_export_templates.tpz"
+          echo "GODOT=$RUNNER_TEMP/godot/Godot_v4.7.2-stable_linux.x86_64" >> "$GITHUB_ENV"
+          curl -sSL -o templates.tpz "$GODOT_URL/Godot_v4.7.2-stable_export_templates.tpz"
           mkdir -p ~/.local/share/godot/export_templates
           unzip -q templates.tpz -d "$RUNNER_TEMP/tpl"
-          mv "$RUNNER_TEMP/tpl/templates" ~/.local/share/godot/export_templates/4.3.stable
+          mv "$RUNNER_TEMP/tpl/templates" ~/.local/share/godot/export_templates/4.7.2.stable
       - name: Pasang Android Build Template
         run: |
           mkdir -p android/build
-          unzip -q ~/.local/share/godot/export_templates/4.3.stable/android_source.zip -d android/build
-          echo "4.3.stable" > android/.build_version
+          unzip -q ~/.local/share/godot/export_templates/4.7.2.stable/android_source.zip -d android/build
+          echo "4.7.2.stable" > android/.build_version
           touch android/build/.gdignore
       - name: Pengaturan editor (SDK, JDK, keystore debug)
         run: |
           keytool -genkeypair -v -keystore "$RUNNER_TEMP/debug.keystore" -storepass android -alias androiddebugkey \
             -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           mkdir -p ~/.config/godot
-          cat > ~/.config/godot/editor_settings-4.3.tres <<EOT
+          cat > ~/.config/godot/editor_settings-4.7.tres <<EOT
           [gd_resource type="EditorSettings" format=3]
 
           [resource]
@@ -131,7 +131,7 @@ jobs:
           export/android/debug_keystore_user = "androiddebugkey"
           export/android/debug_keystore_pass = "android"
           EOT
-          sed -i 's/^          //' ~/.config/godot/editor_settings-4.3.tres
+          sed -i 's/^          //' ~/.config/godot/editor_settings-4.7.tres
       - name: Build APK arm64
         run: |
           mkdir -p build

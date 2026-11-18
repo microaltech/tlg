@@ -1,6 +1,6 @@
 # Performa
 
-Diukur dengan `tools/perf_check.gd` di komputer pengembang (Godot 4.3, renderer
+Diukur dengan `tools/perf_check.gd` di komputer pengembang (Godot 4.3 pada pengukuran awal; 4.7.2 sejak November 2026, renderer
 Compatibility, xvfb, layar 720x1280). HP kelas bawah biasanya 3–6 kali lebih lambat.
 
     xvfb-run -s "-screen 0 720x1280x24" godot --path . --resolution 720x1280 \

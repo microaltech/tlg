@@ -26,6 +26,20 @@ const CONFIG_SPEC = {
 	event: { def: "", str: 32 }, // id event mingguan (kosong = bergilir)
 	min_version: { def: 0, min: 0, max: 1e6 }, // version/code minimum; di bawahnya wajib update
 	announcement: { def: null, obj: true }, // {id, title, body}
+	// Koreksi tanggal hari besar: {"nyepi": {"2028": [3, 27]}}
+	holidays: { def: {}, list: true, clean(v) {
+		const out = {};
+		if (!v || typeof v !== "object") return out;
+		for (const [id, years] of Object.entries(v).slice(0, 10)) {
+			if (!/^[a-z_]{1,16}$/.test(id) || !years || typeof years !== "object") continue;
+			out[id] = {};
+			for (const [y, md] of Object.entries(years).slice(0, 10)) {
+				const m = Number(md?.[0]), d = Number(md?.[1]);
+				if (/^20\d\d$/.test(y) && m >= 1 && m <= 12 && d >= 1 && d <= 31) out[id][y] = [m, d];
+			}
+		}
+		return out;
+	} },
 };
 
 function install(ctx) {

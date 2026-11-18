@@ -4734,7 +4734,7 @@ static func sign_text(text: String) -> String:
 
 ## Teks save bertanda tangan: "<tanda tangan>\n<json>".
 static func signed_text(data: Dictionary) -> String:
-	var json := JSON.stringify(data)
+	var json := JSON.stringify(data, "", true, true)  # presisi penuh: angka desimal tidak bergeser
 	return sign_text(json) + "\n" + json
 
 

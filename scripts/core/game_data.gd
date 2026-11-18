@@ -2266,21 +2266,22 @@ const VERSION_CODE := 1
 
 ## Hari besar keagamaan & budaya (di luar festival panjang): kartu ucapan di Kota dan
 ## hadiah sekali per hari raya, berlaku `days` hari mulai tanggalnya. Tanggal yang
-## berpindah tiap tahun mengikuti SKB 3 Menteri; perbarui tiap tahun (atau timpa lewat
-## konfigurasi server "holidays").
+## berpindah tiap tahun mengikuti SKB 3 Menteri. Tanggal 2028–2030 untuk Nyepi, Waisak,
+## dan Iduladha adalah perkiraan (fase bulan); koreksi lewat konfigurasi server
+## "holidays" (dasbor) begitu SKB terbit, tanpa perlu update aplikasi.
 const HOLIDAYS := [
 	{"id": "imlek", "name": "Tahun Baru Imlek", "icon": "holiday_imlek", "days": 3, "frame": "frame_imlek",
 		"greeting": "Gong Xi Fa Cai! Semoga tahun yang baru membawa rezeki dan kesehatan.",
 		"dates": {2026: [2, 17], 2027: [2, 6], 2028: [1, 26], 2029: [2, 13], 2030: [2, 3]}},
 	{"id": "nyepi", "name": "Hari Raya Nyepi", "icon": "holiday_nyepi", "days": 2, "frame": "frame_nyepi",
 		"greeting": "Selamat Hari Raya Nyepi. Hening sejenak untuk menyambut tahun baru Saka.",
-		"dates": {2026: [3, 19], 2027: [3, 8]}},
+		"dates": {2026: [3, 19], 2027: [3, 8], 2028: [3, 26], 2029: [3, 16], 2030: [3, 5]}},
 	{"id": "waisak", "name": "Hari Raya Waisak", "icon": "holiday_waisak", "days": 2, "frame": "frame_waisak",
 		"greeting": "Selamat Hari Raya Waisak. Semoga semua makhluk berbahagia.",
-		"dates": {2026: [5, 31], 2027: [5, 20]}},
+		"dates": {2026: [5, 31], 2027: [5, 20], 2028: [5, 9], 2029: [5, 27], 2030: [5, 16]}},
 	{"id": "iduladha", "name": "Hari Raya Iduladha", "icon": "holiday_iduladha", "days": 3, "frame": "frame_iduladha",
 		"greeting": "Selamat Hari Raya Iduladha. Semoga semangat berbagi selalu menyertai kita.",
-		"dates": {2026: [5, 27], 2027: [5, 16]}},
+		"dates": {2026: [5, 27], 2027: [5, 16], 2028: [5, 5], 2029: [4, 24], 2030: [4, 13]}},
 	{"id": "natal", "name": "Hari Natal", "icon": "holiday_natal", "days": 3, "frame": "frame_natal",
 		"greeting": "Selamat Natal! Damai dan sukacita bagi Tuan sekeluarga.", "fixed": [12, 24]},
 ]

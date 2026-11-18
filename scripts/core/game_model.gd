@@ -504,6 +504,7 @@ func apply_remote(cfg: Dictionary) -> void:
 		"min_version": int(cfg.get("min_version", 0)),
 		"announcement": cfg.get("announcement") if cfg.get("announcement") is Dictionary else {},
 		"groups": {},
+		"holidays": cfg.get("holidays") if cfg.get("holidays") is Dictionary else {},
 	}
 	# Uji A/B: varian dipilih tetap per pemasangan (hash ID pemasangan + id eksperimen).
 	var exps = cfg.get("experiments", [])
@@ -725,9 +726,13 @@ func widget_lines(now: float) -> Array:
 func holiday_active(now: float) -> Dictionary:
 	var d := Time.get_datetime_dict_from_unix_time(int(now + tz_bias))
 	var today := Time.get_unix_time_from_datetime_dict({"year": d["year"], "month": d["month"], "day": d["day"]})
+	# Koreksi tanggal dari server: {"nyepi": {"2028": [3, 27]}, ...}
+	var fix = remote.get("holidays", {})
 	for h in Data.HOLIDAYS:
 		for year in [int(d["year"]), int(d["year"]) - 1]:
 			var md = h["fixed"] if h.has("fixed") else h.get("dates", {}).get(year)
+			if fix is Dictionary and fix.get(h["id"]) is Dictionary and fix[h["id"]].get(str(year)) is Array:
+				md = fix[h["id"]][str(year)]
 			if md == null:
 				continue
 			var start := Time.get_unix_time_from_datetime_dict({"year": year, "month": md[0], "day": md[1]})
